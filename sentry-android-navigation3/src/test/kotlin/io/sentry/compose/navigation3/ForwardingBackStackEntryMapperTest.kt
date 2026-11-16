@@ -15,11 +15,13 @@ class ForwardingBackStackEntryMapperTest {
   fun `mapper returns name and arguments when present`() {
     val screen = ProfileScreen("123")
     val sut =
-      ForwardingBackStackEntryMapper({
-        BackStackEntryMapper<ProfileScreen> { entry ->
-          SentryBackStackEntry("profile-${entry.userId}", mapOf("userId" to entry.userId))
-        }
-      })
+      ForwardingBackStackEntryMapper(
+        {
+          BackStackEntryMapper<ProfileScreen> { entry ->
+            SentryBackStackEntry("profile-${entry.userId}", mapOf("userId" to entry.userId))
+          }
+        },
+      )
 
     assertThat(sut.map(screen))
       .isEqualTo(SentryBackStackEntry("profile-123", mapOf("userId" to "123")))

@@ -33,7 +33,7 @@ class SentrySpringSubscriptionHandlerTest {
           OperationDefinition.newOperationDefinition()
             .operation(OperationDefinition.Operation.QUERY)
             .name("testQuery")
-            .build()
+            .build(),
         )
         .build()
     whenever(dataFetchingEnvironment.document).thenReturn(document)
@@ -69,7 +69,7 @@ class SentrySpringSubscriptionHandlerTest {
           OperationDefinition.newOperationDefinition()
             .operation(OperationDefinition.Operation.QUERY)
             .name("testQuery")
-            .build()
+            .build(),
         )
         .build()
     whenever(dataFetchingEnvironment.document).thenReturn(document)

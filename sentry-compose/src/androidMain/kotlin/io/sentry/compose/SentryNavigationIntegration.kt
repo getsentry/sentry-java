@@ -59,7 +59,7 @@ internal class SentryLifecycleObserver(
 @Composable
 @NonRestartableComposable
 public fun NavHostController.withSentryObservableEffect(
-  navListener: SentryNavigationListener
+  navListener: SentryNavigationListener,
 ): NavHostController {
   val navListenerSnapshot by rememberUpdatedState(navListener)
 
@@ -105,7 +105,7 @@ public fun NavHostController.withSentryObservableEffect(
         enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
         enableNavigationTracing = enableTracingSnapshot,
         traceOriginAppendix = TRACE_ORIGIN_APPENDIX,
-      )
+      ),
   )
 }
 

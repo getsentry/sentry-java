@@ -170,10 +170,9 @@ public final class SentryInstrumentation
       final @NotNull InstrumentationExecutionParameters parameters,
       final @NotNull InstrumentationState state) {
     return super.instrumentExecutionResult(executionResult, parameters, state)
-        .whenComplete(
-            (result, exception) -> {
-              instrumentation.instrumentExecutionResultComplete(parameters, result, exception);
-            });
+        .whenComplete((result, exception) -> {
+          instrumentation.instrumentExecutionResultComplete(parameters, result, exception);
+        });
   }
 
   @Override

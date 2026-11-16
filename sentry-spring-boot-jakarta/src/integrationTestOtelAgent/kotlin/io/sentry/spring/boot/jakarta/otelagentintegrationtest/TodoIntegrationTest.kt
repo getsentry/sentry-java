@@ -39,7 +39,7 @@ class TodoIntegrationTest : IntegrationTest() {
         transaction.hasSpanWithOpAndDescription(
           "http.client",
           "GET ${restTemplate.rootUri}/stub/todos/1",
-        )
+        ),
       )
       .isTrue()
     return transaction

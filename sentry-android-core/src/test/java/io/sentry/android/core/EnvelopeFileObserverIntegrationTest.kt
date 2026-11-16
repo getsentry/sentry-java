@@ -31,7 +31,7 @@ class EnvelopeFileObserverIntegrationTest {
     val logger = mock<ILogger>()
 
     fun getSut(
-      optionConfiguration: (SentryAndroidOptions) -> Unit = {}
+      optionConfiguration: (SentryAndroidOptions) -> Unit = {},
     ): EnvelopeFileObserverIntegration {
       options = SentryAndroidOptions()
       options.setLogger(logger)

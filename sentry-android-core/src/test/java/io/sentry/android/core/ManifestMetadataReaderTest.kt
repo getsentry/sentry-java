@@ -1197,7 +1197,8 @@ class ManifestMetadataReaderTest {
     // Arrange
     val bundle =
       bundleOf(
-        ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$"""
+        ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to
+          """localhost,^(http|https)://api\..*$""",
       )
     val context = fixture.getContext(metaData = bundle)
 
@@ -1738,7 +1739,7 @@ class ManifestMetadataReaderTest {
     val bundle =
       bundleOf(
         ManifestMetadataReader.SENTRY_GRADLE_PLUGIN_INTEGRATIONS to
-          "Database Instrumentation,OkHttp Instrumentation"
+          "Database Instrumentation,OkHttp Instrumentation",
       )
     val context = fixture.getContext(metaData = bundle)
 
@@ -2041,13 +2042,13 @@ class ManifestMetadataReaderTest {
     // Assert
     assertTrue(
       fixture.options.sessionReplay.unmaskViewClasses.contains(
-        SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
-      )
+        SentryReplayOptions.IMAGE_VIEW_CLASS_NAME,
+      ),
     )
     assertTrue(
       fixture.options.sessionReplay.unmaskViewClasses.contains(
-        SentryReplayOptions.TEXT_VIEW_CLASS_NAME
-      )
+        SentryReplayOptions.TEXT_VIEW_CLASS_NAME,
+      ),
     )
   }
 
@@ -2062,13 +2063,13 @@ class ManifestMetadataReaderTest {
     // Assert
     assertTrue(
       fixture.options.sessionReplay.maskViewClasses.contains(
-        SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
-      )
+        SentryReplayOptions.IMAGE_VIEW_CLASS_NAME,
+      ),
     )
     assertTrue(
       fixture.options.sessionReplay.maskViewClasses.contains(
-        SentryReplayOptions.TEXT_VIEW_CLASS_NAME
-      )
+        SentryReplayOptions.TEXT_VIEW_CLASS_NAME,
+      ),
     )
   }
 
@@ -2144,7 +2145,7 @@ class ManifestMetadataReaderTest {
     // Arrange
     val bundle =
       bundleOf(
-        ManifestMetadataReader.IN_APP_INCLUDES to "com.example.package1,com.example.package2"
+        ManifestMetadataReader.IN_APP_INCLUDES to "com.example.package1,com.example.package2",
       )
     val context = fixture.getContext(metaData = bundle)
 
@@ -2175,7 +2176,7 @@ class ManifestMetadataReaderTest {
     // Arrange
     val bundle =
       bundleOf(
-        ManifestMetadataReader.IN_APP_EXCLUDES to "com.example.excluded1,com.example.excluded2"
+        ManifestMetadataReader.IN_APP_EXCLUDES to "com.example.excluded1,com.example.excluded2",
       )
     val context = fixture.getContext(metaData = bundle)
 
@@ -2799,7 +2800,7 @@ class ManifestMetadataReaderTest {
     val bundle =
       bundleOf(
         ManifestMetadataReader.REPLAYS_NETWORK_DETAIL_ALLOW_URLS to
-          " https://api.example.com/.* , https://cdn.example.com/.* "
+          " https://api.example.com/.* , https://cdn.example.com/.* ",
       )
     val context = fixture.getContext(metaData = bundle)
 
@@ -2819,7 +2820,7 @@ class ManifestMetadataReaderTest {
     val bundle =
       bundleOf(
         ManifestMetadataReader.REPLAYS_NETWORK_REQUEST_HEADERS to
-          " Authorization , X-Custom-Header "
+          " Authorization , X-Custom-Header ",
       )
     val context = fixture.getContext(metaData = bundle)
 

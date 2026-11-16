@@ -89,14 +89,14 @@ class CheckInUtilsTest {
             check {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-            }
+            },
           )
         verify(scopes)
           .captureCheckIn(
             check {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals(CheckInStatus.OK.apiName(), it.status)
-            }
+            },
           )
         verify(lifecycleToken).close()
       }
@@ -129,7 +129,7 @@ class CheckInUtilsTest {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals("environment-1", it.environment)
               assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-            }
+            },
           )
         verify(scopes)
           .captureCheckIn(
@@ -137,7 +137,7 @@ class CheckInUtilsTest {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals("environment-1", it.environment)
               assertEquals(CheckInStatus.OK.apiName(), it.status)
-            }
+            },
           )
         verify(lifecycleToken).close()
       }
@@ -171,14 +171,14 @@ class CheckInUtilsTest {
             check {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-            }
+            },
           )
         verify(scopes)
           .captureCheckIn(
             check {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals(CheckInStatus.ERROR.apiName(), it.status)
-            }
+            },
           )
         verify(lifecycleToken).close()
       }
@@ -209,14 +209,14 @@ class CheckInUtilsTest {
               assertEquals("monitor-1", it.monitorSlug)
               assertSame(monitorConfig, it.monitorConfig)
               assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-            }
+            },
           )
         verify(scopes)
           .captureCheckIn(
             check {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals(CheckInStatus.OK.apiName(), it.status)
-            }
+            },
           )
         verify(lifecycleToken).close()
       }
@@ -251,14 +251,14 @@ class CheckInUtilsTest {
               assertEquals("monitor-1", it.monitorSlug)
               assertSame(monitorConfig, it.monitorConfig)
               assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-            }
+            },
           )
         verify(scopes)
           .captureCheckIn(
             check {
               assertEquals("monitor-1", it.monitorSlug)
               assertEquals(CheckInStatus.OK.apiName(), it.status)
-            }
+            },
           )
         verify(lifecycleToken).close()
       }
@@ -281,7 +281,7 @@ class CheckInUtilsTest {
                 defaultFailureIssueThreshold = 40
                 defaultRecoveryThreshold = 50
               }
-          }
+          },
         )
 
       val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
@@ -308,7 +308,7 @@ class CheckInUtilsTest {
                 defaultMaxRuntime = 50
                 defaultTimezone = "America/New_York"
               }
-          }
+          },
         )
 
       val monitorConfig =

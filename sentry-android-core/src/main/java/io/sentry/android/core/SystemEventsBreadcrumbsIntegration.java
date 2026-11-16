@@ -137,53 +137,52 @@ public final class SystemEventsBreadcrumbsIntegration
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-                  if (isClosed || isStopped || receiver != null) {
-                    return;
-                  }
+          .submit(() -> {
+            try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+              if (isClosed || isStopped || receiver != null) {
+                return;
+              }
 
-                  receiver = new SystemEventsBroadcastReceiver(scopes, options);
-                  final @NotNull IntentFilter filter = new IntentFilter();
-                  for (String item : actions) {
-                    filter.addAction(item);
-                  }
-                  try {
-                    // registerReceiver can throw SecurityException but it's not documented in the
-                    // official docs
+              receiver = new SystemEventsBroadcastReceiver(scopes, options);
+              final @NotNull IntentFilter filter = new IntentFilter();
+              for (String item : actions) {
+                filter.addAction(item);
+              }
+              try {
+                // registerReceiver can throw SecurityException but it's not documented in the
+                // official docs
 
-                    // onReceive will be called on this handler thread
-                    @NotNull Handler handler;
-                    if (customHandler != null) {
-                      handler = customHandler;
-                    } else {
-                      if (handlerThread == null) {
-                        handlerThread =
-                            new HandlerThread(
-                                "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
-                        handlerThread.start();
-                      }
-                      handler = new Handler(handlerThread.getLooper());
-                    }
-                    ContextUtils.registerReceiver(context, options, receiver, filter, handler);
-                    if (!isReceiverRegistered.getAndSet(true)) {
-                      options
-                          .getLogger()
-                          .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-                      addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
-                    }
-                  } catch (Throwable e) {
-                    options.setEnableSystemEventBreadcrumbs(false);
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.ERROR,
-                            "Failed to initialize SystemEventsBreadcrumbsIntegration.",
-                            e);
+                // onReceive will be called on this handler thread
+                @NotNull Handler handler;
+                if (customHandler != null) {
+                  handler = customHandler;
+                } else {
+                  if (handlerThread == null) {
+                    handlerThread =
+                        new HandlerThread(
+                            "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
+                    handlerThread.start();
                   }
+                  handler = new Handler(handlerThread.getLooper());
                 }
-              });
+                ContextUtils.registerReceiver(context, options, receiver, filter, handler);
+                if (!isReceiverRegistered.getAndSet(true)) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+                  addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
+                }
+              } catch (Throwable e) {
+                options.setEnableSystemEventBreadcrumbs(false);
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.ERROR,
+                        "Failed to initialize SystemEventsBreadcrumbsIntegration.",
+                        e);
+              }
+            }
+          });
     } catch (Throwable e) {
       options
           .getLogger()

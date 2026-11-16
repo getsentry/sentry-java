@@ -108,7 +108,7 @@ class Nav3FragmentsActivity : FragmentActivity() {
         orientation = LinearLayout.VERTICAL
         addView(controls, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         addView(container, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
-      }
+      },
     )
 
     if (savedInstanceState == null) {
@@ -330,7 +330,7 @@ class Nav3PagerFragment : Fragment() {
         override fun onPageSelected(position: Int) {
           currentPage = position
         }
-      }
+      },
     )
   }
 
@@ -360,7 +360,7 @@ internal fun FragmentScenarioRoute(
         testTag =
           nav3TestTag(
             if (mode == Nav3FragmentMode.REPLACE) "multi_fragment_open_fragments"
-            else "${mode.name.lowercase()}_open_fragments"
+            else "${mode.name.lowercase()}_open_fragments",
           ),
       )
     },
@@ -435,7 +435,7 @@ private fun PagerHeader(currentPage: Int, onSelectPage: (Int) -> Unit) {
     modifier =
       Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).semantics {
         testTagsAsResourceId = true
-      }
+      },
   ) {
     Text(
       "ViewPager2 page $currentPage (neighbors preloaded at STARTED)",

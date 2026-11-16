@@ -153,12 +153,12 @@ class AndroidProfilerTest {
 
     assertFailsWith<IllegalArgumentException> {
       ctor.newInstance(
-        arrayOf(null, 0, mock(), { mock<SentryExecutorService>() }, mock<AndroidLogger>())
+        arrayOf(null, 0, mock(), { mock<SentryExecutorService>() }, mock<AndroidLogger>()),
       )
     }
     assertFailsWith<IllegalArgumentException> {
       ctor.newInstance(
-        arrayOf("mock", 0, null, { mock<SentryExecutorService>() }, mock<AndroidLogger>())
+        arrayOf("mock", 0, null, { mock<SentryExecutorService>() }, mock<AndroidLogger>()),
       )
     }
     assertFailsWith<IllegalArgumentException> {

@@ -163,10 +163,9 @@ public final class SentryInstrumentation
   public CompletableFuture<ExecutionResult> instrumentExecutionResult(
       ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
     return super.instrumentExecutionResult(executionResult, parameters)
-        .whenComplete(
-            (result, exception) -> {
-              instrumentation.instrumentExecutionResultComplete(parameters, result, exception);
-            });
+        .whenComplete((result, exception) -> {
+          instrumentation.instrumentExecutionResultComplete(parameters, result, exception);
+        });
   }
 
   @Override

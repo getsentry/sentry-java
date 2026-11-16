@@ -37,7 +37,7 @@ open class TodoController(
     return SentryReactorUtils.withSentry(
         Mono.just(true).publishOn(Schedulers.boundedElastic()).flatMap {
           webClient.get().uri(url).retrieve().bodyToMono(Todo::class.java)
-        }
+        },
       )
       .block()
   }

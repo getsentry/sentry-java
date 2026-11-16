@@ -23,7 +23,7 @@ class SentryWebfluxAutoConfigurationTest {
           WebFluxAutoConfiguration::class.java,
           SentryWebfluxAutoConfiguration::class.java,
           SentryAutoConfiguration::class.java,
-        )
+        ),
       )
       .withPropertyValues(
         // Speed up tests by reducing timeouts and disabling expensive operations
@@ -44,7 +44,7 @@ class SentryWebfluxAutoConfigurationTest {
   // Use the optimized base runner by default
   private val contextRunner =
     baseContextRunner.withUserConfiguration(
-      NoOpTransportConfiguration::class.java
+      NoOpTransportConfiguration::class.java,
     ) // Use no-op transport to avoid network calls
 
   // Specialized context runner for tests requiring DSN
@@ -52,7 +52,7 @@ class SentryWebfluxAutoConfigurationTest {
     baseContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(
-        NoOpTransportConfiguration::class.java
+        NoOpTransportConfiguration::class.java,
       ) // Use no-op transport to avoid network calls
 
   @Test

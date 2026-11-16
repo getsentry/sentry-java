@@ -49,14 +49,13 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       try {
         options
             .getExecutorService()
-            .submit(
-                () -> {
-                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
-                    if (!isClosed) {
-                      startOutboxSender(scopes, options, path);
-                    }
-                  }
-                });
+            .submit(() -> {
+              try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
+                if (!isClosed) {
+                  startOutboxSender(scopes, options, path);
+                }
+              }
+            });
       } catch (Throwable e) {
         logger.log(
             SentryLevel.DEBUG,

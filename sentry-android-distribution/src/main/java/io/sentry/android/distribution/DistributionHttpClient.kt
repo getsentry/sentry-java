@@ -46,14 +46,14 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
 
     if (orgSlug.isNullOrEmpty() || projectSlug.isNullOrEmpty() || authToken.isNullOrEmpty()) {
       throw IllegalStateException(
-        "Missing required distribution configuration: orgSlug, projectSlug, or orgAuthToken"
+        "Missing required distribution configuration: orgSlug, projectSlug, or orgAuthToken",
       )
     }
 
     val urlString = buildString {
       append(baseUrl.trimEnd('/'))
       append(
-        "/api/0/projects/${URLEncoder.encode(orgSlug, "UTF-8")}/${URLEncoder.encode(projectSlug, "UTF-8")}/preprodartifacts/check-for-updates/"
+        "/api/0/projects/${URLEncoder.encode(orgSlug, "UTF-8")}/${URLEncoder.encode(projectSlug, "UTF-8")}/preprodartifacts/check-for-updates/",
       )
       append("?app_id=${URLEncoder.encode(params.appId, "UTF-8")}")
       append("&platform=${URLEncoder.encode(params.platform, "UTF-8")}")

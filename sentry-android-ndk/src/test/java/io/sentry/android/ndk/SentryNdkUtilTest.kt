@@ -13,7 +13,7 @@ class SentryNdkUtilTest {
     assertTrue(
       options.sdkVersion!!.packageSet.any {
         it.name == "maven:io.sentry:sentry-android-ndk" && it.version == BuildConfig.VERSION_NAME
-      }
+      },
     )
   }
 

@@ -14,9 +14,9 @@ class EmptyBroadcastReceiver : BroadcastReceiver() {
     val pendingResult = goAsync()
     Log.d(TAG, "onReceive: broadcast received")
     Thread {
-        Thread.sleep(1000)
-        pendingResult.finish()
-      }
+      Thread.sleep(1000)
+      pendingResult.finish()
+    }
       .start()
   }
 }

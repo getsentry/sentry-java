@@ -26,7 +26,7 @@ class OtlpEndToEndTest {
       .setTracerProvider(
         SdkTracerProvider.builder()
           .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter.composite()))
-          .build()
+          .build(),
       )
       .build()
 

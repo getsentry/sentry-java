@@ -202,16 +202,15 @@ public final class ScreenshotUtils {
           view.draw(canvas);
           latch.countDown();
         } else {
-          activity.runOnUiThread(
-              () -> {
-                try {
-                  view.draw(canvas);
-                } catch (Throwable e) {
-                  logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
-                } finally {
-                  latch.countDown();
-                }
-              });
+          activity.runOnUiThread(() -> {
+            try {
+              view.draw(canvas);
+            } catch (Throwable e) {
+              logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
+            } finally {
+              latch.countDown();
+            }
+          });
         }
 
         if (!latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {

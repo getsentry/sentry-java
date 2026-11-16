@@ -250,7 +250,7 @@ class SentryOkHttpAutoConfigurationTest {
           SentryOkHttpInterceptor::class.java,
           SentryAutoConfigurationCustomizerProvider::class.java,
           AgentMarker::class.java,
-        )
+        ),
       )
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(OkHttpClientConfiguration::class.java)

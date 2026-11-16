@@ -43,7 +43,7 @@ class SentryTaskDecoratorTest {
         sut.decorate {
           assertNotEquals(mainScopes, Sentry.getCurrentScopes())
           assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
-        }
+        },
       )
 
     callableFuture.get()

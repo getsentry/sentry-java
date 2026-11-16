@@ -114,11 +114,10 @@ public final class SentryShakeDetector implements SensorEventListener {
     }
     final @Nullable Handler h = handler;
     if (h != null) {
-      h.post(
-          () -> {
-            //noinspection Convert2MethodRef
-            queue.clear();
-          });
+      h.post(() -> {
+        //noinspection Convert2MethodRef
+        queue.clear();
+      });
     }
   }
 

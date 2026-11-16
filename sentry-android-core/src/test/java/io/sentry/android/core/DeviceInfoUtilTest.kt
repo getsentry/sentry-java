@@ -32,7 +32,7 @@ class DeviceInfoUtilTest {
     context.sendStickyBroadcast(
       Intent(Intent.ACTION_BATTERY_CHANGED)
         .putExtra(BatteryManager.EXTRA_LEVEL, 75)
-        .putExtra(BatteryManager.EXTRA_PLUGGED, 0)
+        .putExtra(BatteryManager.EXTRA_PLUGGED, 0),
     )
   }
 

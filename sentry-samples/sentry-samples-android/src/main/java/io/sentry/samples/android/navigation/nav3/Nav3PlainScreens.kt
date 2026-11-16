@@ -97,7 +97,7 @@ internal fun Nav3OpenPlainActivityButton(modifier: Modifier = Modifier) {
           .putExtra(
             EXTRA_ENABLE_USER_INTERACTION_BREADCRUMBS,
             options.enableUserInteractionBreadcrumbs,
-          )
+          ),
       )
     },
     modifier = modifier,
@@ -123,11 +123,11 @@ private fun PlainNav3Screen(title: String, onBack: (() -> Unit)? = null) {
   Column(
     Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp).semantics {
       testTagsAsResourceId = true
-    }
+    },
   ) {
     Text(title, modifier = Modifier.testTag(nav3TestTag("plain_title")))
     Text(
-      "This screen has no SentryNavEffect. The previous root's Navigation context should be absent."
+      "This screen has no SentryNavEffect. The previous root's Navigation context should be absent.",
     )
     Text(snapshot, modifier = Modifier.testTag(nav3TestTag("plain_scope_state")))
     Text(result, modifier = Modifier.testTag(nav3TestTag("plain_result")))

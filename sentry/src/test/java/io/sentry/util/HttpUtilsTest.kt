@@ -16,7 +16,7 @@ class HttpUtilsTest {
         HttpUtils.filterQueryParams(
           "name=value&access_token=secret&customerId=123",
           KeyValueCollectionBehavior.denyList("customer"),
-        )
+        ),
       )
       .isEqualTo("name=value&access_token=[Filtered]&customerId=[Filtered]")
   }
@@ -27,7 +27,7 @@ class HttpUtilsTest {
         HttpUtils.filterQueryParams(
           "name=value&access_token=secret&customerId=123",
           KeyValueCollectionBehavior.allowList("name", "access_token"),
-        )
+        ),
       )
       .isEqualTo("name=value&access_token=[Filtered]&customerId=[Filtered]")
   }
@@ -38,7 +38,7 @@ class HttpUtilsTest {
         HttpUtils.filterQueryParams(
           "access%5Ftoken=secret&display%20name=Jane+Doe",
           KeyValueCollectionBehavior.denyList(),
-        )
+        ),
       )
       .isEqualTo("access%5Ftoken=[Filtered]&display%20name=Jane+Doe")
   }
@@ -49,7 +49,7 @@ class HttpUtilsTest {
         HttpUtils.filterQueryParams(
           "name=&flag&&token",
           KeyValueCollectionBehavior.denyList(),
-        )
+        ),
       )
       .isEqualTo("name=&flag&&token=[Filtered]")
   }

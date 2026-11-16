@@ -38,7 +38,7 @@ plugins.withId("io.sentry.android.gradle") {
           InstrumentationFeature.COMPOSE,
           InstrumentationFeature.DATABASE,
           InstrumentationFeature.OKHTTP,
-        )
+        ),
       )
       logcat.enabled.set(false)
       appStart.enabled.set(false)
@@ -82,7 +82,7 @@ android {
         "ContentDescription",
         "LabelFor",
         "HardcodedText",
-      )
+      ),
     )
   }
 
@@ -270,7 +270,7 @@ abstract class ToggleNativeLoggingTask : Exec() {
   companion object {
     private val regex =
       Regex(
-        """<meta-data\s+[^>]*android:name="io\.sentry\.session-replay\.debug"[^>]*android:value="([^"]+)""""
+        """<meta-data\s+[^>]*android:name="io\.sentry\.session-replay\.debug"[^>]*android:value="([^"]+)"""",
       )
   }
 }

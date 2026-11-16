@@ -292,16 +292,15 @@ public final class SentryGraphqlInstrumentation {
               maybeCallSubscriptionHandler(parameters, environment, tmpResult);
           if (result instanceof CompletableFuture) {
             ((CompletableFuture<?>) result)
-                .whenComplete(
-                    (r, ex) -> {
-                      if (ex != null) {
-                        span.setThrowable(ex);
-                        span.setStatus(SpanStatus.INTERNAL_ERROR);
-                      } else {
-                        span.setStatus(SpanStatus.OK);
-                      }
-                      finish(span, environment, r);
-                    });
+                .whenComplete((r, ex) -> {
+                  if (ex != null) {
+                    span.setThrowable(ex);
+                    span.setStatus(SpanStatus.INTERNAL_ERROR);
+                  } else {
+                    span.setStatus(SpanStatus.OK);
+                  }
+                  finish(span, environment, r);
+                });
           } else {
             span.setStatus(SpanStatus.OK);
             finish(span, environment, result);

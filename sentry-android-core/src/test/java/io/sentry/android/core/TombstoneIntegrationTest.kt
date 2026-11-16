@@ -58,8 +58,8 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
               whenever(mock.traceInputStream)
                 .thenReturn(
                   GZIPInputStream(
-                    TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz")
-                  )
+                    TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz"),
+                  ),
                 )
             }
           }

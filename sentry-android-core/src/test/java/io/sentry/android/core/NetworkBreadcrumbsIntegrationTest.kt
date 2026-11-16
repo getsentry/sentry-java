@@ -132,7 +132,7 @@ class NetworkBreadcrumbsIntegrationTest {
           assertEquals("network.event", it.category)
           assertEquals(SentryLevel.INFO, it.level)
           assertEquals("NETWORK_AVAILABLE", it.data["action"])
-        }
+        },
       )
   }
 
@@ -154,7 +154,7 @@ class NetworkBreadcrumbsIntegrationTest {
           assertEquals("network.event", it.category)
           assertEquals(SentryLevel.INFO, it.level)
           assertEquals("NETWORK_LOST", it.data["action"])
-        }
+        },
       )
   }
 
@@ -448,7 +448,7 @@ class NetworkBreadcrumbsIntegrationTest {
   }
 
   private fun KInOrder.verifyBreadcrumbInOrder(
-    check: (detail: NetworkBreadcrumbConnectionDetail) -> Unit
+    check: (detail: NetworkBreadcrumbConnectionDetail) -> Unit,
   ) {
     verify(fixture.scopes, times(1))
       .addBreadcrumb(

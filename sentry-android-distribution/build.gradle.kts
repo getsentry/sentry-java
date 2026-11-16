@@ -45,7 +45,7 @@ androidComponents.beforeVariants {
 dependencies {
   implementation(projects.sentry)
   implementation(
-    libs.jetbrains.annotations
+    libs.jetbrains.annotations,
   ) // Use implementation instead of compileOnly to override kotlin stdlib's version
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   testImplementation(libs.androidx.test.ext.junit)

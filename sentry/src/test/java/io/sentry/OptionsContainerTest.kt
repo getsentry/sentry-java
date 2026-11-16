@@ -7,7 +7,7 @@ class OptionsContainerTest {
   @Test
   fun `When passing class to OptionsContainer, instance is created based on the type`() {
     assertTrue(
-      (OptionsContainer.create(SentryOptions::class.java)).createInstance() is SentryOptions
+      (OptionsContainer.create(SentryOptions::class.java)).createInstance() is SentryOptions,
     )
   }
 }

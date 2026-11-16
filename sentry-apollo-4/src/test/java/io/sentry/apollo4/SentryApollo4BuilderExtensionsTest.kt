@@ -44,7 +44,7 @@ class SentryApollo4BuilderExtensionsTestWithV3Implementation :
 
 abstract class SentryApollo4BuilderExtensionsTest(
   private val executeQueryImplementation:
-    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>,
 ) {
   class Fixture {
     val server = MockWebServer()
@@ -78,7 +78,7 @@ abstract class SentryApollo4BuilderExtensionsTest(
         MockResponse()
           .setBody(responseBody)
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       return ApolloClient.Builder()

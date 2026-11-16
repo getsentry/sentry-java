@@ -68,7 +68,7 @@ class KafkaOtelCoexistenceIntegrationTest : IntegrationTest() {
           listOf(
             "--spring.profiles.active=kafka",
             "--spring.kafka.bootstrap-servers=${kafka.brokersAsString}",
-          )
+          ),
         )
     }
 

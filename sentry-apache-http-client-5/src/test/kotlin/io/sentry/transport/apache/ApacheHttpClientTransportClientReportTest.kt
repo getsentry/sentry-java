@@ -60,7 +60,7 @@ class ApacheHttpClientTransportClientReportTest {
       envelopeAfterClientReportAttached =
         SentryEnvelope.from(options.serializer, SentryEvent(), null)
       whenever(
-          clientReportRecorder.attachReportToEnvelope(same(envelopeBeforeClientReportAttached))
+          clientReportRecorder.attachReportToEnvelope(same(envelopeBeforeClientReportAttached)),
         )
         .thenReturn(envelopeAfterClientReportAttached)
     }

@@ -57,7 +57,7 @@ class WebViewActivity : AppCompatActivity() {
         addView(receivedView)
         addView(statusView)
         addView(webView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
-      }
+      },
     )
 
     val assetLoader =

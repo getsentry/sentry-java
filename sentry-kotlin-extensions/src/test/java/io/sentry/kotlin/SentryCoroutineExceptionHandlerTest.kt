@@ -56,7 +56,7 @@ class SentryCoroutineExceptionHandlerTest {
           assertTrue {
             exception.toString().equals(it.throwable.toString())
           } // stack trace will differ
-        }
+        },
       )
   }
 }

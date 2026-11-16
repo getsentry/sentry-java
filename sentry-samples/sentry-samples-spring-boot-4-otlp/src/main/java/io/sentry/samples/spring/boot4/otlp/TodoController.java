@@ -36,14 +36,13 @@ public class TodoController {
     return SentryReactorUtils.withSentry(
             Mono.just(true)
                 .publishOn(Schedulers.boundedElastic())
-                .flatMap(
-                    x ->
-                        webClient
-                            .get()
-                            .uri("https://jsonplaceholder.typicode.com/todos/{id}", id)
-                            .retrieve()
-                            .bodyToMono(Todo.class)
-                            .map(response -> response)))
+                .flatMap(x ->
+                    webClient
+                        .get()
+                        .uri("https://jsonplaceholder.typicode.com/todos/{id}", id)
+                        .retrieve()
+                        .bodyToMono(Todo.class)
+                        .map(response -> response)))
         .block();
   }
 

@@ -49,8 +49,8 @@ class SentryMetricsSerializationTest {
                   "custom.point" to SentryLogEventAttributeValue("string", Point(20, 30)),
                   "custom.integer" to SentryLogEventAttributeValue("integer", 10),
                 )
-            }
-        )
+            },
+        ),
       )
   }
 

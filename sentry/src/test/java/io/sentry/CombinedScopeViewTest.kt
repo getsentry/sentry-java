@@ -187,7 +187,7 @@ class CombinedScopeViewTest {
               capturedHint = hint
               breadcrumb
             }
-        }
+        },
       )
 
     combined.addBreadcrumb(
@@ -817,7 +817,7 @@ class CombinedScopeViewTest {
     assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
     assertNull(fixture.scope.attachments.firstOrNull { it.filename == "someAttachment.png" })
     assertNotNull(
-      fixture.isolationScope.attachments.firstOrNull { it.filename == "someAttachment.png" }
+      fixture.isolationScope.attachments.firstOrNull { it.filename == "someAttachment.png" },
     )
     assertNull(fixture.globalScope.attachments.firstOrNull { it.filename == "someAttachment.png" })
   }
@@ -835,10 +835,10 @@ class CombinedScopeViewTest {
     assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
     assertNotNull(fixture.scope.attachments.firstOrNull { it.filename == "scopeAttachment.png" })
     assertNull(
-      fixture.isolationScope.attachments.firstOrNull { it.filename == "isolationAttachment.png" }
+      fixture.isolationScope.attachments.firstOrNull { it.filename == "isolationAttachment.png" },
     )
     assertNotNull(
-      fixture.globalScope.attachments.firstOrNull { it.filename == "globalAttachment.png" }
+      fixture.globalScope.attachments.firstOrNull { it.filename == "globalAttachment.png" },
     )
   }
 

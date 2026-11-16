@@ -318,7 +318,7 @@ class StagedNavTransactionTest {
     whenever(finished.isFinished).thenReturn(true)
 
     stagedNavTransaction.updateRequest(
-      navTransactionRequest("/Profile", contexts = updatedContexts)
+      navTransactionRequest("/Profile", contexts = updatedContexts),
     )
     stagedNavTransaction.publishTo(fixture.scope)
 
@@ -332,7 +332,7 @@ class StagedNavTransactionTest {
     stagedNavTransaction.stage(request)
 
     stagedNavTransaction.updateRequest(
-      navTransactionRequest("/Profile", contexts = updatedContexts)
+      navTransactionRequest("/Profile", contexts = updatedContexts),
     )
     stagedNavTransaction.publishTo(fixture.scope)
 
@@ -348,7 +348,7 @@ class StagedNavTransactionTest {
     val started = fixture.start()
 
     stagedNavTransaction.updateRequest(
-      navTransactionRequest("/Profile", contexts = updatedContexts)
+      navTransactionRequest("/Profile", contexts = updatedContexts),
     )
     stagedNavTransaction.publishTo(fixture.scope)
 
@@ -365,7 +365,7 @@ class StagedNavTransactionTest {
     stagedNavTransaction.finish(fixture.scope)
 
     stagedNavTransaction.updateRequest(
-      navTransactionRequest("/Profile", contexts = updatedContexts)
+      navTransactionRequest("/Profile", contexts = updatedContexts),
     )
     stagedNavTransaction.publishTo(fixture.scope)
 
@@ -898,7 +898,7 @@ class StagedNavTransactionTest {
             SentryOptions().apply {
               setLogger(this@Fixture.logger)
               isDebug = true
-            }
+            },
           )
         whenever(scopes.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
           .thenAnswer {
@@ -923,7 +923,7 @@ class StagedNavTransactionTest {
               throw ThrowingScopeObserverException()
             }
           }
-        }
+        },
       )
     }
 

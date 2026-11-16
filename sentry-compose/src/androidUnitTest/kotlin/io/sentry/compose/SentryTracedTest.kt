@@ -60,7 +60,7 @@ class SentryTracedTest {
         val appContext: Application = ApplicationProvider.getApplicationContext()
         Shadows.shadowOf(appContext.packageManager)
           .addActivityIfNotPresent(
-            ComponentName(appContext.packageName, ComponentActivity::class.java.name)
+            ComponentName(appContext.packageName, ComponentActivity::class.java.name),
           )
       }
     }
@@ -86,7 +86,7 @@ class SentryTracedTest {
     assertThat(tx.countSpans(OP_COMPOSE)).isEqualTo(1)
     assertThat(tx.countSpans(OP_PARENT_RENDER)).isEqualTo(0)
     assertThat(
-        tx.singleSpan(OP_PARENT_COMPOSITION).startDate.isAfter(tx.singleSpan(OP_COMPOSE).startDate)
+        tx.singleSpan(OP_PARENT_COMPOSITION).startDate.isAfter(tx.singleSpan(OP_COMPOSE).startDate),
       )
       .isFalse()
   }
@@ -415,7 +415,7 @@ class SentryTracedTest {
             modifier = Modifier.fillMaxSize(),
             enableUserInteractionTracing = false,
           ) {}
-        }
+        },
       ) { measurables, constraints ->
         val placeable = measurables.single().measure(constraints)
         layout(placeable.width, placeable.height) {

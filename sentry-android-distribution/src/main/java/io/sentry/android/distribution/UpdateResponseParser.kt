@@ -74,7 +74,7 @@ internal class UpdateResponseParser(private val options: SentryOptions) {
 
     if (missingFields.isNotEmpty()) {
       throw IllegalArgumentException(
-        "Missing required fields in API response: ${missingFields.joinToString(", ")}"
+        "Missing required fields in API response: ${missingFields.joinToString(", ")}",
       )
     }
 

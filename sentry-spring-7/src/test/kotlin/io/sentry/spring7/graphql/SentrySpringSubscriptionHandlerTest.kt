@@ -29,9 +29,9 @@ class SentrySpringSubscriptionHandlerTest {
           .operation(OperationDefinition.Operation.QUERY)
           .name("testQuery")
           .selectionSet(
-            SelectionSet.newSelectionSet().selection(Field.newField("test").build()).build()
+            SelectionSet.newSelectionSet().selection(Field.newField("test").build()).build(),
           )
-          .build()
+          .build(),
       )
       .build()
 

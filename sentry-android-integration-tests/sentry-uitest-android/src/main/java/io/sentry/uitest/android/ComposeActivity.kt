@@ -39,7 +39,7 @@ class ComposeActivity : AppCompatActivity() {
                     .clickable {
                       // no-op
                     }
-                    .testTag("button_login")
+                    .testTag("button_login"),
               ) {
                 Text("Login")
               }

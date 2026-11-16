@@ -267,7 +267,7 @@ public class ReplayIntegration(
         lifecycleState = STARTED,
         replayId = replayId ?: SentryId.EMPTY_ID,
         captureStrategy = strategy,
-      )
+      ),
     )
 
     registerRootViewListeners()
@@ -370,7 +370,7 @@ public class ReplayIntegration(
       current.copy(
         replayId = replayId ?: SentryId.EMPTY_ID,
         captureStrategy = activeStrategy,
-      )
+      ),
     )
   }
 
@@ -470,7 +470,7 @@ public class ReplayIntegration(
         lifecycleState = STOPPED,
         replayId = SentryId.EMPTY_ID,
         captureStrategy = null,
-      )
+      ),
     )
   }
 
@@ -728,7 +728,7 @@ public class ReplayIntegration(
         segment.capture(scopes, hint)
       }
       cleanupReplays(
-        unfinishedReplayId = previousReplayIdString
+        unfinishedReplayId = previousReplayIdString,
       ) // will be cleaned up after the envelope is assembled
     }
   }
