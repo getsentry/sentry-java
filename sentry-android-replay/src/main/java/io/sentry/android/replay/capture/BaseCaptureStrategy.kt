@@ -42,7 +42,6 @@ import io.sentry.time.Timestamp
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.AutoClosableReentrantLock
 import java.io.File
-import java.util.ArrayDeque
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -84,10 +83,9 @@ constructor(
 
   /**
    * Makes moving onto a new timeline atomic: checking the wall clock, restarting the clock and
-   * draining [currentEvents] for the segment that closes the old timeline happen together. Touch
-   * events are stamped and added under it too. So two frames can't both follow one jump, and every
-   * touch event stamped on the old timeline is drained while every one stamped on the new one
-   * stays.
+   * starting new [currentEvents] happen together. Touch events are stamped and added under it too.
+   * So two frames can't both follow one jump, and every touch event lands in the events of the
+   * timeline it was stamped on.
    */
   private val timelineLock = AutoClosableReentrantLock()
 
@@ -96,7 +94,9 @@ constructor(
    * is building. Only [stampFrame] restarts the clock, and that frame's task moves this onto the
    * new timeline, so the two differ only while such a task is queued.
    */
-  @Volatile protected var executorTimeline: AnchoredClock = clock.timeline
+  @Volatile
+  protected var executorTimeline: AnchoredClock = clock.timeline
+    private set
 
   private val gestureConverter = ReplayGestureConverter({ clock.nowMillis() }, ticker)
 
@@ -149,7 +149,16 @@ constructor(
   override var isFlushed: Boolean by
     persistableAtomic(initialValue = false, propertyName = SEGMENT_KEY_FLUSHED)
 
-  protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
+  /** The touch events of the timeline [clock] is on, which new ones are added to. */
+  @Volatile
+  protected var currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
+    private set
+
+  /**
+   * The touch events of [executorTimeline], which segments built on [replayExecutor] take theirs
+   * from. So a segment queued before a jump still finds the touch events of the old timeline.
+   */
+  @Volatile private var executorEvents: Deque<RRWebEvent> = currentEvents
   private val replayContextLock = Any()
   private val currentTraceIds: MutableSet<String> = linkedSetOf()
   private val currentSegmentNames: MutableSet<String> = linkedSetOf()
@@ -213,7 +222,7 @@ constructor(
     cache: ReplayCache? = this.cache,
     screenAtStart: String? = this.screenAtStart,
     breadcrumbs: List<Breadcrumb>? = null,
-    events: Deque<RRWebEvent> = this.currentEvents,
+    events: Deque<RRWebEvent> = this.executorEvents,
   ): ReplaySegment {
     val (traceIds, segmentNames) =
       synchronized(replayContextLock) {
@@ -261,13 +270,9 @@ constructor(
         val oldTimeline = clock.timeline
         val oldTimelineEnd = oldTimeline.nowMillis()
         val newTimeline = clock.restart()
-        val oldEvents = ArrayDeque<RRWebEvent>()
-        var event = currentEvents.pollFirst()
-        while (event != null) {
-          oldEvents.add(event)
-          event = currentEvents.pollFirst()
-        }
-        val jump = TimelineJump(oldTimeline, oldTimelineEnd, newTimeline, oldEvents)
+        val oldEvents = currentEvents
+        currentEvents = ConcurrentLinkedDeque()
+        val jump = TimelineJump(oldTimeline, oldTimelineEnd, newTimeline, oldEvents, currentEvents)
         StampedFrame(jump.newTimelineStart, jump)
       }
     }
@@ -312,16 +317,24 @@ constructor(
   )
 
   /**
-   * Where the old timeline ended and the new one starts, and the touch events stamped on the old
-   * one, which belong to the segment that closes it.
+   * Where the old timeline ended and the new one starts, and the touch events stamped on each. The
+   * old timeline's events that segments queued before the jump leave belong to the segment that
+   * closes it.
    */
   protected class TimelineJump(
     val oldTimeline: AnchoredClock,
     val oldTimelineEnd: Long,
     val newTimeline: AnchoredClock,
     val oldEvents: Deque<RRWebEvent>,
+    val newEvents: Deque<RRWebEvent>,
   ) {
     val newTimelineStart: Long = newTimeline.startTime().epochMillis
+  }
+
+  /** Called from the task of the frame that followed [jump], once the old timeline is closed. */
+  protected fun moveExecutorOnto(jump: TimelineJump) {
+    executorEvents = jump.newEvents
+    executorTimeline = jump.newTimeline
   }
 
   /**

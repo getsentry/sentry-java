@@ -161,7 +161,7 @@ constructor(
     // frames left from the old timeline would be encoded into the new one's segments
     cache?.rotate(until = jump.oldTimelineEnd)
     // last, so a segment request can't see the new timeline before the cache is on it
-    executorTimeline = jump.newTimeline
+    moveExecutorOnto(jump)
   }
 
   /** Buffers the frames up to where the old timeline ended as a segment of their own. */

@@ -1101,6 +1101,29 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
+  fun `touch events stay in a segment queued before a wall-clock jump`() {
+    val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    fixture.runQueuedTasks()
+    val segmentStart = fixture.now
+    fixture.elapse(1_000)
+    strategy.onTouchEvent(fixture.mockedMotionEvent(MotionEvent.ACTION_DOWN))
+    fixture.elapse(4_000)
+    // its task cuts the segment the touch is in, but the executor is busy
+    strategy.recordFrame()
+    fixture.elapse(1_000)
+    fixture.jumpWallClock(-120_000)
+    strategy.recordFrame()
+
+    fixture.runQueuedTasks()
+
+    val payloads = capturedPayloads(count = 2)
+    assertThat(payloads[0]!!.filterIsInstance<RRWebInteractionEvent>().map { it.timestamp })
+      .containsExactly(segmentStart + 1_000)
+  }
+
+  @Test
   fun `executor delay across a wall-clock jump keeps both timelines apart`() {
     val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
     strategy.start()

@@ -207,7 +207,7 @@ constructor(
     }
     // frames left from the old timeline would be encoded into the new one's segments
     cache?.rotate(until = jump.oldTimelineEnd)
-    executorTimeline = jump.newTimeline
+    moveExecutorOnto(jump)
   }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
