@@ -20,9 +20,9 @@ public class SecurityConfiguration {
   @SuppressWarnings({"lgtm[java/spring-disabled-csrf-protection]", "removal"})
   @Bean
   public SecurityFilterChain filterChain(final @NotNull HttpSecurity http) throws Exception {
-    return http.csrf((csrf) -> csrf.disable())
-        .authorizeHttpRequests((r) -> r.anyRequest().authenticated())
-        .httpBasic((h) -> {})
+    return http.csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(r -> r.anyRequest().authenticated())
+        .httpBasic(h -> {})
         .build();
   }
 

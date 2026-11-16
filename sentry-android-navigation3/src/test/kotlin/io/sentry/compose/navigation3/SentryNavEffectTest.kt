@@ -64,7 +64,7 @@ class SentryNavEffectTest {
         val appContext: Application = ApplicationProvider.getApplicationContext()
         Shadows.shadowOf(appContext.packageManager)
           .addActivityIfNotPresent(
-            ComponentName(appContext.packageName, ComponentActivity::class.java.name)
+            ComponentName(appContext.packageName, ComponentActivity::class.java.name),
           )
       }
     }
@@ -259,7 +259,7 @@ class SentryNavEffectTest {
           mapOf("entry" to "/ProfileRoute"),
           mapOf("entry" to "/HomeRoute"),
           mapOf("entry" to "/HomeRoute"),
-        )
+        ),
       )
   }
 
@@ -361,7 +361,7 @@ class SentryNavEffectTest {
       mutableStateOf<BackStackEntryMapper<Any>>(
         BackStackEntryMapper { entry ->
           SentryBackStackEntry(entry::class.simpleName ?: "<unknown>")
-        }
+        },
       )
 
     composeRule.setContent {
@@ -399,7 +399,7 @@ class SentryNavEffectTest {
       mutableStateOf<BackStackEntryMapper<Any>>(
         BackStackEntryMapper { entry ->
           SentryBackStackEntry(entry::class.simpleName ?: "unknown")
-        }
+        },
       )
 
     composeRule.setContent {
@@ -468,7 +468,7 @@ class SentryNavEffectTest {
         listOf(
           mapOf("entry" to "/ProfileRoute", "entry_arguments" to mapOf("userId" to "123")),
           mapOf("entry" to "/HomeRoute"),
-        )
+        ),
       )
   }
 

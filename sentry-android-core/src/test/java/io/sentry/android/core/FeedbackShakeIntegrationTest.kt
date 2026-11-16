@@ -472,7 +472,7 @@ class FeedbackShakeIntegrationTest {
     val intervalNs = 20_000_000L
     for (i in 0 until 20) {
       listener.onSensorChanged(
-        createSensorEvent(floatArrayOf(20f, 0f, 0f), baseTimestamp + i * intervalNs)
+        createSensorEvent(floatArrayOf(20f, 0f, 0f), baseTimestamp + i * intervalNs),
       )
     }
   }

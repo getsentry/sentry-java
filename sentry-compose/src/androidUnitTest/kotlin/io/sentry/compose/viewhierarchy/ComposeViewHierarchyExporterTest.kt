@@ -78,7 +78,7 @@ class ComposeViewHierarchyExporterTest {
                 config.set(SemanticsPropertyKey("SentryTag") { s: String?, s2: String? -> s }, tag)
                 return config
               }
-          }
+          },
         )
       val modifierInfoList: MutableList<ModifierInfo> = ArrayList()
       modifierInfoList.add(modifierInfo)

@@ -73,7 +73,7 @@ class EnvelopeSenderTest {
     val sut = fixture.getSut()
     val testFile =
       File(
-        Files.createTempFile("send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri()
+        Files.createTempFile("send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri(),
       )
     testFile.deleteOnExit()
     sut.processDirectory(testFile)
@@ -90,7 +90,7 @@ class EnvelopeSenderTest {
     val sut = fixture.getSut()
     val testFile =
       File(
-        Files.createTempFile(tempDirectory, "send-cached-event-test", ".not-right-suffix").toUri()
+        Files.createTempFile(tempDirectory, "send-cached-event-test", ".not-right-suffix").toUri(),
       )
     sut.processDirectory(File(tempDirectory.toUri()))
     testFile.deleteOnExit()
@@ -116,7 +116,7 @@ class EnvelopeSenderTest {
             "send-cached-event-test",
             EnvelopeCache.SUFFIX_ENVELOPE_FILE,
           )
-          .toUri()
+          .toUri(),
       )
     testFile.deleteOnExit()
     sut.processDirectory(File(tempDirectory.toUri()))
@@ -135,7 +135,7 @@ class EnvelopeSenderTest {
             "send-cached-event-test",
             EnvelopeCache.SUFFIX_ENVELOPE_FILE,
           )
-          .toUri()
+          .toUri(),
       )
     testFile.deleteOnExit()
 
@@ -163,7 +163,7 @@ class EnvelopeSenderTest {
             "send-cached-event-test",
             EnvelopeCache.SUFFIX_ENVELOPE_FILE,
           )
-          .toUri()
+          .toUri(),
       )
     testFile.deleteOnExit()
     sut.processFile(testFile, Hint())

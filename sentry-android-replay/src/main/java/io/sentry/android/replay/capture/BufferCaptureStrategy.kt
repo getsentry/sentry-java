@@ -86,7 +86,7 @@ constructor(
       ReplayRunnable("$TAG.stop") {
         ReplayCache.deleteExceptSegmentVideos(replayCacheDir)
         currentSegment = -1
-      }
+      },
     )
     super.stop()
   }
@@ -144,7 +144,7 @@ constructor(
         val bufferLimit = now - options.sessionReplay.errorReplayDuration
         screenAtStart = cache?.rotate(bufferLimit)
         bufferedSegments.rotate(bufferLimit)
-      }
+      },
     )
   }
 
@@ -283,7 +283,7 @@ constructor(
             currentConfig.bitRate,
           )
         onSegmentCreated(segment)
-      }
+      },
     )
   }
 }

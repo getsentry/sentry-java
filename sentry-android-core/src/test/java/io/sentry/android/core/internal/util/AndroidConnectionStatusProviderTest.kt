@@ -80,7 +80,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(contextMock.getSystemService(Context.CONNECTIVITY_SERVICE))
       .thenReturn(connectivityManager)
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_GRANTED)
 
@@ -187,7 +187,7 @@ class AndroidConnectionStatusProviderTest {
           eq(Manifest.permission.ACCESS_NETWORK_STATE),
           any(),
           any(),
-        )
+        ),
       )
       .thenReturn(PERMISSION_GRANTED)
 
@@ -266,7 +266,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
       .thenReturn(telephonyManager)
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_DENIED)
     whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
@@ -305,7 +305,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
       .thenReturn(PERMISSION_DENIED)
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.READ_BASIC_PHONE_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.READ_BASIC_PHONE_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_DENIED)
 
@@ -354,7 +354,7 @@ class AndroidConnectionStatusProviderTest {
         buildInfo,
         null,
         mock(),
-      )
+      ),
     )
   }
 
@@ -384,7 +384,7 @@ class AndroidConnectionStatusProviderTest {
   @Test
   fun `addConnectionStatusObserver adds the observer and returns true when the network callback cannot be registered`() {
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_DENIED)
     val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
@@ -838,7 +838,7 @@ class AndroidConnectionStatusProviderTest {
     assertFalse(
       AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 

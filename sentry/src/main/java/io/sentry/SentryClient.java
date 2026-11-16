@@ -892,45 +892,42 @@ public final class SentryClient implements ISentryClient {
     if (HintUtils.shouldApplyScopeData(hint)) {
       if (scope != null) {
         clonedSession =
-            scope.withSession(
-                session -> {
-                  if (session != null) {
-                    Session.State status = null;
-                    if (event.isCrashed()) {
-                      status = Session.State.Crashed;
-                    }
+            scope.withSession(session -> {
+              if (session != null) {
+                Session.State status = null;
+                if (event.isCrashed()) {
+                  status = Session.State.Crashed;
+                }
 
-                    boolean crashedOrErrored = false;
-                    if (Session.State.Crashed == status || event.isErrored()) {
-                      crashedOrErrored = true;
-                    }
+                boolean crashedOrErrored = false;
+                if (Session.State.Crashed == status || event.isErrored()) {
+                  crashedOrErrored = true;
+                }
 
-                    String userAgent = null;
-                    if (event.getRequest() != null && event.getRequest().getHeaders() != null) {
-                      if (event.getRequest().getHeaders().containsKey("user-agent")) {
-                        userAgent = event.getRequest().getHeaders().get("user-agent");
-                      }
-                    }
-
-                    final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-                    @Nullable String abnormalMechanism = null;
-                    if (sentrySdkHint instanceof AbnormalExit) {
-                      abnormalMechanism = ((AbnormalExit) sentrySdkHint).mechanism();
-                      status = Session.State.Abnormal;
-                    }
-
-                    if (session.update(status, userAgent, crashedOrErrored, abnormalMechanism)) {
-                      // if session terminated we can end it.
-                      if (session.isTerminated()) {
-                        session.end();
-                      }
-                    }
-                  } else {
-                    options
-                        .getLogger()
-                        .log(SentryLevel.INFO, "Session is null on scope.withSession");
+                String userAgent = null;
+                if (event.getRequest() != null && event.getRequest().getHeaders() != null) {
+                  if (event.getRequest().getHeaders().containsKey("user-agent")) {
+                    userAgent = event.getRequest().getHeaders().get("user-agent");
                   }
-                });
+                }
+
+                final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+                @Nullable String abnormalMechanism = null;
+                if (sentrySdkHint instanceof AbnormalExit) {
+                  abnormalMechanism = ((AbnormalExit) sentrySdkHint).mechanism();
+                  status = Session.State.Abnormal;
+                }
+
+                if (session.update(status, userAgent, crashedOrErrored, abnormalMechanism)) {
+                  // if session terminated we can end it.
+                  if (session.isTerminated()) {
+                    session.end();
+                  }
+                }
+              } else {
+                options.getLogger().log(SentryLevel.INFO, "Session is null on scope.withSession");
+              }
+            });
       } else {
         options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
       }

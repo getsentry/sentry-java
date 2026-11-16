@@ -218,7 +218,7 @@ tasks {
 
   test {
     jvmArgumentProviders.add(
-      objects.newInstance<ChildJvmTestArguments>().apply { agentJar.from(shadowJar) }
+      objects.newInstance<ChildJvmTestArguments>().apply { agentJar.from(shadowJar) },
     )
   }
 }

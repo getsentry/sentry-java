@@ -281,7 +281,7 @@ internal fun RouteScaffold(
       Modifier.fillMaxSize()
         .background(MaterialTheme.colorScheme.background)
         .padding(16.dp)
-        .testTag("${testTagPrefix}_screen")
+        .testTag("${testTagPrefix}_screen"),
   ) {
     Column(
       modifier =
@@ -448,7 +448,7 @@ private fun Nav3CustomTransactionModeSelector(
     modifier =
       Modifier.fillMaxWidth()
         .testTag(nav3TestTag("custom_mode_selector"))
-        .testTag(nav3CustomModeSelectionTag(selected))
+        .testTag(nav3CustomModeSelectionTag(selected)),
   ) {
     Nav3CustomTransactionMode.entries.forEachIndexed { index, mode ->
       SegmentedButton(
@@ -526,7 +526,7 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
                   productId = "42",
                   source = "product-list",
                   campaign = "summer-sale",
-                )
+                ),
               )
             },
             testTag = nav3TestTag("product_list_open_product_42"),
@@ -779,12 +779,12 @@ private fun nav3RouteTag(routeName: String): String =
 
 private fun nav3ButtonTag(label: String): String =
   nav3TestTag(
-    "button_${label.lowercase().replace(' ', '_').replace('/', '_').replace('.', '_').replace('-', '_')}"
+    "button_${label.lowercase().replace(' ', '_').replace('/', '_').replace('.', '_').replace('-', '_')}",
   )
 
 private fun nav3InfoTag(label: String): String =
   nav3TestTag(
-    "info_${label.lowercase().replace(' ', '_').replace('/', '_').replace('.', '_').replace('-', '_')}"
+    "info_${label.lowercase().replace(' ', '_').replace('/', '_').replace('.', '_').replace('-', '_')}",
   )
 
 private fun nav3CustomModeSelectionTag(mode: Nav3CustomTransactionMode): String =

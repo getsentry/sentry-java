@@ -330,7 +330,7 @@ class NavScopeTest {
         override fun setTransaction(transaction: String?) {
           throw ThrowingScopeObserverException()
         }
-      }
+      },
     )
 
     assertThrows(ThrowingScopeObserverException::class.java) {
@@ -442,7 +442,7 @@ class NavScopeTest {
     private fun resumedNavScopes(): NavScopes =
       NavScopes(scopes, coordinator).also {
         it.attach(
-          NavRootInfo(TestLifecycleOwner().also(lifecycleOwners::add).lifecycle, activity = null)
+          NavRootInfo(TestLifecycleOwner().also(lifecycleOwners::add).lifecycle, activity = null),
         )
       }
 

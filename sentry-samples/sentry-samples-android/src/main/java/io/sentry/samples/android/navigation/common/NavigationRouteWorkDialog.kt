@@ -41,7 +41,7 @@ private fun routeWorkDialogTitle(context: Context): View =
         textSize = 20f
         setTypeface(null, Typeface.BOLD)
         setTextColor(context.themeColor(R.attr.textColorPrimary))
-      }
+      },
     )
     addView(
       TextView(context).apply {
@@ -49,7 +49,7 @@ private fun routeWorkDialogTitle(context: Context): View =
         textSize = 14f
         setTextColor(context.themeColor(R.attr.textColorSecondary))
         setPadding(0, context.dp(8), 0, 0)
-      }
+      },
     )
   }
 

@@ -85,7 +85,7 @@ class SentryInstrumentationTest {
       val graphQL =
         GraphQL.newGraphQL(graphQLSchema)
           .instrumentation(
-            SentryInstrumentation(beforeSpan, NoOpSubscriptionHandler.getInstance(), true)
+            SentryInstrumentation(beforeSpan, NoOpSubscriptionHandler.getInstance(), true),
           )
           .build()
 
@@ -166,7 +166,7 @@ class SentryInstrumentationTest {
   fun `beforeSpan can drop spans`() {
     val sut =
       fixture.getSut(
-        beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { _, _, _ -> null }
+        beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { _, _, _ -> null },
       )
     val onDiscard = mock<SentryOptions.OnDiscardCallback>()
     fixture.scopes.options.onDiscard = onDiscard
@@ -194,7 +194,7 @@ class SentryInstrumentationTest {
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
             throw IllegalStateException("callback failed")
-          }
+          },
         )
       fixture.activeSpan.spanContext.sampled = sampled
       fixture.scopes.options.onDiscard = onDiscard
@@ -220,7 +220,7 @@ class SentryInstrumentationTest {
         beforeSpan = { span, _, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
     fixture.scopes.options.isDebug = true
     fixture.scopes.options.setLogger(logger)
@@ -300,7 +300,7 @@ class SentryInstrumentationTest {
         beforeSpan =
           SentryGraphqlInstrumentation.BeforeSpanCallback { span, _, _ ->
             span.apply { description = "changed" }
-          }
+          },
       )
 
     withMockScopes {
@@ -333,7 +333,7 @@ class SentryInstrumentationTest {
           GraphQLScalarType.newScalar()
             .name("MyResponseType")
             .coercing(GraphqlStringCoercing())
-            .build()
+            .build(),
         )
         .build()
     val environment =
@@ -341,7 +341,7 @@ class SentryInstrumentationTest {
         .graphQLContext(graphQLContext)
         .executionStepInfo(executionStepInfo)
         .operationDefinition(
-          OperationDefinition.newOperationDefinition().operation(operation).build()
+          OperationDefinition.newOperationDefinition().operation(operation).build(),
         )
         .build()
     val executionContext =

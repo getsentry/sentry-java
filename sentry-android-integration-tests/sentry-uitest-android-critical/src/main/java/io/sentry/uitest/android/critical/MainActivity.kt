@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
                     .trimIndent()
                 file.writeText(corruptedEnvelopeContent)
                 println("Wrote corrupted envelope to: ${file.absolutePath}")
-              }
+              },
             ) {
               Text("Write Corrupted Envelope")
             }
@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                   postNotification()
                 }
-              }
+              },
             ) {
               Text("Trigger Notification")
             }
@@ -101,11 +101,11 @@ class MainActivity : ComponentActivity() {
                     addFlags(
                       Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP,
                     )
-                  }
+                  },
                 )
-              }
+              },
             ) {
               Text("Launch Main Activity (singleTask)")
             }

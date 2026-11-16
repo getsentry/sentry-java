@@ -48,7 +48,7 @@ class JsonSerializationUtilsTest {
   fun `serializes AtomicIntegerArray to list`() {
     val actual =
       JsonSerializationUtils.atomicIntegerArrayToList(
-        AtomicIntegerArray(arrayOf(1, 2, 3).toIntArray())
+        AtomicIntegerArray(arrayOf(1, 2, 3).toIntArray()),
       )
     assertEquals(listOf(1, 2, 3), actual)
   }

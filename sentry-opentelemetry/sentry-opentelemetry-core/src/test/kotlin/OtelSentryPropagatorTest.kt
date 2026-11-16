@@ -129,8 +129,8 @@ class OtelSentryPropagatorTest {
     whenever(sentrySpan.toBaggageHeader(anyOrNull()))
       .thenReturn(
         BaggageHeader(
-          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
+          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+        ),
       )
     val otelSpanContext =
       SpanContext.create(
@@ -163,8 +163,8 @@ class OtelSentryPropagatorTest {
     whenever(sentrySpan.toBaggageHeader(anyOrNull()))
       .thenReturn(
         BaggageHeader(
-          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
+          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+        ),
       )
     whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
     val otelSpanContext =
@@ -202,8 +202,8 @@ class OtelSentryPropagatorTest {
     whenever(sentrySpan.toBaggageHeader(anyOrNull()))
       .thenReturn(
         BaggageHeader(
-          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
+          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+        ),
       )
     whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
     val otelSpanContext =
@@ -241,8 +241,8 @@ class OtelSentryPropagatorTest {
     whenever(sentrySpan.toBaggageHeader(anyOrNull()))
       .thenReturn(
         BaggageHeader(
-          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
+          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+        ),
       )
     whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
     val otelSpanContext =
@@ -278,8 +278,8 @@ class OtelSentryPropagatorTest {
     whenever(sentrySpan.toBaggageHeader(anyOrNull()))
       .thenReturn(
         BaggageHeader(
-          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
+          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+        ),
       )
     whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
     val otelSpanContext =

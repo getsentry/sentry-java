@@ -25,7 +25,7 @@ class RRWebOptionsEventSerializationTest {
             sessionReplay.quality = LOW
             sessionReplay.unmaskViewClasses.add("com.example.MyClass")
             sessionReplay.maskViewClasses.clear()
-          }
+          },
         )
         .apply { timestamp = 12345678901 }
   }

@@ -653,7 +653,7 @@ class SentryTest {
 
     assertNotNull(currentScopesEvent)
     assertNotNull(
-      currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" }
+      currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" },
     )
     assertNotNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
     assertNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
@@ -840,7 +840,7 @@ class SentryTest {
       .log(
         eq(SentryLevel.ERROR),
         eq(
-          "Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?"
+          "Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?",
         ),
         any(),
       )
@@ -1231,7 +1231,7 @@ class SentryTest {
           assertEquals("app.launch", it.transactionContext.name)
           assertEquals("profile", it.transactionContext.operation)
           assertTrue(it.transactionContext.isForNextAppStart)
-        }
+        },
       )
     verify(mockProfilesSampler)
       .sample(
@@ -1239,7 +1239,7 @@ class SentryTest {
           assertEquals("app.launch", it.transactionContext.name)
           assertEquals("profile", it.transactionContext.operation)
           assertTrue(it.transactionContext.isForNextAppStart)
-        }
+        },
       )
   }
 

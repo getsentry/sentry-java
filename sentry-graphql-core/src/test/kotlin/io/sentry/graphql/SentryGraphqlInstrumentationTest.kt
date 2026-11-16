@@ -24,7 +24,7 @@ class SentryGraphqlInstrumentationTest {
       .thenReturn(
         GraphQLContext.newContext()
           .of(SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY, scopes)
-          .build()
+          .build(),
       )
   }
 
@@ -45,7 +45,7 @@ class SentryGraphqlInstrumentationTest {
         CustomErrorClassification(
           "graphql.validation.interpolation.ResourceBundleMessageInterpolator\$ValidationErrorType@1",
           mapOf("type" to "ExtendedValidationError"),
-        )
+        ),
       ),
       ignoredErrorTypes = listOf("ExtendedValidationError"),
     )
@@ -73,7 +73,7 @@ class SentryGraphqlInstrumentationTest {
         CustomErrorClassification(
           "graphql.validation.interpolation.ResourceBundleMessageInterpolator\$ValidationErrorType@1",
           mapOf("type" to "ExtendedValidationError"),
-        )
+        ),
       ),
       ignoredErrorTypes = listOf("ExtendedValidationError"),
       enableSpecificationErrorTypeFiltering = true,

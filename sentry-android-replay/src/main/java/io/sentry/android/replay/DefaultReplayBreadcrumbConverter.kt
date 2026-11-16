@@ -44,7 +44,7 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
    * user-provided callback to provide the actual breadcrumb to process.
    */
   private inner class ReplayBeforeBreadcrumbCallback(
-    private val delegate: BeforeBreadcrumbCallback?
+    private val delegate: BeforeBreadcrumbCallback?,
   ) : BeforeBreadcrumbCallback {
     override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? {
       val resultBreadcrumb =
@@ -81,11 +81,11 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
     Collections.synchronizedMap(
       object : LinkedHashMap<Breadcrumb, NetworkRequestData>() {
         override fun removeEldestEntry(
-          eldest: MutableMap.MutableEntry<Breadcrumb, NetworkRequestData>?
+          eldest: MutableMap.MutableEntry<Breadcrumb, NetworkRequestData>?,
         ): Boolean {
           return size > MAX_HTTP_NETWORK_DETAILS
         }
-      }
+      },
     )
 
   override fun convert(breadcrumb: Breadcrumb): RRWebEvent? {

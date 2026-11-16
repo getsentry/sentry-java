@@ -261,7 +261,7 @@ internal fun Nav2ComposeApp(
                     productId = "42",
                     source = "product-list",
                     campaign = "summer-sale",
-                  )
+                  ),
                 )
               },
               onOpenProduct7 = {
@@ -655,7 +655,7 @@ private fun Nav2ComposePromoDialogRoute(
         routeSpec.displayArguments(mapOf(NavArgs.PROMO_ID to promoId)).toDisplayString()
       Text(
         listOfNotNull(routeSpec.description, argumentText.takeIf { it.isNotEmpty() })
-          .joinToString("\n\n")
+          .joinToString("\n\n"),
       )
     },
     confirmButton = {
@@ -843,7 +843,7 @@ private fun nav2ComposeBackStackSaver() =
     restore = { savedDestinations ->
       mutableStateListOf<Nav2ComposeDestination>().apply {
         addAll(
-          savedDestinations.map { savedDestination -> savedDestination.toNav2ComposeDestination() }
+          savedDestinations.map { savedDestination -> savedDestination.toNav2ComposeDestination() },
         )
         if (isEmpty()) {
           add(Home)

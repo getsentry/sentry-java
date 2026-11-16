@@ -19,7 +19,7 @@ internal object RouteWorkApi {
         SentryOkHttpInterceptor(
           captureFailedRequests = true,
           failedRequestStatusCodes = listOf(HttpStatusCodeRange(400, 599)),
-        )
+        ),
       )
       .build()
 
@@ -49,7 +49,7 @@ internal object RouteWorkApi {
           override fun onFailure(call: retrofit2.Call<ResponseBody>, t: Throwable) {
             onFailure(t)
           }
-        }
+        },
       )
   }
 

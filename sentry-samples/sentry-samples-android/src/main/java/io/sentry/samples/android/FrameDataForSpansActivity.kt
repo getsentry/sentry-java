@@ -134,7 +134,7 @@ fun JankyButton(name: String, delay: Long, counter: MutableIntState) {
             counter.intValue += 1
             Thread.sleep(delay)
           }
-        }
+        },
   ) {
     Text(color = MaterialTheme.colorScheme.onPrimary, text = "$name: ${counter.intValue}")
   }
@@ -192,9 +192,9 @@ class ViewModel {
 
   fun onStopDelayedSpanClicked() {
     Thread {
-        Thread.sleep(3000)
-        onStopSpanClicked()
-      }
+      Thread.sleep(3000)
+      onStopSpanClicked()
+    }
       .start()
   }
 

@@ -135,7 +135,7 @@ private class TextActivity : Activity() {
         setTextColor(Color.BLACK)
         textSize = 32f
         layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-      }
+      },
     )
     setContentView(linearLayout)
   }

@@ -18,7 +18,7 @@ import org.junit.Test
 
 class MapObjectReaderTest {
   enum class BasicEnum {
-    A
+    A,
   }
 
   data class BasicSerializable(var test: String = "string") : JsonSerializable {
@@ -216,7 +216,7 @@ class MapObjectReaderTest {
           partialSerializableValue("fail", "bad"),
           "oops",
           partialSerializableValue("ok", "two"),
-        )
+        ),
       )
 
     val actual = reader.nextListOrNull(logger, partiallyFailingDeserializer)
@@ -286,7 +286,7 @@ class MapObjectReaderTest {
           linkedMapOf(
             "bad" to serializableValue("fail"),
             "good" to listOf(serializableValue("one")),
-          )
+          ),
         )
         .nextMapOfListOrNull(logger, BasicSerializable.Deserializer())
 
@@ -300,7 +300,7 @@ class MapObjectReaderTest {
           linkedMapOf(
             "good" to listOf(serializableValue("two")),
             "bad" to serializableValue("fail"),
-          )
+          ),
         )
         .nextMapOfListOrNull(logger, BasicSerializable.Deserializer())
 
@@ -311,7 +311,7 @@ class MapObjectReaderTest {
   fun `nextListOrNull keeps elements after a partially consumed failing element`() {
     val actual =
       getValuesReader(
-          listOf(partialSerializableValue("fail", "bad"), partialSerializableValue("ok", "two"))
+          listOf(partialSerializableValue("fail", "bad"), partialSerializableValue("ok", "two")),
         )
         .nextListOrNull(logger, partiallyFailingDeserializer)
 
@@ -325,7 +325,7 @@ class MapObjectReaderTest {
           linkedMapOf(
             "bad" to partialSerializableValue("fail", "bad"),
             "good" to partialSerializableValue("ok", "two"),
-          )
+          ),
         )
         .nextMapOrNull(logger, partiallyFailingDeserializer)
 
@@ -339,7 +339,7 @@ class MapObjectReaderTest {
           linkedMapOf(
             "bad" to listOf(partialSerializableValue("fail", "bad")),
             "good" to listOf(partialSerializableValue("ok", "two")),
-          )
+          ),
         )
         .nextMapOfListOrNull(logger, partiallyFailingDeserializer)
 

@@ -266,7 +266,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       HintUtils.runIfHasType(
           hint,
           type,
-          (typedHint) -> {
+          typedHint -> {
             final @NotNull Long timestamp = timestampProvider.extract(typedHint);
             options
                 .getLogger()

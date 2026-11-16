@@ -254,7 +254,7 @@ public final class AsyncHttpTransport implements ITransport {
         HintUtils.runIfHasType(
             hint,
             SubmissionResult.class,
-            (submissionResult) -> {
+            submissionResult -> {
               options
                   .getLogger()
                   .log(
@@ -276,7 +276,7 @@ public final class AsyncHttpTransport implements ITransport {
       HintUtils.runIfHasType(
           hint,
           DiskFlushNotification.class,
-          (diskFlushNotification) -> {
+          diskFlushNotification -> {
             if (diskFlushNotification.isFlushable(envelope.getHeader().getEventId())) {
               diskFlushNotification.markFlushed();
               options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
@@ -326,7 +326,7 @@ public final class AsyncHttpTransport implements ITransport {
           HintUtils.runIfHasType(
               hint,
               Retryable.class,
-              (retryable) -> {
+              retryable -> {
                 retryable.setRetry(true);
               },
               (hint, clazz) -> {
@@ -344,7 +344,7 @@ public final class AsyncHttpTransport implements ITransport {
         HintUtils.runIfHasType(
             hint,
             Retryable.class,
-            (retryable) -> {
+            retryable -> {
               retryable.setRetry(true);
             },
             (hint, clazz) -> {

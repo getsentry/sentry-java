@@ -164,7 +164,7 @@ class AppStartMetricsTest {
         description = "ExampleContentProvider"
         setStartedAt(1)
         setStoppedAt(2)
-      }
+      },
     )
 
     metrics.applicationOnCreateTimeSpan.apply {

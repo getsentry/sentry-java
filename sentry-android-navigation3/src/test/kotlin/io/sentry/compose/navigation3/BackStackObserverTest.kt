@@ -209,7 +209,7 @@ class BackStackObserverTest {
                 else -> emptyMap()
               },
           )
-        }
+        },
       )
 
     sut.onBackStackChanged(listOf(HomeScreen(), previousProfile))
@@ -269,7 +269,7 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut =
       fixture.getSut(
-        config = ObserverConfig(captureBackStack = true, maxCapturedBackStackEntries = 2)
+        config = ObserverConfig(captureBackStack = true, maxCapturedBackStackEntries = 2),
       )
 
     sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123"), SettingsScreen("privacy")))
@@ -306,7 +306,7 @@ class BackStackObserverTest {
             "entry" to "/HomeScreen",
             "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
           ),
-        )
+        ),
       )
     assertThat(fixture.startedTransactions.single().getData("arguments"))
       .isEqualTo(mapOf("userId" to "123"))
@@ -331,7 +331,7 @@ class BackStackObserverTest {
           mapOf("entry" to "/ProfileScreen"),
           mapOf("entry" to "/SettingsScreen"),
           mapOf("entry" to "/HomeScreen"),
-        )
+        ),
       )
   }
 
@@ -362,7 +362,7 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut =
       fixture.getSut(
-        config = ObserverConfig(captureBackStack = true, maxCapturedBackStackEntries = 0)
+        config = ObserverConfig(captureBackStack = true, maxCapturedBackStackEntries = 0),
       )
     fixture.scope.setContexts(
       NAVIGATION_CONTEXT_KEY,
@@ -450,7 +450,7 @@ class BackStackObserverTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     sut.onBackStackChanged(listOf(home, profile))
@@ -491,7 +491,7 @@ class BackStackObserverTest {
         listOf(
           mapOf("entry" to "/ProfileScreen", "entry_arguments" to mapOf("userId" to "123")),
           mapOf("entry" to "/HomeScreen"),
-        )
+        ),
       )
     assertThat(fixture.scope.transaction).isSameInstanceAs(transaction)
   }
@@ -506,7 +506,7 @@ class BackStackObserverTest {
         fixture.scopes.startTransaction(
           any<TransactionContext>(),
           transactionOptionsCaptor.capture(),
-        )
+        ),
       )
       .thenAnswer {
         val transactionContext = it.arguments[0] as TransactionContext
@@ -656,9 +656,9 @@ class BackStackObserverTest {
               is CartScreen -> error("throwing in order to simulate a buggy entry mapper")
               is SettingsScreen -> "settings"
               else -> error("unknown entry: $entry")
-            }
+            },
           )
-        }
+        },
       )
 
     // Navigate to the home screen and verify that a transaction has started and related Sentry data
@@ -693,7 +693,7 @@ class BackStackObserverTest {
         listOf(
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
-        )
+        ),
       )
 
     // Navigate to the cart screen and verify the later failure is also recorded as /unknown rather
@@ -729,7 +729,7 @@ class BackStackObserverTest {
           ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
-        )
+        ),
       )
 
     // Navigate to the settings screen and verify a new /settings transaction is started and Sentry
@@ -764,7 +764,7 @@ class BackStackObserverTest {
           ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
-        )
+        ),
       )
   }
 

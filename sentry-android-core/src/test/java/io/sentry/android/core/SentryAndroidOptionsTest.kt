@@ -33,13 +33,13 @@ class SentryAndroidOptionsTest {
     assertTrue(
       sdkVersion.packageSet.any {
         it.name == "maven:io.sentry:sentry-android-core" && it.version == BuildConfig.VERSION_NAME
-      }
+      },
     )
 
     assertTrue(
       sdkVersion.packageSet.any {
         it.name == "maven:io.sentry:sentry" && it.version == BuildConfig.VERSION_NAME
-      }
+      },
     )
   }
 
@@ -179,7 +179,7 @@ class SentryAndroidOptionsTest {
   fun `ndk handler strategy option can be changed`() {
     val sentryOptions = SentryAndroidOptions()
     sentryOptions.setNativeHandlerStrategy(
-      NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START
+      NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START,
     )
     assertEquals(
       NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START.value,

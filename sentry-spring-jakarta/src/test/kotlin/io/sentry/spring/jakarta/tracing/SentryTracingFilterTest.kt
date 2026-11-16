@@ -87,7 +87,10 @@ class SentryTracingFilterTest {
       }
       response.status = status
       whenever(
-          scopes.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })
+          scopes.startTransaction(
+            any(),
+            check<TransactionOptions> { assertTrue(it.isBindToScope) },
+          ),
         )
         .thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
       whenever(scopes.isEnabled).thenReturn(isEnabled)
@@ -98,7 +101,7 @@ class SentryTracingFilterTest {
             it.arguments[0] as String?,
             it.arguments[1] as List<String>?,
             null,
-          )
+          ),
         )
       }
       return SentryTracingFilter(scopes, transactionNameProvider, isAsyncSupportEnabled)
@@ -313,7 +316,7 @@ class SentryTracingFilterTest {
     val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
     val baggageHeaderStrings =
       listOf(
-        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
+        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET",
       )
     fixture.options.tracesSampleRate = null
     val filter =
@@ -343,7 +346,7 @@ class SentryTracingFilterTest {
     val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
     val baggageHeaderStrings =
       listOf(
-        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
+        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET",
       )
     fixture.options.tracesSampleRate = null
     fixture.options.setIgnoredSpanOrigins(listOf("auto.http.spring_jakarta.webmvc"))
@@ -373,7 +376,7 @@ class SentryTracingFilterTest {
     val sentryTrace = "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"
     val baggage =
       listOf(
-        "baggage: sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
+        "baggage: sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
       )
     val filter =
       fixture.getSut(
@@ -442,7 +445,7 @@ class SentryTracingFilterTest {
     val sentryTrace = "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"
     val baggage =
       listOf(
-        "baggage: sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
+        "baggage: sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
       )
     val filter =
       fixture.getSut(

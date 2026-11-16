@@ -79,7 +79,7 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
                   Cmd line: com.example.app:mainProcess
                   """
                     .trimIndent()
-                    .byteInputStream()
+                    .byteInputStream(),
                 )
             } else {
               whenever(mock.traceInputStream)
@@ -115,7 +115,7 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
                     (no managed stack frames)
                   """
                     .trimIndent()
-                    .byteInputStream()
+                    .byteInputStream(),
                 )
             }
           }

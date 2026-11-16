@@ -121,7 +121,7 @@ class Nav3ProductsActivity : ComponentActivity() {
                 onClick = { productId ->
                   startActivity(
                     checkoutIntent(productId, configuration)
-                      .setClass(this, Nav3TranslucentCheckoutActivity::class.java)
+                      .setClass(this, Nav3TranslucentCheckoutActivity::class.java),
                   )
                 },
               ),
@@ -130,7 +130,7 @@ class Nav3ProductsActivity : ComponentActivity() {
                 testTag = nav3TestTag("product_detail_go_to_checkout_for_result"),
                 onClick = { productId ->
                   checkoutForResult.launch(
-                    checkoutIntent(productId, configuration).putExtra(EXTRA_RETURN_RESULT, true)
+                    checkoutIntent(productId, configuration).putExtra(EXTRA_RETURN_RESULT, true),
                   )
                 },
               ),
@@ -140,7 +140,7 @@ class Nav3ProductsActivity : ComponentActivity() {
                 onClick = { productId ->
                   startActivity(
                     checkoutIntent(productId, configuration)
-                      .putExtra(EXTRA_CRASH_ON_FIRST_COMPOSITION, true)
+                      .putExtra(EXTRA_CRASH_ON_FIRST_COMPOSITION, true),
                   )
                 },
               ),
@@ -373,7 +373,7 @@ internal fun MultiRootNavDisplay(
     val parentDispatcherOwner = LocalNavigationEventDispatcherOwner.current
     CompositionLocalProvider(
       LocalNavigationEventDispatcherOwner provides
-        rememberNavigationEventDispatcherOwner(enabled = isResumed, parent = parentDispatcherOwner)
+        rememberNavigationEventDispatcherOwner(enabled = isResumed, parent = parentDispatcherOwner),
     ) {
       NavDisplay(
         backStack = backStack,
@@ -425,7 +425,7 @@ internal fun MultiRootNavDisplay(
                 if (crashOnFirstComposition) {
                   SideEffect {
                     throw RuntimeException(
-                      "Fatal Nav3 ${scenario.label} crash after first composition"
+                      "Fatal Nav3 ${scenario.label} crash after first composition",
                     )
                   }
                 }
@@ -460,7 +460,7 @@ internal fun MultiRootNavDisplay(
           onClick = {
             showCrashConfirmation = false
             crashSampleApp("Nav3 ${scenario.label}")
-          }
+          },
         ) {
           Text("Crash")
         }

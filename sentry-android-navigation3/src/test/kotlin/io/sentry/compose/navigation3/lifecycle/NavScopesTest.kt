@@ -187,7 +187,7 @@ class NavScopesTest {
         override fun setContexts(contexts: Contexts) {
           throw failure
         }
-      }
+      },
     )
 
     val thrown = assertThrows(IllegalStateException::class.java) { fixture.incoming.dispose() }
@@ -393,7 +393,7 @@ class NavScopesTest {
         override fun setTransaction(transaction: String?) {
           if (transaction == "/Home") screensAtBinding += fixture.scope.screen
         }
-      }
+      },
     )
 
     fixture.incoming.dispose()
@@ -540,7 +540,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
     covered.startNavTransaction(
-      navTransactionRequest("/Result", data = mapOf("arguments" to "id=1"))
+      navTransactionRequest("/Result", data = mapOf("arguments" to "id=1")),
     )
 
     fixture.incoming.dispose()
@@ -721,7 +721,7 @@ class NavScopesTest {
         override fun setContexts(contexts: Contexts) {
           if (observerThrows) throw failure
         }
-      }
+      },
     )
     val thrown = assertThrows(IllegalStateException::class.java) { fixture.incoming.dispose() }
     assertThat(thrown).isSameInstanceAs(failure)
@@ -806,7 +806,7 @@ class NavScopesTest {
             SentryOptions().apply {
               setLogger(this@Fixture.logger)
               isDebug = true
-            }
+            },
           )
         doAnswer {
             if (isEnabled) {

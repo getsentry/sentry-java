@@ -331,9 +331,9 @@ class AppStateTest {
     // Add listeners concurrently
     listeners.forEach { listener ->
       Thread {
-          sut.addAppStateListener(listener)
-          latch.countDown()
-        }
+        sut.addAppStateListener(listener)
+        latch.countDown()
+      }
         .start()
     }
     latch.await()

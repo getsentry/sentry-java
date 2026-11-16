@@ -40,7 +40,7 @@ class NavScopesIntegrationTest {
         NavTransactionRequest(
           name = "/Checkout",
           newOptions = ::TransactionOptions,
-        )
+        ),
       )
     }
     assertThat(contextsAtSampling).isEmpty()

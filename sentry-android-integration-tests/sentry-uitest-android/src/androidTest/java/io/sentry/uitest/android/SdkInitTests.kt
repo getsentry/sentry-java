@@ -75,8 +75,8 @@ class SdkInitTests : BaseUiTest() {
 
     relay.assert {
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           it.assertNoOtherItems()
@@ -84,9 +84,8 @@ class SdkInitTests : BaseUiTest() {
         }
 
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "EmptyActivity"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "EmptyActivity"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           // Transaction-based Profiling is already in e2etests transaction, so it won't run again
@@ -96,8 +95,8 @@ class SdkInitTests : BaseUiTest() {
         }
 
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests2"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests2"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           // Profiling uses executorService, so if the executorService is shutdown it would fail
@@ -186,17 +185,17 @@ class SdkInitTests : BaseUiTest() {
                 ReferencePattern.InstanceFieldPattern(
                   "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
                   "context",
-                )
-              )
+                ),
+              ),
             ) +
             ('a'..'z').map { char ->
               IgnoredReferenceMatcher(
                 ReferencePattern.StaticFieldPattern(
                   "com.testfairy.modules.capture.TouchListener",
                   "$char",
-                )
+                ),
               )
-            }
+            },
       )
 
     val activityScenario = launchActivity<ComposeActivity>()
@@ -237,12 +236,12 @@ class SdkInitTests : BaseUiTest() {
       // so we need to set the current activity manually
       CurrentActivityHolder.getInstance().setActivity(activity)
       Thread {
-          initSentry(false) { options: SentryAndroidOptions ->
-            options.tracesSampleRate = 1.0
-            options.profilesSampleRate = 1.0
-          }
-          initLatch.countDown()
+        initSentry(false) { options: SentryAndroidOptions ->
+          options.tracesSampleRate = 1.0
+          options.profilesSampleRate = 1.0
         }
+        initLatch.countDown()
+      }
         .start()
     }
     initLatch.await()

@@ -246,7 +246,7 @@ public open class SentryKtorClientPluginContextHook(protected val scopes: IScope
     client.requestPipeline.intercept(phase) {
       val scopes =
         this@SentryKtorClientPluginContextHook.scopes.forkedCurrentScope(
-          SENTRY_KTOR_CLIENT_PLUGIN_KEY
+          SENTRY_KTOR_CLIENT_PLUGIN_KEY,
         )
       withContext(SentryContext(scopes)) { proceed() }
     }

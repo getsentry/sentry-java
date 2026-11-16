@@ -36,7 +36,7 @@ class DebugMetaSerializationTest {
               imageAddr = "8a258c81-641d-4e54-b06e-a0f56b1ee2ef"
               imageSize = -7905338721846826571L
               arch = "d00d5bea-fb5c-43c9-85f0-dc1350d957a4"
-            }
+            },
           )
       }
   }

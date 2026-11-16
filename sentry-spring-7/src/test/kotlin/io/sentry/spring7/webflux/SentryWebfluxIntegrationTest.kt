@@ -139,7 +139,7 @@ class SentryWebfluxIntegrationTest {
 }
 
 @SpringBootApplication(
-  exclude = [ReactiveWebSecurityAutoConfiguration::class, SecurityAutoConfiguration::class]
+  exclude = [ReactiveWebSecurityAutoConfiguration::class, SecurityAutoConfiguration::class],
 )
 open class App {
   private val transport = mock<ITransport>().also { whenever(it.isHealthy).thenReturn(true) }

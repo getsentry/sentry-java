@@ -18,17 +18,15 @@ public final class SentrySpringSubscriptionHandler implements SentrySubscription
       final @NotNull InstrumentationFieldFetchParameters parameters) {
     if (result instanceof Flux) {
       final @NotNull Flux<?> flux = (Flux<?>) result;
-      return flux.doOnError(
-          throwable -> {
-            final @NotNull ExceptionReporter.ExceptionDetails exceptionDetails =
-                new ExceptionReporter.ExceptionDetails(scopes, parameters.getEnvironment(), true);
-            if (throwable instanceof SubscriptionPublisherException
-                && throwable.getCause() != null) {
-              exceptionReporter.captureThrowable(throwable.getCause(), exceptionDetails, null);
-            } else {
-              exceptionReporter.captureThrowable(throwable, exceptionDetails, null);
-            }
-          });
+      return flux.doOnError(throwable -> {
+        final @NotNull ExceptionReporter.ExceptionDetails exceptionDetails =
+            new ExceptionReporter.ExceptionDetails(scopes, parameters.getEnvironment(), true);
+        if (throwable instanceof SubscriptionPublisherException && throwable.getCause() != null) {
+          exceptionReporter.captureThrowable(throwable.getCause(), exceptionDetails, null);
+        } else {
+          exceptionReporter.captureThrowable(throwable, exceptionDetails, null);
+        }
+      });
     }
     return result;
   }
