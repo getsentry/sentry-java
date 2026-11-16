@@ -35,10 +35,14 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.springboot.starter.test)
-  testImplementation(libs.springboot.starter.web)
+  testImplementation(libs.springboot.starter.web) {
+    exclude(group = "org.apache.tomcat.embed")
+  }
+  testImplementation(libs.tomcat85.embed.core)
 }
 
 tasks.withType<JavaCompile>().configureEach {
