@@ -19,6 +19,7 @@ import io.sentry.protocol.Mechanism
 import io.sentry.util.CookieUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils
+import java.util.concurrent.TimeUnit
 
 internal object SentryKtorClientUtils {
   internal suspend fun captureClientError(
@@ -126,16 +127,17 @@ internal object SentryKtorClientUtils {
       SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY,
       response.contentLength(),
     )
+    // Session Replay reads these as epoch milliseconds for its rrweb network spans.
     if (startTimestamp != null) {
       breadcrumb.setData(
         SpanDataConvention.HTTP_START_TIMESTAMP,
-        startTimestamp.nanoTimestamp() / 1000L,
+        TimeUnit.NANOSECONDS.toMillis(startTimestamp.nanoTimestamp()),
       )
     }
     if (endTimestamp != null) {
       breadcrumb.setData(
         SpanDataConvention.HTTP_END_TIMESTAMP,
-        endTimestamp.nanoTimestamp() / 1000L,
+        TimeUnit.NANOSECONDS.toMillis(endTimestamp.nanoTimestamp()),
       )
     }
 

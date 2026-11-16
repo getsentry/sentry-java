@@ -23,8 +23,10 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.ScopeType
 import io.sentry.Sentry
+import io.sentry.SentryDateProvider
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -150,6 +152,27 @@ class SentryKtorClientPluginTest {
           assertEquals(fixture.server.url("/hello").toString(), it.getData("url"))
           assertEquals(13L, it.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
           assertNotNull(it.getData(SpanDataConvention.HTTP_START_TIMESTAMP))
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `breadcrumb timestamps are epoch milliseconds`(): Unit = runBlocking {
+    val epochMillis = 1_700_000_000_123L
+    val sut =
+      fixture.getSut(
+        optionsConfiguration = { options ->
+          options.dateProvider = SentryDateProvider { SentryNanotimeDate(epochMillis, 0) }
+        },
+      )
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> {
+          assertThat(it.getData(SpanDataConvention.HTTP_START_TIMESTAMP)).isEqualTo(epochMillis)
+          assertThat(it.getData(SpanDataConvention.HTTP_END_TIMESTAMP)).isEqualTo(epochMillis)
         },
         anyOrNull(),
       )
