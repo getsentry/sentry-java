@@ -85,6 +85,7 @@
 
 ### Fixes
 
+- Preserve the oldest and newest frames when truncating deep stack traces ([#6623](https://github.com/getsentry/sentry-java/pull/6623))
 - Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))
 - Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 - Session Replay: `SentryOkHttpInterceptor` now captures network request and response details only while Session Replay is recording or buffering ([#6486](https://github.com/getsentry/sentry-java/pull/6486))
