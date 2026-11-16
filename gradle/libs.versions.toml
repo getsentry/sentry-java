@@ -39,12 +39,12 @@ otelSemanticConventions = "1.44.0"
 otelSemanticConventionsAlpha = "1.44.0-alpha"
 retrofit = "3.0.0"
 room2 = "2.8.5"
-room3 = "3.0.0-rc01"
+room3 = "3.0.3"
 sagp = "6.13.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
 agp = "9.5.1"
 sqlite = "2.6.2"
-sqliteRc = "2.8.0-alpha03" # Required by Room3 3.0.0-rc*
+sqliteDrivers = "2.7.1"
 slf4j = "1.7.30"
 spotless = "8.8.0"
 springboot2 = "2.7.18"
@@ -129,8 +129,8 @@ androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.re
 androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
 androidx-webkit = { module = "androidx.webkit:webkit", version = "1.14.0" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
-androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteRc" }
-androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteRc" }
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteDrivers" }
+androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteDrivers" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.4.0" }
 androidx-browser = { module = "androidx.browser:browser", version = "1.10.0" }
 aspectjweaver = { module = "org.aspectj:aspectjweaver" }
