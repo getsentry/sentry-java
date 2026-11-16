@@ -57,6 +57,11 @@ DOLLAR_TAG_START     = "$" {UNQUOTED_IDENTIFIER} "$"
 BACKTICK_QUOTED_STR  = "`" ("``" | [^`])* "`"
 BRACKET_QUOTED_STR   = "[" [^\]]* "]"
 UNTERMINATED_BRACKET_STR = "[" [^\]]*
+// Sentry: the literals above without their closing quote, so they run to the end of input.
+UNTERMINATED_QUOTED_STR          = "'" ("''" | [^'])*
+UNTERMINATED_DOUBLE_QUOTED_STR   = "\"" ("\"\"" | [^\"])*
+UNTERMINATED_BACKTICK_QUOTED_STR = "`" ("``" | [^`])*
+UNTERMINATED_DOLLAR_QUOTED_STR   = "$$" [^$]*
 POSTGRE_PARAM_MARKER = "$"[0-9]*
 WHITESPACE           = [ \t\r\n]+
 
@@ -1390,6 +1395,12 @@ WHITESPACE           = [ \t\r\n]+
 
   {UNTERMINATED_BRACKET_STR} {
           // Consume an unfinished identifier once instead of retrying from every opening bracket.
+          builder.append('?');
+          return YYEOF;
+      }
+
+  // Sentry: an unterminated literal is replaced by ? and stops (R4).
+  {UNTERMINATED_QUOTED_STR} | {UNTERMINATED_DOUBLE_QUOTED_STR} | {UNTERMINATED_BACKTICK_QUOTED_STR} | {UNTERMINATED_DOLLAR_QUOTED_STR} {
           builder.append('?');
           return YYEOF;
       }
