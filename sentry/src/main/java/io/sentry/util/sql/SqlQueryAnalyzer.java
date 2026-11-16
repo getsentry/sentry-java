@@ -1,5 +1,6 @@
 package io.sentry.util.sql;
 
+import io.sentry.util.sql.otel.OtelSqlSanitizer;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +33,16 @@ public final class SqlQueryAnalyzer {
     if (sql == null) {
       return SqlQuery.EMPTY;
     }
-    // Fail-closed stub until an analyzer implementation lands.
-    return SqlQuery.FAILED;
+    // Option 06 step 1: the vendored OpenTelemetry grammar, unchanged. Only doubleQuotedIdentifiers
+    // reaches it, maxQueryTextLength is ignored (upstream has a fixed 32 KiB limit), and every
+    // result is COMPLETE. The patch, the driver and the wrapper follow in steps 2 to 5.
+    final io.sentry.util.sql.otel.SqlQuery result =
+        OtelSqlSanitizer.sanitize(
+            sql, dialect.getDoubleQuotedIdentifiers() == SqlDialect.Support.YES);
+    return new SqlQuery(
+        result.getQueryText(),
+        result.getQuerySummary(),
+        result.getStoredProcedureName(),
+        SqlQuery.Status.COMPLETE);
   }
 }

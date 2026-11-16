@@ -1,0 +1,6 @@
+# Untouched upstream copy of the OpenTelemetry SQL grammar (README D36, option 06).
+# Updated only by scripts/sync-otel-sql-grammar.sh; never edit SqlSanitizer.jflex here by hand.
+repository=open-telemetry/opentelemetry-java-instrumentation
+path=instrumentation-api-incubator/src/main/jflex/SqlSanitizer.jflex
+commit=38e68968be30491d74065230e6bf5cfdcf0c13d8
+sha256=1f89eccd0360a16e391f977f0bee66365a29ad3af29b16b69ea7acfdf74fd5f3

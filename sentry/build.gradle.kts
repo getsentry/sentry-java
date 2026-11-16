@@ -15,7 +15,11 @@ tasks.withType<KotlinCompile>().configureEach {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
+// Build-time only: JFlex generates the SQL lexer; the generated code has no runtime dependency.
+val jflex: Configuration = configurations.create("jflex")
+
 dependencies {
+  jflex(libs.jflex)
   errorprone(libs.errorprone.core)
   errorprone(libs.nopen.checker)
   errorprone(libs.nullaway)
@@ -65,6 +69,40 @@ tasks {
   }
 }
 
+// Generates the SQL lexer from the patched OpenTelemetry grammar (README D36). The untouched
+// upstream copy lives in otel-upstream/ and is synced with scripts/sync-otel-sql-grammar.sh.
+val jflexSourceFile = layout.projectDirectory.file("src/main/jflex/SqlSanitizer.jflex")
+val jflexOutputDir = layout.buildDirectory.dir("generated/sources/jflex")
+
+val generateJflex =
+  tasks.register<JavaExec>("generateJflex") {
+    description = "Generates the SQL lexer from src/main/jflex/SqlSanitizer.jflex."
+    classpath(jflex)
+    mainClass.set("jflex.Main")
+    inputs.file(jflexSourceFile)
+    outputs.dir(jflexOutputDir)
+    // Locals, not the script's vals: lambdas that reference script vals capture the script object,
+    // which the configuration cache cannot serialize.
+    val sourceFile = jflexSourceFile
+    val outputDir = jflexOutputDir
+    argumentProviders.add(
+      CommandLineArgumentProvider {
+        listOf(
+          "--quiet",
+          "--nobak",
+          "-d",
+          outputDir.get().dir("io/sentry/util/sql/otel").asFile.absolutePath,
+          sourceFile.asFile.absolutePath,
+        )
+      }
+    )
+    doFirst { outputDir.get().asFile.deleteRecursively() }
+  }
+
+sourceSets { main { java.srcDir(generateJflex) } }
+
+tasks.javadoc { exclude("io/sentry/util/sql/otel/AutoSqlSanitizer.java") }
+
 buildConfig {
   useJavaOutput()
   packageName("io.sentry")
@@ -78,7 +116,9 @@ tasks.withType<JavaCompile>().configureEach {
     check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
     option("NullAway:AnnotatedPackages", "io.sentry")
   }
-  options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/io/sentry/vendor/.*")
+  options.errorprone.errorproneArgs.add(
+    "-XepExcludedPaths:.*/io/sentry/vendor/.*|.*/generated/sources/jflex/.*"
+  )
 }
 
 tasks.jar {
