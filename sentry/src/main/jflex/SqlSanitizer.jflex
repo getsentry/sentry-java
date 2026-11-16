@@ -13,6 +13,7 @@
 package io.sentry.util.sql.otel;
 
 import io.sentry.util.sql.otel.StringUtils;
+import io.sentry.util.sql.SqlDialect.Support;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Locale;
@@ -41,6 +42,8 @@ LINE_COMMENT         = "--" [^\r\n]*
 // Sentry: a whole block comment, and one that runs to the end of input.
 CLOSED_COMMENT       = "/*" ([^*] | "*"+ [^*/])* "*"+ "/"
 UNTERMINATED_COMMENT = "/*" ([^*] | "*"+ [^*/])* "*"*
+HASH_COMMENT         = "#" [^\r\n]*
+DOUBLE_SLASH_COMMENT = "//" [^\r\n]*
 UNQUOTED_IDENTIFIER  = ([:letter:] | "_") ([:letter:] | [0-9] | "_")*
 IDENTIFIER_PART      = {UNQUOTED_IDENTIFIER} | {DOUBLE_QUOTED_STR} | {BACKTICK_QUOTED_STR} | {BRACKET_QUOTED_STR}
 // We are using {UNQUOTED_IDENTIFIER} instead of {IDENTIFIER_PART} here because DOUBLE_QUOTED_STR
@@ -1332,8 +1335,37 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   {LINE_COMMENT} {
-          // Sentry: line comment body dropped (R3)
-          appendSpace();
+          // Sentry: where -- needs whitespace after it (MySQL), --x is two minus signs (D9).
+          Support needsWhitespace = yylength() > 2 && zzBuffer[zzStartRead + 2] > ' '
+              ? dialect.dashDashCommentNeedsWhitespace() : Support.NO;
+          if (needsWhitespace == Support.UNKNOWN) {
+            builder.append('?');
+            return YYEOF;
+          }
+          if (needsWhitespace == Support.YES) {
+            yypushback(yylength() - 1);
+            appendCurrentFragment();
+          } else {
+            // Sentry: line comment body dropped (R3)
+            appendSpace();
+          }
+          if (isOverLimit()) return YYEOF;
+      }
+
+  // Sentry: # and // per dialect (D9). YES: a comment; NO: the first character is text.
+  {HASH_COMMENT} | {DOUBLE_SLASH_COMMENT} {
+          Support rule = zzBuffer[zzStartRead] == '#'
+              ? dialect.hashComments() : dialect.doubleSlashComments();
+          if (rule == Support.UNKNOWN) {
+            builder.append('?');
+            return YYEOF;
+          }
+          if (rule == Support.YES) {
+            appendSpace();
+          } else {
+            yypushback(yylength() - 1);
+            appendCurrentFragment();
+          }
           if (isOverLimit()) return YYEOF;
       }
 
