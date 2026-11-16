@@ -8,19 +8,18 @@ profiling) and integrations (Compose, OkHttp, SQLite, etc.).
 Install the app on your device or emulator:
 
 ```
-./gradlew -p sentry-samples/sentry-samples-android installDebug
+./gradlew -p sentry-android-integration-tests :sentry-samples-android:installDebug
 ```
 
-or open the `sentry-samples/sentry-samples-android` directory in Android Studio and run the `sentry-samples-android` configuration.
+or open the `sentry-android-integration-tests` directory in Android Studio and run the `sentry-samples-android` configuration.
 
-The sample is a separate Gradle build that includes the SDK build, so changes to the SDK show up in the next build of the sample, with nothing to publish first.
-The SDK build doesn't include the sample, so `./gradlew` from the repository root doesn't build, lint or format it.
-`gradle.properties`, `gradlew`, `gradle/wrapper` and `gradle/gradle-daemon-jvm.properties` are symlinks to the SDK build's, so both builds use the same Gradle, JDK and settings.
+The sample is part of [`sentry-android-integration-tests`](../README.md), a separate Gradle build that includes the SDK build, so changes to the SDK show up in the next build of the sample, with nothing to publish first.
+The SDK build doesn't include it, so `./gradlew` from the repository root doesn't build, lint or format the sample.
 
 You can also apply the [Sentry Android Gradle Plugin](https://github.com/getsentry/sentry-android-gradle-plugin) (SAGP) when building (not applied by default):
 
 ```
-./gradlew -p sentry-samples/sentry-samples-android installDebug -PuseSagp
+./gradlew -p sentry-android-integration-tests :sentry-samples-android:installDebug -PuseSagp
 ```
 
 In Android Studio, add `useSagp=` (empty value) to `gradle.properties`, or pass `-PuseSagp` as a Gradle project property.
@@ -59,7 +58,7 @@ Re-run `publishToMavenLocal` after each SAGP change.
 Then build from sentry-java:
 
 ```
-./gradlew -p sentry-samples/sentry-samples-android installDebug -PuseSagp
+./gradlew -p sentry-android-integration-tests :sentry-samples-android:installDebug -PuseSagp
 ```
 
 ## Viewing SDK output
