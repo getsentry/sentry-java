@@ -1046,7 +1046,7 @@ class SessionCaptureStrategyTest {
       Breadcrumb(Date(segmentStart + 500)).apply {
         category = "test"
         message = "before"
-      }
+      },
     )
     fixture.elapse(3_000)
     fixture.jumpWallClock(-120_000)
@@ -1057,7 +1057,7 @@ class SessionCaptureStrategyTest {
       Breadcrumb(Date(newTimelineStart + 500)).apply {
         category = "test"
         message = "after"
-      }
+      },
     )
     fixture.elapse(5_000)
     strategy.recordFrame()

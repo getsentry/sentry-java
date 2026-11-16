@@ -157,7 +157,7 @@ class BufferCaptureStrategyTest {
             anyInt(),
             anyInt(),
             any(),
-          )
+          ),
         )
         .thenAnswer {
           val video = File(videoDir, "${it.arguments[2]}.mp4")
