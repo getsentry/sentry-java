@@ -20,6 +20,13 @@ import org.apache.catalina.startup.Tomcat
 import org.apache.catalina.util.ServerInfo
 
 class SentryServletIntegrationTest {
+  private val servletMajorVersion =
+    System.getProperty("io.sentry.test.servlet-major-version", "3").toInt()
+  private val servletMinorVersion =
+    System.getProperty("io.sentry.test.servlet-minor-version", "1").toInt()
+  private val tomcatVersionPrefix =
+    System.getProperty("io.sentry.test.tomcat-version-prefix", "8.5.")
+
   private var server: MockSentryServer? = null
   private var servletContext: ServletContext? = null
   private var tomcat: Tomcat? = null
@@ -32,13 +39,13 @@ class SentryServletIntegrationTest {
 
     tomcat =
       Tomcat().apply {
-        setBaseDir(Files.createTempDirectory("tomcat-8.5").toString())
+        setBaseDir(Files.createTempDirectory("tomcat").toString())
         setPort(0)
         connector.setProperty("address", "127.0.0.1")
 
         val context = addContext("", Files.createTempDirectory("servlet-docbase").toString())
-        context.effectiveMajorVersion = 3
-        context.effectiveMinorVersion = 1
+        context.effectiveMajorVersion = servletMajorVersion
+        context.effectiveMinorVersion = servletMinorVersion
         context.parentClassLoader = javaClass.classLoader
         Tomcat.addServlet(context, "capture", CaptureServlet())
         context.addServletMappingDecoded("/capture", "capture")
@@ -62,10 +69,10 @@ class SentryServletIntegrationTest {
   }
 
   @Test
-  fun `captures request data on Tomcat 8_5 with Servlet 3_1`() {
-    assertThat(ServerInfo.getServerNumber()).startsWith("8.5.")
-    assertThat(servletContext!!.effectiveMajorVersion).isEqualTo(3)
-    assertThat(servletContext!!.effectiveMinorVersion).isEqualTo(1)
+  fun `captures request data on supported servlet container`() {
+    assertThat(ServerInfo.getServerNumber()).startsWith(tomcatVersionPrefix)
+    assertThat(servletContext!!.effectiveMajorVersion).isEqualTo(servletMajorVersion)
+    assertThat(servletContext!!.effectiveMinorVersion).isEqualTo(servletMinorVersion)
 
     val port = tomcat!!.connector.localPort
     val connection =

@@ -21,6 +21,13 @@ tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
 
+val tomcat9TestRuntimeClasspath =
+  configurations.create("tomcat9TestRuntimeClasspath") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    extendsFrom(configurations.testImplementation.get(), configurations.testRuntimeOnly.get())
+  }
+
 dependencies {
   api(projects.sentry)
 
@@ -43,7 +50,31 @@ dependencies {
     exclude(group = "org.apache.tomcat.embed")
   }
   testImplementation(libs.tomcat85.embed.core)
+  add(tomcat9TestRuntimeClasspath.name, libs.tomcat9.embed.core)
 }
+
+val testSourceSet = sourceSets["test"]
+
+tasks.named<Test>("test") {
+  systemProperty("io.sentry.test.tomcat-version-prefix", "8.5.")
+  systemProperty("io.sentry.test.servlet-major-version", "3")
+  systemProperty("io.sentry.test.servlet-minor-version", "1")
+}
+
+val testTomcat9 =
+  tasks.register<Test>("testTomcat9") {
+    group = "verification"
+    description = "Runs the servlet integration test on Tomcat 9 and Servlet 4"
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.output + sourceSets["main"].output + tomcat9TestRuntimeClasspath
+    filter { includeTestsMatching("io.sentry.servlet.SentryServletIntegrationTest") }
+    systemProperty("io.sentry.test.tomcat-version-prefix", "9.0.")
+    systemProperty("io.sentry.test.servlet-major-version", "4")
+    systemProperty("io.sentry.test.servlet-minor-version", "0")
+    shouldRunAfter(tasks.test)
+  }
+
+tasks.named("check") { dependsOn(testTomcat9) }
 
 tasks.withType<JavaCompile>().configureEach {
   options.errorprone {

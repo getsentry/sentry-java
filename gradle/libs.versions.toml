@@ -267,6 +267,7 @@ java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref =
 
 # tomcat libraries
 tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "8.5.100" }
+tomcat9-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "9.0.108" }
 tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
 tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
 tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.22" }
