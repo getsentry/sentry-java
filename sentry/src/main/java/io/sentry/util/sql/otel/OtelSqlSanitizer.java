@@ -13,11 +13,7 @@ public final class OtelSqlSanitizer {
   private OtelSqlSanitizer() {}
 
   public static @NotNull SqlQuery sanitize(
-      final @NotNull String sql, final boolean doubleQuotesAreIdentifiers) {
-    return AutoSqlSanitizer.sanitize(
-        sql,
-        doubleQuotesAreIdentifiers
-            ? SqlDialect.DOUBLE_QUOTES_ARE_IDENTIFIERS
-            : SqlDialect.DOUBLE_QUOTES_ARE_STRING_LITERALS);
+      final @NotNull String sql, final @NotNull io.sentry.util.sql.SqlDialect dialect) {
+    return AutoSqlSanitizer.sanitize(sql, new SqlDialect(dialect));
   }
 }

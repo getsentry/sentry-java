@@ -8352,7 +8352,7 @@ public final class io/sentry/util/sql/SqlQueryAnalyzer {
 }
 
 public final class io/sentry/util/sql/otel/OtelSqlSanitizer {
-	public static fun sanitize (Ljava/lang/String;Z)Lio/sentry/util/sql/otel/SqlQuery;
+	public static fun sanitize (Ljava/lang/String;Lio/sentry/util/sql/SqlDialect;)Lio/sentry/util/sql/otel/SqlQuery;
 }
 
 public final class io/sentry/util/sql/otel/SqlQuery {

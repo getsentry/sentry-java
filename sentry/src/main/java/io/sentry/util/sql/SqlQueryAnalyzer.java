@@ -33,12 +33,10 @@ public final class SqlQueryAnalyzer {
     if (sql == null) {
       return SqlQuery.EMPTY;
     }
-    // Option 06 step 1: the vendored OpenTelemetry grammar, unchanged. Only doubleQuotedIdentifiers
-    // reaches it, maxQueryTextLength is ignored (upstream has a fixed 32 KiB limit), and every
-    // result is COMPLETE. The patch, the driver and the wrapper follow in steps 2 to 5.
-    final io.sentry.util.sql.otel.SqlQuery result =
-        OtelSqlSanitizer.sanitize(
-            sql, dialect.getDoubleQuotedIdentifiers() == SqlDialect.Support.YES);
+    // Option 06: the vendored OpenTelemetry grammar with our lexical-safety patch (step 2).
+    // maxQueryTextLength is ignored (upstream has a fixed 32 KiB limit) and every result is
+    // COMPLETE until the driver (step 4); the wrapper follows in step 5.
+    final io.sentry.util.sql.otel.SqlQuery result = OtelSqlSanitizer.sanitize(sql, dialect);
     return new SqlQuery(
         result.getQueryText(),
         result.getQuerySummary(),
