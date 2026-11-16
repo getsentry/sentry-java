@@ -149,6 +149,48 @@
       "note": "backslashEscapes is UNKNOWN (NO_BACKSLASH_ESCAPES): stop at the backslash."
     },
     {
+      "id": "literal.string.backslash_same_boundary.postgresql",
+      "requirements": ["R2", "R8"],
+      "dialect": "postgresql",
+      "input": "SELECT * FROM files WHERE name LIKE '100\\%' AND path = 'C:\\\\' AND note = 'say \\\"hi\\\"' AND quote = 'it\\\\''s' AND owner = 'Zq9xK7la'",
+      "expected": {
+        "text": "SELECT * FROM files WHERE name LIKE ? AND path = ? AND note = ? AND quote = ? AND owner = ?",
+        "summary": "SELECT files",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7la"],
+      "source": "sentry",
+      "note": "backslashEscapes is UNKNOWN, but no quote of the literal's own kind is directly preceded by an odd run of backslashes, so both readings end every literal at the same place and the analyzer continues (D25)."
+    },
+    {
+      "id": "literal.string.backslash_same_boundary.mysql",
+      "requirements": ["R2", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT * FROM files WHERE name LIKE '100\\%' AND path = 'C:\\\\' AND note = 'say \\\"hi\\\"' AND quote = 'it\\\\''s' AND owner = 'Zq9xK7lb'",
+      "expected": {
+        "text": "SELECT * FROM files WHERE name LIKE ? AND path = ? AND note = ? AND quote = ? AND owner = ?",
+        "summary": "SELECT files",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7lb"],
+      "source": "sentry",
+      "note": "backslashEscapes is UNKNOWN, but no quote of the literal's own kind is directly preceded by an odd run of backslashes, so both readings end every literal at the same place and the analyzer continues (D25)."
+    },
+    {
+      "id": "literal.string.backslash_same_boundary.conservative",
+      "requirements": ["R2", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM files WHERE name LIKE '100\\%' AND path = 'C:\\\\' AND note = 'say \\\"hi\\\"' AND quote = 'it\\\\''s' AND owner = 'Zq9xK7lc'",
+      "expected": {
+        "text": "SELECT * FROM files WHERE name LIKE ? AND path = ? AND note = ? AND quote = ? AND owner = ?",
+        "summary": "SELECT files",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7lc"],
+      "source": "sentry",
+      "note": "backslashEscapes is UNKNOWN, but no quote of the literal's own kind is directly preceded by an odd run of backslashes, so both readings end every literal at the same place and the analyzer continues (D25)."
+    },
+    {
       "id": "literal.number.integers",
       "requirements": ["R2"],
       "dialect": "CONSERVATIVE",
@@ -180,12 +222,77 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT a FROM t WHERE b = 99+100 AND c=x-1 AND d = x - 1 AND e>=-5",
       "expected": {
-        "text": "SELECT a FROM t WHERE b = ?? AND c=x? AND d = x - ? AND e>=?",
+        "text": "SELECT a FROM t WHERE b = ?+? AND c=x-? AND d = x - ? AND e>=?",
         "summary": "SELECT t",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Signed numbers convention: a sign directly before a digit belongs to the number."
+      "note": "Signed numbers (D18): a sign is part of the number only when no operand precedes it; after an operand it is a binary operator and is kept."
+    },
+    {
+      "id": "literal.number.sign_after_operand",
+      "requirements": ["R2"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a-1, a -1, 2-1, 'b'-1, ?-1, :p-1, $1-1, (c)-1, d[1]-1, `e`-1 FROM t",
+      "expected": {
+        "text": "SELECT a-?, a -?, ?-?, ?-?, ?-?, :p-?, $1-?, (c)-?, d[?]-?, `e`-? FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Signed numbers (D18): identifier, number, literal, parameter marker, ) and ] are operands, so the sign after them is kept."
+    },
+    {
+      "id": "literal.number.sign_after_keyword.clauses",
+      "requirements": ["R2"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT ALL -1 FROM t JOIN u ON -2 < u.a WHERE -3 < a AND -4 < b OR NOT -5 > c GROUP BY a HAVING -6 < COUNT(*) ORDER BY -7 LIMIT -8 OFFSET -9",
+      "expected": {
+        "text": "SELECT ALL ? FROM t JOIN u ON ? < u.a WHERE ? < a AND ? < b OR NOT ? > c GROUP BY a HAVING ? < COUNT(*) ORDER BY ? LIMIT ? OFFSET ?",
+        "summary": "SELECT t u",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers ALL, ON, WHERE, AND, OR, NOT, HAVING, BY, LIMIT and OFFSET."
+    },
+    {
+      "id": "literal.number.sign_after_keyword.expressions",
+      "requirements": ["R2"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT DISTINCT CASE -1 WHEN -2 THEN -3 ELSE -4 END FROM t WHERE a BETWEEN -5 AND -6 OR b LIKE -7 ESCAPE -8 OR c = INTERVAL -9 DAY",
+      "expected": {
+        "text": "SELECT DISTINCT CASE ? WHEN ? THEN ? ELSE ? END FROM t WHERE a BETWEEN ? AND ? OR b LIKE ? ESCAPE ? OR c = INTERVAL ? DAY",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers DISTINCT, CASE, WHEN, THEN, ELSE, BETWEEN, LIKE, ESCAPE and INTERVAL."
+    },
+    {
+      "id": "literal.number.sign_after_keyword.lists",
+      "requirements": ["R2"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT TOP -1 a FROM t WHERE b IN -2 OR c > ANY -3 OR d > SOME -4; VALUES -5; UPDATE t SET -6",
+      "expected": {
+        "text": "SELECT TOP ? a FROM t WHERE b IN ? OR c > ANY ? OR d > SOME ?; VALUES ?; UPDATE t SET ?",
+        "summary": "SELECT t; VALUES; UPDATE t",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers TOP, IN, ANY, SOME, VALUES and SET."
+    },
+    {
+      "id": "literal.number.sign_after_keyword.ddl",
+      "requirements": ["R2"],
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE TABLE t (a INT DEFAULT -1); CREATE PROCEDURE p AS RETURN -2; CREATE SEQUENCE s START WITH -3 INCREMENT BY -4 MINVALUE -5",
+      "expected": {
+        "text": "CREATE TABLE t (a INT DEFAULT ?); CREATE PROCEDURE p AS RETURN ?; CREATE SEQUENCE s START WITH ? INCREMENT BY ? MINVALUE -?",
+        "summary": "CREATE TABLE t; CREATE PROCEDURE p; CREATE SEQUENCE",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers DEFAULT, RETURN, WITH and BY. MINVALUE is not in the set, so its sign is kept as an operator."
     },
     {
       "id": "literal.number.in_identifier",
@@ -1070,13 +1177,13 @@
       "dialect": "oracle",
       "input": "CREATE USER Zq9xK7bb IDENTIFIED BY Zq9xK7ba",
       "expected": {
-        "text": "CREATE USER ? IDENTIFIED BY ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7ba", "Zq9xK7bb"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.alter_user_replace.oracle",
@@ -1084,13 +1191,13 @@
       "dialect": "oracle",
       "input": "ALTER USER Zq9xK7bc IDENTIFIED BY Zq9xK7bd REPLACE Zq9xK7be",
       "expected": {
-        "text": "ALTER USER ? IDENTIFIED BY ? REPLACE ?",
+        "text": "ALTER USER ?",
         "summary": "ALTER USER",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bc", "Zq9xK7bd", "Zq9xK7be"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.create_user.mysql",
@@ -1098,13 +1205,13 @@
       "dialect": "mysql",
       "input": "CREATE USER 'Zq9xK7bf'@'localhost' IDENTIFIED BY 'Zq9xK7bg'",
       "expected": {
-        "text": "CREATE USER ?@? IDENTIFIED BY ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bf", "Zq9xK7bg"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.create_user.postgresql",
@@ -1112,13 +1219,13 @@
       "dialect": "postgresql",
       "input": "CREATE USER Zq9xK7bh WITH PASSWORD 'Zq9xK7bi'",
       "expected": {
-        "text": "CREATE USER ? WITH PASSWORD ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bh", "Zq9xK7bi"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.unquoted_password",
@@ -1126,13 +1233,13 @@
       "dialect": "CONSERVATIVE",
       "input": "ALTER USER Zq9xK7bj PASSWORD Zq9xK7bk",
       "expected": {
-        "text": "ALTER USER ? PASSWORD ?",
+        "text": "ALTER USER ?",
         "summary": "ALTER USER",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bj", "Zq9xK7bk"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.create_login.sqlserver",
@@ -1140,13 +1247,13 @@
       "dialect": "sqlserver",
       "input": "CREATE LOGIN [CONTOSO\\Zq9xK7bl] FROM WINDOWS",
       "expected": {
-        "text": "CREATE LOGIN [?] FROM WINDOWS",
+        "text": "CREATE LOGIN ?",
         "summary": "CREATE LOGIN",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bl", "CONTOSO"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.create_login_password.sqlserver",
@@ -1154,13 +1261,13 @@
       "dialect": "sqlserver",
       "input": "CREATE LOGIN Zq9xK7bm WITH PASSWORD = 'Zq9xK7bn'",
       "expected": {
-        "text": "CREATE LOGIN ? WITH PASSWORD = ?",
+        "text": "CREATE LOGIN ?",
         "summary": "CREATE LOGIN",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bm", "Zq9xK7bn"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.drop_user_if_exists.postgresql",
@@ -1168,13 +1275,13 @@
       "dialect": "postgresql",
       "input": "DROP USER IF EXISTS \"Zq9xK7bo\"",
       "expected": {
-        "text": "DROP USER IF EXISTS \"?\"",
+        "text": "DROP USER ?",
         "summary": "DROP USER",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bo"],
       "source": "sentry",
-      "note": "A quoted principal name keeps its quotes."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.grant_grantees",
@@ -1182,13 +1289,13 @@
       "dialect": "CONSERVATIVE",
       "input": "GRANT SELECT, INSERT ON orders TO Zq9xK7bp, Zq9xK7bq",
       "expected": {
-        "text": "GRANT SELECT, INSERT ON orders TO ?, ?",
+        "text": "GRANT ?",
         "summary": "GRANT",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bp", "Zq9xK7bq"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.revoke_grantee",
@@ -1196,13 +1303,13 @@
       "dialect": "CONSERVATIVE",
       "input": "REVOKE SELECT ON orders FROM Zq9xK7br",
       "expected": {
-        "text": "REVOKE SELECT ON orders FROM ?",
+        "text": "REVOKE ?",
         "summary": "REVOKE",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7br"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
     },
     {
       "id": "credentials.grant_identified_by.mysql",
@@ -1210,13 +1317,190 @@
       "dialect": "mysql",
       "input": "GRANT ALL PRIVILEGES ON db.* TO 'Zq9xK7bs'@'%' IDENTIFIED BY 'Zq9xK7bt'",
       "expected": {
-        "text": "GRANT ALL PRIVILEGES ON db.* TO ?@? IDENTIFIED BY ?",
+        "text": "GRANT ?",
         "summary": "GRANT",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7bs", "Zq9xK7bt"],
       "source": "sentry",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?."
+    },
+    {
+      "id": "credentials.create_role",
+      "requirements": ["R2", "R6"],
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE ROLE Zq9xK7by",
+      "expected": {
+        "text": "CREATE ROLE ?",
+        "summary": "CREATE ROLE",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7by"],
+      "source": "sentry",
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. A PostgreSQL user is a role, so role names are reduced too."
+    },
+    {
+      "id": "credentials.set_password.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SET PASSWORD FOR 'Zq9xK7nh'@'localhost' = 'Zq9xK7ni'",
+      "expected": {
+        "text": "SET PASSWORD ?",
+        "summary": "SET PASSWORD",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7nh", "Zq9xK7ni"],
+      "source": "sentry",
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The summary is SET PASSWORD."
+    },
+    {
+      "id": "credentials.reduction_ends_at_statement_end.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "CREATE USER Zq9xK7ne WITH PASSWORD 'x; DROP TABLE Zq9xK7nf'; UPDATE t SET a = 'Zq9xK7ng'",
+      "expected": {
+        "text": "CREATE USER ?; UPDATE t SET a = ?",
+        "summary": "CREATE USER; UPDATE t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7ne", "Zq9xK7nf", "Zq9xK7ng"],
+      "source": "sentry",
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The reduced part is still lexed: the ; inside the literal does not end the statement, the one after it does."
+    },
+    {
+      "id": "credentials.unterminated_in_reduced_part.postgresql",
+      "requirements": ["R4", "R6"],
+      "dialect": "postgresql",
+      "input": "CREATE USER Zq9xK7nj WITH PASSWORD 'Zq9xK7nk",
+      "expected": {
+        "text": "CREATE USER ?",
+        "summary": "CREATE USER",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7nj", "Zq9xK7nk"],
+      "source": "sentry",
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The literal in the reduced part never closes, so the analyzer stops there: STOPPED, not COMPLETE (D27)."
+    },
+    {
+      "id": "credentials.identified_by.database_link.oracle",
+      "requirements": ["R2", "R4"],
+      "dialect": "oracle",
+      "input": "CREATE DATABASE LINK remote CONNECT TO scott IDENTIFIED BY Zq9xK7na USING 'Zq9xK7nb'",
+      "expected": {
+        "text": "CREATE DATABASE LINK remote CONNECT TO scott IDENTIFIED BY ?",
+        "summary": "CREATE DATABASE LINK",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7na", "Zq9xK7nb"],
+      "source": "sentry",
+      "note": "IDENTIFIED BY outside a reduced DCL statement stops the analyzer (D23). The summary follows OTel Java: DATABASE is the object kind and LINK the first word after it."
+    },
+    {
+      "id": "credentials.identified_by_quoted.database_link.oracle",
+      "requirements": ["R2", "R4"],
+      "dialect": "oracle",
+      "input": "CREATE DATABASE LINK remote CONNECT TO scott IDENTIFIED BY \"Zq9xK7nc\" USING 'Zq9xK7nd'",
+      "expected": {
+        "text": "CREATE DATABASE LINK remote CONNECT TO scott IDENTIFIED BY ?",
+        "summary": "CREATE DATABASE LINK",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7nc", "Zq9xK7nd"],
+      "source": "sentry",
+      "note": "doubleQuotedIdentifiers is YES, so the password is a quoted identifier; the stop at IDENTIFIED BY still redacts it (D23)."
+    },
+    {
+      "id": "credentials.password_stop.double_quoted.postgresql",
+      "requirements": ["R2", "R4"],
+      "dialect": "postgresql",
+      "input": "CREATE DATABASE db SYSTEM USER PASSWORD \"Zq9xK7nl\"",
+      "expected": {
+        "text": "CREATE DATABASE db SYSTEM USER PASSWORD ?",
+        "summary": "CREATE DATABASE db",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7nl"],
+      "source": "sentry",
+      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23). doubleQuotedIdentifiers is YES, so the password is a quoted identifier and only the stop redacts it."
+    },
+    {
+      "id": "credentials.password_stop.equals.sqlserver",
+      "requirements": ["R2", "R4"],
+      "dialect": "sqlserver",
+      "input": "CREATE CERTIFICATE billing ENCRYPTION BY PASSWORD = 'Zq9xK7nm' WITH SUBJECT = 'Zq9xK7nn'",
+      "expected": {
+        "text": "CREATE CERTIFICATE billing ENCRYPTION BY PASSWORD ?",
+        "summary": "CREATE CERTIFICATE",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7nm", "Zq9xK7nn"],
+      "source": "sentry",
+      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23). = after PASSWORD counts as a value following it."
+    },
+    {
+      "id": "credentials.password_kept.before_punctuation.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "CREATE STATISTICS user_stats ON password, email FROM users",
+      "expected": {
+        "text": "CREATE STATISTICS user_stats ON password, email FROM users",
+        "summary": "CREATE STATISTICS",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "PASSWORD is kept (D23): punctuation follows it, so it is a name, not a credential clause."
+    },
+    {
+      "id": "credentials.password_kept.object_name",
+      "requirements": ["R6"],
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE SCHEMA password AUTHORIZATION app_owner",
+      "expected": {
+        "text": "CREATE SCHEMA password AUTHORIZATION app_owner",
+        "summary": "CREATE SCHEMA",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "PASSWORD is kept (D23): it is the object name."
+    },
+    {
+      "id": "credentials.password_kept.safe_kinds",
+      "requirements": ["R6"],
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE INDEX idx_pw ON users (password DESC); CREATE VIEW v AS SELECT password FROM users; CREATE PROCEDURE p AS SELECT password FROM users",
+      "expected": {
+        "text": "CREATE INDEX idx_pw ON users (password DESC); CREATE VIEW v AS SELECT password FROM users; CREATE PROCEDURE p AS SELECT password FROM users",
+        "summary": "CREATE INDEX idx_pw; CREATE VIEW v SELECT users; CREATE PROCEDURE p SELECT users",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "PASSWORD is kept (D23): INDEX, VIEW and PROCEDURE are safe object kinds (TABLE: credentials.password_column_ddl)."
+    },
+    {
+      "id": "credentials.password_kept.modifiers.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "CREATE OR REPLACE TEMP VIEW v AS SELECT password FROM users; CREATE UNLOGGED TABLE t (password TEXT); CREATE GLOBAL TEMPORARY TABLE g (password TEXT); CREATE LOCAL TEMPORARY TABLE l (password TEXT); CREATE UNIQUE INDEX i ON users (password DESC); CREATE MATERIALIZED VIEW m AS SELECT password FROM users",
+      "expected": {
+        "text": "CREATE OR REPLACE TEMP VIEW v AS SELECT password FROM users; CREATE UNLOGGED TABLE t (password TEXT); CREATE GLOBAL TEMPORARY TABLE g (password TEXT); CREATE LOCAL TEMPORARY TABLE l (password TEXT); CREATE UNIQUE INDEX i ON users (password DESC); CREATE MATERIALIZED VIEW m AS SELECT password FROM users",
+        "summary": "CREATE VIEW v SELECT users; CREATE TABLE t; CREATE TABLE g; CREATE TABLE l; CREATE INDEX i; CREATE VIEW m SELECT users",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "PASSWORD is kept (D23): OR REPLACE, TEMP, TEMPORARY, GLOBAL, LOCAL, UNLOGGED, UNIQUE and MATERIALIZED are skipped to find the object kind. The summary leaves the modifiers out."
+    },
+    {
+      "id": "credentials.password_kept.modifiers.sqlserver",
+      "requirements": ["R6"],
+      "dialect": "sqlserver",
+      "input": "CREATE CLUSTERED INDEX i ON users (password DESC); CREATE NONCLUSTERED INDEX j ON users (password ASC)",
+      "expected": {
+        "text": "CREATE CLUSTERED INDEX i ON users (password DESC); CREATE NONCLUSTERED INDEX j ON users (password ASC)",
+        "summary": "CREATE INDEX i; CREATE INDEX j",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "PASSWORD is kept (D23): CLUSTERED and NONCLUSTERED are skipped to find the object kind. The summary leaves the modifiers out."
     },
     {
       "id": "credentials.connect_not_allowlisted",
@@ -1258,20 +1542,6 @@
       "note": ""
     },
     {
-      "id": "credentials.password_object_grant",
-      "requirements": ["R2", "R6"],
-      "dialect": "CONSERVATIVE",
-      "input": "GRANT SELECT ON password TO Zq9xK7bw",
-      "expected": {
-        "text": "GRANT SELECT ON password TO ?",
-        "summary": "GRANT",
-        "status": "COMPLETE"
-      },
-      "secrets": ["Zq9xK7bw"],
-      "source": "sentry",
-      "note": ""
-    },
-    {
       "id": "credentials.password_update",
       "requirements": ["R2", "R6"],
       "dialect": "CONSERVATIVE",
@@ -1284,19 +1554,6 @@
       "secrets": ["Zq9xK7bx"],
       "source": "sentry",
       "note": ""
-    },
-    {
-      "id": "credentials.create_role_kept",
-      "requirements": ["R6"],
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE ROLE reporting",
-      "expected": {
-        "text": "CREATE ROLE reporting",
-        "summary": "CREATE ROLE",
-        "status": "COMPLETE"
-      },
-      "source": "sentry",
-      "note": "Role names are not principal names and are kept in the text."
     },
     {
       "id": "shape.select.lowercase",
@@ -1790,6 +2047,206 @@
       "note": ""
     },
     {
+      "id": "allowlist.fetch.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "FETCH FORWARD 10 FROM order_cursor",
+      "expected": {
+        "text": "FETCH FORWARD ? FROM order_cursor",
+        "summary": "FETCH",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.close.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "CLOSE order_cursor",
+      "expected": {
+        "text": "CLOSE order_cursor",
+        "summary": "CLOSE",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.prepare.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "PREPARE find_user (int) AS SELECT * FROM users WHERE id = $1 AND tenant = 'Zq9xK7ma'",
+      "expected": {
+        "text": "PREPARE find_user (int) AS SELECT * FROM users WHERE id = $1 AND tenant = ?",
+        "summary": "PREPARE",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7ma"],
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only. The prepared statement is sanitized in the text but adds nothing to the summary."
+    },
+    {
+      "id": "allowlist.deallocate.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "DEALLOCATE PREPARE find_user",
+      "expected": {
+        "text": "DEALLOCATE PREPARE find_user",
+        "summary": "DEALLOCATE",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.copy.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "COPY users (id, email) FROM '/srv/import/Zq9xK7mb.csv' WITH (FORMAT csv)",
+      "expected": {
+        "text": "COPY users (id, email) FROM ? WITH (FORMAT csv)",
+        "summary": "COPY users",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7mb"],
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary keeps the table-like target, as for TRUNCATE and LOCK."
+    },
+    {
+      "id": "allowlist.copy_query.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "COPY (SELECT * FROM users WHERE tenant = 'Zq9xK7mc') TO STDOUT",
+      "expected": {
+        "text": "COPY (SELECT * FROM users WHERE tenant = ?) TO STDOUT",
+        "summary": "COPY SELECT users",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7mc"],
+      "source": "sentry",
+      "note": "Allowlisted by D26. A query instead of a table adds its own SELECT, as subqueries do."
+    },
+    {
+      "id": "allowlist.refresh.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "REFRESH MATERIALIZED VIEW order_totals",
+      "expected": {
+        "text": "REFRESH MATERIALIZED VIEW order_totals",
+        "summary": "REFRESH MATERIALIZED VIEW order_totals",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary keeps the table-like target, as for TRUNCATE and LOCK."
+    },
+    {
+      "id": "allowlist.optimize.mysql",
+      "requirements": ["R6"],
+      "dialect": "mysql",
+      "input": "OPTIMIZE TABLE orders",
+      "expected": {
+        "text": "OPTIMIZE TABLE orders",
+        "summary": "OPTIMIZE TABLE orders",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary keeps the table-like target, as for TRUNCATE and LOCK."
+    },
+    {
+      "id": "allowlist.checkpoint.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "CHECKPOINT",
+      "expected": {
+        "text": "CHECKPOINT",
+        "summary": "CHECKPOINT",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.kill.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "KILL QUERY 48213",
+      "expected": {
+        "text": "KILL QUERY ?",
+        "summary": "KILL",
+        "status": "COMPLETE"
+      },
+      "secrets": ["48213"],
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.flush.mysql",
+      "requirements": ["R6"],
+      "dialect": "mysql",
+      "input": "FLUSH PRIVILEGES",
+      "expected": {
+        "text": "FLUSH PRIVILEGES",
+        "summary": "FLUSH",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.reset.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "RESET search_path",
+      "expected": {
+        "text": "RESET search_path",
+        "summary": "RESET",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.discard.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "DISCARD ALL",
+      "expected": {
+        "text": "DISCARD ALL",
+        "summary": "DISCARD",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.abort.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "ABORT",
+      "expected": {
+        "text": "ABORT",
+        "summary": "ABORT",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
+      "id": "allowlist.xa.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "XA START 'Zq9xK7md'",
+      "expected": {
+        "text": "XA START ?",
+        "summary": "XA",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7md"],
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary is the operation only."
+    },
+    {
       "id": "dialect.double_quotes.postgresql",
       "requirements": ["R6", "R8"],
       "dialect": "postgresql",
@@ -1883,6 +2340,20 @@
       "secrets": ["Zq9xK7dd"],
       "source": "sentry",
       "note": "A double-quoted literal follows backslashEscapes too."
+    },
+    {
+      "id": "dialect.double_quotes.backslash_same_boundary.mysql",
+      "requirements": ["R2", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT * FROM t WHERE a LIKE \"100\\%\" AND b = \"C:\\\\\" AND c = \"say \\'hi\\'\" AND d = 'Zq9xK7ld'",
+      "expected": {
+        "text": "SELECT * FROM t WHERE a LIKE ? AND b = ? AND c = ? AND d = ?",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7ld"],
+      "source": "sentry",
+      "note": "A double-quoted literal follows backslashEscapes too: no \" is directly preceded by an odd run of backslashes, so the analyzer continues (D25)."
     },
     {
       "id": "dialect.brackets.sqlserver",
@@ -2698,13 +3169,13 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT 123-45-6789",
       "expected": {
-        "text": "SELECT ???",
+        "text": "SELECT ?-?-?",
         "summary": "SELECT",
         "status": "COMPLETE"
       },
       "secrets": ["6789"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[24]",
-      "note": "Signed numbers convention: each sign directly before a digit starts a new number. OTel Java gives SELECT ?."
+      "note": "Signed numbers (D18): a sign after an operand is a binary operator and is kept. OTel Java gives SELECT ?."
     },
     {
       "id": "otel_java.sanitize_sql.025",
@@ -2762,16 +3233,16 @@
     },
     {
       "id": "otel_java.sanitize_sql.029",
-      "requirements": ["R2", "R4", "R8"],
+      "requirements": ["R2", "R8"],
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM TABLE WHERE FIELD = '\\\\'",
       "expected": {
         "text": "SELECT * FROM TABLE WHERE FIELD = ?",
         "summary": "SELECT TABLE",
-        "status": "STOPPED"
+        "status": "COMPLETE"
       },
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[29]",
-      "note": "backslashEscapes is UNKNOWN: the analyzer stops at the backslash and the ? replaces the literal in place, which gives upstream's text."
+      "note": "backslashEscapes is UNKNOWN, but the run of two backslashes before the quote is even, so both readings end the literal there and the analyzer continues (D25)."
     },
     {
       "id": "otel_java.sanitize_sql.030",
@@ -4443,13 +4914,13 @@
       "dialect": "CONSERVATIVE",
       "input": "GRANT SELECT ON users TO some_user",
       "expected": {
-        "text": "GRANT SELECT ON users TO ?",
+        "text": "GRANT ?",
         "summary": "GRANT",
         "status": "COMPLETE"
       },
-      "secrets": ["some_"],
+      "secrets": ["some_user"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[123]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name). some_user is not declared as a secret: its fragment 'user' also occurs in the kept text. Declared instead: some_."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.simplify_sql.124",
@@ -4457,13 +4928,13 @@
       "dialect": "CONSERVATIVE",
       "input": "GRANT ALL PRIVILEGES ON database.* TO 'user'@'host'",
       "expected": {
-        "text": "GRANT ALL PRIVILEGES ON database.* TO ?@?",
+        "text": "GRANT ?",
         "summary": "GRANT",
         "status": "COMPLETE"
       },
       "secrets": ["user", "host"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[124]",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.simplify_sql.125",
@@ -4471,13 +4942,13 @@
       "dialect": "CONSERVATIVE",
       "input": "REVOKE SELECT ON users FROM some_user",
       "expected": {
-        "text": "REVOKE SELECT ON users FROM ?",
+        "text": "REVOKE ?",
         "summary": "REVOKE",
         "status": "COMPLETE"
       },
-      "secrets": ["some_"],
+      "secrets": ["some_user"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[125]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name). some_user is not declared as a secret: its fragment 'user' also occurs in the kept text. Declared instead: some_."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.simplify_sql.126",
@@ -4485,13 +4956,13 @@
       "dialect": "CONSERVATIVE",
       "input": "REVOKE ALL PRIVILEGES ON database.* FROM 'user'@'host'",
       "expected": {
-        "text": "REVOKE ALL PRIVILEGES ON database.* FROM ?@?",
+        "text": "REVOKE ?",
         "summary": "REVOKE",
         "status": "COMPLETE"
       },
       "secrets": ["user", "host"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[126]",
-      "note": ""
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.simplify_sql.127",
@@ -4798,13 +5269,13 @@
       "dialect": "CONSERVATIVE",
       "input": "CREATE USER new_user PASSWORD Password1",
       "expected": {
-        "text": "CREATE USER ? PASSWORD ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["new_user", "Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[1]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_sensitive.002",
@@ -4812,13 +5283,13 @@
       "dialect": "CONSERVATIVE",
       "input": "ALTER USER user PASSWORD Password1",
       "expected": {
-        "text": "ALTER USER ? PASSWORD ?",
+        "text": "ALTER USER ?",
         "summary": "ALTER USER",
         "status": "COMPLETE"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[2]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_sensitive.003",
@@ -4861,31 +5332,31 @@
     },
     {
       "id": "otel_java.sanitize_sensitive.006",
-      "requirements": ["R2"],
+      "requirements": ["R2", "R4"],
       "dialect": "CONSERVATIVE",
       "input": "CREATE DATABASE db SYSTEM USER PASSWORD Password1",
       "expected": {
         "text": "CREATE DATABASE db SYSTEM USER PASSWORD ?",
         "summary": "CREATE DATABASE db",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[6]",
-      "note": ""
+      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23)."
     },
     {
       "id": "otel_java.sanitize_sensitive.007",
-      "requirements": ["R2"],
+      "requirements": ["R2", "R4"],
       "dialect": "CONSERVATIVE",
       "input": "ALTER SYSTEM SET SECURE STORE BACKUP PASSWORD \"Password1\"",
       "expected": {
         "text": "ALTER SYSTEM SET SECURE STORE BACKUP PASSWORD ?",
         "summary": "ALTER SYSTEM",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[7]",
-      "note": ""
+      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23)."
     },
     {
       "id": "otel_java.sanitize_sensitive.008",
@@ -4932,13 +5403,13 @@
       "dialect": "CONSERVATIVE",
       "input": "GRANT SELECT ON users TO admin /* PASSWORD Password1 */",
       "expected": {
-        "text": "GRANT SELECT ON users TO ?",
+        "text": "GRANT ?",
         "summary": "GRANT",
         "status": "COMPLETE"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[11]",
-      "note": "Comments are stripped (OTel Java keeps them). Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "Comments are stripped (OTel Java keeps them). DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_sensitive.012",
@@ -4946,13 +5417,13 @@
       "dialect": "CONSERVATIVE",
       "input": "CREATE USER new_user IDENTIFIED BY Password1",
       "expected": {
-        "text": "CREATE USER ? IDENTIFIED BY ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["new_user", "Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[12]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_sensitive.013",
@@ -4960,13 +5431,13 @@
       "dialect": "oracle",
       "input": "ALTER USER user IDENTIFIED BY Password1 REPLACE Password2",
       "expected": {
-        "text": "ALTER USER ? IDENTIFIED BY ? REPLACE ?",
+        "text": "ALTER USER ?",
         "summary": "ALTER USER",
         "status": "COMPLETE"
       },
       "secrets": ["Password1", "Password2"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[13]",
-      "note": "Oracle syntax: REPLACE introduces the old password, so oracle is the dialect. OTel Java drops everything after IDENTIFIED BY. Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "Oracle syntax: REPLACE introduces the old password, so oracle is the dialect. DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_sensitive.014",
@@ -4974,13 +5445,13 @@
       "dialect": "CONSERVATIVE",
       "input": "GRANT ALL PRIVILEGES ON database.* TO user IDENTIFIED BY Password1",
       "expected": {
-        "text": "GRANT ALL PRIVILEGES ON database.* TO ? IDENTIFIED BY ?",
+        "text": "GRANT ?",
         "summary": "GRANT",
         "status": "COMPLETE"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[14]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_sensitive.015",
@@ -4988,12 +5459,12 @@
       "dialect": "CONSERVATIVE",
       "input": "GRANT SELECT ON users TO admin; SELECT password FROM users",
       "expected": {
-        "text": "GRANT SELECT ON users TO ?; SELECT password FROM users",
+        "text": "GRANT ?; SELECT password FROM users",
         "summary": "GRANT; SELECT users",
         "status": "COMPLETE"
       },
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[15]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges). The reduction ends at the statement end."
     },
     {
       "id": "otel_java.sanitize_sensitive.016",
@@ -5106,12 +5577,12 @@
       "dialect": "CONSERVATIVE",
       "input": "GRANT SELECT ON password TO admin",
       "expected": {
-        "text": "GRANT SELECT ON password TO ?",
+        "text": "GRANT ?",
         "summary": "GRANT",
         "status": "COMPLETE"
       },
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeGrantObjectNamedPassword[1]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_grant_identified_by_after_previous_statement.001",
@@ -5119,13 +5590,13 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT 1; GRANT ALL PRIVILEGES ON database.* TO user IDENTIFIED BY Password1",
       "expected": {
-        "text": "SELECT ?; GRANT ALL PRIVILEGES ON database.* TO ? IDENTIFIED BY ?",
+        "text": "SELECT ?; GRANT ?",
         "summary": "SELECT; GRANT",
         "status": "COMPLETE"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeGrantIdentifiedByAfterPreviousStatement[1]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.sanitize_ddl_object_named_password.001",
@@ -5133,13 +5604,13 @@
       "dialect": "CONSERVATIVE",
       "input": "CREATE USER password PASSWORD Password1",
       "expected": {
-        "text": "CREATE USER ? PASSWORD ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeDdlObjectNamedPassword[1]",
-      "note": "Principal names convention: the user name is replaced even when it is password, and the summary is the operation only (OTel Java keeps the name)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.query_summary_is_truncated.001",
@@ -5423,12 +5894,12 @@
       "dialect": "CONSERVATIVE",
       "input": "grant select on users to admin",
       "expected": {
-        "text": "grant select on users to ?",
+        "text": "grant ?",
         "summary": "grant",
         "status": "COMPLETE"
       },
       "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[21]",
-      "note": "Upstream asserts only the summary. Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "Upstream asserts only the summary. DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.query_summary_preserves_operation_case.022",
@@ -5436,12 +5907,12 @@
       "dialect": "CONSERVATIVE",
       "input": "revoke select on users from admin",
       "expected": {
-        "text": "revoke select on users from ?",
+        "text": "revoke ?",
         "summary": "revoke",
         "status": "COMPLETE"
       },
       "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[22]",
-      "note": "Upstream asserts only the summary. Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name)."
+      "note": "Upstream asserts only the summary. DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
     },
     {
       "id": "otel_java.query_summary_preserves_operation_case.023",
@@ -7576,12 +8047,12 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT 99+100",
       "expected": {
-        "text": "SELECT ??",
+        "text": "SELECT ?+?",
         "summary": "SELECT",
         "status": "COMPLETE"
       },
       "source": "otel-dotnet:SqlProcessorTestCases.json#arithmetic_on_numeric_literals",
-      "note": ""
+      "note": "Signed numbers (D18): a sign after an operand is a binary operator and is kept. OTel .NET gives SELECT ??."
     },
     {
       "id": "otel_dotnet.json.hex_literal",
@@ -7672,13 +8143,13 @@
       "dialect": "CONSERVATIVE",
       "input": "INSERT INTO X VALUES(1, 23456, 123.456, 99+100)",
       "expected": {
-        "text": "INSERT INTO X VALUES(?, ?, ?, ??)",
+        "text": "INSERT INTO X VALUES(?, ?, ?, ?+?)",
         "summary": "INSERT X",
         "status": "COMPLETE"
       },
       "secrets": ["23456"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#insert_into",
-      "note": ""
+      "note": "Signed numbers (D18): a sign after an operand is a binary operator and is kept. OTel .NET gives ??."
     },
     {
       "id": "otel_dotnet.json.uuid",
@@ -9099,13 +9570,13 @@
       "dialect": "sqlserver",
       "input": "CREATE LOGIN [CONTOSO\\alice.smith] FROM WINDOWS",
       "expected": {
-        "text": "CREATE LOGIN [?] FROM WINDOWS",
+        "text": "CREATE LOGIN ?",
         "summary": "CREATE LOGIN",
         "status": "COMPLETE"
       },
       "secrets": ["CONTOSO", "alice.smith"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[1]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.02",
@@ -9113,13 +9584,13 @@
       "dialect": "sqlserver",
       "input": "CREATE USER [Alice Smith] WITH PASSWORD = 'Pa55w0rd!'",
       "expected": {
-        "text": "CREATE USER [?] WITH PASSWORD = ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["Alice Smith", "Pa55w0rd!"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[2]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.03",
@@ -9127,13 +9598,13 @@
       "dialect": "sqlserver",
       "input": "CREATE USER [svc-payments] WITH PASSWORD = 'Pa55w0rd!'",
       "expected": {
-        "text": "CREATE USER [?] WITH PASSWORD = ?",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["svc-payments", "Pa55w0rd!"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[3]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.04",
@@ -9141,13 +9612,13 @@
       "dialect": "sqlserver",
       "input": "CREATE USER [alice@contoso.com] FROM EXTERNAL PROVIDER",
       "expected": {
-        "text": "CREATE USER [?] FROM EXTERNAL PROVIDER",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["alice@contoso.com"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[4]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.05",
@@ -9155,13 +9626,13 @@
       "dialect": "sqlserver",
       "input": "CREATE USER [alice]]smith] WITHOUT LOGIN",
       "expected": {
-        "text": "CREATE USER [?] WITHOUT LOGIN",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["alice]]smith"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[5]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.06",
@@ -9169,13 +9640,13 @@
       "dialect": "sqlserver",
       "input": "DROP USER IF EXISTS [Alice Smith]",
       "expected": {
-        "text": "DROP USER IF EXISTS [?]",
+        "text": "DROP USER ?",
         "summary": "DROP USER",
         "status": "COMPLETE"
       },
       "secrets": ["Alice Smith"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[6]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.07",
@@ -9183,13 +9654,13 @@
       "dialect": "sqlserver",
       "input": "ALTER LOGIN \"Alice Smith\" DISABLE",
       "expected": {
-        "text": "ALTER LOGIN \"?\" DISABLE",
+        "text": "ALTER LOGIN ?",
         "summary": "ALTER LOGIN",
         "status": "COMPLETE"
       },
       "secrets": ["Alice Smith"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[7]",
-      "note": "Principal names convention: a quoted name keeps its quotes regardless of doubleQuotedIdentifiers (UNKNOWN for sqlserver)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.08",
@@ -9197,13 +9668,13 @@
       "dialect": "sqlserver",
       "input": "CREATE LOGIN alice WITH PASSWORD = 'Pa55w0rd!'",
       "expected": {
-        "text": "CREATE LOGIN ? WITH PASSWORD = ?",
+        "text": "CREATE LOGIN ?",
         "summary": "CREATE LOGIN",
         "status": "COMPLETE"
       },
       "secrets": ["Pa55w0rd!"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[8]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_or_user_name.09",
@@ -9211,12 +9682,12 @@
       "dialect": "sqlserver",
       "input": "CREATE USER \"\" X",
       "expected": {
-        "text": "CREATE USER \"?\" X",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[9]",
-      "note": "Principal names convention: an empty quoted name also becomes \"?\" (OTel .NET keeps \"\")."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest)."
     },
     {
       "id": "otel_dotnet.login_escaped_brackets_max_length.01",
@@ -9224,13 +9695,13 @@
       "dialect": "sqlserver",
       "input": "CREATE USER [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]]] WITHOUT LOGIN",
       "expected": {
-        "text": "CREATE USER [?] WITHOUT LOGIN",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["aaaaaaaaaa]]"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[1]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest). The reduced part is still lexed to find the statement end, escaped brackets included."
     },
     {
       "id": "otel_dotnet.login_escaped_brackets_max_length.02",
@@ -9238,13 +9709,13 @@
       "dialect": "sqlserver",
       "input": "CREATE USER [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] WITHOUT LOGIN",
       "expected": {
-        "text": "CREATE USER [?] WITHOUT LOGIN",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["]]]]]]]]]]]]"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[2]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest). The reduced part is still lexed to find the statement end, escaped brackets included."
     },
     {
       "id": "otel_dotnet.login_escaped_brackets_max_length.03",
@@ -9252,13 +9723,13 @@
       "dialect": "sqlserver",
       "input": "CREATE USER []]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] WITHOUT LOGIN",
       "expected": {
-        "text": "CREATE USER [?] WITHOUT LOGIN",
+        "text": "CREATE USER ?",
         "summary": "CREATE USER",
         "status": "COMPLETE"
       },
       "secrets": ["]]]]]]]]]]]]"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[3]",
-      "note": "Principal names convention."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel .NET redacts the name and the literals and keeps the rest). The reduced part is still lexed to find the statement end, escaped brackets included."
     },
     {
       "id": "otel_dotnet.keyword_first_character.01",
