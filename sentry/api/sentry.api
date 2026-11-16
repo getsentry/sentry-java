@@ -503,6 +503,9 @@ public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ILogger;)V
 	public fun getLogger ()Lio/sentry/ILogger;
 	public fun isEnabled (Lio/sentry/SentryLevel;)Z
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
@@ -944,6 +947,9 @@ public abstract interface class io/sentry/IHub : io/sentry/IScopes {
 
 public abstract interface class io/sentry/ILogger {
 	public abstract fun isEnabled (Lio/sentry/SentryLevel;)Z
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
@@ -982,7 +988,9 @@ public abstract interface class io/sentry/IReplayApi {
 	public abstract fun enableDebugMaskingOverlay ()V
 	public abstract fun flush ()V
 	public abstract fun pause ()V
+	public abstract fun pauseTouchTracking ()V
 	public abstract fun resume ()V
+	public abstract fun resumeTouchTracking ()V
 	public abstract fun start ()V
 	public abstract fun startBuffering ()V
 	public abstract fun stop ()V
@@ -1804,6 +1812,9 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public static fun getInstance ()Lio/sentry/NoOpLogger;
 	public fun isEnabled (Lio/sentry/SentryLevel;)Z
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
@@ -1833,9 +1844,11 @@ public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public fun onAppForegrounded (Z)V
 	public fun onAppSessionEnded ()V
 	public fun pause ()V
+	public fun pauseTouchTracking ()V
 	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
+	public fun resumeTouchTracking ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
 	public fun startBuffering ()V

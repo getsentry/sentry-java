@@ -144,7 +144,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       } else {
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, "Scroll target found: " + target.getIdentifier());
+            .log(SentryLevel.DEBUG, "Scroll target found: %s", target.getIdentifier());
       }
 
       scrollState.setTarget(target);
@@ -226,9 +226,8 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "The view with id: "
-                    + viewIdentifier
-                    + " already has an ongoing transaction assigned. Rescheduling finish");
+                "The view with id: %s already has an ongoing transaction assigned. Rescheduling finish",
+                viewIdentifier);
 
         final Long idleTimeout = options.getIdleTimeout();
         if (idleTimeout != null) {
@@ -351,7 +350,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (activity == null) {
       options
           .getLogger()
-          .log(SentryLevel.DEBUG, "Activity is null in " + caller + ". No breadcrumb captured.");
+          .log(SentryLevel.DEBUG, "Activity is null in %s. No breadcrumb captured.", caller);
       return null;
     }
 
@@ -359,7 +358,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (window == null) {
       options
           .getLogger()
-          .log(SentryLevel.DEBUG, "Window is null in " + caller + ". No breadcrumb captured.");
+          .log(SentryLevel.DEBUG, "Window is null in %s. No breadcrumb captured.", caller);
       return null;
     }
 
@@ -367,7 +366,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     if (decorView == null) {
       options
           .getLogger()
-          .log(SentryLevel.DEBUG, "DecorView is null in " + caller + ". No breadcrumb captured.");
+          .log(SentryLevel.DEBUG, "DecorView is null in %s. No breadcrumb captured.", caller);
       return null;
     }
     return decorView;

@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @RestController
+@SuppressWarnings("removal")
 public class TodoController {
   private final RestTemplate restTemplate;
   private final WebClient webClient;

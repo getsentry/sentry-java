@@ -10,7 +10,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: getsentry/github-workflows/validate-pr@959162c159b866489d3fabe93327f48f9b8cb7ee # v3
+      - uses: getsentry/github-workflows/validate-pr@36529d71129a14967bea1fb81bcaf2a5943cf877 # v3
         with:
           app-id: ${{ vars.SDK_MAINTAINER_BOT_APP_ID }}
           private-key: ${{ secrets.SDK_MAINTAINER_BOT_PRIVATE_KEY }}

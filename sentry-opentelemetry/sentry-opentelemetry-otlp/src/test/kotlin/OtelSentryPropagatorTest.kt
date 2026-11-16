@@ -8,6 +8,8 @@ import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.context.propagation.TextMapSetter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.export.SpanExporter
 import io.sentry.Baggage
 import io.sentry.Sentry
 import kotlin.test.AfterTest
@@ -180,7 +182,10 @@ class OpenTelemetryOtlpPropagatorTest {
     }
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier = mutableMapOf<String, String>()
-    val tracerProvider = SdkTracerProvider.builder().build()
+    val tracerProvider =
+      SdkTracerProvider.builder()
+        .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter.composite()))
+        .build()
     val otelSpan =
       tracerProvider
         .get("test")
@@ -220,7 +225,10 @@ class OpenTelemetryOtlpPropagatorTest {
     }
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier = mutableMapOf<String, String>()
-    val tracerProvider = SdkTracerProvider.builder().build()
+    val tracerProvider =
+      SdkTracerProvider.builder()
+        .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter.composite()))
+        .build()
     val otelSpan =
       tracerProvider
         .get("test")

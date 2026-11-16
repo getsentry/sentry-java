@@ -31,8 +31,8 @@ dependencies {
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
   implementation("io.sentry:sentry-graphql:$sentryVersion")
-  implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))
-  implementation("com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure:4.9.2")
+  implementation(platform(libs.netflix.dgs.platform))
+  implementation(libs.netflix.dgs.subscriptions.websockets.autoconfigure)
   implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
   testImplementation(libs.springboot.starter.test) {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

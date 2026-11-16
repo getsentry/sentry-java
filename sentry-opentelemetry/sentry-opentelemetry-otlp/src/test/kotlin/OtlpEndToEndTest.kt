@@ -3,6 +3,8 @@ package io.sentry.opentelemetry.otlp
 import com.google.common.truth.Truth.assertThat
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.export.SpanExporter
 import io.sentry.Sentry
 import io.sentry.test.MockSentryServer
 import io.sentry.test.event
@@ -20,7 +22,13 @@ import kotlin.test.Test
 class OtlpEndToEndTest {
   private val server = MockSentryServer()
   private val openTelemetry =
-    OpenTelemetrySdk.builder().setTracerProvider(SdkTracerProvider.builder().build()).build()
+    OpenTelemetrySdk.builder()
+      .setTracerProvider(
+        SdkTracerProvider.builder()
+          .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter.composite()))
+          .build()
+      )
+      .build()
 
   @AfterTest
   fun teardown() {

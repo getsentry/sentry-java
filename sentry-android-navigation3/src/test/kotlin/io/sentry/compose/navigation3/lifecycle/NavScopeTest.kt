@@ -13,7 +13,6 @@ import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.protocol.App
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -74,29 +73,6 @@ class NavScopeTest {
 
     fixture.acquireLease()
     assertThat(fixture.scope.screen).isEqualTo("Profile")
-  }
-
-  @Test
-  fun `getApp() - returns a copy of the scope's app context`() {
-    val fixture = Fixture.create()
-    val navScopes = fixture.navScopes
-    val hostApp = App().apply { appName = "Host" }
-    fixture.scope.contexts.setApp(hostApp)
-
-    val app = navScopes.withNavScope { it.app }
-
-    assertThat(app?.appName).isEqualTo("Host")
-    assertThat(app).isNotSameInstanceAs(hostApp)
-  }
-
-  @Test
-  fun `getApp() - returns null when the scope has no app context`() {
-    val fixture = Fixture.create()
-    val navScopes = fixture.navScopes
-
-    val app = navScopes.withNavScope { it.app }
-
-    assertThat(app).isNull()
   }
 
   @Test
@@ -163,9 +139,8 @@ class NavScopeTest {
     val fixture = Fixture.create(ownsLease = true)
     val navScopes = fixture.navScopes
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNotNull()
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
   }
 
@@ -176,9 +151,8 @@ class NavScopeTest {
     val hostTransaction = mock<ITransaction>()
     fixture.scope.transaction = hostTransaction
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNull()
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
   }
@@ -190,9 +164,8 @@ class NavScopeTest {
     fixture.scope.transaction =
       mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNotNull()
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
   }
 
@@ -203,9 +176,8 @@ class NavScopeTest {
     val hostTransaction = mock<ITransaction>()
     fixture.scope.transaction = hostTransaction
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNotNull()
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
   }
@@ -229,9 +201,8 @@ class NavScopeTest {
     val navScopes = fixture.navScopes
     val otherTransaction = fixture.startAnotherOwnersNavTransaction()
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNotNull()
     assertThat(fixture.startedTransactions).containsExactly(otherTransaction)
     assertThat(fixture.scope.transaction).isSameInstanceAs(otherTransaction)
   }
@@ -243,9 +214,8 @@ class NavScopeTest {
     val finished = mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
     fixture.scope.transaction = finished
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNotNull()
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isSameInstanceAs(finished)
   }
@@ -257,9 +227,8 @@ class NavScopeTest {
     navScopes.withNavScope { it.startNavTransaction("/Profile") }
     val previous = fixture.startedTransactions.single()
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    navScopes.withNavScope { it.startNavTransaction("/Settings") }
 
-    assertThat(navTransaction).isNull()
     verify(previous, never()).finish(any())
     assertThat(fixture.startedTransactions).containsExactly(previous)
     assertThat(fixture.scope.transaction).isSameInstanceAs(previous)
@@ -272,9 +241,8 @@ class NavScopeTest {
     navScopes.withNavScope { it.startNavTransaction("/Profile") }
     navScopes.withNavScope { it.finishNavTransaction() }
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    navScopes.withNavScope { it.startNavTransaction("/Settings") }
 
-    assertThat(navTransaction).isNotNull()
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.last())
   }
 
@@ -282,13 +250,11 @@ class NavScopeTest {
   fun `startNavTransaction() - replaces the previous deferred transaction without the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes
-    val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    navScopes.withNavScope { it.startNavTransaction("/Settings") }
     fixture.acquireLease()
 
-    assertThat(navTransaction).isNotNull()
-    assertThat(previous.transaction).isNull()
     assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Settings")
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
   }
@@ -303,9 +269,8 @@ class NavScopeTest {
     fixture.scope.transaction = hostTransaction
     navScopes.withNavScope { it.finishNavTransaction() }
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    navScopes.withNavScope { it.startNavTransaction("/Settings") }
 
-    assertThat(navTransaction).isNull()
     verify(previous).finish(SpanStatus.OK)
     assertThat(fixture.startedTransactions).containsExactly(previous)
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
@@ -315,15 +280,13 @@ class NavScopeTest {
   fun `startNavTransaction() - replaces the previous deferred transaction while a host transaction is bound`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes
-    val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
     fixture.scope.transaction = mock<ITransaction>()
 
-    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    navScopes.withNavScope { it.startNavTransaction("/Settings") }
     fixture.scope.clearTransaction()
     fixture.acquireLease()
 
-    assertThat(navTransaction).isNotNull()
-    assertThat(previous.transaction).isNull()
     assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Settings")
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
   }
@@ -414,8 +377,9 @@ class NavScopeTest {
     return results.single()
   }
 
-  private fun INavScope.startNavTransaction(name: String): INavTransaction? =
-    startNavTransaction(TransactionContext(name, "navigation"), TransactionOptions())
+  private fun INavScope.startNavTransaction(name: String) {
+    startNavTransaction(navTransactionRequest(name))
+  }
 
   /** Thrown by a scope observer, to stand in for one the host app registered. */
   private class ThrowingScopeObserverException : RuntimeException()
@@ -470,14 +434,16 @@ class NavScopeTest {
       val other = resumedNavScopes()
       other.onBackStackUpdate()
       other.configureScope {
-        it.startNavTransaction(TransactionContext("/Other", "navigation"), TransactionOptions())
+        it.startNavTransaction(navTransactionRequest("/Other"))
       }
       return startedTransactions.single { it.name == "/Other" }
     }
 
     private fun resumedNavScopes(): NavScopes =
       NavScopes(scopes, coordinator).also {
-        it.attach(TestLifecycleOwner().also(lifecycleOwners::add).lifecycle)
+        it.attach(
+          NavRootInfo(TestLifecycleOwner().also(lifecycleOwners::add).lifecycle, activity = null)
+        )
       }
 
     companion object {
@@ -490,3 +456,9 @@ class NavScopeTest {
     }
   }
 }
+
+private fun navTransactionRequest(name: String): NavTransactionRequest =
+  NavTransactionRequest(
+    name = name,
+    newOptions = ::TransactionOptions,
+  )

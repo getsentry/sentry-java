@@ -114,7 +114,7 @@ public class ReplayIntegration(
   }
 
   private var lastKnownConnectionStatus: ConnectionStatus = ConnectionStatus.UNKNOWN
-  private var debugMaskingEnabled: Boolean = false
+  @Volatile private var debugMaskingEnabled: Boolean = false
   private lateinit var options: SentryOptions
   private var scopes: IScopes? = null
   private var recorder: Recorder? = null
@@ -135,6 +135,11 @@ public class ReplayIntegration(
 
   internal val isEnabled = AtomicBoolean(false)
   internal var isManualPause = false
+  // Not reset by start()/stop(), only resumeTouchTracking() clears it, so touches cannot leak
+  // by accident. Set directly instead of enqueueOnMainThread like lifecycle commands: it does not
+  // touch ReplayState, so ordering does not matter, and a queued set could let already-pending
+  // touch events through.
+  @Volatile private var isTouchTrackingPaused = false
   public val replayCacheDir: File?
     get() = state.get().captureStrategy?.replayCacheDir
 
@@ -397,6 +402,14 @@ public class ReplayIntegration(
     }
   }
 
+  override fun pauseTouchTracking() {
+    isTouchTrackingPaused = true
+  }
+
+  override fun resumeTouchTracking() {
+    isTouchTrackingPaused = false
+  }
+
   override fun enableDebugMaskingOverlay() {
     debugMaskingEnabled = true
   }
@@ -606,7 +619,7 @@ public class ReplayIntegration(
 
   override fun onTouchEvent(event: MotionEvent) {
     val current = state.get()
-    if (!isEnabled.get() || !current.isTouchRecordingAllowed) {
+    if (!isEnabled.get() || isTouchTrackingPaused || !current.isTouchRecordingAllowed) {
       return
     }
     current.captureStrategy?.onTouchEvent(event)

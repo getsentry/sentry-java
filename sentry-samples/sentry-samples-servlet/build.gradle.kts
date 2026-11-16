@@ -16,7 +16,7 @@ java.targetCompatibility = JavaVersion.VERSION_1_8
 
 dependencies {
   implementation("io.sentry:sentry-servlet:$sentryVersion")
-  implementation("javax.servlet:javax.servlet-api:4.0.1")
+  implementation(libs.servlet4.api)
 }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
