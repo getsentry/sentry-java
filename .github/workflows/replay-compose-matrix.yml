@@ -1,0 +1,66 @@
+name: Replay Compose Matrix
+
+# Session Replay calls Compose internals. Runs the replay unit tests against the last five Compose UI
+# minor versions, so a renamed internal fails here instead of silently unmasking Compose content in
+# apps. 1.9 is the oldest version the test composables can run on.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'sentry-android-replay/**'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/replay-compose-matrix.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay-compose-matrix:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compose-ui: [ '1.9.5', '1.10.6', '1.11.4', '1.12.1', '1.13.0-rc01' ]
+
+    name: Replay - Compose UI ${{ matrix.compose-ui }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Java Version
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Run replay unit tests
+        run: ./gradlew :sentry-android-replay:testReleaseUnitTest -PreplayTestComposeUiVersion=${{ matrix.compose-ui }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: test-results-replay-compose-${{ matrix.compose-ui }}
+          path: |
+            sentry-android-replay/build/reports/*
+
+      - name: Test Report
+        uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16
+        if: always()
+        with:
+          name: JUnit Replay Compose UI ${{ matrix.compose-ui }}
+          list-suites: 'failed'
+          list-tests: 'failed'
+          path: |
+            sentry-android-replay/build/test-results/**/*.xml
+          reporter: java-junit
+          output-to: step-summary
+          fail-on-error: false

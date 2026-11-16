@@ -102,6 +102,23 @@ dependencies {
   testImplementation(libs.coil.compose)
 }
 
+// Runs the unit tests against another androidx.compose.ui version than the one they compile
+// against, e.g. -PreplayTestComposeUiVersion=1.13.0-rc01, the same as an app that ships a newer
+// Compose than the SDK was built with. Versions older than the test dependencies (Compose 1.9)
+// don't
+// work, as the test composables need a newer runtime.
+providers.gradleProperty("replayTestComposeUiVersion").orNull?.let { composeUiVersion ->
+  configurations
+    .matching { it.name.endsWith("UnitTestRuntimeClasspath") }
+    .configureEach {
+      resolutionStrategy.eachDependency {
+        if (requested.group == "androidx.compose.ui") {
+          useVersion(composeUiVersion)
+        }
+      }
+    }
+}
+
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
   jvmTarget = JavaVersion.VERSION_1_8.toString()
