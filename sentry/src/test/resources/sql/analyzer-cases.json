@@ -222,12 +222,12 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT a FROM t WHERE b = 99+100 AND c=x-1 AND d = x - 1 AND e>=-5",
       "expected": {
-        "text": "SELECT a FROM t WHERE b = ?+? AND c=x-? AND d = x - ? AND e>=?",
+        "text": "SELECT a FROM t WHERE b = ? AND c=x? AND d = x - ? AND e>=?",
         "summary": "SELECT t",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Signed numbers (D18): a sign is part of the number only when no operand precedes it; after an operand it is a binary operator and is kept."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, and + - . e E after its first digit are absorbed, as in OTel Java. A space between the operator and the digit keeps the operator."
     },
     {
       "id": "literal.number.sign_after_operand",
@@ -235,12 +235,12 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT a-1, a -1, 2-1, 'b'-1, ?-1, :p-1, $1-1, (c)-1, d[1]-1, `e`-1 FROM t",
       "expected": {
-        "text": "SELECT a-?, a -?, ?-?, ?-?, ?-?, :p-?, $1-?, (c)-?, d[?]-?, `e`-? FROM t",
+        "text": "SELECT a?, a ?, ?, ??, ??, :p?, $1?, (c)?, d[?]?, `e`? FROM t",
         "summary": "SELECT t",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Signed numbers (D18): identifier, number, literal, parameter marker, ) and ] are operands, so the sign after them is kept."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, and + - . e E after its first digit are absorbed, as in OTel Java. What precedes the sign does not matter."
     },
     {
       "id": "literal.number.sign_after_keyword.clauses",
@@ -253,7 +253,7 @@
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers ALL, ON, WHERE, AND, OR, NOT, HAVING, BY, LIMIT and OFFSET."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, and + - . e E after its first digit are absorbed, as in OTel Java. After a keyword as well. Covers ALL, ON, WHERE, AND, OR, NOT, HAVING, BY, LIMIT and OFFSET."
     },
     {
       "id": "literal.number.sign_after_keyword.expressions",
@@ -266,7 +266,7 @@
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers DISTINCT, CASE, WHEN, THEN, ELSE, BETWEEN, LIKE, ESCAPE and INTERVAL."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, and + - . e E after its first digit are absorbed, as in OTel Java. After a keyword as well. Covers DISTINCT, CASE, WHEN, THEN, ELSE, BETWEEN, LIKE, ESCAPE and INTERVAL."
     },
     {
       "id": "literal.number.sign_after_keyword.lists",
@@ -279,7 +279,7 @@
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers TOP, IN, ANY, SOME, VALUES and SET."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, and + - . e E after its first digit are absorbed, as in OTel Java. After a keyword as well. Covers TOP, IN, ANY, SOME, VALUES and SET."
     },
     {
       "id": "literal.number.sign_after_keyword.ddl",
@@ -287,12 +287,12 @@
       "dialect": "CONSERVATIVE",
       "input": "CREATE TABLE t (a INT DEFAULT -1); CREATE PROCEDURE p AS RETURN -2; CREATE SEQUENCE s START WITH -3 INCREMENT BY -4 MINVALUE -5",
       "expected": {
-        "text": "CREATE TABLE t (a INT DEFAULT ?); CREATE PROCEDURE p AS RETURN ?; CREATE SEQUENCE s START WITH ? INCREMENT BY ? MINVALUE -?",
+        "text": "CREATE TABLE t (a INT DEFAULT ?); CREATE PROCEDURE p AS RETURN ?; CREATE SEQUENCE s START WITH ? INCREMENT BY ? MINVALUE ?",
         "summary": "CREATE TABLE t; CREATE PROCEDURE p; CREATE SEQUENCE",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Signed numbers (D18): a sign after a keyword of the expression set belongs to the number. Covers DEFAULT, RETURN, WITH and BY. MINVALUE is not in the set, so its sign is kept as an operator."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, and + - . e E after its first digit are absorbed, as in OTel Java. After a keyword as well. Covers DEFAULT, RETURN, WITH, BY and MINVALUE."
     },
     {
       "id": "literal.number.in_identifier",
@@ -713,31 +713,31 @@
     },
     {
       "id": "comment.nested.postgresql",
-      "requirements": ["R3", "R8"],
+      "requirements": ["R3", "R4", "R8"],
       "dialect": "postgresql",
       "input": "SELECT a /* outer /* Zq9xK7af */ still Zq9xK7ag */ FROM t",
       "expected": {
-        "text": "SELECT a FROM t",
-        "summary": "SELECT t",
-        "status": "COMPLETE"
+        "text": "SELECT a ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7af", "Zq9xK7ag"],
       "source": "sentry",
-      "note": ""
+      "note": "D35: a /* inside a block comment stops in every dialect, also where nestedBlockComments is YES, as OTel Java does. The comment is replaced by ?."
     },
     {
       "id": "comment.nested.sqlite",
-      "requirements": ["R3", "R8"],
+      "requirements": ["R3", "R4", "R8"],
       "dialect": "sqlite",
       "input": "SELECT a /* outer /* Zq9xK7ah */ FROM t",
       "expected": {
-        "text": "SELECT a FROM t",
-        "summary": "SELECT t",
-        "status": "COMPLETE"
+        "text": "SELECT a ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7ah"],
       "source": "sentry",
-      "note": "nestedBlockComments is NO: the comment ends at the first */."
+      "note": "D35: a /* inside a block comment stops in every dialect, also where nestedBlockComments is NO. The comment is replaced by ?."
     },
     {
       "id": "comment.nested.mysql",
@@ -918,6 +918,48 @@
       "note": "dashDashCommentNeedsWhitespace is UNKNOWN: stop at --1. The ? replaces the construct in place."
     },
     {
+      "id": "comment.dash_dash.after_number.postgresql",
+      "requirements": ["R3", "R8"],
+      "dialect": "postgresql",
+      "input": "SELECT 1--Zq9xK7wa\nFROM t",
+      "expected": {
+        "text": "SELECT ? FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7wa"],
+      "source": "sentry",
+      "note": "A number never contains --: it starts a comment here. OTel Java's number pattern absorbs it and keeps the comment text."
+    },
+    {
+      "id": "comment.dash_dash.after_number.mysql",
+      "requirements": ["R3", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT 2-- Zq9xK7wb\nFROM t",
+      "expected": {
+        "text": "SELECT ? FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7wb"],
+      "source": "sentry",
+      "note": "A number never contains --: it starts a comment here. OTel Java's number pattern absorbs it and keeps the comment text."
+    },
+    {
+      "id": "comment.dash_dash.after_number.sqlite",
+      "requirements": ["R3", "R8"],
+      "dialect": "sqlite",
+      "input": "SELECT 3.5e--Zq9xK7wc\nFROM t",
+      "expected": {
+        "text": "SELECT ? FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7wc"],
+      "source": "sentry",
+      "note": "A number never contains --: it starts a comment here. OTel Java's number pattern absorbs it and keeps the comment text. Also after an exponent marker."
+    },
+    {
       "id": "comment.double_slash.h2",
       "requirements": ["R3", "R8"],
       "dialect": "h2",
@@ -977,12 +1019,12 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM t WHERE a = ?1 AND b = ?2",
       "expected": {
-        "text": "SELECT * FROM t WHERE a = ?1 AND b = ?2",
+        "text": "SELECT * FROM t WHERE a = ?? AND b = ??",
         "summary": "SELECT t",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": ""
+      "note": "D35: ?NNN follows OTel Java: the index is lexed as a number. It is not data."
     },
     {
       "id": "param.named_colon",
@@ -1388,12 +1430,11 @@
       "input": "CREATE USER Zq9xK7ne WITH PASSWORD 'x; DROP TABLE Zq9xK7nf'; UPDATE t SET a = 'Zq9xK7ng'",
       "expected": {
         "text": "CREATE USER ?; UPDATE t SET a = ?",
-        "summary": "CREATE USER; UPDATE t",
         "status": "COMPLETE"
       },
       "secrets": ["Zq9xK7ne", "Zq9xK7nf", "Zq9xK7ng"],
       "source": "sentry",
-      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The reduced part is still lexed: the ; inside the literal does not end the statement, the one after it does."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The reduced part is still lexed: the ; inside the literal does not end the statement, the one after it does. No summary (D34): multi-statement input with a reduced statement."
     },
     {
       "id": "credentials.unterminated_in_reduced_part.postgresql",
@@ -2768,12 +2809,11 @@
       "input": "SELECT * FROM t; AUTH Zq9xK7em",
       "expected": {
         "text": "SELECT * FROM t; ?",
-        "summary": "SELECT t",
         "status": "STOPPED"
       },
       "secrets": ["Zq9xK7em"],
       "source": "sentry",
-      "note": ""
+      "note": "No summary (D34): multi-statement input with a stopped statement."
     },
     {
       "id": "unrecognized.backslash_outside_literal",
@@ -3706,7 +3746,7 @@
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Handwritten T-SQL, as sent through mssql-jdbc. ] is an operand, so the + stays an operator (D18)."
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. The space after + keeps it an operator (D32)."
     },
     {
       "id": "workload.sqlserver.merge_values",
@@ -3747,7 +3787,7 @@
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Handwritten T-SQL, as sent through mssql-jdbc. hashComments is NO, so #recent is an identifier; a sign after a comma belongs to the number (D18)."
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. hashComments is NO, so #recent is an identifier; a sign directly before a digit belongs to the number (D32)."
     },
     {
       "id": "workload.sqlserver.brackets_with_spaces",
@@ -4189,13 +4229,13 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT 123-45-6789",
       "expected": {
-        "text": "SELECT ?-?-?",
+        "text": "SELECT ?",
         "summary": "SELECT",
         "status": "COMPLETE"
       },
       "secrets": ["6789"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[24]",
-      "note": "Signed numbers (D18): a sign after an operand is a binary operator and is kept. OTel Java gives SELECT ?."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, as in OTel Java."
     },
     {
       "id": "otel_java.sanitize_sql.025",
@@ -6480,11 +6520,10 @@
       "input": "GRANT SELECT ON users TO admin; SELECT password FROM users",
       "expected": {
         "text": "GRANT ?; SELECT password FROM users",
-        "summary": "GRANT; SELECT users",
         "status": "COMPLETE"
       },
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[15]",
-      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges). The reduction ends at the statement end."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges). The reduction ends at the statement end. No summary (D34): multi-statement input with a reduced statement."
     },
     {
       "id": "otel_java.sanitize_sensitive.016",
@@ -6611,12 +6650,11 @@
       "input": "SELECT 1; GRANT ALL PRIVILEGES ON database.* TO user IDENTIFIED BY Password1",
       "expected": {
         "text": "SELECT ?; GRANT ?",
-        "summary": "SELECT; GRANT",
         "status": "COMPLETE"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeGrantIdentifiedByAfterPreviousStatement[1]",
-      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ? (OTel Java keeps names and privileges). No summary (D34): multi-statement input with a reduced statement."
     },
     {
       "id": "otel_java.sanitize_ddl_object_named_password.001",
@@ -8824,16 +8862,16 @@
     },
     {
       "id": "otel_java.lexical_edge_cases.001",
-      "requirements": ["R3", "R6", "R8"],
+      "requirements": ["R3", "R4", "R6", "R8"],
       "dialect": "postgresql",
       "input": "SELECT /* outer /* inner */ still comment */ * FROM users",
       "expected": {
-        "text": "SELECT * FROM users",
-        "summary": "SELECT users",
-        "status": "COMPLETE"
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
       },
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lexicalEdgeCases[1]",
-      "note": "Upstream asserts only the summary. A nested /* stops CONSERVATIVE; postgresql has nestedBlockComments YES."
+      "note": "Upstream asserts only the summary. D35: a /* inside a block comment stops in every dialect, also where nestedBlockComments is YES (postgresql), as OTel Java does. The comment is replaced by ? in place."
     },
     {
       "id": "otel_java.lexical_edge_cases.002",
@@ -9067,12 +9105,12 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT 99+100",
       "expected": {
-        "text": "SELECT ?+?",
+        "text": "SELECT ?",
         "summary": "SELECT",
         "status": "COMPLETE"
       },
       "source": "otel-dotnet:SqlProcessorTestCases.json#arithmetic_on_numeric_literals",
-      "note": "Signed numbers (D18): a sign after an operand is a binary operator and is kept. OTel .NET gives SELECT ??."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, as in OTel Java. OTel .NET gives SELECT ??."
     },
     {
       "id": "otel_dotnet.json.hex_literal",
@@ -9163,13 +9201,13 @@
       "dialect": "CONSERVATIVE",
       "input": "INSERT INTO X VALUES(1, 23456, 123.456, 99+100)",
       "expected": {
-        "text": "INSERT INTO X VALUES(?, ?, ?, ?+?)",
+        "text": "INSERT INTO X VALUES(?, ?, ?, ?)",
         "summary": "INSERT X",
         "status": "COMPLETE"
       },
       "secrets": ["23456"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#insert_into",
-      "note": "Signed numbers (D18): a sign after an operand is a binary operator and is kept. OTel .NET gives ??."
+      "note": "Signed numbers (D32): a + or - directly before a digit belongs to the number, as in OTel Java. OTel .NET gives ??."
     },
     {
       "id": "otel_dotnet.json.uuid",
@@ -9526,17 +9564,17 @@
     },
     {
       "id": "otel_dotnet.in_clause_close_paren.12",
-      "requirements": ["R2", "R3", "R8"],
+      "requirements": ["R2", "R3", "R4", "R8"],
       "dialect": "postgresql",
       "input": "SELECT * FROM Users WHERE Name IN ('a', /* /* ) */ ) */ 'secret-name')",
       "expected": {
-        "text": "SELECT * FROM Users WHERE Name IN (?)",
+        "text": "SELECT * FROM Users WHERE Name IN (?, ?",
         "summary": "SELECT Users",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["secret-name"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[12]",
-      "note": "A nested /* stops CONSERVATIVE; postgresql has nestedBlockComments YES."
+      "note": "D35: a /* inside a block comment stops in every dialect, also where nestedBlockComments is YES (postgresql), as OTel Java does. The comment is replaced by ? in place. Without the closing parenthesis there is no list to collapse."
     },
     {
       "id": "otel_dotnet.in_clause_close_paren.13",
@@ -10488,17 +10526,17 @@
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.10",
-      "requirements": ["R2", "R3", "R8"],
+      "requirements": ["R3", "R4", "R8"],
       "dialect": "postgresql",
       "input": "SELECT * FROM users /* disabled: /* old */ don't use */ WHERE api_key = 'secret-name'",
       "expected": {
-        "text": "SELECT * FROM users WHERE api_key = ?",
+        "text": "SELECT * FROM users ?",
         "summary": "SELECT users",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["secret-name"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[10]",
-      "note": "A nested /* stops CONSERVATIVE; postgresql has nestedBlockComments YES. Whitespace is collapsed and trimmed (OTel .NET keeps it)."
+      "note": "D35: a /* inside a block comment stops in every dialect, also where nestedBlockComments is YES (postgresql), as OTel Java does. The comment is replaced by ? in place."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.11",
@@ -10512,7 +10550,7 @@
       },
       "secrets": ["secret-name"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[11]",
-      "note": "A nested /* stops CONSERVATIVE; postgresql has nestedBlockComments YES. The outer comment never closes, so the ? replaces it in place (OTel .NET drops it)."
+      "note": "D35: a /* inside a block comment stops in every dialect, also where nestedBlockComments is YES (postgresql), as OTel Java does. The comment is replaced by ? in place. The outer comment never closes, so the ? replaces it in place (OTel .NET drops it)."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.12",
