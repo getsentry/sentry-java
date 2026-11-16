@@ -22,7 +22,7 @@
 
 ### Fixes
 
-- Session Replay: Fix Ktor client network requests showing up 1000x too late in the replay timeline ([#6619](https://github.com/getsentry/sentry-java/pull/6619))
+- Session Replay: Send Ktor client network request start and end times in milliseconds, so the requests line up with the replay ([#6619](https://github.com/getsentry/sentry-java/pull/6619))
 - Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
 
