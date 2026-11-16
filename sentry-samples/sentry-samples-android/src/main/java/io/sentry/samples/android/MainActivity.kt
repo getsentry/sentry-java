@@ -204,9 +204,9 @@ fun MainScreen() {
           Modifier.fillMaxSize()
             .windowInsetsPadding(
               WindowInsets.safeDrawing.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.End
-              )
-            )
+                WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.End,
+              ),
+            ),
       ) {
         when (selectedCategory) {
           Category.ERRORS -> ErrorsScreen()
@@ -303,7 +303,7 @@ fun ErrorsScreen() {
           onClick = {
             tagSampleAction("crash_from_java")
             throw RuntimeException("Crash from Java button: uncaught RuntimeException")
-          }
+          },
         ) {
           Text("Crash from Java", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
@@ -315,7 +315,7 @@ fun ErrorsScreen() {
           onClick = {
             tagSampleAction("capture_exception")
             Sentry.captureException(
-              Exception(Exception(Exception("Capture Exception button: nested exception")))
+              Exception(Exception(Exception("Capture Exception button: nested exception"))),
             )
           },
           modifier = Modifier,
@@ -386,16 +386,16 @@ fun ErrorsScreen() {
           onClick = {
             tagSampleAction("anr")
             Thread {
-                synchronized(mutex) {
-                  while (true) {
-                    try {
-                      Thread.sleep(10000)
-                    } catch (e: InterruptedException) {
-                      e.printStackTrace()
-                    }
+              synchronized(mutex) {
+                while (true) {
+                  try {
+                    Thread.sleep(10000)
+                  } catch (e: InterruptedException) {
+                    e.printStackTrace()
                   }
                 }
               }
+            }
               .start()
 
             Handler(Looper.getMainLooper())
@@ -445,16 +445,16 @@ fun ErrorsScreen() {
             val latch = CountDownLatch(1)
             for (i in 0 until 20) {
               Thread {
-                  val data = ArrayList<String>()
-                  try {
-                    latch.await()
-                    for (j in 0 until 1_000_000) {
-                      data.add(String(ByteArray(1024 * 8)))
-                    }
-                  } catch (e: InterruptedException) {
-                    e.printStackTrace()
+                val data = ArrayList<String>()
+                try {
+                  latch.await()
+                  for (j in 0 until 1_000_000) {
+                    data.add(String(ByteArray(1024 * 8)))
                   }
+                } catch (e: InterruptedException) {
+                  e.printStackTrace()
                 }
+              }
                 .start()
             }
             latch.countDown()
@@ -559,12 +559,22 @@ fun TracingScreen() {
         OutlinedButton(
           onClick = {
             activity.startActivity(
-              Intent(activity, io.sentry.samples.android.sqlite.SQLiteActivity::class.java)
+              Intent(activity, io.sentry.samples.android.sqlite.SQLiteActivity::class.java),
             )
           },
           modifier = Modifier,
         ) {
           Text("Open SQLite Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("open_webview_activity") {
+        OutlinedButton(
+          onClick = { activity.startActivity(Intent(activity, WebViewActivity::class.java)) },
+          modifier = Modifier,
+        ) {
+          Text("Open WebView Trace Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }
@@ -686,7 +696,7 @@ fun SessionReplayScreen() {
             } else {
               showDialog = false
             }
-          }
+          },
         ) {
           Text("Close")
         }
@@ -777,7 +787,7 @@ fun UserFeedbackScreen() {
           Icon(
             painter =
               painterResource(
-                id = io.sentry.compose.R.drawable.sentry_user_feedback_compose_button_logo_24
+                id = io.sentry.compose.R.drawable.sentry_user_feedback_compose_button_logo_24,
               ),
             contentDescription = null,
           )
@@ -887,7 +897,7 @@ fun IntegrationsScreen() {
         OutlinedButton(
           onClick = {
             activity.startActivity(
-              Intent(activity, io.sentry.samples.android.compose.ComposeActivity::class.java)
+              Intent(activity, io.sentry.samples.android.compose.ComposeActivity::class.java),
             )
           },
           modifier = Modifier,
@@ -904,7 +914,7 @@ fun IntegrationsScreen() {
               Intent(
                 activity,
                 io.sentry.samples.android.navigation.nav2.Nav2SetupActivity::class.java,
-              )
+              ),
             )
           },
           modifier = Modifier,
@@ -1041,37 +1051,36 @@ fun UpdatesScreen() {
             val future = Sentry.distribution().checkForUpdate()
 
             Thread {
-                try {
-                  val result = future.get()
-                  activity.runOnUiThread {
-                    val message =
-                      when (result) {
-                        is UpdateStatus.NewRelease -> {
-                          "Update available: ${result.info.buildVersion} " +
-                            "(Build ${result.info.buildNumber})\n" +
-                            "Download URL: ${result.info.downloadUrl}"
-                        }
-
-                        is UpdateStatus.UpToDate -> "App is up to date!"
-                        is UpdateStatus.NoNetwork -> "No network connection: ${result.message}"
-                        is UpdateStatus.UpdateError ->
-                          "Error checking for updates: ${result.message}"
-
-                        else -> "Unknown status"
+              try {
+                val result = future.get()
+                activity.runOnUiThread {
+                  val message =
+                    when (result) {
+                      is UpdateStatus.NewRelease -> {
+                        "Update available: ${result.info.buildVersion} " +
+                          "(Build ${result.info.buildNumber})\n" +
+                          "Download URL: ${result.info.downloadUrl}"
                       }
-                    Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
-                  }
-                } catch (e: Exception) {
-                  activity.runOnUiThread {
-                    Toast.makeText(
-                        activity,
-                        "Error checking for updates: ${e.message}",
-                        Toast.LENGTH_LONG,
-                      )
-                      .show()
-                  }
+
+                      is UpdateStatus.UpToDate -> "App is up to date!"
+                      is UpdateStatus.NoNetwork -> "No network connection: ${result.message}"
+                      is UpdateStatus.UpdateError -> "Error checking for updates: ${result.message}"
+
+                      else -> "Unknown status"
+                    }
+                  Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
+                }
+              } catch (e: Exception) {
+                activity.runOnUiThread {
+                  Toast.makeText(
+                      activity,
+                      "Error checking for updates: ${e.message}",
+                      Toast.LENGTH_LONG,
+                    )
+                    .show()
                 }
               }
+            }
               .start()
           },
           modifier = Modifier,

@@ -61,7 +61,7 @@ class GraphqlIntegrationTest : IntegrationTest() {
   fun `query with batch loaded fields is traced`() {
     val response =
       graphql(
-        """query { tasks(projectSlug: "project-slug") { id assigneeId assignee { id } creatorId creator { id } } }"""
+        """query { tasks(projectSlug: "project-slug") { id assigneeId assignee { id } creatorId creator { id } } }""",
       )
 
     assertThat(response.has("errors")).isFalse()

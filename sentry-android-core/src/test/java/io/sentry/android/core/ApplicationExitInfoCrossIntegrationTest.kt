@@ -35,7 +35,7 @@ import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 // Our current Robolectric version (4.15) caps at API 35. All ApplicationExitInfo code paths we
 // exercise are at API 31 or below, so we use the latter.
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [31])
+@Config(sdk = [33])
 class ApplicationExitInfoCrossIntegrationTest {
 
   @get:Rule val tmpDir = TemporaryFolder()
@@ -105,7 +105,7 @@ class ApplicationExitInfoCrossIntegrationTest {
                 at android.os.Looper.loop(Looper.java:313)
               """
                 .trimIndent()
-                .byteInputStream()
+                .byteInputStream(),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)
@@ -121,8 +121,8 @@ class ApplicationExitInfoCrossIntegrationTest {
           whenever(mock.traceInputStream)
             .thenReturn(
               GZIPInputStream(
-                TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz")
-              )
+                TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz"),
+              ),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)

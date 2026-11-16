@@ -37,7 +37,7 @@ class BackStackConverterTest {
     }
 
   private fun getSut(
-    entryMapper: BackStackEntryMapper<Any> = defaultEntryMapper
+    entryMapper: BackStackEntryMapper<Any> = defaultEntryMapper,
   ): BackStackConverter<Any> =
     BackStackConverter(
       entryMapper = ForwardingBackStackEntryMapper { entryMapper },
@@ -64,7 +64,7 @@ class BackStackConverterTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     val routes =
@@ -154,7 +154,7 @@ class BackStackConverterTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     val routes = sut.convert(listOf(first, middle, last), RetentionPolicy.KEEP_FIRST)
@@ -191,7 +191,7 @@ class BackStackConverterTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     val routes = sut.convert(listOf(first, middle, last), RetentionPolicy.KEEP_LAST)
@@ -227,7 +227,7 @@ class BackStackConverterTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     val routes = sut.convert(listOf(first, middle, last), RetentionPolicy.KEEP_FIRST)
@@ -263,7 +263,7 @@ class BackStackConverterTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     val routes = sut.convert(listOf(first, middle, last), RetentionPolicy.KEEP_LAST)
@@ -313,14 +313,14 @@ class BackStackConverterTest {
 
     assertThat(sut.convert(HomeScreen()))
       .isEqualTo(
-        NormalizedSentryBackStackEntry(name = "/unknown", arguments = mapOf("userId" to "123"))
+        NormalizedSentryBackStackEntry(name = "/unknown", arguments = mapOf("userId" to "123")),
       )
     verify(logger)
       .log(
         eq(WARNING),
         eq(
           "Nav3 backStackEntryMapper returned a blank name while processing this back stack update. " +
-            "Using /unknown instead."
+            "Using /unknown instead.",
         ),
       )
   }
@@ -342,13 +342,13 @@ class BackStackConverterTest {
         NormalizedSentryBackStackEntry(
           UNKNOWN_ENTRY_NAME,
           argumentDropReason = ArgumentDropReason.MAPPING_FAILED,
-        )
+        ),
       )
     verify(logger)
       .log(
         eq(WARNING),
         eq(
-          "Nav3 backStackEntryMapper threw while resolving an entry. Using /unknown without arguments instead."
+          "Nav3 backStackEntryMapper threw while resolving an entry. Using /unknown without arguments instead.",
         ),
         org.mockito.kotlin.any<Throwable>(),
       )
@@ -378,7 +378,7 @@ class BackStackConverterTest {
               "bytes" to byteArrayOf(4, 5),
             ),
           )
-        }
+        },
       )
 
     assertThat(sut.convert(HomeScreen()).arguments)
@@ -397,7 +397,7 @@ class BackStackConverterTest {
           "ints" to listOf(1, 2, 3),
           "chars" to listOf("a", "b"),
           "bytes" to listOf(4.toByte(), 5.toByte()),
-        )
+        ),
       )
   }
 
@@ -417,19 +417,19 @@ class BackStackConverterTest {
                       listOf('y', PrivacyMode.PRIVATE),
                       booleanArrayOf(true, false),
                       charArrayOf('q'),
-                    )
-                )
+                    ),
+                ),
             ),
           )
-        }
+        },
       )
 
     assertThat(sut.convert(HomeScreen()).arguments)
       .isEqualTo(
         mapOf(
           "nested" to
-            mapOf("items" to listOf("x", listOf("y", "PRIVATE"), listOf(true, false), listOf("q")))
-        )
+            mapOf("items" to listOf("x", listOf("y", "PRIVATE"), listOf(true, false), listOf("q"))),
+        ),
       )
   }
 
@@ -461,7 +461,7 @@ class BackStackConverterTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     sut.convert(listOf(HomeScreen(), ProfileScreen("123")), RetentionPolicy.KEEP_FIRST)
@@ -473,7 +473,7 @@ class BackStackConverterTest {
           "Nav3 backStackEntryMapper returned unsupported argument value of type %s while processing this " +
             "back stack update. Falling back to toString(). Use String, CharSequence, Char, " +
             "Number, Boolean, Enum, Map, Collection, object Array, and primitive array values " +
-            "for reliable results."
+            "for reliable results.",
         ),
         eq("OpaqueValue"),
       )
@@ -499,7 +499,7 @@ class BackStackConverterTest {
           "Nav3 backStackEntryMapper returned unsupported argument value of type %s while processing this " +
             "back stack update. Falling back to toString(). Use String, CharSequence, Char, " +
             "Number, Boolean, Enum, Map, Collection, object Array, and primitive array values " +
-            "for reliable results."
+            "for reliable results.",
         ),
         eq("OpaqueValue"),
       )
@@ -608,7 +608,7 @@ class BackStackConverterTest {
               else -> emptyMap()
             },
           )
-        }
+        },
       )
 
     val routes =
@@ -638,7 +638,7 @@ class BackStackConverterTest {
         mapOf(
           "entry" to "/HomeScreen",
           "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
-        )
+        ),
       )
   }
 }

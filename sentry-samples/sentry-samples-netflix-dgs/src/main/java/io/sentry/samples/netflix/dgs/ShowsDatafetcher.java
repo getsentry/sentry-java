@@ -51,15 +51,13 @@ public class ShowsDatafetcher {
     }
     final @NotNull AtomicInteger counter = new AtomicInteger(2);
     return Flux.interval(Duration.ofSeconds(1))
-        .map(
-            t -> {
-              int i = counter.incrementAndGet();
-              if (releaseYear == -3 && i % 2 == 0) {
-                throw new RuntimeException(
-                    "Causing error for subscription while producing an element");
-              }
-              return new Show(i, "A new show has arrived " + i, releaseYear, 1);
-            });
+        .map(t -> {
+          int i = counter.incrementAndGet();
+          if (releaseYear == -3 && i % 2 == 0) {
+            throw new RuntimeException("Causing error for subscription while producing an element");
+          }
+          return new Show(i, "A new show has arrived " + i, releaseYear, 1);
+        });
   }
 
   @DgsData(parentType = "Show", field = "actor")

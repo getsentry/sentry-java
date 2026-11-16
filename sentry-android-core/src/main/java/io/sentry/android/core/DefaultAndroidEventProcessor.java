@@ -18,7 +18,6 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
-import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.Collections;
 import java.util.List;
@@ -40,8 +39,7 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull SentryAndroidOptions options;
   @TestOnly final @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
-  private final @NotNull LazyEvaluator<String> deviceFamily =
-      new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
+  private final @Nullable String deviceFamily = ContextUtils.getFamily(NoOpLogger.getInstance());
 
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
@@ -241,7 +239,7 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
       event.setAttribute(
           "device.family",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily.getValue()));
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
     }
@@ -269,7 +267,7 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
       event.setAttribute(
           "device.family",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily.getValue()));
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
     }

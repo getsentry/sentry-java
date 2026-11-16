@@ -174,12 +174,11 @@ public class SentryAutoConfiguration {
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
       optionsConfigurations.forEach(
           optionsConfiguration -> optionsConfiguration.configure(options));
-      gitProperties.ifAvailable(
-          git -> {
-            if (options.getRelease() == null && options.isUseGitCommitIdAsRelease()) {
-              options.setRelease(git.getCommitId());
-            }
-          });
+      gitProperties.ifAvailable(git -> {
+        if (options.getRelease() == null && options.isUseGitCommitIdAsRelease()) {
+          options.setRelease(git.getCommitId());
+        }
+      });
       spanFactory.ifAvailable(options::setSpanFactory);
 
       options.setSentryClientName(
@@ -512,6 +511,7 @@ public class SentryAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass({RestTemplate.class, RestTemplateAutoConfiguration.class})
     @Open
+    @SuppressWarnings("removal")
     static class SentryPerformanceRestTemplateConfigurationWrapper {
       @Configuration(proxyBeanMethods = false)
       @AutoConfigureBefore(RestTemplateAutoConfiguration.class)

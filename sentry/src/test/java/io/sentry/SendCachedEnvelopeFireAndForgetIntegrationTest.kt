@@ -101,7 +101,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
       .log(
         eq(SentryLevel.ERROR),
         eq(
-          "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?"
+          "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
         ),
         any(),
       )

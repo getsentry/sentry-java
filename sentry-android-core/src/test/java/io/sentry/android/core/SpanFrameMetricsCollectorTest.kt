@@ -61,7 +61,7 @@ class SpanFrameMetricsCollectorTest {
           SentryNanotimeDate(System.currentTimeMillis(), endTimeStampNanos)
         } else {
           null
-        }
+        },
       )
     return span
   }
@@ -81,7 +81,7 @@ class SpanFrameMetricsCollectorTest {
           SentryNanotimeDate(System.currentTimeMillis(), endTimeStampNanos)
         } else {
           null
-        }
+        },
       )
     return span
   }

@@ -136,6 +136,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
    * {@link ActivityManager#registerAnrWarningListener} is a binder call, so it must not run on the
    * caller's thread — {@link #register} is driven from {@code Sentry.init} on the main thread.
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void scheduleRegisterAnrWarningListener(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
     final @Nullable Context context = this.context;

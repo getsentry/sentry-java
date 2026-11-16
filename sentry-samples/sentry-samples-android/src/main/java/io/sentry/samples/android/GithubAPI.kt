@@ -15,7 +15,7 @@ object GitHubApi {
         SentryOkHttpInterceptor(
           captureFailedRequests = true,
           failedRequestStatusCodes = listOf(HttpStatusCodeRange(400, 599)),
-        )
+        ),
       )
       .build()
 

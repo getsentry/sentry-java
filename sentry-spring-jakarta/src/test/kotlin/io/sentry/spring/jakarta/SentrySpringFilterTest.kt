@@ -133,7 +133,7 @@ class SentrySpringFilterTest {
           MockMvcRequestBuilders.get(URI.create("http://example.com?param1=xyz"))
             .header("some-header", "some-header value")
             .accept(MediaType.APPLICATION_JSON)
-            .buildRequest(MockServletContext())
+            .buildRequest(MockServletContext()),
       )
 
     listener.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -157,7 +157,7 @@ class SentrySpringFilterTest {
           MockMvcRequestBuilders.get(URI.create("http://example.com?param1=xyz"))
             .header("another-header", "another value")
             .header("another-header", "another value2")
-            .buildRequest(MockServletContext())
+            .buildRequest(MockServletContext()),
       )
 
     listener.doFilter(fixture.request, fixture.response, fixture.chain)

@@ -78,7 +78,7 @@ class SentryKtorClientPluginTest {
       failedRequestTargets: List<String> = listOf(".*"),
       failedRequestStatusCodes: List<HttpStatusCodeRange> =
         listOf(
-          HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
+          HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX),
         ),
       sendDefaultPii: Boolean = false,
       optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
@@ -118,7 +118,7 @@ class SentryKtorClientPluginTest {
           .addHeader("myResponseHeader", "myValue")
           .addHeader("Set-Cookie", "theme=dark; Path=/")
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       return HttpClient(httpClientEngine) {
@@ -457,7 +457,7 @@ class SentryKtorClientPluginTest {
           beforeSpan = { span, _ ->
             span.spanContext.sampled = false
             error("callback failed")
-          }
+          },
         )
       fixture.sentryTracer.spanContext.sampled = sampled
       fixture.options.onDiscard = onDiscard
@@ -481,7 +481,7 @@ class SentryKtorClientPluginTest {
         beforeSpan = { span, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
     fixture.options.isDebug = true
     fixture.options.setLogger(logger)
@@ -536,7 +536,7 @@ class SentryKtorClientPluginTest {
         beforeSpan = { span, _ ->
           span.description = "changed"
           span
-        }
+        },
       )
     sut.use { sut.get(fixture.server.url("/hello").toString()) }
     val span = fixture.sentryTracer.children.single()
@@ -699,8 +699,8 @@ class SentryKtorClientPluginTest {
         "thirdPartyBaggage=someValue," +
           "secondThirdPartyBaggage=secondValue; " +
           "property;propertyKey=propertyValue," +
-          "anotherThirdPartyBaggage=anotherValue"
-      )
+          "anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))

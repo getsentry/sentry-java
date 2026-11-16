@@ -273,7 +273,7 @@ class Nav2Activity : AppCompatActivity() {
             currentRoute = "/${backStack.lastOrNull()?.routeName ?: RouteNames.HOME}",
             backStack =
               nav2PerformanceBackStackPreview(
-                backStack.map { destination -> "/${destination.routeName}" }
+                backStack.map { destination -> "/${destination.routeName}" },
               ),
             state = performanceState,
             onBuildStack = { buildNav2PerformanceStack() },
@@ -318,12 +318,12 @@ class Nav2Activity : AppCompatActivity() {
           addView(
             sentryEventButton("Capture Exception", R.id.nav2_capture_exception) {
               captureSampleException("Nav2")
-            }
+            },
           )
           addView(
-            sentryEventButton("Crash App", R.id.nav2_crash_app) { showCrashConfirmation("Nav2") }
+            sentryEventButton("Crash App", R.id.nav2_crash_app) { showCrashConfirmation("Nav2") },
           )
-        }
+        },
       )
     }
   }
@@ -411,7 +411,7 @@ class Nav2Activity : AppCompatActivity() {
       currentRoute = "/${backStack.lastOrNull()?.routeName ?: RouteNames.HOME}",
       backStack =
         nav2PerformanceBackStackPreview(
-          backStack.map { destination -> "/${destination.routeName}" }
+          backStack.map { destination -> "/${destination.routeName}" },
         ),
     )
   }

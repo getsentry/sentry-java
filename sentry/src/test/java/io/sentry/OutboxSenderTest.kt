@@ -17,7 +17,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -310,7 +309,13 @@ class OutboxSenderTest {
     sut.processEnvelopeFile(path, hints)
 
     // Additionally make sure we have no errors logged
-    verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), anyVararg<Any>())
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Item %d of type %s returned null by the parser."),
+        any<Any>(),
+        any<Any>(),
+      )
     verify(fixture.scopes, never()).captureEvent(any())
     assertFalse(File(path).exists())
   }
@@ -328,7 +333,13 @@ class OutboxSenderTest {
     sut.processEnvelopeFile(path, hints)
 
     // Additionally make sure we have no errors logged
-    verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), anyVararg<Any>())
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Item %d of type %s returned null by the parser."),
+        any<Any>(),
+        any<Any>(),
+      )
     verify(fixture.scopes, never()).captureEvent(any())
     assertFalse(File(path).exists())
   }

@@ -780,12 +780,12 @@ internal fun Nav3PerformancePanel(
           enabled = !state.performanceRunActive,
           onDecrement = {
             controls.onMaxCapturedBackStackEntriesChange(
-              (controls.maxCapturedBackStackEntries - 1).coerceAtLeast(0)
+              (controls.maxCapturedBackStackEntries - 1).coerceAtLeast(0),
             )
           },
           onIncrement = {
             controls.onMaxCapturedBackStackEntriesChange(
-              (controls.maxCapturedBackStackEntries + 1).coerceAtMost(100)
+              (controls.maxCapturedBackStackEntries + 1).coerceAtMost(100),
             )
           },
         )

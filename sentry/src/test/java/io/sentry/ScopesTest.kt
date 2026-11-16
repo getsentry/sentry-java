@@ -801,7 +801,7 @@ class ScopesTest {
           assertEquals(userFeedback.email, it.email)
           assertEquals(userFeedback.name, it.name)
           assertEquals(userFeedback.comments, it.comments)
-        }
+        },
       )
   }
 
@@ -1591,7 +1591,7 @@ class ScopesTest {
           anyOrNull(),
           anyOrNull(),
           anyOrNull(),
-        )
+        ),
       )
       .thenReturn(SentryId())
 
@@ -2307,7 +2307,7 @@ class ScopesTest {
       scopes.continueTrace(
         "$traceId-$parentSpanId-1",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2329,7 +2329,7 @@ class ScopesTest {
       scopes.continueTrace(
         "$traceId-$parentSpanId",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2356,7 +2356,7 @@ class ScopesTest {
       scopes.continueTrace(
         "invalid",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2380,7 +2380,7 @@ class ScopesTest {
       scopes.continueTrace(
         "$traceId-$parentSpanId-1",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2405,7 +2405,7 @@ class ScopesTest {
       scopes.continueTrace(
         "invalid",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2559,7 +2559,7 @@ class ScopesTest {
       .log(
         eq(SentryLevel.WARNING),
         eq(
-          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."
+          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.",
         ),
       )
   }
@@ -2613,7 +2613,7 @@ class ScopesTest {
       .log(
         eq(SentryLevel.WARNING),
         eq(
-          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."
+          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.",
         ),
       )
   }
@@ -2960,7 +2960,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
         "log message",
       )
@@ -3720,7 +3720,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
       )
 
@@ -3899,7 +3899,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
       )
 
@@ -4078,7 +4078,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
       )
 
@@ -4551,7 +4551,7 @@ class ScopesTest {
   private val dsnTest = "https://key@sentry.io/proj"
 
   private fun generateScopes(
-    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null
+    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
   ): IScopes {
     val options =
       SentryOptions().apply {
@@ -4565,7 +4565,7 @@ class ScopesTest {
   }
 
   private fun getEnabledScopes(
-    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null
+    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
   ): Triple<Scopes, ISentryClient, ILogger> {
     val logger = mock<ILogger>()
 

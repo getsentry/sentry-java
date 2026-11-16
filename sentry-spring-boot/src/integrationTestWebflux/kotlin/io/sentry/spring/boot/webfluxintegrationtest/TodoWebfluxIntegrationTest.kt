@@ -21,7 +21,7 @@ class TodoWebfluxIntegrationTest : WebfluxIntegrationTest() {
         transaction.hasSpanWithOpAndDescription(
           "http.client",
           "GET ${restTemplate.rootUri}/stub/todos/1",
-        )
+        ),
       )
       .isTrue()
   }

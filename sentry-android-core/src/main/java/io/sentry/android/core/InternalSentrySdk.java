@@ -51,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
 public final class InternalSentrySdk {
 
   /**
-   * @return a copy of the current scopes's topmost scope, or null in case the scopes is disabled
+   * Returns a copy of the current scopes's topmost scope, or null in case the scopes is disabled.
    */
   @Nullable
   public static IScope getCurrentScope() {
@@ -293,28 +293,24 @@ public final class InternalSentrySdk {
   private static void updateSessionNonTerminating(final boolean unhandled) {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
-    scopes.configureScope(
-        scope ->
-            scope.withSession(
-                session -> {
-                  if (session == null) {
-                    options.getLogger().log(INFO, "Session is null on updateSessionNonTerminating");
-                    return;
-                  }
-                  if (session.isTerminated()) {
-                    options
-                        .getLogger()
-                        .log(INFO, "Session already terminated, not recording the error.");
-                    return;
-                  }
-                  final boolean recorded =
-                      unhandled
-                          ? session.recordNonTerminatingUnhandledError()
-                          : session.update(null, null, true, null);
-                  if (recorded && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
-                    ((EnvelopeCache) options.getEnvelopeDiskCache()).persistCurrentSession(session);
-                  }
-                }));
+    scopes.configureScope(scope ->
+        scope.withSession(session -> {
+          if (session == null) {
+            options.getLogger().log(INFO, "Session is null on updateSessionNonTerminating");
+            return;
+          }
+          if (session.isTerminated()) {
+            options.getLogger().log(INFO, "Session already terminated, not recording the error.");
+            return;
+          }
+          final boolean recorded =
+              unhandled
+                  ? session.recordNonTerminatingUnhandledError()
+                  : session.update(null, null, true, null);
+          if (recorded && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+            ((EnvelopeCache) options.getEnvelopeDiskCache()).persistCurrentSession(session);
+          }
+        }));
   }
 
   /** What the events inside an envelope amount to, from the session's point of view. */
@@ -409,16 +405,16 @@ public final class InternalSentrySdk {
     spans.add(spanMap);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static void deleteCurrentSessionFile(
       final @NotNull SentryOptions options, boolean isSync) {
     if (!isSync) {
       try {
         options
             .getExecutorService()
-            .submit(
-                () -> {
-                  deleteCurrentSessionFile(options);
-                });
+            .submit(() -> {
+              deleteCurrentSessionFile(options);
+            });
       } catch (Throwable e) {
         options
             .getLogger()
@@ -449,29 +445,27 @@ public final class InternalSentrySdk {
       final @Nullable Session.State status,
       final boolean crashedOrErrored) {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
-    scopes.configureScope(
-        scope -> {
-          scope.withSession(
-              session -> {
-                if (session != null) {
-                  final boolean updated = session.update(status, null, crashedOrErrored, null);
-                  // if we have an uncaughtExceptionHint we can end the session.
-                  if (updated) {
-                    if (session.getStatus() == Session.State.Crashed) {
-                      session.end();
-                      // Session needs to be removed from the scope, otherwise it will be send twice
-                      // standalone and with the crash event
-                      scope.clearSession();
-                    }
-                    // fromSession serializes lazily, on the transport thread, so handing out the
-                    // live session would race a later mutation
-                    sessionRef.set(session.clone());
-                  }
-                } else {
-                  options.getLogger().log(INFO, "Session is null on updateSession");
-                }
-              });
-        });
+    scopes.configureScope(scope -> {
+      scope.withSession(session -> {
+        if (session != null) {
+          final boolean updated = session.update(status, null, crashedOrErrored, null);
+          // if we have an uncaughtExceptionHint we can end the session.
+          if (updated) {
+            if (session.getStatus() == Session.State.Crashed) {
+              session.end();
+              // Session needs to be removed from the scope, otherwise it will be send twice
+              // standalone and with the crash event
+              scope.clearSession();
+            }
+            // fromSession serializes lazily, on the transport thread, so handing out the
+            // live session would race a later mutation
+            sessionRef.set(session.clone());
+          }
+        } else {
+          options.getLogger().log(INFO, "Session is null on updateSession");
+        }
+      });
+    });
     return sessionRef.get();
   }
 

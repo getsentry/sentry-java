@@ -86,12 +86,11 @@ public final class SentryFileInputStream extends FileInputStream {
     // this is the only case, when the read() operation returns the byte value, and not the count
     // hence we need this special handling
     AtomicInteger result = new AtomicInteger(0);
-    spanManager.performIO(
-        () -> {
-          final int res = delegate.read();
-          result.set(res);
-          return res != -1 ? 1 : 0;
-        });
+    spanManager.performIO(() -> {
+      final int res = delegate.read();
+      result.set(res);
+      return res != -1 ? 1 : 0;
+    });
     return result.get();
   }
 

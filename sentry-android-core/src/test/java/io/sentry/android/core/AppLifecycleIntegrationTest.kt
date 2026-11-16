@@ -108,7 +108,7 @@ class AppLifecycleIntegrationTest {
             "Broadcast of Intent { act=android.intent.action.SCREEN_ON }",
             it.getData("description"),
           )
-        }
+        },
       )
 
     sut.close()
@@ -244,9 +244,9 @@ class AppLifecycleIntegrationTest {
     assertNotNull(sut.watcher)
 
     Thread {
-        sut.close()
-        latch.countDown()
-      }
+      sut.close()
+      latch.countDown()
+    }
       .start()
 
     latch.await()

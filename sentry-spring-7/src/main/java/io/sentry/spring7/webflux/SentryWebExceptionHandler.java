@@ -43,30 +43,28 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
 
     return SentryReactorUtils.withSentryScopes(
             Mono.just(ex)
-                .map(
-                    it -> {
-                      if (!(ex instanceof ResponseStatusException)) {
-                        final Mechanism mechanism = new Mechanism();
-                        mechanism.setType(MECHANISM_TYPE);
-                        mechanism.setHandled(false);
-                        final Throwable throwable =
-                            new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
-                        final SentryEvent event = new SentryEvent(throwable);
-                        event.setLevel(SentryLevel.FATAL);
-                        event.setTransaction(
-                            TransactionNameProvider.provideTransactionName(serverWebExchange));
+                .map(it -> {
+                  if (!(ex instanceof ResponseStatusException)) {
+                    final Mechanism mechanism = new Mechanism();
+                    mechanism.setType(MECHANISM_TYPE);
+                    mechanism.setHandled(false);
+                    final Throwable throwable =
+                        new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
+                    final SentryEvent event = new SentryEvent(throwable);
+                    event.setLevel(SentryLevel.FATAL);
+                    event.setTransaction(
+                        TransactionNameProvider.provideTransactionName(serverWebExchange));
 
-                        final Hint hint = new Hint();
-                        hint.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
-                        hint.set(
-                            WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
-                        hint.set(WEBFLUX_EXCEPTION_HANDLER_EXCHANGE, serverWebExchange);
+                    final Hint hint = new Hint();
+                    hint.set(WEBFLUX_EXCEPTION_HANDLER_REQUEST, serverWebExchange.getRequest());
+                    hint.set(WEBFLUX_EXCEPTION_HANDLER_RESPONSE, serverWebExchange.getResponse());
+                    hint.set(WEBFLUX_EXCEPTION_HANDLER_EXCHANGE, serverWebExchange);
 
-                        scopes.captureEvent(event, hint);
-                      }
+                    scopes.captureEvent(event, hint);
+                  }
 
-                      return it;
-                    }),
+                  return it;
+                }),
             scopesToUse)
         .flatMap(it -> Mono.error(ex));
   }

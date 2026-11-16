@@ -356,7 +356,7 @@ private fun Nav3SampleApp(
       host.startActivity(
         Intent(host, Nav3FragmentsActivity::class.java)
           .putExtra(Nav3FragmentsActivity.EXTRA_MODE, mode.name)
-          .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+          .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) }),
       )
     }
   }
@@ -398,7 +398,7 @@ private fun Nav3SampleApp(
       modifier =
         Modifier.fillMaxSize()
           .padding(innerPadding)
-          .background(MaterialTheme.colorScheme.background)
+          .background(MaterialTheme.colorScheme.background),
     ) {
       NavDisplay(
         backStack = backStack,
@@ -473,7 +473,7 @@ private fun Nav3SampleApp(
                 MultiActivityRoute {
                   activity?.startActivity(
                     Intent(activity, Nav3ProductsActivity::class.java)
-                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) }),
                   )
                 }
               }
@@ -610,7 +610,7 @@ private fun Nav3SampleApp(
           onClick = {
             onDismissCrashConfirmation()
             crashSampleApp("Nav3")
-          }
+          },
         ) {
           Text("Crash")
         }

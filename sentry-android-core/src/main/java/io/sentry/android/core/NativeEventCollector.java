@@ -302,6 +302,7 @@ public final class NativeEventCollector {
    * the fields we need and exits early once found. Uses a bounded stream to track position within
    * the payload and skip any unread bytes on close, avoiding allocation of the full payload.
    */
+  @SuppressWarnings("JavaUtilDate")
   private @Nullable NativeEnvelopeMetadata extractMetadataFromEventPayload(
       final @NotNull InputStream stream, final int payloadLength, final @NotNull File file) {
 

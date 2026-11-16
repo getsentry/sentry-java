@@ -25,7 +25,7 @@ public final class SentryUserFeedbackDialog extends SentryUserFeedbackForm {
    * @deprecated Use {@link SentryUserFeedbackForm.Builder} instead.
    */
   @Deprecated
-  public static class Builder extends SentryUserFeedbackForm.Builder {
+  public static final class Builder extends SentryUserFeedbackForm.Builder {
 
     /**
      * Creates a builder for a {@link SentryUserFeedbackDialog} that uses the default alert dialog

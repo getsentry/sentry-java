@@ -321,6 +321,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
+  /** Options for connecting the app's trace with web content in a {@code WebView}. */
+  private final @NotNull SentryWebViewTracingOptions webViewTracing =
+      new SentryWebViewTracingOptions();
+
   /**
    * Sample rate for capturing main-thread stack profiles when a foreground ANR is detected. {@code
    * null} disables ANR profiling (default). Values must be between {@code 0.0} and {@code 1.0}.
@@ -847,8 +851,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
-   *     more details.
+   * Returns true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
+   * more details.
    */
   public boolean isEnablePerformanceV2() {
     return enablePerformanceV2;
@@ -867,8 +871,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * @return true if standalone app start tracing is enabled. See {@link
-   *     #setEnableStandaloneAppStartTracing(boolean)} for more details.
+   * Returns true if standalone app start tracing is enabled. See {@link
+   * #setEnableStandaloneAppStartTracing(boolean)} for more details.
    */
   @ApiStatus.Experimental
   public boolean isEnableStandaloneAppStartTracing() {
@@ -951,6 +955,15 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
+   * Returns the options for connecting the app's trace with web content in a {@code WebView}.
+   *
+   * @return the WebView tracing options
+   */
+  public @NotNull SentryWebViewTracingOptions getWebViewTracing() {
+    return webViewTracing;
+  }
+
+  /**
    * Returns the sample rate used when deciding whether to capture a main-thread stack profile for a
    * detected foreground ANR.
    *
@@ -1018,7 +1031,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     return AndroidMonotonicTicker.getInstance();
   }
 
-  static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
+  static final class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
     @Override
     public void showForm(
         final @Nullable SentryId associatedEventId,

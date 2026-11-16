@@ -79,30 +79,27 @@ public final class OpenTelemetryAttributesExtractor {
       final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     Map<String, String> headers = new HashMap<>();
 
-    attributes.forEach(
-        (key, value) -> {
-          final @NotNull String attributeKeyAsString = key.getKey();
-          if (attributeKeyAsString.startsWith(HTTP_REQUEST_HEADER_PREFIX)) {
-            final @NotNull String headerName =
-                StringUtils.removePrefix(attributeKeyAsString, HTTP_REQUEST_HEADER_PREFIX);
-            if (options.isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
-              if (value instanceof List) {
-                try {
-                  final @NotNull List<String> headerValues = (List<String>) value;
-                  headers.put(
-                      headerName,
-                      toString(
-                          CookieUtils.filterOutSecurityCookiesFromHeader(
-                              headerValues, headerName, null)));
-                } catch (Throwable t) {
-                  options
-                      .getLogger()
-                      .log(SentryLevel.WARNING, "Expected a List<String> as header", t);
-                }
-              }
+    attributes.forEach((key, value) -> {
+      final @NotNull String attributeKeyAsString = key.getKey();
+      if (attributeKeyAsString.startsWith(HTTP_REQUEST_HEADER_PREFIX)) {
+        final @NotNull String headerName =
+            StringUtils.removePrefix(attributeKeyAsString, HTTP_REQUEST_HEADER_PREFIX);
+        if (options.isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
+          if (value instanceof List) {
+            try {
+              final @NotNull List<String> headerValues = (List<String>) value;
+              headers.put(
+                  headerName,
+                  toString(
+                      CookieUtils.filterOutSecurityCookiesFromHeader(
+                          headerValues, headerName, null)));
+            } catch (Throwable t) {
+              options.getLogger().log(SentryLevel.WARNING, "Expected a List<String> as header", t);
             }
           }
-        });
+        }
+      }
+    });
     return headers;
   }
 

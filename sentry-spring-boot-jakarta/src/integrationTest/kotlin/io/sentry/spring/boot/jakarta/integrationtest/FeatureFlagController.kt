@@ -42,8 +42,8 @@ open class OpenFeatureConfig {
             "new-checkout-flow" to booleanFlag(true),
             "experimental-feature" to booleanFlag(false),
             "beta-features" to booleanFlag(true),
-          )
-        )
+          ),
+        ),
       )
       addHooks(SentryOpenFeatureHook())
     }

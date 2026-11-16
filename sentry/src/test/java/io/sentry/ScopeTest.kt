@@ -211,7 +211,7 @@ class ScopeTest {
     request.method = "post"
 
     scope.setTransaction(
-      SentryTracer(TransactionContext("newTransaction", "op"), NoOpScopes.getInstance())
+      SentryTracer(TransactionContext("newTransaction", "op"), NoOpScopes.getInstance()),
     )
 
     // because you can only set a new list to scope
@@ -1181,7 +1181,7 @@ class ScopeTest {
     Scope(options).apply { screen = "MainActivity" }
     verify(observer)
       .setContexts(
-        check { contexts -> assertEquals("MainActivity", contexts.app?.viewNames?.first()) }
+        check { contexts -> assertEquals("MainActivity", contexts.app?.viewNames?.first()) },
       )
   }
 
@@ -1319,7 +1319,7 @@ class ScopeTest {
       SentryAttributes.of(
         SentryAttribute.stringAttribute("key1", "value1"),
         SentryAttribute.integerAttribute("key2", 42),
-      )
+      ),
     )
     val attrs = scope.attributes
     assertEquals(2, attrs.size)

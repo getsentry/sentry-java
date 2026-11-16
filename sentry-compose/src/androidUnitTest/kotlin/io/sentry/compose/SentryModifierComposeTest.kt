@@ -35,7 +35,7 @@ class SentryModifierComposeTest {
         val appContext: Application = ApplicationProvider.getApplicationContext()
         Shadows.shadowOf(appContext.packageManager)
           .addActivityIfNotPresent(
-            ComponentName(appContext.packageName, ComponentActivity::class.java.name)
+            ComponentName(appContext.packageName, ComponentActivity::class.java.name),
           )
       }
     }
@@ -49,7 +49,7 @@ class SentryModifierComposeTest {
       .onNode(
         SemanticsMatcher(TAG_VALUE) {
           it.config.find { (key, _) -> key.name == SentryModifier.TAG }?.value == TAG_VALUE
-        }
+        },
       )
       .assertExists()
   }

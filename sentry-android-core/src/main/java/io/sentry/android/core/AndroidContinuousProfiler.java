@@ -45,7 +45,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  * implementation using {@code ProfilingManager}, available on API 35+.
  */
 @ApiStatus.Internal
-public class AndroidContinuousProfiler
+public final class AndroidContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 60000;
 
@@ -335,6 +335,7 @@ public class AndroidContinuousProfiler
     }
   }
 
+  @Override
   public void reevaluateSampling() {
     shouldSample = true;
   }
@@ -373,27 +374,27 @@ public class AndroidContinuousProfiler
     return ProfileRecordingState.UNKNOWN;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                // SDK is closed, we don't send the chunks
-                if (isClosed.get()) {
-                  return;
-                }
-                final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
-                try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
-                  for (ProfileChunk.Builder builder : payloadBuilders) {
-                    payloads.add(builder.build(options));
-                  }
-                  payloadBuilders.clear();
-                }
-                for (ProfileChunk payload : payloads) {
-                  scopes.captureProfileChunk(payload);
-                }
-              });
+          .submit(() -> {
+            // SDK is closed, we don't send the chunks
+            if (isClosed.get()) {
+              return;
+            }
+            final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
+            try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
+              for (ProfileChunk.Builder builder : payloadBuilders) {
+                payloads.add(builder.build(options));
+              }
+              payloadBuilders.clear();
+            }
+            for (ProfileChunk payload : payloads) {
+              scopes.captureProfileChunk(payload);
+            }
+          });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
     }

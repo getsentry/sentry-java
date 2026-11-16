@@ -273,7 +273,7 @@ class ActivityLifecycleIntegrationTest {
       contexts.any {
         it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
           it.operation == ActivityLifecycleIntegration.APP_START_WARM
-      }
+      },
     )
   }
 
@@ -341,7 +341,7 @@ class ActivityLifecycleIntegrationTest {
     assertTrue(
       appStartTransaction.children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_EXTENDED_OP
-      }
+      },
     )
     assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
     assertNotNull(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan)
@@ -473,7 +473,7 @@ class ActivityLifecycleIntegrationTest {
     assertTrue(
       transaction.children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_EXTENDED_OP
-      }
+      },
     )
     assertFalse(transaction.isFinished)
 
@@ -704,8 +704,8 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.M])
-  fun `onHeadlessAppStart creates standalone App Start transaction on API 23`() {
+  @Config(sdk = [Build.VERSION_CODES.N])
+  fun `onHeadlessAppStart creates standalone App Start transaction on API 24`() {
     val sut = fixture.getSut {
       it.tracesSampleRate = 1.0
       it.isEnableStandaloneAppStartTracing = true
@@ -919,7 +919,7 @@ class ActivityLifecycleIntegrationTest {
           it.tracesSampleRate = 1.0
           it.isEnableTimeToFullDisplayTracing = true
           it.idleTimeout = 100
-        }
+        },
       )
     // the transaction idle timeout is scheduled on the dedicated timer executor
     fixture.options.timerExecutorService = SentryExecutorService()
@@ -990,7 +990,7 @@ class ActivityLifecycleIntegrationTest {
         initializer = {
           it.tracesSampleRate = 1.0
           it.isEnableActivityLifecycleTracingAutoFinish = false
-        }
+        },
       )
     sut.register(fixture.scopes, fixture.options)
     val activity = mock<Activity>()
@@ -1473,7 +1473,7 @@ class ActivityLifecycleIntegrationTest {
       uiLoadTransaction.children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
           it.operation == ActivityLifecycleIntegration.APP_START_WARM
-      }
+      },
     )
 
     sut.onActivityPostCreated(activity, fixture.bundle)
@@ -1678,7 +1678,7 @@ class ActivityLifecycleIntegrationTest {
     assertFalse(
       fixture.capturedContexts.drop(1).any {
         it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
-      }
+      },
     )
     assertEquals(appStartTransaction.spanContext.traceId, uiLoadContext.traceId)
     // siblings, not parent/child: ui.load has no parent span id
@@ -1707,7 +1707,7 @@ class ActivityLifecycleIntegrationTest {
     assertTrue(
       fixture.createdTransactions.single().children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_COLD
-      }
+      },
     )
   }
 

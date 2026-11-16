@@ -60,7 +60,7 @@ class AnrWarningBreadcrumbTest : BaseUiTest() {
     // ForegroundServiceDidNotStartInTimeException. The main thread stays responsive throughout.
     context.startForegroundService(
       Intent(context, SlowStartService::class.java)
-        .putExtra(SlowStartService.EXTRA_STOP_SELF_AFTER_MILLIS, STOP_SELF_AFTER_MS)
+        .putExtra(SlowStartService.EXTRA_STOP_SELF_AFTER_MILLIS, STOP_SELF_AFTER_MS),
     )
 
     val arrived = recorded.await(10, TimeUnit.SECONDS)

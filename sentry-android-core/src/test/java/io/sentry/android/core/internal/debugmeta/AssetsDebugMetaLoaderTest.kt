@@ -51,7 +51,7 @@ class AssetsDebugMetaLoaderTest {
           io.sentry.bundle-ids=88ba82db-cd26-4c09-8b31-21461d286b68
           io.sentry.build-tool=maven
           """
-            .trimIndent()
+            .trimIndent(),
       )
 
     val options = SentryOptions()
@@ -74,7 +74,7 @@ class AssetsDebugMetaLoaderTest {
           io.sentry.bundle-ids=88ba82db-cd26-4c09-8b31-21461d286b68,8d11a44a-facd-46c1-a49b-87d256227101
           io.sentry.build-tool=maven
           """
-            .trimIndent()
+            .trimIndent(),
       )
 
     val options = SentryOptions()

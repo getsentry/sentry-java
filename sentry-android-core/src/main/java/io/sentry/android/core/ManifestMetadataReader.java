@@ -104,6 +104,8 @@ final class ManifestMetadataReader {
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
+  static final String WEBVIEW_TRACING_ALLOWED_HOSTS = "io.sentry.webview-tracing.allowed-hosts";
+
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
   static final String IDLE_TIMEOUT = "io.sentry.traces.idle-timeout";
@@ -543,6 +545,12 @@ final class ManifestMetadataReader {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
           options.setTracePropagationTargets(tracePropagationTargets);
+        }
+
+        final @Nullable List<String> webViewTracingAllowedHosts =
+            readList(metadata, logger, WEBVIEW_TRACING_ALLOWED_HOSTS);
+        if (webViewTracingAllowedHosts != null) {
+          options.getWebViewTracing().setAllowedHosts(webViewTracingAllowedHosts);
         }
 
         options.setEnableFramesTracking(readBool(metadata, logger, PERFORM_FRAMES_TRACKING, true));

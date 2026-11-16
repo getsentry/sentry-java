@@ -18,7 +18,13 @@ class NoOpTransactionTest {
     assertNotNull(transaction.startChild("op", "desc", SentryNanotimeDate()))
     assertNotNull(transaction.startChild("op", "desc", SentryNanotimeDate(), Instrumenter.SENTRY))
     assertNotNull(
-      transaction.startChild("op", "desc", SentryNanotimeDate(), Instrumenter.SENTRY, SpanOptions())
+      transaction.startChild(
+        "op",
+        "desc",
+        SentryNanotimeDate(),
+        Instrumenter.SENTRY,
+        SpanOptions(),
+      ),
     )
   }
 

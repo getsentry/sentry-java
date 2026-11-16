@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class NativeEventUtils {
+public final class NativeEventUtils {
 
   public static byte[] readBytes(final @NotNull InputStream stream) throws IOException {
     try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {

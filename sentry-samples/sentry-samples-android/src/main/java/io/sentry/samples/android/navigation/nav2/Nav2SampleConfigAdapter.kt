@@ -11,7 +11,7 @@ internal fun currentNav2SampleConfigSnapshot(): NavigationSampleConfigSnapshot =
   currentNavigationSampleConfigSnapshot()
 
 internal fun Intent.previousNav2SampleConfigSnapshot(
-  fallback: NavigationSampleConfigSnapshot
+  fallback: NavigationSampleConfigSnapshot,
 ): NavigationSampleConfigSnapshot =
   NavigationSampleConfigSnapshot(
     enableScreenTracking =

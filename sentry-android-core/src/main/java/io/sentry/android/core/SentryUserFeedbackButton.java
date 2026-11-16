@@ -13,11 +13,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @deprecated `SentryUserFeedbackButton` will be removed in the next major version
  */
-// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
-// public API.
-@SuppressWarnings("this-escape")
 @Deprecated
-public class SentryUserFeedbackButton extends Button {
+public final class SentryUserFeedbackButton extends Button {
 
   private @Nullable OnClickListener delegate;
 
@@ -122,12 +119,11 @@ public class SentryUserFeedbackButton extends Button {
   @Override
   public void setOnClickListener(final @Nullable OnClickListener listener) {
     delegate = listener;
-    super.setOnClickListener(
-        v -> {
-          new SentryUserFeedbackForm.Builder(getContext()).create().show();
-          if (delegate != null) {
-            delegate.onClick(v);
-          }
-        });
+    super.setOnClickListener(v -> {
+      new SentryUserFeedbackForm.Builder(getContext()).create().show();
+      if (delegate != null) {
+        delegate.onClick(v);
+      }
+    });
   }
 }

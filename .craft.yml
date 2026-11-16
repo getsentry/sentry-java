@@ -124,6 +124,11 @@ targets:
         packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-ndk
         mainDocsUrl: https://docs.sentry.io/platforms/android/
         apiDocsUrl: https://javadoc.io/doc/io.sentry
+      maven:io.sentry:sentry-android-ndk-outproc:
+        name: io.sentry:sentry-android-ndk-outproc
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-ndk-outproc
+        mainDocsUrl: https://docs.sentry.io/platforms/android/configuration/using-ndk/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-timber:
         name: io.sentry:sentry-android-timber
         packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-timber

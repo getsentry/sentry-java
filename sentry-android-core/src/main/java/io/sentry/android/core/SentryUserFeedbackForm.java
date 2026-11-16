@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Attachment;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -39,6 +40,8 @@ import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// Open until the deprecated SentryUserFeedbackDialog, which extends it, is removed.
+@Open
 public class SentryUserFeedbackForm extends AlertDialog {
 
   private boolean isCancelable = false;
@@ -147,12 +150,11 @@ public class SentryUserFeedbackForm extends AlertDialog {
       }
       final @Nullable Activity active = activityRef.get();
       if (active != null && !active.isFinishing() && !active.isDestroyed()) {
-        active.runOnUiThread(
-            () -> {
-              if (!active.isFinishing() && !active.isDestroyed()) {
-                show();
-              }
-            });
+        active.runOnUiThread(() -> {
+          if (!active.isFinishing() && !active.isDestroyed()) {
+            show();
+          }
+        });
       }
     };
   }
@@ -176,6 +178,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public void onActivityResumed(final @NotNull Activity activity) {
       if (activity == activityRef.get() && shakeDetector != null) {
         shakeDetector.start(activity, shakeListener(activityRef));
@@ -183,6 +186,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public void onActivityPaused(final @NotNull Activity activity) {
       if (activity == activityRef.get() && shakeDetector != null) {
         shakeDetector.stop();
@@ -190,6 +194,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public void onActivityDestroyed(final @NotNull Activity activity) {
       if (activity == activityRef.get()) {
         stopShakeDetection();
@@ -246,33 +251,32 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
     // The button is made visible in onStart, once the screenshot picker is registered successfully
     btnAddScreenshot.setVisibility(View.GONE);
-    btnAddScreenshot.setOnClickListener(
-        v -> {
-          if (selectedImageUri == null) {
-            if (screenshotPicker != null) {
-              try {
-                screenshotPicker.launch();
-              } catch (LinkageError e) {
-                // androidx.activity is compileOnly, so the version in the app's apk may not have
-                // the photo picker APIs this was compiled against
-                Sentry.getCurrentScopes()
-                    .getOptions()
-                    .getLogger()
-                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", e);
-              } catch (Throwable t) {
-                ExceptionUtils.rethrowIfFatal(t);
-                // e.g. no photo picker on the device, or the launcher is no longer registered
-                Sentry.getCurrentScopes()
-                    .getOptions()
-                    .getLogger()
-                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", t);
-              }
-            }
-          } else {
-            selectedImageUri = null;
-            btnAddScreenshot.setText(feedbackOptions.getAddScreenshotButtonLabel());
+    btnAddScreenshot.setOnClickListener(v -> {
+      if (selectedImageUri == null) {
+        if (screenshotPicker != null) {
+          try {
+            screenshotPicker.launch();
+          } catch (LinkageError e) {
+            // androidx.activity is compileOnly, so the version in the app's apk may not have
+            // the photo picker APIs this was compiled against
+            Sentry.getCurrentScopes()
+                .getOptions()
+                .getLogger()
+                .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", e);
+          } catch (Throwable t) {
+            ExceptionUtils.rethrowIfFatal(t);
+            // e.g. no photo picker on the device, or the launcher is no longer registered
+            Sentry.getCurrentScopes()
+                .getOptions()
+                .getLogger()
+                .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", t);
           }
-        });
+        }
+      } else {
+        selectedImageUri = null;
+        btnAddScreenshot.setText(feedbackOptions.getAddScreenshotButtonLabel());
+      }
+    });
 
     if (feedbackOptions.isShowBranding()) {
       imgLogo.setVisibility(View.VISIBLE);
@@ -323,76 +327,74 @@ public class SentryUserFeedbackForm extends AlertDialog {
     lblTitle.setText(feedbackOptions.getFormTitle());
 
     btnSend.setText(feedbackOptions.getSubmitButtonLabel());
-    btnSend.setOnClickListener(
-        v -> {
-          // Gather fields and trim them
-          final @NotNull String name = edtName.getText().toString().trim();
-          final @NotNull String email = edtEmail.getText().toString().trim();
-          final @NotNull String message = edtMessage.getText().toString().trim();
+    btnSend.setOnClickListener(v -> {
+      // Gather fields and trim them
+      final @NotNull String name = edtName.getText().toString().trim();
+      final @NotNull String email = edtEmail.getText().toString().trim();
+      final @NotNull String message = edtMessage.getText().toString().trim();
 
-          // If a required field is missing, shows the error label
-          if (name.isEmpty() && feedbackOptions.isNameRequired()) {
-            edtName.setError(lblName.getText());
-            return;
-          }
+      // If a required field is missing, shows the error label
+      if (name.isEmpty() && feedbackOptions.isNameRequired()) {
+        edtName.setError(lblName.getText());
+        return;
+      }
 
-          if (email.isEmpty() && feedbackOptions.isEmailRequired()) {
-            edtEmail.setError(lblEmail.getText());
-            return;
-          }
+      if (email.isEmpty() && feedbackOptions.isEmailRequired()) {
+        edtEmail.setError(lblEmail.getText());
+        return;
+      }
 
-          if (message.isEmpty()) {
-            edtMessage.setError(lblMessage.getText());
-            return;
-          }
+      if (message.isEmpty()) {
+        edtMessage.setError(lblMessage.getText());
+        return;
+      }
 
-          // Create the feedback object
-          final @NotNull Feedback feedback = new Feedback(message);
-          feedback.setName(name);
-          feedback.setContactEmail(email);
-          if (associatedEventId != null) {
-            feedback.setAssociatedEventId(associatedEventId);
-          }
-          if (currentReplayId != null) {
-            feedback.setReplayId(currentReplayId);
-          }
+      // Create the feedback object
+      final @NotNull Feedback feedback = new Feedback(message);
+      feedback.setName(name);
+      feedback.setContactEmail(email);
+      if (associatedEventId != null) {
+        feedback.setAssociatedEventId(associatedEventId);
+      }
+      if (currentReplayId != null) {
+        feedback.setReplayId(currentReplayId);
+      }
 
-          // Capture the feedback. If the ID is empty, it means that the feedback was not sent
-          final @NotNull Hint hint = new Hint();
-          maybeAddImageAttachment(hint);
-          final @NotNull SentryId id = Sentry.feedback().capture(feedback, hint);
-          if (!id.equals(SentryId.EMPTY_ID)) {
-            Toast.makeText(
-                    getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)
-                .show();
-            final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
-                feedbackOptions.getOnSubmitSuccess();
-            if (onSubmitSuccess != null) {
-              try {
-                onSubmitSuccess.call(feedback);
-              } catch (Exception e) {
-                Sentry.getCurrentScopes()
-                    .getOptions()
-                    .getLogger()
-                    .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
-              }
-            }
-          } else {
-            final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
-                feedbackOptions.getOnSubmitError();
-            if (onSubmitError != null) {
-              try {
-                onSubmitError.call(feedback);
-              } catch (Exception e) {
-                Sentry.getCurrentScopes()
-                    .getOptions()
-                    .getLogger()
-                    .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
-              }
-            }
+      // Capture the feedback. If the ID is empty, it means that the feedback was not sent
+      final @NotNull Hint hint = new Hint();
+      maybeAddImageAttachment(hint);
+      final @NotNull SentryId id = Sentry.feedback().capture(feedback, hint);
+      if (!id.equals(SentryId.EMPTY_ID)) {
+        Toast.makeText(getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)
+            .show();
+        final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
+            feedbackOptions.getOnSubmitSuccess();
+        if (onSubmitSuccess != null) {
+          try {
+            onSubmitSuccess.call(feedback);
+          } catch (Exception e) {
+            Sentry.getCurrentScopes()
+                .getOptions()
+                .getLogger()
+                .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
           }
-          cancel();
-        });
+        }
+      } else {
+        final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
+            feedbackOptions.getOnSubmitError();
+        if (onSubmitError != null) {
+          try {
+            onSubmitError.call(feedback);
+          } catch (Exception e) {
+            Sentry.getCurrentScopes()
+                .getOptions()
+                .getLogger()
+                .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
+          }
+        }
+      }
+      cancel();
+    });
 
     btnCancel.setText(feedbackOptions.getCancelButtonLabel());
     btnCancel.setOnClickListener(v -> cancel());
@@ -406,22 +408,19 @@ public class SentryUserFeedbackForm extends AlertDialog {
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     final @Nullable Runnable onFormClose = options.getFeedbackOptions().getOnFormClose();
     if (onFormClose != null) {
-      super.setOnDismissListener(
-          dialog -> {
-            // User-provided callback: a crash in it must not take down the app or skip the
-            // cleanup and the user's own dismiss listener below
-            try {
-              onFormClose.run();
-            } catch (Exception e) {
-              options
-                  .getLogger()
-                  .log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
-            }
-            currentReplayId = null;
-            if (delegate != null) {
-              delegate.onDismiss(dialog);
-            }
-          });
+      super.setOnDismissListener(dialog -> {
+        // User-provided callback: a crash in it must not take down the app or skip the
+        // cleanup and the user's own dismiss listener below
+        try {
+          onFormClose.run();
+        } catch (Exception e) {
+          options.getLogger().log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
+        }
+        currentReplayId = null;
+        if (delegate != null) {
+          delegate.onDismiss(dialog);
+        }
+      });
     } else {
       super.setOnDismissListener(delegate);
     }
@@ -654,6 +653,8 @@ public class SentryUserFeedbackForm extends AlertDialog {
     super.show();
   }
 
+  // Open until the deprecated SentryUserFeedbackDialog.Builder, which extends it, is removed.
+  @Open
   public static class Builder {
 
     @Nullable OptionsConfiguration configuration;

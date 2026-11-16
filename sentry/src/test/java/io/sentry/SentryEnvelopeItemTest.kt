@@ -193,7 +193,7 @@ class SentryEnvelopeItemTest {
 
     assertFailsWith<IOException>(
       "Reading the attachment ${attachment.pathname} failed, because the file located at " +
-        "the path is not a file."
+        "the path is not a file.",
     ) {
       item.data
     }
@@ -218,7 +218,7 @@ class SentryEnvelopeItemTest {
         )
 
       assertFailsWith<IOException>(
-        "Reading the attachment ${attachment.pathname} failed, " + "because can't read the file."
+        "Reading the attachment ${attachment.pathname} failed, " + "because can't read the file.",
       ) {
         item.data
       }
@@ -272,7 +272,7 @@ class SentryEnvelopeItemTest {
 
     assertFailsWith<SentryEnvelopeException>(
       "Couldn't attach the attachment ${attachment.filename}.\n" +
-        "Please check that either bytes or a path is set."
+        "Please check that either bytes or a path is set.",
     ) {
       item.data
     }
@@ -385,7 +385,7 @@ class SentryEnvelopeItemTest {
 
     assertFailsWith<SentryEnvelopeException>(
       "Couldn't attach the attachment ${attachment.filename}.\n" +
-        "Please check that either bytes or a path is set."
+        "Please check that either bytes or a path is set.",
     ) {
       item.data
     }
@@ -427,7 +427,7 @@ class SentryEnvelopeItemTest {
     val profilingTraceData = mock<ProfilingTraceData> { whenever(it.traceFile).thenReturn(file) }
 
     assertFailsWith<SentryEnvelopeException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())
         .data
@@ -445,7 +445,7 @@ class SentryEnvelopeItemTest {
     file.writeBytes(fixture.bytes)
     file.setReadable(false)
     assertFailsWith<IOException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())
         .data
@@ -538,7 +538,7 @@ class SentryEnvelopeItemTest {
       }
 
     assertFailsWith<SentryEnvelopeException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
     }
@@ -555,7 +555,7 @@ class SentryEnvelopeItemTest {
     file.writeBytes(fixture.bytes)
     file.setReadable(false)
     assertFailsWith<IOException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
     }

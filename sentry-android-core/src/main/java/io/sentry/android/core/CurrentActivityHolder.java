@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class CurrentActivityHolder {
+public final class CurrentActivityHolder {
 
   private static final @NotNull CurrentActivityHolder instance = new CurrentActivityHolder();
 
@@ -26,6 +26,7 @@ public class CurrentActivityHolder {
     return null;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   public void setActivity(final @NotNull Activity activity) {
     if (currentActivity != null && currentActivity.get() == activity) {
       return;
@@ -38,6 +39,7 @@ public class CurrentActivityHolder {
     currentActivity = null;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   public void clearActivity(final @NotNull Activity activity) {
     if (currentActivity != null && currentActivity.get() != activity) {
       return;

@@ -60,20 +60,20 @@ final class LifecycleWatcher implements AppState.AppStateListener {
     addAppBreadcrumb("foreground");
   }
 
+  @SuppressWarnings("JavaUtilDate")
   private void startSession() {
     cancelTask();
 
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
 
-    scopes.configureScope(
-        scope -> {
-          if (lastUpdatedSession.get() == 0L) {
-            final @Nullable Session currentSession = scope.getSession();
-            if (currentSession != null && currentSession.getStarted() != null) {
-              lastUpdatedSession.set(currentSession.getStarted().getTime());
-            }
-          }
-        });
+    scopes.configureScope(scope -> {
+      if (lastUpdatedSession.get() == 0L) {
+        final @Nullable Session currentSession = scope.getSession();
+        if (currentSession != null && currentSession.getStarted() != null) {
+          lastUpdatedSession.set(currentSession.getStarted().getTime());
+        }
+      }
+    });
 
     final long lastUpdatedSession = this.lastUpdatedSession.get();
     final boolean startNewSession =

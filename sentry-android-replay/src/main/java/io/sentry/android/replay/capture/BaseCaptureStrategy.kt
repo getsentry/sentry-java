@@ -165,7 +165,7 @@ constructor(
         replayDeadline = null
         segmentTimestamp = null
         currentReplayId = SentryId.EMPTY_ID
-      }
+      },
     )
   }
 

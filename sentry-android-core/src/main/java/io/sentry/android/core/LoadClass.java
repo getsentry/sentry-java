@@ -26,14 +26,17 @@ public final class LoadClass extends io.sentry.util.LoadClass {
    * @param logger an instance of ILogger
    * @return a Class<?> if it's available, or null
    */
+  @Override
   public @Nullable Class<?> loadClass(final @NotNull String clazz, final @Nullable ILogger logger) {
     return delegate.loadClass(clazz, logger);
   }
 
+  @Override
   public boolean isClassAvailable(final @NotNull String clazz, final @Nullable ILogger logger) {
     return delegate.isClassAvailable(clazz, logger);
   }
 
+  @Override
   public boolean isClassAvailable(
       final @NotNull String clazz, final @Nullable SentryOptions options) {
     return delegate.isClassAvailable(clazz, options);

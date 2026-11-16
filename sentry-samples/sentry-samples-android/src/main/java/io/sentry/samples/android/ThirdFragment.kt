@@ -30,7 +30,7 @@ class ThirdFragment : Fragment(R.layout.third_fragment) {
             }
             child?.finish(SpanStatus.OK)
           }
-        }
+        },
       )
   }
 }
