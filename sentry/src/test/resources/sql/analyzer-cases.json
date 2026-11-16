@@ -2862,6 +2862,998 @@
       "note": "Summary entries that would exceed 255 characters are dropped whole (240 characters kept)."
     },
     {
+      "id": "workload.room.insert_entity",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "INSERT OR ABORT INTO `song` (`id`,`title`,`artist`) VALUES (nullif(?, 0),?,?)",
+      "expected": {
+        "text": "INSERT OR ABORT INTO `song` (`id`,`title`,`artist`) VALUES (nullif(?, ?),?,?)",
+        "summary": "INSERT `song`",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run. @Insert with an auto-generated key; the 0 in nullif is redacted like any number."
+    },
+    {
+      "id": "workload.room.insert_batch",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "INSERT INTO song(title, artist) VALUES (?, ?), (?, ?), (?, ?)",
+      "expected": {
+        "text": "INSERT INTO song(title, artist) VALUES (?, ?), (?, ?), (?, ?)",
+        "summary": "INSERT song",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "From sentry-samples-android (sqlite/SqlStatements.kt, Room2Dao.kt). insertSongsBatch(3). Multi-row VALUES are not collapsed, so the text varies with the batch size (50 rows in the sample)."
+    },
+    {
+      "id": "workload.room.count",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "SELECT count(*) FROM song",
+      "expected": {
+        "text": "SELECT count(*) FROM song",
+        "summary": "SELECT song",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "From sentry-samples-android (sqlite/SqlStatements.kt, Room2Dao.kt)."
+    },
+    {
+      "id": "workload.room.prime_writer",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "DELETE FROM song WHERE id < 0",
+      "expected": {
+        "text": "DELETE FROM song WHERE id < ?",
+        "summary": "DELETE song",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "From sentry-samples-android (sqlite/SqlStatements.kt, Room2Dao.kt)."
+    },
+    {
+      "id": "workload.room.query_in_list",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "SELECT * FROM song WHERE id IN (?,?,?) ORDER BY title COLLATE NOCASE LIMIT 20",
+      "expected": {
+        "text": "SELECT * FROM song WHERE id IN (?) ORDER BY title COLLATE NOCASE LIMIT ?",
+        "summary": "SELECT song",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run. Room expands a list parameter to one marker per element; the list collapses."
+    },
+    {
+      "id": "workload.room.master_table_create",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "expected": {
+        "text": "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+        "summary": "CREATE TABLE room_master_table",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.room.master_table_insert",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'Zq9xK7va')",
+      "expected": {
+        "text": "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(?, ?)",
+        "summary": "INSERT room_master_table",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7va"],
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run. The identity hash is a literal."
+    },
+    {
+      "id": "workload.room.modification_log_create",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "CREATE TEMP TABLE room_table_modification_log (table_id INTEGER PRIMARY KEY, invalidated INTEGER NOT NULL DEFAULT 0)",
+      "expected": {
+        "text": "CREATE TEMP TABLE room_table_modification_log (table_id INTEGER PRIMARY KEY, invalidated INTEGER NOT NULL DEFAULT ?)",
+        "summary": "CREATE TABLE room_table_modification_log",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run. The summary leaves the TEMP modifier out."
+    },
+    {
+      "id": "workload.room.invalidation_trigger",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "CREATE TEMP TRIGGER IF NOT EXISTS `room_table_modification_trigger_song_INSERT` AFTER INSERT ON `song` BEGIN UPDATE room_table_modification_log SET invalidated = 1 WHERE table_id = 0 AND invalidated = 0; END",
+      "expected": {
+        "text": "CREATE TEMP TRIGGER IF NOT EXISTS `room_table_modification_trigger_song_INSERT` AFTER INSERT ON `song` BEGIN UPDATE room_table_modification_log SET invalidated = ? WHERE table_id = ? AND invalidated = ?; END",
+        "summary": "CREATE TRIGGER; END",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run. TRIGGER is not one of upstream's object kinds, so the summary has no name; the statements in the body add nothing. The ; in the body ends the statement lexically, so END is summarized as its own statement."
+    },
+    {
+      "id": "workload.room.modification_log_reset",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "UPDATE room_table_modification_log SET invalidated = 0 WHERE invalidated = 1",
+      "expected": {
+        "text": "UPDATE room_table_modification_log SET invalidated = ? WHERE invalidated = ?",
+        "summary": "UPDATE room_table_modification_log",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.room.pragma_temp_store",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "PRAGMA temp_store = MEMORY;",
+      "expected": {
+        "text": "PRAGMA temp_store = MEMORY;",
+        "summary": "PRAGMA temp_store",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.room.begin_immediate",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "BEGIN IMMEDIATE TRANSACTION",
+      "expected": {
+        "text": "BEGIN IMMEDIATE TRANSACTION",
+        "summary": "BEGIN TRANSACTION",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run. Room's driver transactions. As upstream, only TRANSACTION follows BEGIN in the summary."
+    },
+    {
+      "id": "workload.room.migration_double_quoted",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "CREATE TABLE \"order\" (\"id\" INTEGER PRIMARY KEY, \"user\" TEXT)",
+      "expected": {
+        "text": "CREATE TABLE ? (? INTEGER PRIMARY KEY, ? TEXT)",
+        "summary": "CREATE TABLE \"?\"",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten Room Migration (execSQL) quoting reserved words with double quotes. doubleQuotedIdentifiers is UNKNOWN for sqlite, so the names are redacted (D15)."
+    },
+    {
+      "id": "workload.hibernate.find_by_id_join",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "select p1_0.id,p1_0.email,p1_0.first_name,a1_0.id,a1_0.city from person p1_0 left join address a1_0 on a1_0.id=p1_0.address_id where p1_0.id=?",
+      "expected": {
+        "text": "select p1_0.id,p1_0.email,p1_0.first_name,a1_0.id,a1_0.city from person p1_0 left join address a1_0 on a1_0.id=p1_0.address_id where p1_0.id=?",
+        "summary": "select person address",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.insert",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "insert into person (address_id,email,first_name,version,id) values (?,?,?,?,?)",
+      "expected": {
+        "text": "insert into person (address_id,email,first_name,version,id) values (?,?,?,?,?)",
+        "summary": "insert person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.update_versioned",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "update person set email=?,first_name=?,version=? where id=? and version=?",
+      "expected": {
+        "text": "update person set email=?,first_name=?,version=? where id=? and version=?",
+        "summary": "update person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.delete",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "delete from person where id=?",
+      "expected": {
+        "text": "delete from person where id=?",
+        "summary": "delete person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.sequence",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "select nextval('Zq9xK7vc')",
+      "expected": {
+        "text": "select nextval(?)",
+        "summary": "select",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vc"],
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run. The sequence name is a string literal, so it is redacted and the summary has no target."
+    },
+    {
+      "id": "workload.hibernate.page_like",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "select p1_0.id,p1_0.email from person p1_0 where p1_0.email like ? escape '' order by p1_0.id offset ? rows fetch first ? rows only",
+      "expected": {
+        "text": "select p1_0.id,p1_0.email from person p1_0 where p1_0.email like ? escape ? order by p1_0.id offset ? rows fetch first ? rows only",
+        "summary": "select person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.in_padding",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "select p1_0.id,p1_0.email from person p1_0 where p1_0.id in (?,?,?,?)",
+      "expected": {
+        "text": "select p1_0.id,p1_0.email from person p1_0 where p1_0.id in (?)",
+        "summary": "select person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run. in_clause_parameter_padding; the list collapses."
+    },
+    {
+      "id": "workload.hibernate.count_subquery",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "select count(o1_0.id) from orders o1_0 where o1_0.customer_id in (select c1_0.id from customer c1_0 where c1_0.region=?)",
+      "expected": {
+        "text": "select count(o1_0.id) from orders o1_0 where o1_0.customer_id in (select c1_0.id from customer c1_0 where c1_0.region=?)",
+        "summary": "select orders select customer",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.hql_comment",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "/* select p from Person p where p.email = 'Zq9xK7vd' */ select p1_0.id from person p1_0 where p1_0.email='Zq9xK7vd'",
+      "expected": {
+        "text": "select p1_0.id from person p1_0 where p1_0.email=?",
+        "summary": "select person",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vd"],
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run. hibernate.use_sql_comments puts the HQL, literals included, in a leading comment."
+    },
+    {
+      "id": "workload.hibernate.limit.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "select p1_0.id,p1_0.email from person p1_0 order by p1_0.id limit ?,?",
+      "expected": {
+        "text": "select p1_0.id,p1_0.email from person p1_0 order by p1_0.id limit ?,?",
+        "summary": "select person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.quoted_reserved.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "insert into `order` (`customer_id`,`status`,`id`) values (?,?,?)",
+      "expected": {
+        "text": "insert into `order` (`customer_id`,`status`,`id`) values (?,?,?)",
+        "summary": "insert `order`",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run. A reserved table name quoted by the MySQL dialect."
+    },
+    {
+      "id": "workload.hibernate.top.sqlserver",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "select top(?) p1_0.id,p1_0.email from person p1_0 where p1_0.email=?",
+      "expected": {
+        "text": "select top(?) p1_0.id,p1_0.email from person p1_0 where p1_0.email=?",
+        "summary": "select person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run."
+    },
+    {
+      "id": "workload.hibernate.lock_hint.sqlserver",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "select p1_0.id,p1_0.version from person p1_0 with (updlock,holdlock,rowlock) where p1_0.id=?",
+      "expected": {
+        "text": "select p1_0.id,p1_0.version from person p1_0 with (updlock,holdlock,rowlock) where p1_0.id=?",
+        "summary": "select person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Hibernate 6 generated SQL, written from memory, not captured from a run. PESSIMISTIC_WRITE; the table hint adds nothing to the summary."
+    },
+    {
+      "id": "workload.postgresql.upsert_jsonb",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "INSERT INTO user_settings (user_id, setting, value) VALUES (?, 'Zq9xK7ve', ?::jsonb) ON CONFLICT (user_id, setting) DO UPDATE SET value = EXCLUDED.value, updated_at = now() RETURNING id",
+      "expected": {
+        "text": "INSERT INTO user_settings (user_id, setting, value) VALUES (?, ?, ?::jsonb) ON CONFLICT (user_id, setting) DO UPDATE SET value = EXCLUDED.value, updated_at = now() RETURNING id",
+        "summary": "INSERT user_settings",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7ve"],
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc."
+    },
+    {
+      "id": "workload.postgresql.jsonb_filter",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT id, payload->>'Zq9xK7vf' AS status FROM events WHERE payload @> '{\"type\": \"Zq9xK7vg\"}'::jsonb AND created_at > ? ORDER BY created_at DESC LIMIT 50",
+      "expected": {
+        "text": "SELECT id, payload->>? AS status FROM events WHERE payload @> ?::jsonb AND created_at > ? ORDER BY created_at DESC LIMIT ?",
+        "summary": "SELECT events",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vf", "Zq9xK7vg"],
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc."
+    },
+    {
+      "id": "workload.postgresql.cte_window",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "WITH ranked AS (SELECT o.id, o.customer_id, row_number() OVER (PARTITION BY o.customer_id ORDER BY o.created_at DESC) AS rn FROM orders o WHERE o.status = ANY(?)) SELECT id, customer_id FROM ranked WHERE rn = 1",
+      "expected": {
+        "text": "WITH ranked AS (SELECT o.id, o.customer_id, row_number() OVER (PARTITION BY o.customer_id ORDER BY o.created_at DESC) AS rn FROM orders o WHERE o.status = ANY(?)) SELECT id, customer_id FROM ranked WHERE rn = ?",
+        "summary": "SELECT orders SELECT",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc. CTE names are filtered from the summary."
+    },
+    {
+      "id": "workload.postgresql.search_page",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT id, email FROM users WHERE email ILIKE ? AND deleted_at IS NULL ORDER BY email LIMIT 20 OFFSET 40",
+      "expected": {
+        "text": "SELECT id, email FROM users WHERE email ILIKE ? AND deleted_at IS NULL ORDER BY email LIMIT ? OFFSET ?",
+        "summary": "SELECT users",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc."
+    },
+    {
+      "id": "workload.postgresql.job_claim",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "UPDATE jobs SET status = 'Zq9xK7vh', locked_at = now() WHERE id = (SELECT id FROM jobs WHERE status = 'Zq9xK7vi' ORDER BY priority DESC FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id, payload",
+      "expected": {
+        "text": "UPDATE jobs SET status = ?, locked_at = now() WHERE id = (SELECT id FROM jobs WHERE status = ? ORDER BY priority DESC FOR UPDATE SKIP LOCKED LIMIT ?) RETURNING id, payload",
+        "summary": "UPDATE jobs SELECT jobs",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vh", "Zq9xK7vi"],
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc."
+    },
+    {
+      "id": "workload.postgresql.advisory_lock",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT pg_try_advisory_xact_lock(?)",
+      "expected": {
+        "text": "SELECT pg_try_advisory_xact_lock(?)",
+        "summary": "SELECT",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc."
+    },
+    {
+      "id": "workload.postgresql.create_table",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "CREATE TABLE IF NOT EXISTS orders (id BIGSERIAL PRIMARY KEY, customer_id BIGINT NOT NULL REFERENCES customers (id), total NUMERIC(12, 2) NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT now())",
+      "expected": {
+        "text": "CREATE TABLE IF NOT EXISTS orders (id BIGSERIAL PRIMARY KEY, customer_id BIGINT NOT NULL REFERENCES customers (id), total NUMERIC(?, ?) NOT NULL DEFAULT ?, created_at TIMESTAMPTZ NOT NULL DEFAULT now())",
+        "summary": "CREATE TABLE orders",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL migration, as run by Flyway."
+    },
+    {
+      "id": "workload.postgresql.create_index",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders (customer_id, created_at DESC)",
+      "expected": {
+        "text": "CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders (customer_id, created_at DESC)",
+        "summary": "CREATE INDEX idx_orders_customer",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL migration, as run by Flyway."
+    },
+    {
+      "id": "workload.postgresql.do_block",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'Zq9xK7vs') THEN CREATE TYPE order_status AS ENUM ('new', 'paid'); END IF; END $$",
+      "expected": {
+        "text": "DO ?",
+        "summary": "DO",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vs"],
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL migration, as run by Flyway. The body is one dollar-quoted literal, so the text keeps only DO and the ; inside it does not end the statement."
+    },
+    {
+      "id": "workload.postgresql.quoted_identifiers",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT \"u\".\"id\", \"u\".\"displayName\" FROM \"public\".\"User\" AS \"u\" WHERE \"u\".\"email\" = ?",
+      "expected": {
+        "text": "SELECT \"u\".\"id\", \"u\".\"displayName\" FROM \"public\".\"User\" AS \"u\" WHERE \"u\".\"email\" = ?",
+        "summary": "SELECT \"public\".\"User\"",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "jOOQ-style rendering with quoted identifiers, written from memory."
+    },
+    {
+      "id": "workload.postgresql.listen",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "LISTEN order_events",
+      "expected": {
+        "text": "LISTEN order_events",
+        "summary": "LISTEN",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc. Allowlisted in step 11c after the workload showed the gap (D26). The summary is the operation only."
+    },
+    {
+      "id": "workload.postgresql.unlisten",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "UNLISTEN order_events",
+      "expected": {
+        "text": "UNLISTEN order_events",
+        "summary": "UNLISTEN",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc. Allowlisted in step 11c after the workload showed the gap (D26). The summary is the operation only."
+    },
+    {
+      "id": "workload.postgresql.notify",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "NOTIFY order_events, 'Zq9xK7vj'",
+      "expected": {
+        "text": "NOTIFY order_events, ?",
+        "summary": "NOTIFY",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vj"],
+      "source": "sentry",
+      "note": "Handwritten PostgreSQL, as sent through pgjdbc. Allowlisted in step 11c after the workload showed the gap (D26). The summary is the operation only. The payload is a literal."
+    },
+    {
+      "id": "workload.mysql.upsert_counter",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "INSERT INTO page_views (page_id, day, views) VALUES (?, CURDATE(), 1) ON DUPLICATE KEY UPDATE views = views + 1",
+      "expected": {
+        "text": "INSERT INTO page_views (page_id, day, views) VALUES (?, CURDATE(), ?) ON DUPLICATE KEY UPDATE views = views + ?",
+        "summary": "INSERT page_views",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J."
+    },
+    {
+      "id": "workload.mysql.backticks",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SELECT `id`, `name`, `price` FROM `products` WHERE `category_id` = ? AND `price` BETWEEN 10 AND 20 ORDER BY `name` LIMIT 10",
+      "expected": {
+        "text": "SELECT `id`, `name`, `price` FROM `products` WHERE `category_id` = ? AND `price` BETWEEN ? AND ? ORDER BY `name` LIMIT ?",
+        "summary": "SELECT `products`",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J."
+    },
+    {
+      "id": "workload.mysql.interval",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SELECT COUNT(*) FROM orders WHERE created_at >= NOW() - INTERVAL 1 DAY",
+      "expected": {
+        "text": "SELECT COUNT(*) FROM orders WHERE created_at >= NOW() - INTERVAL ? DAY",
+        "summary": "SELECT orders",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J."
+    },
+    {
+      "id": "workload.mysql.double_quoted_string",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SELECT id FROM users WHERE status = \"Zq9xK7vk\" AND email = ?",
+      "expected": {
+        "text": "SELECT id FROM users WHERE status = ? AND email = ?",
+        "summary": "SELECT users",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vk"],
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J. Without ANSI_QUOTES, \"...\" is a string; doubleQuotedIdentifiers is UNKNOWN, so it is redacted either way."
+    },
+    {
+      "id": "workload.mysql.backslash_escaped_quote",
+      "requirements": ["R2", "R6", "R4"],
+      "dialect": "mysql",
+      "input": "SELECT id FROM customers WHERE last_name = 'O\\'Zq9xK7vr' AND active = 1",
+      "expected": {
+        "text": "SELECT id FROM customers WHERE last_name = ?",
+        "summary": "SELECT customers",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7vr"],
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J. Stops early (backslashEscapes UNKNOWN); acceptable: NO_BACKSLASH_ESCAPES can be set per session, and under either reading the other can leak the rest of the statement (D9, D25); the prefix and the summary survive."
+    },
+    {
+      "id": "workload.mysql.stock_decrement",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "UPDATE inventory SET stock = stock - ? WHERE sku = ? AND stock >= ?",
+      "expected": {
+        "text": "UPDATE inventory SET stock = stock - ? WHERE sku = ? AND stock >= ?",
+        "summary": "UPDATE inventory",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J."
+    },
+    {
+      "id": "workload.mysql.json",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SELECT JSON_UNQUOTE(JSON_EXTRACT(attrs, '$.Zq9xK7vl')) AS color FROM products WHERE JSON_CONTAINS(tags, '\"Zq9xK7vm\"')",
+      "expected": {
+        "text": "SELECT JSON_UNQUOTE(JSON_EXTRACT(attrs, ?)) AS color FROM products WHERE JSON_CONTAINS(tags, ?)",
+        "summary": "SELECT products",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vl", "Zq9xK7vm"],
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J."
+    },
+    {
+      "id": "workload.mysql.multi_table_delete",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "DELETE o FROM orders o JOIN customers c ON c.id = o.customer_id WHERE c.deleted_at IS NOT NULL",
+      "expected": {
+        "text": "DELETE o FROM orders o JOIN customers c ON c.id = o.customer_id WHERE c.deleted_at IS NOT NULL",
+        "summary": "DELETE orders",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J. As upstream (by reading), DELETE keeps only the FROM target."
+    },
+    {
+      "id": "workload.mysql.insert_ignore",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "INSERT IGNORE INTO tags (name) VALUES (?)",
+      "expected": {
+        "text": "INSERT IGNORE INTO tags (name) VALUES (?)",
+        "summary": "INSERT tags",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J."
+    },
+    {
+      "id": "workload.mysql.start_transaction",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "START TRANSACTION",
+      "expected": {
+        "text": "START TRANSACTION",
+        "summary": "START TRANSACTION",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J. Like BEGIN TRANSACTION, the summary keeps TRANSACTION (step 11c)."
+    },
+    {
+      "id": "workload.mysql.set_names",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SET NAMES utf8mb4",
+      "expected": {
+        "text": "SET NAMES utf8mb4",
+        "summary": "SET",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J. SET gives the operation only (step 11c)."
+    },
+    {
+      "id": "workload.mysql.call_procedure",
+      "requirements": ["R2", "R6", "R7"],
+      "dialect": "mysql",
+      "input": "CALL refresh_daily_stats(?, ?)",
+      "expected": {
+        "text": "CALL refresh_daily_stats(?, ?)",
+        "summary": "CALL refresh_daily_stats",
+        "storedProcedure": "refresh_daily_stats",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten MySQL, as sent through Connector/J."
+    },
+    {
+      "id": "workload.sqlc.get_author",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "-- name: GetAuthor :one\nSELECT id, name, bio FROM authors\nWHERE id = ? LIMIT 1",
+      "expected": {
+        "text": "SELECT id, name, bio FROM authors WHERE id = ? LIMIT ?",
+        "summary": "SELECT authors",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlc.list_authors",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "-- name: ListAuthors :many\nSELECT id, name, bio FROM authors\nORDER BY name",
+      "expected": {
+        "text": "SELECT id, name, bio FROM authors ORDER BY name",
+        "summary": "SELECT authors",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlc.create_author",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "-- name: CreateAuthor :one\nINSERT INTO authors (\n  name, bio\n) VALUES (\n  ?, ?\n)\nRETURNING id, name, bio",
+      "expected": {
+        "text": "INSERT INTO authors ( name, bio ) VALUES ( ?, ? ) RETURNING id, name, bio",
+        "summary": "INSERT authors",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlc.delete_author",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "-- name: DeleteAuthor :exec\nDELETE FROM authors\nWHERE id = ?",
+      "expected": {
+        "text": "DELETE FROM authors WHERE id = ?",
+        "summary": "DELETE authors",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlc.update_bios",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "-- name: UpdateAuthorBios :execrows\nUPDATE authors SET bio = ?\nWHERE bio IS NOT NULL",
+      "expected": {
+        "text": "UPDATE authors SET bio = ? WHERE bio IS NOT NULL",
+        "summary": "UPDATE authors",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlc.books_by_titles",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "-- name: ListBooksByTitles :many\nSELECT book_id, title FROM books\nWHERE title = ANY(?::varchar[])",
+      "expected": {
+        "text": "SELECT book_id, title FROM books WHERE title = ANY(?::varchar[])",
+        "summary": "SELECT books",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlc.count_join",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "postgresql",
+      "input": "-- name: CountAuthorsByCountry :one\nSELECT count(*) FROM authors a\nJOIN countries c ON c.id = a.country_id\nWHERE c.code = ?",
+      "expected": {
+        "text": "SELECT count(*) FROM authors a JOIN countries c ON c.id = a.country_id WHERE c.code = ?",
+        "summary": "SELECT authors countries",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlc.get_user.mysql",
+      "requirements": ["R2", "R6", "R3"],
+      "dialect": "mysql",
+      "input": "-- name: GetUserByEmail :one\nSELECT id, email FROM users\nWHERE email = ? LIMIT 1",
+      "expected": {
+        "text": "SELECT id, email FROM users WHERE email = ? LIMIT ?",
+        "summary": "SELECT users",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "sqlc-style query (sqlc-gen-kotlin), written from memory: the -- name: header is part of the query text."
+    },
+    {
+      "id": "workload.sqlserver.top_nolock",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "SELECT TOP (10) [o].[Id], [o].[Total] FROM [dbo].[Orders] AS [o] WITH (NOLOCK) WHERE [o].[CustomerId] = ? ORDER BY [o].[CreatedAt] DESC",
+      "expected": {
+        "text": "SELECT TOP (?) [o].[Id], [o].[Total] FROM [dbo].[Orders] AS [o] WITH (NOLOCK) WHERE [o].[CustomerId] = ? ORDER BY [o].[CreatedAt] DESC",
+        "summary": "SELECT [dbo].[Orders]",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc."
+    },
+    {
+      "id": "workload.sqlserver.insert_audit",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "INSERT INTO [dbo].[AuditLog] ([UserId], [Action], [CreatedAt]) VALUES (?, N'Zq9xK7vn', SYSUTCDATETIME())",
+      "expected": {
+        "text": "INSERT INTO [dbo].[AuditLog] ([UserId], [Action], [CreatedAt]) VALUES (?, ?, SYSUTCDATETIME())",
+        "summary": "INSERT [dbo].[AuditLog]",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vn"],
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc."
+    },
+    {
+      "id": "workload.sqlserver.update_counter",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "UPDATE [dbo].[Users] SET [LastLoginAt] = GETDATE(), [LoginCount] = [LoginCount] + 1 WHERE [Id] = ?",
+      "expected": {
+        "text": "UPDATE [dbo].[Users] SET [LastLoginAt] = GETDATE(), [LoginCount] = [LoginCount] + ? WHERE [Id] = ?",
+        "summary": "UPDATE [dbo].[Users]",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. ] is an operand, so the + stays an operator (D18)."
+    },
+    {
+      "id": "workload.sqlserver.merge_values",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "MERGE INTO [dbo].[Inventory] AS [t] USING (VALUES (?, ?)) AS [s] ([Sku], [Qty]) ON [t].[Sku] = [s].[Sku] WHEN MATCHED THEN UPDATE SET [t].[Qty] = [s].[Qty] WHEN NOT MATCHED THEN INSERT ([Sku], [Qty]) VALUES ([s].[Sku], [s].[Qty]);",
+      "expected": {
+        "text": "MERGE INTO [dbo].[Inventory] AS [t] USING (VALUES (?, ?)) AS [s] ([Sku], [Qty]) ON [t].[Sku] = [s].[Sku] WHEN MATCHED THEN UPDATE SET [t].[Qty] = [s].[Qty] WHEN NOT MATCHED THEN INSERT ([Sku], [Qty]) VALUES ([s].[Sku], [s].[Qty]);",
+        "summary": "MERGE [dbo].[Inventory]",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc."
+    },
+    {
+      "id": "workload.sqlserver.exec_procedure",
+      "requirements": ["R2", "R6", "R7"],
+      "dialect": "sqlserver",
+      "input": "EXEC [dbo].[usp_GetOrders] @CustomerId = ?, @Status = N'Zq9xK7vo'",
+      "expected": {
+        "text": "EXEC [dbo].[usp_GetOrders] @CustomerId = ?, @Status = ?",
+        "summary": "EXEC [dbo].[usp_GetOrders]",
+        "storedProcedure": "[dbo].[usp_GetOrders]",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vo"],
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. A bracketed procedure name is kept as written, as summary targets are."
+    },
+    {
+      "id": "workload.sqlserver.temp_table_insert",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "INSERT INTO #recent ([Id]) SELECT [Id] FROM [dbo].[Orders] WHERE [CreatedAt] > DATEADD(day, -7, GETDATE())",
+      "expected": {
+        "text": "INSERT INTO #recent ([Id]) SELECT [Id] FROM [dbo].[Orders] WHERE [CreatedAt] > DATEADD(day, ?, GETDATE())",
+        "summary": "INSERT #recent SELECT [dbo].[Orders]",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. hashComments is NO, so #recent is an identifier; a sign after a comma belongs to the number (D18)."
+    },
+    {
+      "id": "workload.sqlserver.brackets_with_spaces",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "SELECT [Order Id], [Customer's Name] FROM [Sales].[Order Details] WHERE [Unit Price] > ?",
+      "expected": {
+        "text": "SELECT [Order Id], [Customer's Name] FROM [Sales].[Order Details] WHERE [Unit Price] > ?",
+        "summary": "SELECT [Sales].[Order Details]",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc."
+    },
+    {
+      "id": "workload.sqlserver.set_nocount",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlserver",
+      "input": "SET NOCOUNT ON; SELECT [Id], [Payload] FROM [dbo].[Jobs] WHERE [State] = ?",
+      "expected": {
+        "text": "SET NOCOUNT ON; SELECT [Id], [Payload] FROM [dbo].[Jobs] WHERE [State] = ?",
+        "summary": "SET; SELECT [dbo].[Jobs]",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. SET gives the operation only (step 11c)."
+    },
+    {
+      "id": "workload.tooling.flyway_history.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT \"installed_rank\",\"version\",\"description\",\"type\",\"script\",\"checksum\",\"installed_on\",\"installed_by\",\"execution_time\",\"success\" FROM \"public\".\"flyway_schema_history\" WHERE \"installed_rank\" > ? ORDER BY \"installed_rank\"",
+      "expected": {
+        "text": "SELECT \"installed_rank\",\"version\",\"description\",\"type\",\"script\",\"checksum\",\"installed_on\",\"installed_by\",\"execution_time\",\"success\" FROM \"public\".\"flyway_schema_history\" WHERE \"installed_rank\" > ? ORDER BY \"installed_rank\"",
+        "summary": "SELECT \"public\".\"flyway_schema_history\"",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Flyway schema history query, written from memory."
+    },
+    {
+      "id": "workload.tooling.liquibase_lock.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "UPDATE DATABASECHANGELOGLOCK SET `LOCKED` = 1, LOCKEDBY = 'Zq9xK7vp', LOCKGRANTED = NOW() WHERE ID = 1 AND `LOCKED` = 0",
+      "expected": {
+        "text": "UPDATE DATABASECHANGELOGLOCK SET `LOCKED` = ?, LOCKEDBY = ?, LOCKGRANTED = NOW() WHERE ID = ? AND `LOCKED` = ?",
+        "summary": "UPDATE DATABASECHANGELOGLOCK",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vp"],
+      "source": "sentry",
+      "note": "Liquibase lock, written from memory. The lock owner (host name and address) is a literal."
+    },
+    {
+      "id": "workload.tooling.quartz_lock.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT * FROM QRTZ_LOCKS WHERE SCHED_NAME = 'Zq9xK7vq' AND LOCK_NAME = ? FOR UPDATE",
+      "expected": {
+        "text": "SELECT * FROM QRTZ_LOCKS WHERE SCHED_NAME = ? AND LOCK_NAME = ? FOR UPDATE",
+        "summary": "SELECT QRTZ_LOCKS",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7vq"],
+      "source": "sentry",
+      "note": "Quartz JDBC job store, written from memory. Quartz inlines the scheduler name as a literal."
+    },
+    {
+      "id": "workload.tooling.shedlock.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "INSERT INTO shedlock (name, lock_until, locked_at, locked_by) VALUES(?, ?, ?, ?) ON CONFLICT (name) DO UPDATE SET lock_until = ?, locked_at = ?, locked_by = ? WHERE shedlock.lock_until <= ?",
+      "expected": {
+        "text": "INSERT INTO shedlock (name, lock_until, locked_at, locked_by) VALUES(?, ?, ?, ?) ON CONFLICT (name) DO UPDATE SET lock_until = ?, locked_at = ?, locked_by = ? WHERE shedlock.lock_until <= ?",
+        "summary": "INSERT shedlock",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "ShedLock JDBC provider, written from memory."
+    },
+    {
+      "id": "workload.tooling.hikari_test_query.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SELECT 1",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "HikariCP connectionTestQuery."
+    },
+    {
+      "id": "workload.tooling.hikari_init_sql.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SET search_path TO app, public",
+      "expected": {
+        "text": "SET search_path TO app, public",
+        "summary": "SET",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "HikariCP connectionInitSql. SET gives the operation only (step 11c)."
+    },
+    {
+      "id": "workload.tooling.spring_sample_insert.hsqldb",
+      "requirements": ["R2", "R6"],
+      "dialect": "hsqldb",
+      "input": "insert into person (firstName, lastName) values (?, ?)",
+      "expected": {
+        "text": "insert into person (firstName, lastName) values (?, ?)",
+        "summary": "insert person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "From sentry-samples-spring-boot (PersonService.java)."
+    },
+    {
+      "id": "workload.tooling.spring_sample_schema.hsqldb",
+      "requirements": ["R2", "R6"],
+      "dialect": "hsqldb",
+      "input": "CREATE TABLE person (\n   id INTEGER IDENTITY PRIMARY KEY,\n   firstName VARCHAR(50) NOT NULL,\n   lastName VARCHAR(50) NOT NULL\n)",
+      "expected": {
+        "text": "CREATE TABLE person ( id INTEGER IDENTITY PRIMARY KEY, firstName VARCHAR(?) NOT NULL, lastName VARCHAR(?) NOT NULL )",
+        "summary": "CREATE TABLE person",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "From sentry-samples-spring-boot (schema.sql), run by the Spring datasource initializer."
+    },
+    {
       "id": "otel_java.sanitize_sql.001",
       "requirements": ["R2"],
       "dialect": "CONSERVATIVE",

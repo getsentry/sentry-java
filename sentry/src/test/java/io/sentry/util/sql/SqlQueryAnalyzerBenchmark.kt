@@ -6,9 +6,10 @@ import org.junit.Test
 
 /**
  * Measures [SqlQueryAnalyzer.analyze] over the case corpus and prints the median ns per call, once
- * with a warm cache and once with the cache bypassed (plan 01, step 7). It is a measurement, not a
- * contract: it asserts nothing and is skipped unless the `sentry.sql.benchmark` system property is
- * set:
+ * with a warm cache and once with the cache bypassed (plan 01, step 7). Each mode runs twice: over
+ * all cases (`corpus=all`) and over the realistic `workload.*` cases alone (`corpus=workload`, D19,
+ * plan 01 step 11c). It is a measurement, not a contract: it only checks that the workload subset
+ * is not empty, and is skipped unless the `sentry.sql.benchmark` system property is set:
  * ```
  * ./gradlew :sentry:test --tests 'io.sentry.util.sql.SqlQueryAnalyzerBenchmark' -Dsentry.sql.benchmark --rerun
  * ```
@@ -32,13 +33,22 @@ class SqlQueryAnalyzerBenchmark {
   @Test
   fun `median ns per analyze call, warm cache and cache bypassed`() {
     assumeTrue("set -D$PROPERTY to run the benchmark", System.getProperty(PROPERTY) != null)
-    val cases = SqlQueryAnalyzerCasesTest.loadCases()
+    val all = SqlQueryAnalyzerCasesTest.loadCases()
+    val workload = all.filter { it.id.startsWith(WORKLOAD_PREFIX) }
+    check(workload.isNotEmpty()) { "no case id starts with '$WORKLOAD_PREFIX'" }
 
-    val inputs = cases.map { it.input }
-    report("warm", cases.size, measure(cases) { inputs })
+    for ((corpus, cases) in listOf("all" to all, "workload" to workload)) {
+      val inputs = cases.map { it.input }
+      report("warm", corpus, cases.size, measure(cases) { inputs })
 
-    var suffix = 0L
-    report("bypass", cases.size, measure(cases) { cases.map { "${it.input} /* ${suffix++} */" } })
+      var suffix = 0L
+      report(
+        "bypass",
+        corpus,
+        cases.size,
+        measure(cases) { cases.map { "${it.input} /* ${suffix++} */" } },
+      )
+    }
   }
 
   private class Result(val warmupPasses: Int, val nsPerOp: DoubleArray, val checksum: Long)
@@ -75,15 +85,16 @@ class SqlQueryAnalyzerBenchmark {
     return checksum
   }
 
-  private fun report(mode: String, calls: Int, result: Result) {
+  private fun report(mode: String, corpus: String, calls: Int, result: Result) {
     val sorted = result.nsPerOp.sortedArray()
     val mid = sorted.size / 2
     val median = if (sorted.size % 2 == 0) (sorted[mid - 1] + sorted[mid]) / 2 else sorted[mid]
     println(
       String.format(
         Locale.ROOT,
-        "sql-benchmark mode=%s cases=%d warmup_passes=%d passes=%d median_ns_op=%.1f min=%.1f max=%.1f checksum=%d",
+        "sql-benchmark mode=%s corpus=%s cases=%d warmup_passes=%d passes=%d median_ns_op=%.1f min=%.1f max=%.1f checksum=%d",
         mode,
+        corpus,
         calls,
         result.warmupPasses,
         sorted.size,
@@ -97,6 +108,7 @@ class SqlQueryAnalyzerBenchmark {
 
   companion object {
     private const val PROPERTY = "sentry.sql.benchmark"
+    private const val WORKLOAD_PREFIX = "workload."
     private const val WARMUP_MILLIS = 2_000L
     private const val MIN_WARMUP_PASSES = 5
     private const val MEASURED_PASSES = 20
