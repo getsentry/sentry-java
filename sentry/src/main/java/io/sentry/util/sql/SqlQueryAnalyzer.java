@@ -29,7 +29,10 @@ public final class SqlQueryAnalyzer {
    */
   public static @NotNull SqlQuery analyze(
       final @Nullable String sql, final @NotNull SqlDialect dialect, final int maxQueryTextLength) {
+    if (sql == null) {
+      return SqlQuery.EMPTY;
+    }
     // Fail-closed stub until an analyzer implementation lands.
-    return SqlQuery.EMPTY;
+    return SqlQuery.FAILED;
   }
 }

@@ -10,11 +10,13 @@ import kotlin.test.Test
 class SqlQueryAnalyzerTest {
 
   @Test
-  fun `null input returns all-null fields`() {
+  fun `null input returns all-null fields and is complete`() {
     val query = SqlQueryAnalyzer.analyze(null, SqlDialect.CONSERVATIVE, Int.MAX_VALUE)
 
     assertThat(query.queryText).isNull()
     assertThat(query.querySummary).isNull()
     assertThat(query.storedProcedureName).isNull()
+    // Nothing to scan is not a failure: ERROR is reserved for internal errors (D27).
+    assertThat(query.status).isEqualTo(SqlQuery.Status.COMPLETE)
   }
 }

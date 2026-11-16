@@ -27,11 +27,16 @@ class SqlQueryAnalyzerCasesTest(
   fun analyze() {
     val query = SqlQueryAnalyzer.analyze(case.input, case.dialect, case.maxQueryTextLength)
 
-    assertThat(Fields(query.queryText, query.querySummary, query.storedProcedureName))
+    assertThat(Fields(query.queryText, query.querySummary, query.storedProcedureName, query.status))
       .isEqualTo(case.expected)
   }
 
-  data class Fields(val text: String?, val summary: String?, val storedProcedure: String?)
+  data class Fields(
+    val text: String?,
+    val summary: String?,
+    val storedProcedure: String?,
+    val status: SqlQuery.Status,
+  )
 
   class Case(
     val id: String,
@@ -153,6 +158,9 @@ class SqlQueryAnalyzerCasesTest(
         check(it in REQUIREMENTS) { "case '$id': unknown requirement '$it'" }
       }
       check(id!!.isNotEmpty()) { "id must not be empty" }
+      check(expected!!.status != SqlQuery.Status.TRUNCATED || "maxQueryTextLength" in seen) {
+        "case '$id': 'expected.status' TRUNCATED needs a 'maxQueryTextLength'"
+      }
       return Case(id, dialect!!, input!!, maxQueryTextLength, expected!!, secrets)
     }
 
@@ -166,11 +174,15 @@ class SqlQueryAnalyzerCasesTest(
       return dialect
     }
 
-    /** A missing key means the field is expected to be `null`. */
+    /**
+     * A missing `text`, `summary` or `storedProcedure` means the field is expected to be `null`.
+     * `status` is required: a missing status must not read as `COMPLETE`.
+     */
     private fun readExpected(reader: JsonObjectReader): Fields {
       var text: String? = null
       var summary: String? = null
       var storedProcedure: String? = null
+      var status: SqlQuery.Status? = null
       val seen = mutableSetOf<String>()
       reader.beginObject()
       while (reader.hasNext()) {
@@ -180,11 +192,26 @@ class SqlQueryAnalyzerCasesTest(
           "text" -> text = readString(reader, key)
           "summary" -> summary = readString(reader, key)
           "storedProcedure" -> storedProcedure = readString(reader, key)
+          "status" -> status = toStatus(readString(reader, key))
           else -> error("unknown key 'expected.$key'")
         }
       }
       reader.endObject()
-      return Fields(text, summary, storedProcedure)
+      return Fields(
+        text,
+        summary,
+        storedProcedure,
+        checkNotNull(status) { "'expected' misses 'status'" },
+      )
+    }
+
+    /** `ERROR` needs an internal failure, which no input can ask for. */
+    private fun toStatus(value: String): SqlQuery.Status {
+      val status = SqlQuery.Status.values().firstOrNull { it.name == value }
+      check(status != null && status != SqlQuery.Status.ERROR) {
+        "'expected.status' must be COMPLETE, TRUNCATED or STOPPED, not '$value'"
+      }
+      return status
     }
 
     private fun readString(reader: JsonObjectReader, key: String): String {

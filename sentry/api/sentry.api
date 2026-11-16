@@ -8334,7 +8334,17 @@ public final class io/sentry/util/sql/SqlDialect$Support : java/lang/Enum {
 public final class io/sentry/util/sql/SqlQuery {
 	public fun getQuerySummary ()Ljava/lang/String;
 	public fun getQueryText ()Ljava/lang/String;
+	public fun getStatus ()Lio/sentry/util/sql/SqlQuery$Status;
 	public fun getStoredProcedureName ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/sql/SqlQuery$Status : java/lang/Enum {
+	public static final field COMPLETE Lio/sentry/util/sql/SqlQuery$Status;
+	public static final field ERROR Lio/sentry/util/sql/SqlQuery$Status;
+	public static final field STOPPED Lio/sentry/util/sql/SqlQuery$Status;
+	public static final field TRUNCATED Lio/sentry/util/sql/SqlQuery$Status;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/util/sql/SqlQuery$Status;
+	public static fun values ()[Lio/sentry/util/sql/SqlQuery$Status;
 }
 
 public final class io/sentry/util/sql/SqlQueryAnalyzer {
