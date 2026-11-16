@@ -255,7 +255,7 @@ public final class SentryNdkCrashService extends Service {
               final @NotNull ComponentName name, final @NotNull IBinder service) {
             if (!ends.take()) {
               // a restarted or late service process has no daemon for this app
-              reattach(
+              if (reattach(
                   service,
                   logger,
                   nativeDatabasePath,
@@ -266,7 +266,9 @@ public final class SentryNdkCrashService extends Service {
                   debug,
                   shutdownTimeoutMillis,
                   includes,
-                  excludes);
+                  excludes)) {
+                configured = true;
+              }
               return;
             }
             configured =
@@ -347,7 +349,7 @@ public final class SentryNdkCrashService extends Service {
     return context.bindService(intent, connection, flags);
   }
 
-  private static void reattach(
+  private static boolean reattach(
       final @NotNull IBinder service,
       final @NotNull ILogger logger,
       final @NotNull String nativeDatabasePath,
@@ -362,7 +364,7 @@ public final class SentryNdkCrashService extends Service {
     final int shmFd = io.sentry.ndk.SentryNdk.dupCrashShmFd();
     if (shmFd < 0) {
       logger.log(SentryLevel.ERROR, "NDK crash service restarted, but the app can't reattach.");
-      return;
+      return false;
     }
 
     final ParcelFileDescriptor shm = ParcelFileDescriptor.adoptFd(shmFd);
@@ -406,8 +408,10 @@ public final class SentryNdkCrashService extends Service {
       } else {
         logger.log(SentryLevel.ERROR, "NDK crash service restarted, failed to reattach the app.");
       }
+      return reattached;
     } catch (IOException | SecurityException e) {
       logger.log(SentryLevel.ERROR, e, "Failed to reattach to the NDK crash service.");
+      return false;
     } finally {
       closeQuietly(shm);
       closeQuietly(notifyRead);

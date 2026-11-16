@@ -220,6 +220,27 @@ class SentryNdkCrashServiceTest {
   }
 
   @Test
+  fun `binds again when the binding of a late service died`() {
+    val binder = configure(true)
+    val context = UnconnectedContext()
+    val executor = DeferredExecutorService()
+    options.executorService = executor
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      native.`when`<Int> { io.sentry.ndk.SentryNdk.dupCrashShmFd() }.thenReturn(42)
+      native
+        .`when`<Boolean> { io.sentry.ndk.SentryNdk.reattachCrashDaemon(any(), any(), any()) }
+        .thenReturn(true)
+      val connection = SentryNdkCrashService.start(context, options)!!
+      executor.runAll()
+      connection.onServiceConnected(component, binder)
+
+      connection.onBindingDied(component)
+
+      assertThat(context.connections).containsExactly(connection, connection)
+    }
+  }
+
+  @Test
   fun `init fails without shared memory`() {
     configure(true)
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
