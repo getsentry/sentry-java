@@ -85,6 +85,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.core.env.MapPropertySource
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.quartz.SchedulerFactoryBean
@@ -338,6 +339,30 @@ class SentryAutoConfigurationTest {
         assertThat(options.logging.logsEnabled).isTrue()
         assertThat(options.isStrictTraceContinuation).isEqualTo(true)
         assertThat(options.orgId).isEqualTo("12345")
+      }
+  }
+
+  @Test
+  fun `YAML list binds integer ignored server HTTP status codes`() {
+    dsnEnabledRunner
+      .withInitializer { context ->
+        // YAML exposes unquoted numbers as Integer values in indexed property sources.
+        context.environment.propertySources.addFirst(
+          MapPropertySource(
+            "yaml",
+            mapOf<String, Any>(
+              "sentry.trace-ignore-status-codes[0]" to 404,
+              "sentry.trace-ignore-status-codes[1]" to "500-599",
+            ),
+          )
+        )
+      }
+      .run {
+        val ranges = it.getBean(SentryProperties::class.java).traceIgnoreStatusCodes
+        assertThat(ranges).hasSize(2)
+        assertThat(ranges!![0].isInRange(404)).isTrue()
+        assertThat(ranges[1].isInRange(500)).isTrue()
+        assertThat(ranges[1].isInRange(599)).isTrue()
       }
   }
 

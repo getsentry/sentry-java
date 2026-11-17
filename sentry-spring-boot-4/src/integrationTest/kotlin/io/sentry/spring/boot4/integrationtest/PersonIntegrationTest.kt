@@ -48,8 +48,8 @@ class PersonIntegrationTest : IntegrationTest() {
         .transaction()!!
     assertThat(transaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
       .isEqualTo("server")
-    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
-      .isEqualTo(200)
+    assertThat(transaction.contexts.trace!!.data)
+      .doesNotContainKey(SpanDataConvention.HTTP_STATUS_CODE_KEY)
     assertThat(
         transaction.hasOp(
           "http.server",

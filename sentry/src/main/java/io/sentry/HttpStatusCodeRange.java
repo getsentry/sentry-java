@@ -57,6 +57,19 @@ public final class HttpStatusCodeRange {
     return new HttpStatusCodeRange(min, max);
   }
 
+  /**
+   * Converts an integer HTTP status code to a range containing only that status. Configuration
+   * binding uses this overload for unquoted numeric YAML list entries.
+   *
+   * @param value the status code
+   * @return the status code range
+   * @throws IllegalArgumentException if the value is outside 100-599
+   */
+  @ApiStatus.Internal
+  public static @NotNull HttpStatusCodeRange valueOf(final @NotNull Integer value) {
+    return new HttpStatusCodeRange(validateStatusCode(value, value.toString()));
+  }
+
   private static int parseStatusCode(final @NotNull String value) {
     for (int i = 0; i < value.length(); i++) {
       if (!Character.isDigit(value.charAt(i))) {
@@ -70,8 +83,12 @@ public final class HttpStatusCodeRange {
     } catch (NumberFormatException e) {
       throw invalidRange(value);
     }
+    return validateStatusCode(statusCode, value);
+  }
+
+  private static int validateStatusCode(final int statusCode, final @NotNull String originalValue) {
     if (statusCode < MIN_HTTP_STATUS_CODE || statusCode > MAX_HTTP_STATUS_CODE) {
-      throw invalidRange(value);
+      throw invalidRange(originalValue);
     }
     return statusCode;
   }
