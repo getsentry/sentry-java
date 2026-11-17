@@ -15,6 +15,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.testing.Test
 import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.work.DisableCachingByDefault
 
@@ -69,18 +70,30 @@ class SentryRobolectricPlugin : Plugin<Project> {
         propertiesFile.set(project.layout.buildDirectory.file("robolectric/deps.properties"))
       }
 
+    val useGradleCachedJars: (Test) -> Unit = { test ->
+      // The properties file holds absolute paths, so it can't be a test input without breaking
+      // build cache hits across machines. The jars are the input instead.
+      test.dependsOn(writeDeps)
+      test.jvmArgumentProviders.add(
+        project.objects.newInstance(RobolectricDepsArgument::class.java).apply {
+          androidAllJars.from(coordinatesToJar.values)
+          propertiesFile.set(writeDeps.flatMap { it.propertiesFile })
+        }
+      )
+    }
+
     project.plugins.withId("com.android.library") {
-      project.extensions.getByType(LibraryExtension::class.java).testOptions.unitTests.all { test ->
-        // The properties file holds absolute paths, so it can't be a test input without breaking
-        // build cache hits across machines. The jars are the input instead.
-        test.dependsOn(writeDeps)
-        test.jvmArgumentProviders.add(
-          project.objects.newInstance(RobolectricDepsArgument::class.java).apply {
-            androidAllJars.from(coordinatesToJar.values)
-            propertiesFile.set(writeDeps.flatMap { it.propertiesFile })
-          }
-        )
-      }
+      project.extensions
+        .getByType(LibraryExtension::class.java)
+        .testOptions
+        .unitTests
+        .all(useGradleCachedJars)
+    }
+    project.plugins.withId("com.android.kotlin.multiplatform.library") {
+      project.tasks
+        .withType(Test::class.java)
+        .matching { it.name == "testAndroidHostTest" }
+        .configureEach(useGradleCachedJars)
     }
   }
 }

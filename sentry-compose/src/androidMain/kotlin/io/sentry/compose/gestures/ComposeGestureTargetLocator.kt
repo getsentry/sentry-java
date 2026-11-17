@@ -9,7 +9,7 @@ import androidx.compose.ui.node.Owner
 import androidx.compose.ui.semantics.SemanticsModifier
 import io.sentry.ILogger
 import io.sentry.SentryIntegrationPackageStorage
-import io.sentry.compose.BuildConfig
+import io.sentry.compose.SENTRY_COMPOSE_VERSION_NAME
 import io.sentry.compose.SentryComposeHelper
 import io.sentry.compose.boundsInWindow
 import io.sentry.internal.gestures.GestureTargetLocator
@@ -25,7 +25,7 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
 
   init {
     SentryIntegrationPackageStorage.getInstance()
-      .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
+      .addPackage("maven:io.sentry:sentry-compose", SENTRY_COMPOSE_VERSION_NAME)
   }
 
   override fun locate(root: Any?, x: Float, y: Float, targetType: UiElement.Type): UiElement? {

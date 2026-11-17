@@ -56,6 +56,10 @@ tasks.register("buildForCodeQL") {
                 proj.tasks.findByName("compileReleaseUnitTestSources")?.let { testTask ->
                     this.dependsOn(testTask)
                 }
+            } else if (proj.plugins.hasPlugin("com.android.kotlin.multiplatform.library")) {
+                proj.tasks.findByName("compileAndroidHostTest")?.let { testTask ->
+                    this.dependsOn(testTask)
+                }
             } else {
                 proj.tasks.findByName("testClasses")?.let { testTask ->
                     this.dependsOn(testTask)

@@ -6,7 +6,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 plugins {
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.kotlin.compose)
-  id("com.android.library")
+  id("com.android.kotlin.multiplatform.library")
+  id("com.android.lint")
   alias(libs.plugins.gradle.versions)
   id("io.sentry.detekt")
   alias(libs.plugins.dokka)
@@ -19,16 +20,67 @@ plugins {
   id("io.sentry.robolectric")
 }
 
+// The KMP Android library plugin has no BuildConfig, so the version is generated as a Kotlin
+// source.
+val generateSentryComposeVersion =
+  tasks.register("generateSentryComposeVersion") {
+    val version = project.version.toString()
+    val outputDir = layout.buildDirectory.dir("generated/sentryComposeVersion")
+    inputs.property("version", version)
+    outputs.dir(outputDir)
+    doLast {
+      val file = outputDir.get().file("io/sentry/compose/SentryComposeVersion.kt").asFile
+      file.parentFile.mkdirs()
+      file.writeText(
+        """
+        |package io.sentry.compose
+        |
+        |internal const val SENTRY_COMPOSE_VERSION_NAME: String = "$version"
+        |"""
+          .trimMargin(),
+      )
+    }
+  }
+
 kotlin {
   explicitApi()
 
-  androidTarget {
+  android {
+    namespace = "io.sentry.compose"
+    compileSdk {
+      version =
+        release(libs.versions.compileSdk.get().toInt()) {
+          minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
+    minSdk = libs.versions.minSdk.get().toInt()
+
+    androidResources { enable = true }
+
+    optimization {
+      consumerKeepRules.publish = true
+      consumerKeepRules.file("proguard-rules.pro")
+    }
+
+    withHostTest {
+      isReturnDefaultValues = true
+      isIncludeAndroidResources = true
+    }
+
+    lint {
+      warningsAsErrors = true
+      checkDependencies = true
+
+      // Lint 9.5 can't load the custom checks bundled with older androidx.lifecycle releases and
+      // reports that it skips them. They only cover lifecycle APIs this module doesn't call.
+      disable += "ObsoleteLintCustomCheck"
+    }
+
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_1_8)
       apiVersion.set(KotlinVersion.KOTLIN_1_9)
       languageVersion.set(KotlinVersion.KOTLIN_1_9)
     }
-    publishLibraryVariants("release")
   }
   jvm("desktop") {
     compilerOptions {
@@ -56,6 +108,7 @@ kotlin {
       }
     }
     getByName("androidMain") {
+      kotlin.srcDir(generateSentryComposeVersion)
       dependencies {
         api(projects.sentry)
         api(projects.sentryAndroidNavigation)
@@ -65,7 +118,7 @@ kotlin {
         implementation(libs.androidx.lifecycle.common.java8)
       }
     }
-    getByName("androidUnitTest") {
+    getByName("androidHostTest") {
       dependencies {
         implementation(libs.androidx.compose.ui.test.junit4)
         implementation(libs.androidx.navigation.compose)
@@ -82,56 +135,8 @@ kotlin {
   }
 }
 
-android {
-  compileSdk = libs.versions.compileSdk.get().toInt()
-  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
-  namespace = "io.sentry.compose"
-
-  defaultConfig {
-    minSdk = libs.versions.minSdk.get().toInt()
-
-    // for AGP 4.1
-    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
-  }
-
-  buildTypes {
-    getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
-    getByName("release") { consumerProguardFiles("proguard-rules.pro") }
-  }
-
-  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
-  // disabled, so unit tests must target release to run at all.
-  testBuildType = "release"
-
-  testOptions {
-    animationsDisabled = true
-    unitTests.apply {
-      isReturnDefaultValues = true
-      isIncludeAndroidResources = true
-    }
-  }
-
-  lint {
-    warningsAsErrors = true
-    checkDependencies = true
-
-    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-    checkReleaseBuilds = false
-
-    // Lint 9.5 can't load the custom checks bundled with older androidx.lifecycle releases and
-    // reports that it skips them. They only cover lifecycle APIs this module doesn't call.
-    disable += "ObsoleteLintCustomCheck"
-  }
-
-  buildFeatures { buildConfig = true }
-
-  androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-  }
-}
-
 // The default detekt source set is src/{main,test}, which doesn't exist in a multiplatform module.
-detekt { source.setFrom("src/androidMain/kotlin", "src/androidUnitTest/kotlin") }
+detekt { source.setFrom("src/androidMain/kotlin", "src/androidHostTest/kotlin") }
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.

@@ -28,7 +28,7 @@ internal class SentryLifecycleObserver(
   private companion object {
     init {
       SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
+        .addPackage("maven:io.sentry:sentry-compose", SENTRY_COMPOSE_VERSION_NAME)
     }
   }
 
