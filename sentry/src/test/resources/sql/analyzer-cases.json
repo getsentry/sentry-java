@@ -2186,6 +2186,19 @@
       "note": ""
     },
     {
+      "id": "shape.pragma_optimize.sqlite",
+      "requirements": ["R6"],
+      "dialect": "sqlite",
+      "input": "PRAGMA optimize",
+      "expected": {
+        "text": "PRAGMA optimize",
+        "summary": "PRAGMA optimize",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "OPTIMIZE starts a statement of its own, but after PRAGMA it is the pragma's name."
+    },
+    {
       "id": "shape.empty_statements",
       "requirements": ["R6"],
       "dialect": "CONSERVATIVE",
@@ -2303,6 +2316,19 @@
       },
       "source": "sentry",
       "note": "Allowlisted by D26. The summary keeps the table-like target, as for TRUNCATE and LOCK."
+    },
+    {
+      "id": "allowlist.refresh_concurrently.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "REFRESH MATERIALIZED VIEW CONCURRENTLY order_totals",
+      "expected": {
+        "text": "REFRESH MATERIALIZED VIEW CONCURRENTLY order_totals",
+        "summary": "REFRESH MATERIALIZED VIEW order_totals",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "Allowlisted by D26. The summary keeps the table-like target, as for TRUNCATE and LOCK. CONCURRENTLY, and MySQL's LOCAL and NO_WRITE_TO_BINLOG, are skipped before the name."
     },
     {
       "id": "allowlist.optimize.mysql",

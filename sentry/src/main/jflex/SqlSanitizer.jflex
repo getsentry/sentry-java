@@ -900,6 +900,35 @@ WHITESPACE           = [ \t\r\n]+
   /** Sentry: a statement summarized by its operation only (SET, FETCH, PREPARE, ...). */
   private class OperationOnly extends Operation {}
 
+  /** Sentry: COPY t or COPY (SELECT ...): the table, or the subquery's own summary. */
+  private class Copy extends SimpleOperation {
+    boolean isEnteringSubquery() {
+      return !identifierCaptured;
+    }
+
+    void handleSubqueryComplete() {
+      identifierCaptured = true;
+    }
+  }
+
+  /** Sentry: REFRESH MATERIALIZED VIEW v, OPTIMIZE TABLE t: the object kind words and the name. */
+  private class KindAndName extends Operation {
+    boolean nameCaptured = false;
+
+    void handleIdentifier() {
+      if (nameCaptured) return;
+      String word = yytext();
+      if (word.equalsIgnoreCase("MATERIALIZED") || word.equalsIgnoreCase("VIEW")
+          || word.equalsIgnoreCase("TABLE")) {
+        appendTargetToSummary();
+      } else if (!word.equalsIgnoreCase("CONCURRENTLY") && !word.equalsIgnoreCase("LOCAL")
+          && !word.equalsIgnoreCase("NO_WRITE_TO_BINLOG")) {
+        appendTargetToSummary();
+        nameCaptured = true;
+      }
+    }
+  }
+
   /**
    * WITH clause operation - handles CTE (Common Table Expression) definitions.
    * CTEs have the form: WITH name AS (query), name2 AS (query2), ... main_query
@@ -1221,6 +1250,22 @@ WHITESPACE           = [ \t\r\n]+
   "SAVEPOINT" | "RELEASE" | "SET" | "DO" | "END" | "LISTEN" | "UNLISTEN" | "NOTIFY" | "CLOSE" | "DEALLOCATE" | "CHECKPOINT" | "KILL" | "FLUSH" | "RESET" | "DISCARD" | "ABORT" | "XA" | "FETCH" | "PREPARE" | "START" {
           if (shouldStartNewOperation()) {
             setOperation(yytext().equalsIgnoreCase("START") ? new TransactionControl() : new OperationOnly());
+            recordOperationName();
+            appendOperationToSummary();
+          } else if (!insideComment) {
+            cancelPendingSubqueryIfNeeded();
+            operation.handleIdentifier();
+          }
+          appendCurrentFragment();
+          if (isOverLimit()) return YYEOF;
+      }
+  // Sentry: statements whose summary keeps a target (README Output conventions, D26). Elsewhere in
+  // a statement the word is an identifier (SQLite's PRAGMA optimize).
+  "PRAGMA" | "COPY" | "REFRESH" | "OPTIMIZE" {
+          if (shouldStartNewOperation()) {
+            String keyword = yytext();
+            setOperation(keyword.equalsIgnoreCase("PRAGMA") ? new SimpleOperation()
+                : keyword.equalsIgnoreCase("COPY") ? new Copy() : new KindAndName());
             recordOperationName();
             appendOperationToSummary();
           } else if (!insideComment) {
