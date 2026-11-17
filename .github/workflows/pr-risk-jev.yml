@@ -72,7 +72,42 @@ jobs:
               core.warning('PR changed after risk analysis; no label was published.');
               return;
             }
-            const target = result.status === 'ok' ? `risk: ${result.risk_label}` : null;
+            let riskLabel = result.risk_label;
+            if (result.status === 'ok' && riskLabel === 'low') {
+              // Files in the high_risk_code filter, which also drives the "Changes In High Risk Code"
+              // comment, are never low. Read the filter from the base revision so a PR cannot edit it.
+              const { data: filterFile } = await github.rest.repos.getContent({
+                ...repo, path: '.github/file-filters.yml', ref: pr.base.sha,
+              });
+              const filterLines = Buffer.from(filterFile.content, 'base64').toString('utf8').split('\n');
+              const start = filterLines.findIndex(line => /^high_risk_code:/.test(line));
+              if (start < 0) throw new Error('.github/file-filters.yml has no high_risk_code filter.');
+              const highRiskFiles = new Set();
+              for (const line of filterLines.slice(start + 1)) {
+                if (/^\S/.test(line)) break;
+                const entry = line.match(/^\s+-\s+"([^"]+)"\s*$/);
+                if (!entry) {
+                  if (line.trim() && !line.trim().startsWith('#')) {
+                    throw new Error(`Unsupported high_risk_code entry: ${line.trim()}`);
+                  }
+                  continue;
+                }
+                // Exact paths only: fail loudly rather than silently miss a glob added later.
+                if (/[*?[\]{}!]/.test(entry[1])) throw new Error(`Globs are not supported here: ${entry[1]}`);
+                highRiskFiles.add(entry[1]);
+              }
+              const changedFiles = await github.paginate(github.rest.pulls.listFiles, {
+                ...repo, pull_number: prNumber, per_page: 100,
+              });
+              const touched = changedFiles
+                .flatMap(file => [file.filename, file.previous_filename])
+                .filter(name => name && highRiskFiles.has(name));
+              if (touched.length > 0) {
+                core.notice(`Raised risk: low to risk: medium for high-risk files: ${touched.join(', ')}`);
+                riskLabel = 'medium';
+              }
+            }
+            const target = result.status === 'ok' ? `risk: ${riskLabel}` : null;
             const existing = pr.labels.map(label => label.name);
             if (target && !existing.includes(target)) {
               try {
@@ -81,8 +116,8 @@ jobs:
                 if (error.status !== 404) throw error;
                 try {
                   await github.rest.issues.createLabel({
-                    ...repo, name: target, color: colors[result.risk_label],
-                    description: `PR risk score: ${result.risk_label}`,
+                    ...repo, name: target, color: colors[riskLabel],
+                    description: `PR risk score: ${riskLabel}`,
                   });
                 } catch (error) {
                   if (error.status !== 422) throw error;
