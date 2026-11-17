@@ -1,3 +1,5 @@
+import com.android.build.api.variant.HasHostTestsBuilder
+import com.android.build.api.variant.HostTestBuilder
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -15,6 +17,10 @@ plugins {
   id("io.sentry.api-validation")
   id("io.sentry.robolectric")
 }
+
+// Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
+// Creating extra build types to run tests against the latest stable, and latest preview version.
+val composeUiTestVersions = mapOf("composeUi112" to "1.12.1", "composeUi113" to "1.13.0-rc01")
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -37,6 +43,12 @@ android {
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
+    composeUiTestVersions.keys.forEach { name ->
+      create(name) {
+        initWith(getByName("release"))
+        matchingFallbacks += "release"
+      }
+    }
   }
 
   // AGP 9 only generates unit tests for the testBuildType. The debug variant is
@@ -73,6 +85,9 @@ android {
 
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    if (it.buildType in composeUiTestVersions) {
+      (it as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
+    }
   }
 }
 
@@ -102,19 +117,12 @@ dependencies {
   testImplementation(libs.coil.compose)
 }
 
-// Runs the unit tests against another androidx.compose.ui version than the one they compile
-// against, e.g. -PreplayTestComposeUiVersion=1.13.0-rc01, the same as an app that ships a newer
-// Compose than the SDK was built with. Versions older than the test dependencies (Compose 1.9)
-// don't
-// work, as the test composables need a newer runtime.
-providers.gradleProperty("replayTestComposeUiVersion").orNull?.let { composeUiVersion ->
+composeUiTestVersions.forEach { (buildType, version) ->
   configurations
-    .matching { it.name.endsWith("UnitTestRuntimeClasspath") }
+    .matching { it.name == "${buildType}UnitTestRuntimeClasspath" }
     .configureEach {
       resolutionStrategy.eachDependency {
-        if (requested.group == "androidx.compose.ui") {
-          useVersion(composeUiVersion)
-        }
+        if (requested.group == "androidx.compose.ui") useVersion(version)
       }
     }
 }
