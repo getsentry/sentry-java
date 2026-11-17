@@ -1386,9 +1386,7 @@ class SentryClientTest {
 
   @Test
   fun `server transaction with ignored HTTP status is dropped before callbacks`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(
-      listOf(HttpStatusCodeRange(404))
-    )
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
     val processor = mock<EventProcessor>()
     val beforeSend = mock<SentryOptions.BeforeSendTransactionCallback>()
     val replayController = mock<ReplayController>()
@@ -1426,9 +1424,7 @@ class SentryClientTest {
 
   @Test
   fun `server transaction with ignored HTTP status range accepts OTel long value`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(
-      listOf(HttpStatusCodeRange(500, 599))
-    )
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(500, 599)))
 
     val eventId =
       fixture
@@ -1452,9 +1448,7 @@ class SentryClientTest {
 
   @Test
   fun `HTTP status filter only applies to server transactions`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(
-      listOf(HttpStatusCodeRange(404))
-    )
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
     val clientTransaction = createServerTransaction(404)
     clientTransaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "client"
     val missingKindTransaction = createServerTransaction(404)
@@ -1469,9 +1463,7 @@ class SentryClientTest {
 
   @Test
   fun `HTTP status filter ignores missing and invalid root status values`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(
-      listOf(HttpStatusCodeRange(404))
-    )
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
     val invalidStatusValues = listOf("404", 404.0, 404.5f, 99, 600, Long.MAX_VALUE)
     val sut = fixture.getSut()
 
@@ -1490,9 +1482,7 @@ class SentryClientTest {
 
   @Test
   fun `HTTP status filter does not read child span attributes`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(
-      listOf(HttpStatusCodeRange(404))
-    )
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
     val tracer =
       SentryTracer(
         TransactionContext("child-status-transaction", "op", TracesSamplingDecision(true)),
@@ -1512,9 +1502,7 @@ class SentryClientTest {
 
   @Test
   fun `profiling trace deletion failure for ignored transaction is logged`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(
-      listOf(HttpStatusCodeRange(404))
-    )
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
     val traceFile = mock<File>()
     whenever(traceFile.delete()).thenReturn(false)
     whenever(traceFile.path).thenReturn("undeletable.trace")
