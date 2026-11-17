@@ -114,7 +114,11 @@ comment hints, and check any checklist items that apply.
 
 Write the body to `/tmp/pr-body-<branch>.md`, with each `/` in the branch name replaced by `-`, not
 to pr-writer's `/tmp/pr-body.md`: that file outlives sessions and can still hold another PR's body.
-Run `gh pr create` only after the write succeeds.
+Only after the write succeeds, pass that file to `gh pr create` in place of pr-writer's:
+
+```bash
+gh pr create --draft --title '<title>' --body-file /tmp/pr-body-<branch>.md
+```
 
 If the change needs no changelog entry (see Step 6), make `#skip-changelog` the last line of the
 body to disable the changelog CI check.
