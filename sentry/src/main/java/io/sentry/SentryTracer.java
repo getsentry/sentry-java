@@ -156,19 +156,24 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void onDeadlineTimeoutReached() {
-    forceFinish(getDeadlineStatus(), transactionOptions.getIdleTimeout() != null, null);
+    final @Nullable SpanStatus status = getStatus();
+    forceFinish(
+        (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
+        transactionOptions.getIdleTimeout() != null,
+        null);
     isDeadlineTimerRunning.set(false);
   }
 
-  /** Whether the deadline timeout has been reached, even if the deadline timer has not run yet. */
-  boolean hasDeadlinePassed() {
+  /**
+   * The status a span finishing now must take because the deadline timeout has been reached, even
+   * if the deadline timer has not run yet, or null if it has not been reached.
+   */
+  @Nullable
+  SpanStatus getDeadlineExceededStatus() {
     final @Nullable Deadline deadline = this.deadline;
-    return deadline != null && deadline.hasPassed();
-  }
-
-  /** The status the deadline gives: the transaction's own, if it has one. */
-  @NotNull
-  SpanStatus getDeadlineStatus() {
+    if (deadline == null || !deadline.hasPassed()) {
+      return null;
+    }
     final @Nullable SpanStatus status = getStatus();
     return (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED;
   }

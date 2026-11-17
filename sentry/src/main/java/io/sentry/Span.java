@@ -199,8 +199,8 @@ public final class Span implements ISpan {
     // The deadline timer gives this status, but after the device slept or the process was frozen it
     // runs late, and the app's own finish can come first. Either way the span outlived the
     // deadline, and the status keeps it out of queries on span.status:ok.
-    this.context.setStatus(
-        transaction.hasDeadlinePassed() ? transaction.getDeadlineStatus() : status);
+    final @Nullable SpanStatus deadlineExceededStatus = transaction.getDeadlineExceededStatus();
+    this.context.setStatus(deadlineExceededStatus != null ? deadlineExceededStatus : status);
     this.timestamp = timestamp == null ? scopes.getOptions().getDateProvider().now() : timestamp;
     if (options.isTrimStart() || options.isTrimEnd()) {
       @Nullable SentryDate minChildStart = null;
