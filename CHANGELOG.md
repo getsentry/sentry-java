@@ -29,6 +29,7 @@
 - Session Replay no longer drops or freezes video when the device clock changes mid-recording ([#6542](https://github.com/getsentry/sentry-java/pull/6542))
   - The replay shows the change once, as a gap or an overlap, and breadcrumbs and errors stay aligned with the video.
   - A forward change longer than the session duration (1h) ends a full-session recording, as reaching that duration does. When recording only for errors, what was recorded before such a change is dropped, so the replay of a later error starts after it.
+- Android: Register network callbacks on API 24–25 when `AndroidConnectionStatusProvider` is created with a custom `Handler`, instead of failing because the `Handler` overload needs API 26 ([#6634](https://github.com/getsentry/sentry-java/pull/6634))
 
 ### Dependencies
 
