@@ -117,9 +117,10 @@ public final class Scopes implements IScopes {
 
   @Override
   @ApiStatus.Internal
+  @SuppressWarnings("ReferenceEquality")
   public boolean isFromSameSdkInitialization(final @Nullable IScopes otherScopes) {
     return otherScopes instanceof Scopes
-        && sdkInitializationToken.equals(((Scopes) otherScopes).sdkInitializationToken);
+        && sdkInitializationToken == ((Scopes) otherScopes).sdkInitializationToken;
   }
 
   @Override
