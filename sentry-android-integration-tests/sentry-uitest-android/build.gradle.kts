@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 plugins {
   id("com.android.application")
-  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)

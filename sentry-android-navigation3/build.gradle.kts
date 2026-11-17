@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 
 plugins {
   id("com.android.library")
-  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
   id("io.sentry.detekt")
