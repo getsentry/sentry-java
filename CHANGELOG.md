@@ -26,6 +26,7 @@
 - Session Replay: Send Ktor client network request start and end times in milliseconds, so the requests line up with the replay ([#6619](https://github.com/getsentry/sentry-java/pull/6619))
 - Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
+- Android: Register network callbacks on API 24–25 when `AndroidConnectionStatusProvider` is created with a custom `Handler`, instead of failing because the `Handler` overload needs API 26 ([#6634](https://github.com/getsentry/sentry-java/pull/6634))
 
 ### Dependencies
 
