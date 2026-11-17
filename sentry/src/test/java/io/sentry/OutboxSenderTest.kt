@@ -151,7 +151,7 @@ class OutboxSenderTest {
               items.first().data.inputStream().reader(),
               if (isTransaction) SentryTransaction::class.java else SentryEvent::class.java,
             )!!
-            .eventId
+            .eventId,
         )
         .isEqualTo(parent.eventId)
       if (isTransaction) {
@@ -201,7 +201,7 @@ class OutboxSenderTest {
           event.eventId,
           null,
           attachments + broken + SentryEnvelopeItem.fromEvent(serializer, event),
-        )
+        ),
       )
     val client = SentryClient(options)
     whenever(fixture.scopes.captureEvent(any(), any<Hint>())).thenAnswer {
@@ -303,7 +303,24 @@ class OutboxSenderTest {
         verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
         verify(fixture.scopes, never()).captureTransaction(any(), any(), any())
         verify(fixture.scopes, never()).captureEnvelope(any(), any())
-        verify(fixture.logger).log(eq(SentryLevel.ERROR), any(), anyVararg<Any>())
+        if (nullParent) {
+          verify(fixture.logger)
+            .log(
+              eq(SentryLevel.ERROR),
+              eq("Item %d of type %s returned null by the parser."),
+              any<Any>(),
+              any<Any>(),
+            )
+        } else {
+          verify(fixture.logger)
+            .log(
+              eq(SentryLevel.ERROR),
+              eq("Item %d of has a different event id (%s) to the envelope header (%s)"),
+              any<Any>(),
+              any<Any>(),
+              any<Any>(),
+            )
+        }
       }
     }
   }
@@ -426,11 +443,11 @@ class OutboxSenderTest {
         )
       whenever(fixture.envelopeReader.read(any()))
         .thenReturn(
-          SentryEnvelope(event.eventId, null, listOf(attachment, parent, attachment, feedback))
+          SentryEnvelope(event.eventId, null, listOf(attachment, parent, attachment, feedback)),
         )
       val sdkHint =
         mock<Retryable>(
-          extraInterfaces = arrayOf(Flushable::class, SubmissionResult::class, Resettable::class)
+          extraInterfaces = arrayOf(Flushable::class, SubmissionResult::class, Resettable::class),
         )
       whenever(sdkHint.isRetry).thenReturn(outcome != "success")
       whenever((sdkHint as Flushable).waitFlush()).thenReturn(outcome != "timeout")
