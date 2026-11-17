@@ -12,6 +12,12 @@ class TimestampTest {
   }
 
   @Test
+  fun `truncates to whole milliseconds`() {
+    assertThat(Timestamp.ofEpochNanos(1_700_000_000_123_999_999).epochMillis())
+      .isEqualTo(1_700_000_000_123)
+  }
+
+  @Test
   fun `compares by instant, whatever produced it`() {
     val anchored = AnchoredClock.create(FixedEpochClock(42), TestMonotonicTicker())
 
