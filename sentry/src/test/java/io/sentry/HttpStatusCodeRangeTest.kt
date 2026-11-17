@@ -64,6 +64,14 @@ class HttpStatusCodeRangeTest {
   }
 
   @Test
+  fun `parses an integer status code`() {
+    val range = HttpStatusCodeRange.valueOf(404)
+
+    assertTrue(range.isInRange(404))
+    assertFalse(range.isInRange(405))
+  }
+
+  @Test
   fun `parses an inclusive range with whitespace`() {
     val range = HttpStatusCodeRange.valueOf(" 500 - 599 ")
 
@@ -93,6 +101,9 @@ class HttpStatusCodeRangeTest {
   @Test
   fun `rejects status codes outside HTTP range`() {
     listOf("99", "600", "99-200", "500-600").forEach {
+      assertFailsWith<IllegalArgumentException> { HttpStatusCodeRange.valueOf(it) }
+    }
+    listOf(99, 600).forEach {
       assertFailsWith<IllegalArgumentException> { HttpStatusCodeRange.valueOf(it) }
     }
   }
