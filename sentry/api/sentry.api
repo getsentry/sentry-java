@@ -8352,12 +8352,13 @@ public final class io/sentry/util/sql/SqlQueryAnalyzer {
 }
 
 public final class io/sentry/util/sql/otel/OtelSqlSanitizer {
-	public static fun sanitize (Ljava/lang/String;Lio/sentry/util/sql/SqlDialect;)Lio/sentry/util/sql/otel/SqlQuery;
+	public static fun sanitize (Ljava/lang/String;Lio/sentry/util/sql/SqlDialect;I)Lio/sentry/util/sql/otel/SqlQuery;
 }
 
 public final class io/sentry/util/sql/otel/SqlQuery {
 	public fun getQuerySummary ()Ljava/lang/String;
 	public fun getQueryText ()Ljava/lang/String;
+	public fun getStatus ()Lio/sentry/util/sql/SqlQuery$Status;
 	public fun getStoredProcedureName ()Ljava/lang/String;
 }
 

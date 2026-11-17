@@ -5,13 +5,16 @@
 
 package io.sentry.util.sql.otel;
 
+import io.sentry.util.sql.SqlQuery.Status;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Stand-in for upstream's AutoValue {@code SqlQuery}, so the vendored grammar compiles with its
  * {@code SqlQuery.create(...)} calls unchanged. Keeps upstream's summary truncation at 255
- * characters. Operation and collection are dropped: Sentry does not extract them (README D1).
+ * characters. Operation and collection are dropped: Sentry does not extract them (README D1). Adds
+ * how the scan ended (README D27), which the grammar's driver sets.
  */
 @ApiStatus.Internal
 public final class SqlQuery {
@@ -22,14 +25,17 @@ public final class SqlQuery {
   private final @Nullable String queryText;
   private final @Nullable String storedProcedureName;
   private final @Nullable String querySummary;
+  private final @NotNull Status status;
 
   private SqlQuery(
       final @Nullable String queryText,
       final @Nullable String storedProcedureName,
-      final @Nullable String querySummary) {
+      final @Nullable String querySummary,
+      final @NotNull Status status) {
     this.queryText = queryText;
     this.storedProcedureName = storedProcedureName;
     this.querySummary = querySummary;
+    this.status = status;
   }
 
   static SqlQuery create(
@@ -38,7 +44,8 @@ public final class SqlQuery {
       final @Nullable String collectionName,
       final @Nullable String storedProcedureName,
       final @Nullable String querySummary) {
-    return new SqlQuery(queryText, storedProcedureName, truncateQuerySummary(querySummary));
+    return new SqlQuery(
+        queryText, storedProcedureName, truncateQuerySummary(querySummary), Status.COMPLETE);
   }
 
   static SqlQuery create(
@@ -48,6 +55,15 @@ public final class SqlQuery {
     final boolean isStoredProcedure =
         SQL_CALL.equals(operationName) || "EXECUTE".equals(operationName);
     return create(queryText, operationName, null, isStoredProcedure ? target : null, null);
+  }
+
+  /** Returns this result with {@code status}. */
+  @NotNull
+  SqlQuery withStatus(final @NotNull Status status) {
+    if (status == this.status) {
+      return this;
+    }
+    return new SqlQuery(queryText, storedProcedureName, querySummary, status);
   }
 
   private static @Nullable String truncateQuerySummary(final @Nullable String querySummary) {
@@ -72,5 +88,9 @@ public final class SqlQuery {
 
   public @Nullable String getQuerySummary() {
     return querySummary;
+  }
+
+  public @NotNull Status getStatus() {
+    return status;
   }
 }

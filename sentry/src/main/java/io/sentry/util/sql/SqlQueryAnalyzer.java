@@ -33,14 +33,13 @@ public final class SqlQueryAnalyzer {
     if (sql == null) {
       return SqlQuery.EMPTY;
     }
-    // Option 06: the vendored OpenTelemetry grammar with our lexical-safety patch (step 2).
-    // maxQueryTextLength is ignored (upstream has a fixed 32 KiB limit) and every result is
-    // COMPLETE until the driver (step 4); the wrapper follows in step 5.
-    final io.sentry.util.sql.otel.SqlQuery result = OtelSqlSanitizer.sanitize(sql, dialect);
+    // Option 06: the vendored OpenTelemetry grammar with our patch; the wrapper follows in step 5.
+    final io.sentry.util.sql.otel.SqlQuery result =
+        OtelSqlSanitizer.sanitize(sql, dialect, maxQueryTextLength);
     return new SqlQuery(
         result.getQueryText(),
         result.getQuerySummary(),
         result.getStoredProcedureName(),
-        SqlQuery.Status.COMPLETE);
+        result.getStatus());
   }
 }

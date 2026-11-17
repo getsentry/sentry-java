@@ -3079,6 +3079,21 @@
       "note": "The first token already exceeds the limit (Length limit convention)."
     },
     {
+      "id": "size.limit.stop_over_limit",
+      "requirements": ["R4", "R6"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a FROM t WHERE b IN ('Zq9xK7fb",
+      "maxQueryTextLength": 28,
+      "expected": {
+        "text": "SELECT a FROM t WHERE b IN (",
+        "summary": "SELECT t",
+        "status": "TRUNCATED"
+      },
+      "secrets": ["Zq9xK7fb"],
+      "source": "sentry",
+      "note": "The stop's ? for the unterminated literal would exceed the limit, so it is cut and the status is TRUNCATED, not STOPPED (D27)."
+    },
+    {
       "id": "size.summary.over_255",
       "requirements": ["R6"],
       "dialect": "CONSERVATIVE",

@@ -12,8 +12,14 @@ public final class OtelSqlSanitizer {
 
   private OtelSqlSanitizer() {}
 
+  /**
+   * Sanitizes {@code sql}. Text longer than {@code maxQueryTextLength} is cut at a token boundary
+   * and scanning stops there; the result's status says how the scan ended.
+   */
   public static @NotNull SqlQuery sanitize(
-      final @NotNull String sql, final @NotNull io.sentry.util.sql.SqlDialect dialect) {
-    return AutoSqlSanitizer.sanitize(sql, new SqlDialect(dialect));
+      final @NotNull String sql,
+      final @NotNull io.sentry.util.sql.SqlDialect dialect,
+      final int maxQueryTextLength) {
+    return AutoSqlSanitizer.sanitize(sql, new SqlDialect(dialect), maxQueryTextLength);
   }
 }

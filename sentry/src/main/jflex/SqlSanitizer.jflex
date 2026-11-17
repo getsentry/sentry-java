@@ -14,6 +14,7 @@ package io.sentry.util.sql.otel;
 
 import io.sentry.util.sql.otel.StringUtils;
 import io.sentry.util.sql.SqlDialect.Support;
+import io.sentry.util.sql.SqlQuery.Status;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Locale;
@@ -27,6 +28,8 @@ import java.util.regex.Pattern;
 %apiprivate
 %int
 %buffer 2048
+// Sentry: an internal lexer error is a RuntimeException, so the analyzer can fail closed (R5).
+%scanerror SqlLexerException
 
 %unicode
 %ignorecase
@@ -72,9 +75,10 @@ POSTGRE_PARAM_MARKER = "$"[0-9]*
 WHITESPACE           = [ \t\r\n]+
 
 %{
-  static SqlQuery sanitize(String statement, SqlDialect dialect) {
+  static SqlQuery sanitize(String statement, SqlDialect dialect, int limit) {
     AutoSqlSanitizer sanitizer = new AutoSqlSanitizer(new java.io.StringReader(statement));
     sanitizer.dialect = dialect;
+    sanitizer.limit = limit;
     try {
       while (!sanitizer.yyatEOF()) {
         int token = sanitizer.yylex();
@@ -83,15 +87,31 @@ WHITESPACE           = [ \t\r\n]+
           break;
         }
       }
-      return sanitizer.getResult();
+      Status status = sanitizer.finish();
+      return sanitizer.getResult().withStatus(status);
     } catch (java.io.IOException e) {
       // should never happen
-      return SqlQuery.create(null, null, null);
+      return SqlQuery.create(null, null, null).withStatus(Status.ERROR);
     }
   }
 
   // maximum sanitized statement length
-  static final int LIMIT = 32 * 1024;
+  private int limit;
+  // Sentry: text and summary length after the last token that stayed within the limit (D5).
+  private int textMark;
+  private int summaryMark;
+
+  // Sentry: cuts back to the last token boundary within the limit, so the summary covers only the
+  // kept text (D5), and returns how the scan ended (D27). A stop over the limit is TRUNCATED: its ?
+  // is cut. YYEOF from an action, or the end of input inside a $tag$ string, is a stop.
+  private Status finish() {
+    if (builder.length() > limit) {
+      builder.setLength(textMark);
+      querySummaryBuilder.setLength(summaryMark);
+      return Status.TRUNCATED;
+    }
+    return yyatEOF() && yystate() == YYINITIAL ? Status.COMPLETE : Status.STOPPED;
+  }
 
   // Sentry: ends an action early without stopping; the driver loop only stops on YYEOF.
   private static final int CONTINUE = 0;
@@ -157,7 +177,10 @@ WHITESPACE           = [ \t\r\n]+
   }
 
   private boolean isOverLimit() {
-    return builder.length() > LIMIT;
+    if (builder.length() > limit) return true;
+    textMark = builder.length();
+    summaryMark = querySummaryBuilder.length();
+    return false;
   }
 
   // Sentry: one space for removed comments and whitespace runs, collapsed, none at the start.
@@ -975,7 +998,6 @@ WHITESPACE           = [ \t\r\n]+
   }
 
   private SqlQuery getResult() {
-    StringUtils.truncate(builder, LIMIT);
     String fullStatement = builder.toString();
 
     // Normalize all 'in (?, ?, ...)' statements to in (?) to reduce cardinality

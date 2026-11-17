@@ -7,7 +7,7 @@ package io.sentry.util.sql.otel;
 
 import org.jetbrains.annotations.NotNull;
 
-/** The {@code StringUtils} methods the vendored grammar and {@link SqlQuery} use. */
+/** The {@code StringUtils} method {@link SqlQuery} uses. */
 final class StringUtils {
 
   private StringUtils() {}
@@ -21,16 +21,6 @@ final class StringUtils {
       return value;
     }
     return value.substring(0, truncationLength(value, maxLength));
-  }
-
-  /**
-   * Truncates {@code value} so that its length does not exceed {@code maxLength}. If the limit
-   * would split a surrogate pair, the pair is omitted.
-   */
-  static void truncate(final @NotNull StringBuilder value, final int maxLength) {
-    if (value.length() > maxLength) {
-      value.setLength(truncationLength(value, maxLength));
-    }
   }
 
   private static int truncationLength(final @NotNull CharSequence value, final int maxLength) {
