@@ -1,7 +1,10 @@
 package io.sentry.gradle
 
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -81,6 +84,15 @@ class JdkTargetConvention : Plugin<Project> {
           }
         }
       }
+      project.plugins.withId("com.android.kotlin.multiplatform.library") {
+        project.extensions
+          .getByType(KotlinMultiplatformAndroidComponentsExtension::class.java)
+          .onVariants { variant ->
+            verifyMethodParameters.configure {
+              archives.from(variant.artifacts.get(SingleArtifact.AAR))
+            }
+          }
+      }
       // Only works for non-android modules
       // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {
@@ -112,6 +124,22 @@ class JdkTargetConvention : Plugin<Project> {
     listOf("com.android.library", "com.android.application").forEach { pluginId ->
       project.plugins.withId(pluginId) { project.targetBuildJdkForUnitTests() }
     }
+    project.plugins.withId("com.android.kotlin.multiplatform.library") {
+      project.extensions
+        .getByType(KotlinMultiplatformExtension::class.java)
+        .targets
+        .withType(KotlinMultiplatformAndroidLibraryTarget::class.java)
+        .configureEach {
+          aarMetadata { minCompileSdk = project.minSdk() }
+          compilations
+            .withType(KotlinMultiplatformAndroidHostTestCompilation::class.java)
+            .configureEach {
+              compileTaskProvider.configure {
+                compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
+              }
+            }
+        }
+    }
   }
 
   private fun Project.minSdk(): Int =
@@ -132,13 +160,6 @@ class JdkTargetConvention : Plugin<Project> {
   private fun Project.targetBuildJdkForUnitTests() {
     plugins.withId("org.jetbrains.kotlin.android") {
       extensions.getByType(KotlinAndroidProjectExtension::class.java).target.targetBuildJdk()
-    }
-    plugins.withId("org.jetbrains.kotlin.multiplatform") {
-      extensions
-        .getByType(KotlinMultiplatformExtension::class.java)
-        .targets
-        .withType(KotlinAndroidTarget::class.java)
-        .configureEach { targetBuildJdk() }
     }
   }
 
