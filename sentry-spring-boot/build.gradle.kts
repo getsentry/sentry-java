@@ -20,8 +20,8 @@ plugins {
 
 tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = JvmTarget.JVM_11
-  compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-  compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+  compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
+  compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
 }
 
 // Spring scans the integration test apps' own bytecode with its repackaged ASM at startup, and

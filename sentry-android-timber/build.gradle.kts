@@ -43,8 +43,8 @@ android {
 
   kotlin {
     compilerOptions.jvmTarget = JvmTarget.JVM_11
-    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
+    compilerOptions.languageVersion = KotlinVersion.KOTLIN_2_1
+    compilerOptions.apiVersion = KotlinVersion.KOTLIN_2_1
   }
 
   testOptions {
