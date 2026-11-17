@@ -1,16 +1,59 @@
-style:
-  ReturnCount:
-    max: 3
-  MagicNumber:
-    ignorePropertyDeclaration: true
-  UnusedPrivateMember:
-    ignoreAnnotated: ['Preview']
+# detekt's defaults exclude test sources from these rules, but its list predates the KMP Android
+# library plugin's androidHostTest source set. A rule's excludes replace the default list, so this
+# repeats it with androidHostTest added.
+comments:
+  KDocReferencesNonPublicProperty:
+    excludes: &testSources
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidUnitTest/**'
+      - '**/androidHostTest/**'
+      - '**/androidInstrumentedTest/**'
+      - '**/jsTest/**'
+      - '**/iosTest/**'
+  UndocumentedPublicClass:
+    excludes: *testSources
+  UndocumentedPublicFunction:
+    excludes: *testSources
+  UndocumentedPublicProperty:
+    excludes: *testSources
+complexity:
+  StringLiteralDuplication:
+    excludes: *testSources
+  TooManyFunctions:
+    excludes: *testSources
+    ignoreAnnotatedFunctions: ['Preview']
+exceptions:
+  InstanceOfCheckForException:
+    excludes: *testSources
+  ThrowingExceptionsWithoutMessageOrCause:
+    excludes: *testSources
+  TooGenericExceptionCaught:
+    excludes: *testSources
 naming:
   FunctionNaming:
+    excludes: *testSources
     ignoreAnnotated: ['Composable']
   TopLevelPropertyNaming:
     # Accept both SCREAMING_CASE and Compose's PascalCase constants.
     constantPattern: '[A-Z][_A-Za-z0-9]*'
-complexity:
-  TooManyFunctions:
-    ignoreAnnotatedFunctions: ['Preview']
+performance:
+  ForEachOnRange:
+    excludes: *testSources
+  SpreadOperator:
+    excludes: *testSources
+potential-bugs:
+  LateinitUsage:
+    excludes: *testSources
+  UnsafeCallOnNullableType:
+    excludes: *testSources
+style:
+  ReturnCount:
+    max: 3
+  MagicNumber:
+    excludes: *testSources
+    ignorePropertyDeclaration: true
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']

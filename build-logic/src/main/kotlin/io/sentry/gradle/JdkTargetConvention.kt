@@ -1,7 +1,10 @@
 package io.sentry.gradle
 
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -94,6 +97,15 @@ class JdkTargetConvention : Plugin<Project> {
           }
         }
       }
+      project.plugins.withId("com.android.kotlin.multiplatform.library") {
+        project.extensions
+          .getByType(KotlinMultiplatformAndroidComponentsExtension::class.java)
+          .onVariants { variant ->
+            verifyMethodParameters.configure {
+              archives.from(variant.artifacts.get(SingleArtifact.AAR))
+            }
+          }
+      }
       // Only works for non-android modules
       // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {
@@ -126,6 +138,23 @@ class JdkTargetConvention : Plugin<Project> {
       project.plugins.withId(pluginId) { project.targetBuildJdkForUnitTests() }
     }
 
+    project.plugins.withId("com.android.kotlin.multiplatform.library") {
+      project.extensions
+        .getByType(KotlinMultiplatformExtension::class.java)
+        .targets
+        .withType(KotlinMultiplatformAndroidLibraryTarget::class.java)
+        .configureEach {
+          aarMetadata { minCompileSdk = project.minSdk() }
+          compilations
+            .withType(KotlinMultiplatformAndroidHostTestCompilation::class.java)
+            .configureEach {
+              compileTaskProvider.configure {
+                compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
+              }
+            }
+        }
+    }
+
     project.keepKotlinModuleNameWithoutGroup()
 
     // Test code isn't published, so it keeps the compiler's default and may use newer features.
@@ -135,6 +164,21 @@ class JdkTargetConvention : Plugin<Project> {
           compilerOptions.languageVersion.set(PUBLISHED_KOTLIN_VERSION)
           compilerOptions.apiVersion.set(PUBLISHED_KOTLIN_VERSION)
         }
+      }
+      // The KMP Android library plugin checks that a source set's language version isn't lower
+      // than the one of the source sets it depends on, before the commonMain metadata task gets
+      // configured, so multiplatform modules also pin the versions on their source sets.
+      project.plugins.withId("org.jetbrains.kotlin.multiplatform") {
+        project.extensions
+          .getByType(KotlinMultiplatformExtension::class.java)
+          .sourceSets
+          .matching { !it.name.contains("Test") }
+          .configureEach {
+            languageSettings {
+              languageVersion = PUBLISHED_KOTLIN_VERSION.version
+              apiVersion = PUBLISHED_KOTLIN_VERSION.version
+            }
+          }
       }
     }
 
@@ -173,6 +217,9 @@ class JdkTargetConvention : Plugin<Project> {
       targets.withType(KotlinAndroidTarget::class.java).configureEach {
         compilerOptions.moduleName.set(moduleName)
       }
+      targets.withType(KotlinMultiplatformAndroidLibraryTarget::class.java).configureEach {
+        compilerOptions.moduleName.set(moduleName)
+      }
     }
   }
 
@@ -194,13 +241,6 @@ class JdkTargetConvention : Plugin<Project> {
   private fun Project.targetBuildJdkForUnitTests() {
     plugins.withId("org.jetbrains.kotlin.android") {
       extensions.getByType(KotlinAndroidProjectExtension::class.java).target.targetBuildJdk()
-    }
-    plugins.withId("org.jetbrains.kotlin.multiplatform") {
-      extensions
-        .getByType(KotlinMultiplatformExtension::class.java)
-        .targets
-        .withType(KotlinAndroidTarget::class.java)
-        .configureEach { targetBuildJdk() }
     }
   }
 

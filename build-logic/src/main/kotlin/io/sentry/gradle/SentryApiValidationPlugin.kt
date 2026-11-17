@@ -28,6 +28,9 @@ class SentryApiValidationPlugin : Plugin<Project> {
     KOTLIN_PLUGIN_IDS.forEach {
       project.pluginManager.withPlugin(it) { enable(project, extension) }
     }
+    project.pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
+      project.validateKmpAndroidAbi(extension)
+    }
   }
 
   private fun enable(project: Project, extension: ApiValidationExtension) {
