@@ -422,7 +422,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         name = "Test User"
         username = "Test UserName"
         email = "Test User Email"
-      }
+      },
     )
     showDialogAndCheck {
       // Name and email are filled with Sentry user properties
@@ -446,7 +446,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         name = "Test User"
         username = "Test UserName"
         email = "Test User Email"
-      }
+      },
     )
     showDialogAndCheck {
       // Name and email are not filled
@@ -484,9 +484,9 @@ class UserFeedbackUiTest : BaseUiTest() {
 
     relay.assert {
       findEnvelope {
-          assertEnvelopeFeedback(it.items.toList(), AndroidLogger()).contexts.feedback!!.message ==
-            "Description filled"
-        }
+        assertEnvelopeFeedback(it.items.toList(), AndroidLogger()).contexts.feedback!!.message ==
+          "Description filled"
+      }
         .assert {
           val event: SentryEvent = it.assertItem()
           val feedback = event.contexts.feedback!!

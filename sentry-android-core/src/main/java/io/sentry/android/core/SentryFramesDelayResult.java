@@ -16,15 +16,13 @@ public final class SentryFramesDelayResult {
   }
 
   /**
-   * @return the total frame delay in seconds, or -1 if incalculable (e.g. no frame data available)
+   * Returns the total frame delay in seconds, or -1 if incalculable (e.g. no frame data available).
    */
   public double getDelaySeconds() {
     return delaySeconds;
   }
 
-  /**
-   * @return the number of frames that contributed to the delay (slow + frozen frames)
-   */
+  /** Returns the number of frames that contributed to the delay (slow + frozen frames). */
   public int getFramesContributingToDelayCount() {
     return framesContributingToDelayCount;
   }

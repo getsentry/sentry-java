@@ -30,6 +30,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");
@@ -48,14 +49,13 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       try {
         options
             .getExecutorService()
-            .submit(
-                () -> {
-                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
-                    if (!isClosed) {
-                      startOutboxSender(scopes, options, path);
-                    }
-                  }
-                });
+            .submit(() -> {
+              try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
+                if (!isClosed) {
+                  startOutboxSender(scopes, options, path);
+                }
+              }
+            });
       } catch (Throwable e) {
         logger.log(
             SentryLevel.DEBUG,

@@ -213,7 +213,7 @@ class AndroidContinuousProfilerTest {
           assertContains(it.measurements, ProfileMeasurement.ID_CPU_USAGE)
           assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_FOOTPRINT)
           assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT)
-        }
+        },
       )
   }
 

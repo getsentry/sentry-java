@@ -62,7 +62,7 @@ internal object NavigationTransactionHistory {
 }
 
 internal class NavigationTransactionHistoryStore(
-  private val transactionLimit: Int = TRANSACTION_HISTORY_LIMIT
+  private val transactionLimit: Int = TRANSACTION_HISTORY_LIMIT,
 ) {
 
   val transactions = mutableStateListOf<NavigationTransactionTrace>()
@@ -103,7 +103,7 @@ internal data class NavigationTraceSpan(
 )
 
 internal fun SentryTransaction.toNavigationTransactionTrace(
-  dsn: String?
+  dsn: String?,
 ): NavigationTransactionTrace {
   val trace = contexts.trace
   val startTimestamp = startTimestamp
@@ -140,7 +140,7 @@ internal fun SentryTransaction.toNavigationTransactionTrace(
 }
 
 private fun SentrySpan.toNavigationTraceSpan(
-  transactionStartTimestamp: Double
+  transactionStartTimestamp: Double,
 ): NavigationTraceSpan =
   NavigationTraceSpan(
     spanId = spanId.toString(),
@@ -153,18 +153,18 @@ private fun SentrySpan.toNavigationTraceSpan(
   )
 
 private fun List<NavigationTraceSpan>.withChildren(
-  spansByParentId: Map<String?, List<NavigationTraceSpan>>
+  spansByParentId: Map<String?, List<NavigationTraceSpan>>,
 ): List<NavigationTraceSpan> = map { span -> span.withChildren(spansByParentId) }
 
 private fun NavigationTraceSpan.withChildren(
-  spansByParentId: Map<String?, List<NavigationTraceSpan>>
+  spansByParentId: Map<String?, List<NavigationTraceSpan>>,
 ): NavigationTraceSpan =
   copy(
     children =
       spansByParentId[spanId]
         .orEmpty()
         .sortedBy { span -> span.startOffsetMillis }
-        .withChildren(spansByParentId)
+        .withChildren(spansByParentId),
   )
 
 private fun sentryTransactionUrl(
@@ -185,6 +185,22 @@ private fun sentryTransactionUrl(
     "&statsPeriod=14d" +
     "&targetId=$eventId" +
     "&timestamp=${timestampSeconds.toLong()}"
+}
+
+/** The URL of trace [traceId] in the project [dsn] reports to, or `null` if `dsn` names none. */
+internal fun sentryTraceUrl(dsn: String?, traceId: String): String? {
+  val projectId = dsn?.projectIdFromDsn() ?: return null
+  return "https://$SENTRY_SAMPLE_ORG_SLUG.sentry.io/explore/traces/trace/$traceId/" +
+    "?project=$projectId"
+}
+
+/**
+ * The URL of an issue search for event [eventId] in the project [dsn] reports to, or `null` if
+ * `dsn` names none.
+ */
+internal fun sentryEventSearchUrl(dsn: String?, eventId: String): String? {
+  val projectId = dsn?.projectIdFromDsn() ?: return null
+  return "https://$SENTRY_SAMPLE_ORG_SLUG.sentry.io/issues/?project=$projectId&query=$eventId"
 }
 
 private fun String.projectIdFromDsn(): String? =

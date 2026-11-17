@@ -186,7 +186,7 @@ internal class CanvasStrategy(
           if (!pixelCopyInFlight) {
             releaseResources()
           }
-        }
+        },
       )
     unprocessedPictureRef.getAndSet(null)
   }

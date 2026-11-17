@@ -72,7 +72,7 @@ class JsonUnknownSerializationTest(
           SentryPackage(
             "b59a1949-9950-4203-b394-ddd8d02c9633",
             "3d7790f3-7f32-43f7-b82f-9f5bc85205a8",
-          )
+          ),
         )
       val sentryRuntime = givenJsonUnknown(SentryRuntime())
       val sentrySpan = givenJsonUnknown(SentrySpanSerializationTest.Fixture().getSut())
@@ -85,7 +85,10 @@ class JsonUnknownSerializationTest(
       val session = givenJsonUnknown(SessionSerializationTest.Fixture().getSut())
       val skdVersion =
         givenJsonUnknown(
-          SdkVersion("3e934135-3f2b-49bc-8756-9f025b55143e", "3e31738e-4106-42d0-8be2-4a3a1bc648d3")
+          SdkVersion(
+            "3e934135-3f2b-49bc-8756-9f025b55143e",
+            "3e31738e-4106-42d0-8be2-4a3a1bc648d3",
+          ),
         )
       val spanContext = givenJsonUnknown(SpanContext("c2fb8fee2e2b49758bcb67cda0f713c7"))
       val traceContext = givenJsonUnknown(TraceContextSerializationTest.Fixture().getSut())

@@ -77,7 +77,7 @@ class SentryApollo4HttpInterceptorTestWithV3Implementation :
 
 abstract class SentryApollo4HttpInterceptorTest(
   private val executeQueryImplementation:
-    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>,
 ) {
   class Fixture {
     val server = MockWebServer()
@@ -128,7 +128,7 @@ abstract class SentryApollo4HttpInterceptorTest(
         MockResponse()
           .setBody(responseBody)
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       if (beforeSpan != null) {
@@ -308,8 +308,8 @@ abstract class SentryApollo4HttpInterceptorTest(
     assertEquals(baggageHeaderValues.size, 1)
     assertTrue(
       baggageHeaderValues[0].startsWith(
-        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
-      )
+        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
@@ -400,8 +400,8 @@ abstract class SentryApollo4HttpInterceptorTest(
         beforeSpan = { span, request, response ->
           span.description = "overwritten description"
           span
-        }
-      )
+        },
+      ),
     )
 
     verify(fixture.scopes)
@@ -446,7 +446,7 @@ abstract class SentryApollo4HttpInterceptorTest(
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
             error("callback failed")
-          }
+          },
         )
 
       assertThat(executeQueryImplementation(sut.query(LaunchDetailsQuery("83"))).data).isNotNull()
@@ -473,7 +473,7 @@ abstract class SentryApollo4HttpInterceptorTest(
         beforeSpan = { span, _, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
 
     val response = executeQueryImplementation(sut.query(LaunchDetailsQuery("83")))

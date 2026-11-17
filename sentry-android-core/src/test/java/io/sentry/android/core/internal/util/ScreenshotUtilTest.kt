@@ -22,7 +22,7 @@ import org.robolectric.Robolectric.buildActivity
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPixelCopy
 
-@Config(shadows = [ShadowPixelCopy::class], sdk = [26, 33])
+@Config(shadows = [ShadowPixelCopy::class], sdk = [30, 33])
 @RunWith(AndroidJUnit4::class)
 class ScreenshotUtilTest {
   @Test

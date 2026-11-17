@@ -22,140 +22,130 @@ public class Main {
     // Configure OpenTelemetry SDK with Sentry OTLP propagator
     AutoConfiguredOpenTelemetrySdk.builder()
         .setResultAsGlobal()
-        .addPropertiesSupplier(
-            () -> {
-              final Map<String, String> properties = new HashMap<>();
-              properties.put("otel.logs.exporter", "none");
-              properties.put("otel.metrics.exporter", "none");
-              // OTLP traces exporter configuration
-              properties.put("otel.traces.exporter", "otlp,logging");
-              properties.put(
-                  "otel.exporter.otlp.traces.endpoint",
-                  "https://o447951.ingest.us.sentry.io/api/5428563/integration/otlp/v1/traces");
-              properties.put("otel.exporter.otlp.traces.protocol", "http/protobuf");
-              properties.put(
-                  "otel.exporter.otlp.traces.headers",
-                  "x-sentry-auth=sentry sentry_key=502f25099c204a2fbf4cb16edc5975d1");
-              properties.put("otel.propagators", "tracecontext,baggage,sentry");
-              return properties;
-            })
+        .addPropertiesSupplier(() -> {
+          final Map<String, String> properties = new HashMap<>();
+          properties.put("otel.logs.exporter", "none");
+          properties.put("otel.metrics.exporter", "none");
+          // OTLP traces exporter configuration
+          properties.put("otel.traces.exporter", "otlp,logging");
+          properties.put(
+              "otel.exporter.otlp.traces.endpoint",
+              "https://o447951.ingest.us.sentry.io/api/5428563/integration/otlp/v1/traces");
+          properties.put("otel.exporter.otlp.traces.protocol", "http/protobuf");
+          properties.put(
+              "otel.exporter.otlp.traces.headers",
+              "x-sentry-auth=sentry sentry_key=502f25099c204a2fbf4cb16edc5975d1");
+          properties.put("otel.propagators", "tracecontext,baggage,sentry");
+          return properties;
+        })
         .build();
 
-    Sentry.init(
-        options -> {
-          // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
-          // your Sentry project/dashboard
-          options.setEnableExternalConfiguration(true);
-          options.setDsn(
-              "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
+    Sentry.init(options -> {
+      // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
+      // your Sentry project/dashboard
+      options.setEnableExternalConfiguration(true);
+      options.setDsn("https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
 
-          // All events get assigned to the release. See more at
-          // https://docs.sentry.io/workflow/releases/
-          options.setRelease("io.sentry.samples.console@3.0.0+1");
+      // All events get assigned to the release. See more at
+      // https://docs.sentry.io/workflow/releases/
+      options.setRelease("io.sentry.samples.console@3.0.0+1");
 
-          // Link Sentry events to OpenTelemetry spans
-          options.addEventProcessor(new OpenTelemetryOtlpEventProcessor());
+      // Link Sentry events to OpenTelemetry spans
+      options.addEventProcessor(new OpenTelemetryOtlpEventProcessor());
 
-          // Modifications to event before it goes out. Could replace the event altogether
-          options.setBeforeSend(
-              (event, hint) -> {
-                // Drop an event altogether:
-                if (event.getTag("SomeTag") != null) {
-                  return null;
-                }
-                return event;
-              });
+      // Modifications to event before it goes out. Could replace the event altogether
+      options.setBeforeSend((event, hint) -> {
+        // Drop an event altogether:
+        if (event.getTag("SomeTag") != null) {
+          return null;
+        }
+        return event;
+      });
 
-          options.setBeforeSendTransaction(
-              (transaction, hint) -> {
-                // Drop a transaction:
-                if (transaction.getTag("SomeTransactionTag") != null) {
-                  return null;
-                }
+      options.setBeforeSendTransaction((transaction, hint) -> {
+        // Drop a transaction:
+        if (transaction.getTag("SomeTransactionTag") != null) {
+          return null;
+        }
 
-                return transaction;
-              });
+        return transaction;
+      });
 
-          // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
-          options.setBeforeBreadcrumb(
-              (breadcrumb, hint) -> {
-                // Don't add breadcrumbs with message containing:
-                if (breadcrumb.getMessage() != null
-                    && breadcrumb.getMessage().contains("bad breadcrumb")) {
-                  return null;
-                }
-                return breadcrumb;
-              });
+      // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
+      options.setBeforeBreadcrumb((breadcrumb, hint) -> {
+        // Don't add breadcrumbs with message containing:
+        if (breadcrumb.getMessage() != null && breadcrumb.getMessage().contains("bad breadcrumb")) {
+          return null;
+        }
+        return breadcrumb;
+      });
 
-          // Record data being discarded, including the reason, type of data, and the number of
-          // items dropped
-          options.setOnDiscard(
-              (reason, category, number) -> {
-                // Only record the number of lost spans due to overflow conditions
-                if ((reason.equals(DiscardReason.CACHE_OVERFLOW)
-                        || reason.equals(DiscardReason.QUEUE_OVERFLOW))
-                    && category.equals(DataCategory.Span)) {
-                  numberOfDiscardedSpansDueToOverflow += number;
-                }
-              });
+      // Record data being discarded, including the reason, type of data, and the number of
+      // items dropped
+      options.setOnDiscard((reason, category, number) -> {
+        // Only record the number of lost spans due to overflow conditions
+        if ((reason.equals(DiscardReason.CACHE_OVERFLOW)
+                || reason.equals(DiscardReason.QUEUE_OVERFLOW))
+            && category.equals(DataCategory.Span)) {
+          numberOfDiscardedSpansDueToOverflow += number;
+        }
+      });
 
-          // Configure the background worker which sends events to sentry:
-          // Wait up to 5 seconds before shutdown while there are events to send.
-          options.setShutdownTimeoutMillis(5000);
+      // Configure the background worker which sends events to sentry:
+      // Wait up to 5 seconds before shutdown while there are events to send.
+      options.setShutdownTimeoutMillis(5000);
 
-          // Enable SDK logging with Debug level
-          options.setDebug(true);
-          // To change the verbosity, use:
-          // By default it's DEBUG.
-          // options.setDiagnosticLevel(SentryLevel.ERROR);
-          // A good option to have SDK debug log in prod is to use only level ERROR here.
+      // Enable SDK logging with Debug level
+      options.setDebug(true);
+      // To change the verbosity, use:
+      // By default it's DEBUG.
+      // options.setDiagnosticLevel(SentryLevel.ERROR);
+      // A good option to have SDK debug log in prod is to use only level ERROR here.
 
-          // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
-          // UI:
-          options.addInAppExclude("org.jboss");
+      // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
+      // UI:
+      options.addInAppExclude("org.jboss");
 
-          // Include frames from our package
-          options.addInAppInclude("io.sentry.samples");
+      // Include frames from our package
+      options.addInAppInclude("io.sentry.samples");
 
-          // Performance configuration options
-          // Set what percentage of traces should be collected
-          //          options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
+      // Performance configuration options
+      // Set what percentage of traces should be collected
+      //          options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
-          // Determine traces sample rate based on the sampling context
-          //          options.setTracesSampler(
-          //              context -> {
-          //                // only 10% of transactions with "/product" prefix will be collected
-          //                if (!context.getTransactionContext().getName().startsWith("/products"))
-          // {
-          //                  return 0.1;
-          //                } else {
-          //                  return 0.5;
-          //                }
-          //              });
+      // Determine traces sample rate based on the sampling context
+      //          options.setTracesSampler(
+      //              context -> {
+      //                // only 10% of transactions with "/product" prefix will be collected
+      //                if (!context.getTransactionContext().getName().startsWith("/products"))
+      // {
+      //                  return 0.1;
+      //                } else {
+      //                  return 0.5;
+      //                }
+      //              });
 
-        });
+    });
 
     Sentry.addBreadcrumb(
         "A 'bad breadcrumb' that will be rejected because of 'BeforeBreadcrumb callback above.'");
 
     // Data added to the root scope (no PushScope called up to this point)
     // The modifications done here will affect all events sent and will propagate to child scopes.
-    Sentry.configureScope(
-        scope -> {
-          scope.addEventProcessor(new SomeEventProcessor());
+    Sentry.configureScope(scope -> {
+      scope.addEventProcessor(new SomeEventProcessor());
 
-          scope.setExtra("SomeExtraInfo", "Some value for extra info");
-        });
+      scope.setExtra("SomeExtraInfo", "Some value for extra info");
+    });
 
     // Configures a scope which is only valid within the callback
-    Sentry.withScope(
-        scope -> {
-          scope.setLevel(SentryLevel.FATAL);
-          scope.setTransaction("main");
+    Sentry.withScope(scope -> {
+      scope.setLevel(SentryLevel.FATAL);
+      scope.setTransaction("main");
 
-          // This message includes the data set to the scope in this block:
-          Sentry.captureMessage("Fatal message!");
-        });
+      // This message includes the data set to the scope in this block:
+      Sentry.captureMessage("Fatal message!");
+    });
 
     // Only data added to the scope on `configureScope` above is included.
     Sentry.captureMessage("Some warning!", SentryLevel.WARNING);

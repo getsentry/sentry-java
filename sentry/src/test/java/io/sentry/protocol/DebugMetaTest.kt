@@ -68,7 +68,7 @@ class DebugMetaTest {
               DebugImage().apply {
                 type = DebugImage.PROGUARD
                 uuid = "existing-id"
-              }
+              },
             )
         },
         options,
@@ -98,7 +98,7 @@ class DebugMetaTest {
               DebugImage().apply {
                 type = DebugImage.PROGUARD
                 uuid = "existing-id"
-              }
+              },
             )
         },
         options,
@@ -130,7 +130,7 @@ class DebugMetaTest {
               DebugImage().apply {
                 type = "elf"
                 debugId = "native-id"
-              }
+              },
             )
         },
         options,
@@ -190,7 +190,7 @@ class DebugMetaTest {
               DebugImage().apply {
                 type = DebugImage.JVM
                 debugId = "id1"
-              }
+              },
             )
         },
         options,

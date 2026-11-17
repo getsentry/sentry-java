@@ -209,24 +209,22 @@ public final class SentryTracer implements ITransaction {
       // We set the new spanFinishedCallback here instead of creation time, calling the old one to
       // avoid the user overwrites it by setting a custom spanFinishedCallback on the root span
       final @Nullable SpanFinishedCallback oldCallback = this.root.getSpanFinishedCallback();
-      this.root.setSpanFinishedCallback(
-          span -> {
-            if (oldCallback != null) {
-              oldCallback.execute(span);
-            }
+      this.root.setSpanFinishedCallback(span -> {
+        if (oldCallback != null) {
+          oldCallback.execute(span);
+        }
 
-            // Let's call the finishCallback here, when the root span has a finished date but it's
-            // not finished, yet
-            final @Nullable TransactionFinishedCallback finishedCallback =
-                transactionFinishedCallback;
-            if (finishedCallback != null) {
-              finishedCallback.execute(this);
-            }
+        // Let's call the finishCallback here, when the root span has a finished date but it's
+        // not finished, yet
+        final @Nullable TransactionFinishedCallback finishedCallback = transactionFinishedCallback;
+        if (finishedCallback != null) {
+          finishedCallback.execute(this);
+        }
 
-            if (compositePerformanceCollector != null) {
-              performanceCollectionData.set(compositePerformanceCollector.stop(this));
-            }
-          });
+        if (compositePerformanceCollector != null) {
+          performanceCollectionData.set(compositePerformanceCollector.stop(this));
+        }
+      });
 
       // any un-finished children will remain unfinished
       // as relay takes care of setting the end-timestamp + deadline_exceeded
@@ -251,15 +249,13 @@ public final class SentryTracer implements ITransaction {
         performanceCollectionData.get().clear();
       }
 
-      scopes.configureScope(
-          scope -> {
-            scope.withTransaction(
-                transaction -> {
-                  if (transaction == this) {
-                    scope.clearTransaction();
-                  }
-                });
-          });
+      scopes.configureScope(scope -> {
+        scope.withTransaction(transaction -> {
+          if (transaction == this) {
+            scope.clearTransaction();
+          }
+        });
+      });
       dropUnrecordedProfilerIds(finishTimestamp);
 
       final SentryTransaction transaction = new SentryTransaction(this);
@@ -963,10 +959,9 @@ public final class SentryTracer implements ITransaction {
   @ApiStatus.Internal
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
-    scopes.configureScope(
-        (scope) -> {
-          scope.setTransaction(this);
-        });
+    scopes.configureScope(scope -> {
+      scope.setTransaction(this);
+    });
 
     return NoOpScopesLifecycleToken.getInstance();
   }

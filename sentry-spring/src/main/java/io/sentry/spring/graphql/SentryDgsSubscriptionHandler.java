@@ -22,12 +22,11 @@ public final class SentryDgsSubscriptionHandler implements SentrySubscriptionHan
       final @NotNull InstrumentationFieldFetchParameters parameters) {
     if (result instanceof Flux) {
       final @NotNull Flux<?> flux = (Flux<?>) result;
-      return flux.doOnError(
-          throwable -> {
-            final @NotNull ExceptionReporter.ExceptionDetails exceptionDetails =
-                new ExceptionReporter.ExceptionDetails(scopes, parameters.getEnvironment(), true);
-            exceptionReporter.captureThrowable(throwable, exceptionDetails, null);
-          });
+      return flux.doOnError(throwable -> {
+        final @NotNull ExceptionReporter.ExceptionDetails exceptionDetails =
+            new ExceptionReporter.ExceptionDetails(scopes, parameters.getEnvironment(), true);
+        exceptionReporter.captureThrowable(throwable, exceptionDetails, null);
+      });
     }
     return result;
   }

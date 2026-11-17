@@ -44,16 +44,14 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     val authToken = distributionOptions.orgAuthToken
     val baseUrl = distributionOptions.sentryBaseUrl
 
-    if (orgSlug.isNullOrEmpty() || projectSlug.isNullOrEmpty() || authToken.isNullOrEmpty()) {
-      throw IllegalStateException(
-        "Missing required distribution configuration: orgSlug, projectSlug, or orgAuthToken"
-      )
+    check(!orgSlug.isNullOrEmpty() && !projectSlug.isNullOrEmpty() && !authToken.isNullOrEmpty()) {
+      "Missing required distribution configuration: orgSlug, projectSlug, or orgAuthToken"
     }
 
     val urlString = buildString {
       append(baseUrl.trimEnd('/'))
       append(
-        "/api/0/projects/${URLEncoder.encode(orgSlug, "UTF-8")}/${URLEncoder.encode(projectSlug, "UTF-8")}/preprodartifacts/check-for-updates/"
+        "/api/0/projects/${URLEncoder.encode(orgSlug, "UTF-8")}/${URLEncoder.encode(projectSlug, "UTF-8")}/preprodartifacts/check-for-updates/",
       )
       append("?app_id=${URLEncoder.encode(params.appId, "UTF-8")}")
       append("&platform=${URLEncoder.encode(params.platform, "UTF-8")}")
@@ -85,7 +83,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       connection.setRequestProperty("Accept", "application/json")
       connection.setRequestProperty(
         "User-Agent",
-        options.sentryClientName ?: throw IllegalStateException("sentryClientName must be set"),
+        checkNotNull(options.sentryClientName) { "sentryClientName must be set" },
       )
       connection.connectTimeout = options.connectionTimeoutMillis
       connection.readTimeout = options.readTimeoutMillis

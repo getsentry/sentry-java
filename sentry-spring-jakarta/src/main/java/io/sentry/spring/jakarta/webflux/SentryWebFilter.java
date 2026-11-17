@@ -36,10 +36,9 @@ public class SentryWebFilter extends AbstractSentryWebFilter {
         .filter(serverWebExchange)
         .doFinally(__ -> doFinally(serverWebExchange, requestScopes, transaction))
         .doOnError(e -> doOnError(transaction, e))
-        .doFirst(
-            () -> {
-              Sentry.setCurrentScopes(requestScopes);
-              doFirst(serverWebExchange, requestScopes);
-            });
+        .doFirst(() -> {
+          Sentry.setCurrentScopes(requestScopes);
+          doFirst(serverWebExchange, requestScopes);
+        });
   }
 }

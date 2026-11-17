@@ -4,7 +4,7 @@ import android.view.Window;
 import io.sentry.android.core.internal.gestures.WindowCallbackAdapter;
 import org.jetbrains.annotations.NotNull;
 
-public class WindowContentChangedCallback extends WindowCallbackAdapter {
+public final class WindowContentChangedCallback extends WindowCallbackAdapter {
 
   private final @NotNull Runnable callback;
 

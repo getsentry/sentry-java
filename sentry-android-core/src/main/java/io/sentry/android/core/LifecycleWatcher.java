@@ -83,18 +83,19 @@ final class LifecycleWatcher implements AppState.AppStateListener {
    * <p>TODO [MAJOR]: let a session remember the tick it started on, so this can use a {@link
    * Deadline} too. That tick must not be serialized.
    */
+  // Session#getStarted() is a Date, see above.
+  @SuppressWarnings("JavaUtilDate")
   private boolean isSessionOnScopeStale() {
     final long nowMillis = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
     // No session, or one that never recorded a start, leaves nothing to resume.
     final @NotNull AtomicBoolean stale = new AtomicBoolean(true);
-    scopes.configureScope(
-        scope -> {
-          final @Nullable Session session = scope.getSession();
-          final @Nullable Date started = session == null ? null : session.getStarted();
-          if (started != null) {
-            stale.set(started.getTime() + sessionIntervalMillis <= nowMillis);
-          }
-        });
+    scopes.configureScope(scope -> {
+      final @Nullable Session session = scope.getSession();
+      final @Nullable Date started = session == null ? null : session.getStarted();
+      if (started != null) {
+        stale.set(started.getTime() + sessionIntervalMillis <= nowMillis);
+      }
+    });
     return stale.get();
   }
 

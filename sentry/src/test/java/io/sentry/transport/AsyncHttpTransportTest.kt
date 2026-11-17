@@ -527,7 +527,7 @@ class AsyncHttpTransportTest {
           override fun markEnqueued() {
             called = true
           }
-        }
+        },
       )
     fixture.getSUT().send(envelope, hint)
 

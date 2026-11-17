@@ -46,7 +46,7 @@ class UserInteractionIntegrationTest {
           loadClass.isClassAvailable(
             eq("androidx.lifecycle.Lifecycle"),
             anyOrNull<SentryAndroidOptions>(),
-          )
+          ),
         )
         .thenReturn(isLifecycleAvailable)
       whenever(scopes.options).thenReturn(options)
@@ -110,7 +110,7 @@ class UserInteractionIntegrationTest {
     sut.onActivityResumed(fixture.activity)
     assertIs<SentryWindowCallback>(fixture.activity.window.callback)
     assertIs<NoOpWindowCallback>(
-      (fixture.activity.window.callback as SentryWindowCallback).delegate
+      (fixture.activity.window.callback as SentryWindowCallback).delegate,
     )
   }
 

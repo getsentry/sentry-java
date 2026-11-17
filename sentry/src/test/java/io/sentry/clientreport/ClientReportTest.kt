@@ -199,7 +199,7 @@ class ClientReportTest {
 
     val envelope =
       testHelper.newEnvelope(
-        SentryEnvelopeItem.fromEvent(opts.serializer, SentryTransaction(transaction))
+        SentryEnvelopeItem.fromEvent(opts.serializer, SentryTransaction(transaction)),
       )
 
     clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
@@ -319,7 +319,7 @@ class ClientReportTest {
       ChronoUnit.MILLIS.between(
         LocalDateTime.now(),
         envelopeReport.timestamp.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
-      ) < 10000
+      ) < 10000,
     )
   }
 
@@ -340,7 +340,7 @@ class ClientReportTest {
   // Counts restored from an attached client report were already reported once, so replaying them
   // must not fire onDiscard a second time. Both public entry points have to hold the property.
   private fun assertRestoringCountsDoesNotFireOnDiscard(
-    recordLost: (ClientReportRecorder, SentryEnvelope) -> Unit
+    recordLost: (ClientReportRecorder, SentryEnvelope) -> Unit,
   ) {
     val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
@@ -374,9 +374,9 @@ class ClientReportTest {
             listOf(
               SentryLogEvent(SentryId(), SentryLongDate(1), "log message 1", SentryLogLevel.ERROR),
               SentryLogEvent(SentryId(), SentryLongDate(2), "log message 2", SentryLogLevel.WARN),
-            )
+            ),
           ),
-        )
+        ),
       )
 
     clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
@@ -406,9 +406,9 @@ class ClientReportTest {
               SentryMetricsEvent(SentryId(), SentryLongDate(1), "metric1", "counter", 1.0),
               SentryMetricsEvent(SentryId(), SentryLongDate(2), "metric2", "gauge", 2.0),
               SentryMetricsEvent(SentryId(), SentryLongDate(3), "metric3", "distribution", 3.0),
-            )
+            ),
           ),
-        )
+        ),
       )
 
     clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
@@ -576,7 +576,7 @@ class ClientReportTest {
     this!!.discardedEvents!!.first { it.category == category.category }.quantity
 
   private fun givenClientReportRecorder(
-    callback: Sentry.OptionsConfiguration<SentryOptions>? = null
+    callback: Sentry.OptionsConfiguration<SentryOptions>? = null,
   ) {
     setupSentry { options -> callback?.configure(options) }
     clientReportRecorder = opts.clientReportRecorder as ClientReportRecorder

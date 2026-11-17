@@ -237,14 +237,16 @@ class DefaultCompositePerformanceCollectorTest {
     val collector = fixture.getSut(null, null)
     assertNotNull(collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors"))
     assertTrue(
-      collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors").isEmpty()
+      collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors").isEmpty(),
     )
 
     assertNotNull(
-      collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors")
+      collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors"),
     )
     assertTrue(
-      collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors").isEmpty()
+      collector
+        .getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors")
+        .isEmpty(),
     )
   }
 

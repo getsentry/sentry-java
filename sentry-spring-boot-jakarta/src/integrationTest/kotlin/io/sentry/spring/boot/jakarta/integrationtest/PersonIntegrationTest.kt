@@ -49,14 +49,14 @@ class PersonIntegrationTest : IntegrationTest() {
         transaction.hasOp(
           "http.server",
           FeatureFlag("flag.evaluation.transaction-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(
         transaction.hasSpanWithOp(
           "spanCreatedThroughSentryApi",
           FeatureFlag("flag.evaluation.my-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
 
@@ -88,7 +88,7 @@ class PersonIntegrationTest : IntegrationTest() {
         transaction.hasSpanWithOpAndDescription(
           "db.query",
           "insert into person (firstName, lastName) values (?, ?)",
-        )
+        ),
       )
       .isTrue()
   }

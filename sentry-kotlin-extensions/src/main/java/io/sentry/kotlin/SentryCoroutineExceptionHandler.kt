@@ -17,7 +17,7 @@ import org.jetbrains.annotations.ApiStatus
  */
 @ApiStatus.Experimental
 public open class SentryCoroutineExceptionHandler(
-  private val scopes: IScopes = ScopesAdapter.getInstance()
+  private val scopes: IScopes = ScopesAdapter.getInstance(),
 ) : AbstractCoroutineContextElement(CoroutineExceptionHandler), CoroutineExceptionHandler {
   override fun handleException(context: CoroutineContext, exception: Throwable) {
     val mechanism =

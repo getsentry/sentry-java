@@ -114,7 +114,7 @@ class SentryApollo3InterceptorTest {
         MockResponse()
           .setBody(responseBody)
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       if (beforeSpan != null) {
@@ -294,8 +294,8 @@ class SentryApollo3InterceptorTest {
     assertEquals(baggageHeaderValues.size, 1)
     assertTrue(
       baggageHeaderValues[0].startsWith(
-        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
-      )
+        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
@@ -386,8 +386,8 @@ class SentryApollo3InterceptorTest {
         beforeSpan = { span, request, response ->
           span.description = "overwritten description"
           span
-        }
-      )
+        },
+      ),
     )
 
     verify(fixture.scopes)
@@ -432,7 +432,7 @@ class SentryApollo3InterceptorTest {
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
             error("callback failed")
-          }
+          },
         )
 
       assertThat(sut.query(LaunchDetailsQuery("83")).execute().data).isNotNull()
@@ -459,7 +459,7 @@ class SentryApollo3InterceptorTest {
         beforeSpan = { span, _, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
 
     val response = sut.query(LaunchDetailsQuery("83")).execute()

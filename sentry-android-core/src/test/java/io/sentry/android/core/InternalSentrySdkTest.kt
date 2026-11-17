@@ -160,10 +160,10 @@ class InternalSentrySdkTest {
       metrics.appStartType = AppStartMetrics.AppStartType.WARM
 
       metrics.appStartTimeSpan.setStartedAt(
-        20
+        20,
       ) // Can't be 0, as that's the default value if not set
       metrics.appStartTimeSpan.setStartUnixTimeMs(
-        20
+        20,
       ) // The order matters, unix time must be set after started at in tests to avoid overwrite
       metrics.appStartTimeSpan.setStoppedAt(200)
       metrics.classLoadedUptimeMs = 100
@@ -171,29 +171,29 @@ class InternalSentrySdkTest {
       AppStartMetrics.onApplicationCreate(mock<Application>())
       metrics.applicationOnCreateTimeSpan.description = "Application created"
       metrics.applicationOnCreateTimeSpan.setStartedAt(
-        30
+        30,
       ) // Can't be 0, as that's the default value if not set
       metrics.applicationOnCreateTimeSpan.setStartUnixTimeMs(
-        30
+        30,
       ) // The order matters, unix time must be set after started at in tests to avoid overwrite
       metrics.applicationOnCreateTimeSpan.setStoppedAt(40)
 
       val activityLifecycleSpan = ActivityLifecycleTimeSpan()
       activityLifecycleSpan.onCreate.description = "Test Activity Lifecycle onCreate"
       activityLifecycleSpan.onCreate.setStartedAt(
-        50
+        50,
       ) // Can't be 0, as that's the default value if not set
       activityLifecycleSpan.onCreate.setStartUnixTimeMs(
-        50
+        50,
       ) // The order matters, unix time must be set after started at in tests to avoid overwrite
       activityLifecycleSpan.onCreate.setStoppedAt(60)
 
       activityLifecycleSpan.onStart.description = "Test Activity Lifecycle onStart"
       activityLifecycleSpan.onStart.setStartedAt(
-        70
+        70,
       ) // Can't be 0, as that's the default value if not set
       activityLifecycleSpan.onStart.setStartUnixTimeMs(
-        70
+        70,
       ) // The order matters, unix time must be set after started at in tests to avoid overwrite
       activityLifecycleSpan.onStart.setStoppedAt(80)
       metrics.addActivityLifecycleTimeSpans(activityLifecycleSpan)
@@ -214,10 +214,10 @@ class InternalSentrySdkTest {
       metrics.appStartType = AppStartMetrics.AppStartType.WARM
 
       metrics.appStartTimeSpan.setStartedAt(
-        20
+        20,
       ) // Can't be 0, as that's the default value if not set
       metrics.appStartTimeSpan.setStartUnixTimeMs(
-        20
+        20,
       ) // The order matters, unix time must be set after started at in tests to avoid overwrite
       metrics.appStartTimeSpan.setStoppedAt(200)
       metrics.classLoadedUptimeMs = 100
@@ -225,10 +225,10 @@ class InternalSentrySdkTest {
       AppStartMetrics.onApplicationCreate(mock<Application>())
       metrics.applicationOnCreateTimeSpan.description = "Application created"
       metrics.applicationOnCreateTimeSpan.setStartedAt(
-        30
+        30,
       ) // Can't be 0, as that's the default value if not set
       metrics.applicationOnCreateTimeSpan.setStartUnixTimeMs(
-        30
+        30,
       ) // The order matters, unix time must be set after started at in tests to avoid overwrite
       metrics.applicationOnCreateTimeSpan.setStoppedAt(40)
     }
@@ -239,10 +239,10 @@ class InternalSentrySdkTest {
       metrics.appStartType = AppStartMetrics.AppStartType.WARM
 
       metrics.appStartTimeSpan.setStartedAt(
-        20
+        20,
       ) // Can't be 0, as that's the default value if not set
       metrics.appStartTimeSpan.setStartUnixTimeMs(
-        20
+        20,
       ) // The order matters, unix time must be set after started at in tests to avoid overwrite
       metrics.appStartTimeSpan.setStoppedAt(200)
       metrics.classLoadedUptimeMs = 100
@@ -250,7 +250,7 @@ class InternalSentrySdkTest {
       AppStartMetrics.onApplicationCreate(mock<Application>())
       metrics.applicationOnCreateTimeSpan.description = "Application created"
       metrics.applicationOnCreateTimeSpan.setStartedAt(
-        30
+        30,
       ) // Can't be 0, as that's the default value if not set
 
       val activityLifecycleSpan =
@@ -400,7 +400,7 @@ class InternalSentrySdkTest {
 
     val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
     assertTrue(
-      ((serializedScope["contexts"] as Map<*, *>)["app"] as Map<*, *>).containsKey("app_name")
+      ((serializedScope["contexts"] as Map<*, *>)["app"] as Map<*, *>).containsKey("app_name"),
     )
   }
 
@@ -478,7 +478,7 @@ class InternalSentrySdkTest {
     val capturedNewSessionStart =
       fixture.options.serializer.deserialize(
         InputStreamReader(
-          ByteArrayInputStream(capturedStartSessionEnvelope.items.toList()[0].data)
+          ByteArrayInputStream(capturedStartSessionEnvelope.items.toList()[0].data),
         ),
         Session::class.java,
       )!!
@@ -518,7 +518,7 @@ class InternalSentrySdkTest {
 
     // when capture envelope is called with an unhandled event through the non-terminating API
     fixture.captureEnvelopeNonTerminatingWithEvent(
-      fixture.createSentryEventWithUnhandledException()
+      fixture.createSentryEventWithUnhandledException(),
     )
 
     // then only the original event envelope is captured, without a session item
@@ -577,7 +577,7 @@ class InternalSentrySdkTest {
     fixture.init(context)
 
     fixture.captureEnvelopeNonTerminatingWithEvent(
-      fixture.createSentryEventWithUnhandledException()
+      fixture.createSentryEventWithUnhandledException(),
     )
     fixture.capturedEnvelopes.clear()
 
@@ -606,7 +606,7 @@ class InternalSentrySdkTest {
     fixture.init(context)
 
     fixture.captureEnvelopeNonTerminatingWithEvent(
-      fixture.createSentryEventWithUnhandledException()
+      fixture.createSentryEventWithUnhandledException(),
     )
     val unhandledSession = AtomicReference<Session>()
     Sentry.configureScope { scope -> unhandledSession.set(scope.session) }

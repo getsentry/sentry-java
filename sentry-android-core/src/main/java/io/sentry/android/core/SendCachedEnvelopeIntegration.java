@@ -89,62 +89,58 @@ final class SendCachedEnvelopeIntegration
       final Future<?> future =
           options
               .getExecutorService()
-              .submit(
-                  () -> {
-                    try {
-                      if (isClosed.get()) {
-                        options
-                            .getLogger()
-                            .log(
-                                SentryLevel.INFO,
-                                "SendCachedEnvelopeIntegration, not trying to send after closing.");
-                        return;
-                      }
+              .submit(() -> {
+                try {
+                  if (isClosed.get()) {
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.INFO,
+                            "SendCachedEnvelopeIntegration, not trying to send after closing.");
+                    return;
+                  }
 
-                      if (!isInitialized.getAndSet(true)) {
-                        connectionStatusProvider = options.getConnectionStatusProvider();
-                        connectionStatusProvider.addConnectionStatusObserver(this);
+                  if (!isInitialized.getAndSet(true)) {
+                    connectionStatusProvider = options.getConnectionStatusProvider();
+                    connectionStatusProvider.addConnectionStatusObserver(this);
 
-                        sender = factory.create(scopes, options);
-                      }
+                    sender = factory.create(scopes, options);
+                  }
 
-                      if (connectionStatusProvider != null
-                          && connectionStatusProvider.getConnectionStatus()
-                              == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
-                        options
-                            .getLogger()
-                            .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
-                        return;
-                      }
+                  if (connectionStatusProvider != null
+                      && connectionStatusProvider.getConnectionStatus()
+                          == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+                    options
+                        .getLogger()
+                        .log(SentryLevel.INFO, "SendCachedEnvelopeIntegration, no connection.");
+                    return;
+                  }
 
-                      // in case there's rate limiting active, skip processing
-                      final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
-                      if (rateLimiter != null
-                          && rateLimiter.isActiveForCategory(DataCategory.All)) {
-                        options
-                            .getLogger()
-                            .log(
-                                SentryLevel.INFO,
-                                "SendCachedEnvelopeIntegration, rate limiting active.");
-                        return;
-                      }
+                  // in case there's rate limiting active, skip processing
+                  final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
+                  if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.INFO,
+                            "SendCachedEnvelopeIntegration, rate limiting active.");
+                    return;
+                  }
 
-                      if (sender == null) {
-                        options
-                            .getLogger()
-                            .log(
-                                SentryLevel.ERROR,
-                                "SendCachedEnvelopeIntegration factory is null.");
-                        return;
-                      }
+                  if (sender == null) {
+                    options
+                        .getLogger()
+                        .log(SentryLevel.ERROR, "SendCachedEnvelopeIntegration factory is null.");
+                    return;
+                  }
 
-                      sender.send();
-                    } catch (Throwable e) {
-                      options
-                          .getLogger()
-                          .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
-                    }
-                  });
+                  sender.send();
+                } catch (Throwable e) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
+                }
+              });
 
       // startupCrashMarkerEvaluator remains true on subsequent runs, let's ensure we only block on
       // the very first execution (=app start)
@@ -157,6 +153,13 @@ final class SendCachedEnvelopeIntegration
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Synchronous send timed out, continuing in the background.");
+        } catch (InterruptedException e) {
+          // We don't own the calling thread, so keep its interrupt for the code that does
+          Thread.currentThread().interrupt();
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG, "Synchronous send interrupted, continuing in the background.");
         }
       }
       options.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");

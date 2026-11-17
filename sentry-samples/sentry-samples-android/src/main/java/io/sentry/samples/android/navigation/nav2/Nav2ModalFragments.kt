@@ -35,7 +35,7 @@ class Nav2PromoDialogFragment : DialogFragment() {
           orientation = LinearLayout.VERTICAL
           setPadding(20.dp(requireContext()))
           addView(promoDialogContent(activity, promoId))
-        }
+        },
       )
     }
   }
@@ -62,13 +62,13 @@ class Nav2PromoDialogFragment : DialogFragment() {
       addView(
         primaryButton(context, R.id.nav2_modal_capture_exception, "Exception") {
           activity.captureSampleException("Nav2")
-        }
+        },
       )
       addView(spacer(context, height = 10.dp(context)))
       addView(
         secondaryButton(context, R.id.nav2_modal_crash_app, "Crash App") {
           activity.showCrashConfirmation("Nav2")
-        }
+        },
       )
       addView(spacer(context, height = 10.dp(context)))
       addView(
@@ -77,9 +77,9 @@ class Nav2PromoDialogFragment : DialogFragment() {
           gravity = Gravity.END
           layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
           addView(
-            quietButton(context, R.id.nav2_modal_dismiss, "Dismiss") { activity.navigateBack() }
+            quietButton(context, R.id.nav2_modal_dismiss, "Dismiss") { activity.navigateBack() },
           )
-        }
+        },
       )
     }
 }
@@ -98,7 +98,7 @@ class Nav2ShareSheetFragment : DialogFragment() {
           orientation = LinearLayout.VERTICAL
           setPadding(12.dp(requireContext()), 0, 12.dp(requireContext()), 12.dp(requireContext()))
           addView(shareSheetContent(activity, productId))
-        }
+        },
       )
     }
   }
@@ -128,13 +128,13 @@ class Nav2ShareSheetFragment : DialogFragment() {
       addView(
         primaryButton(context, R.id.nav2_modal_capture_exception, "Capture Exception") {
           activity.captureSampleException("Nav2")
-        }
+        },
       )
       addView(spacer(context, height = 10.dp(context)))
       addView(
         secondaryButton(context, R.id.nav2_modal_crash_app, "Crash App") {
           activity.showCrashConfirmation("Nav2")
-        }
+        },
       )
       addView(spacer(context, height = 10.dp(context)))
       addView(
@@ -142,7 +142,7 @@ class Nav2ShareSheetFragment : DialogFragment() {
           .apply {
             backgroundTintList = ColorStateList.valueOf(0xFFE8E1F7.toInt())
             setTextColor(0xFF4E4569.toInt())
-          }
+          },
       )
     }
 }

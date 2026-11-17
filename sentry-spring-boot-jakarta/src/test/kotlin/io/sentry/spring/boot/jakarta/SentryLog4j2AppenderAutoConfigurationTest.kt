@@ -40,7 +40,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
         AutoConfigurations.of(
           SentryLog4j2AppenderAutoConfiguration::class.java,
           SentryAutoConfiguration::class.java,
-        )
+        ),
       )
       .withPropertyValues(
         "sentry.shutdownTimeoutMillis=0",
@@ -155,7 +155,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
       .run {
         assertThat(rootLogger.getAppenders(SentryAppender::class.java)).hasSize(1)
         assertThat(
-            configuration.getLoggerConfig("com.example").getAppenders(SentryAppender::class.java)
+            configuration.getLoggerConfig("com.example").getAppenders(SentryAppender::class.java),
           )
           .hasSize(1)
       }
@@ -320,7 +320,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
 }
 
 fun <T> org.apache.logging.log4j.core.config.LoggerConfig.getAppenders(
-  clazz: Class<T>
+  clazz: Class<T>,
 ): List<Appender> {
   return this.appenders.values.filter { it.javaClass == clazz }
 }

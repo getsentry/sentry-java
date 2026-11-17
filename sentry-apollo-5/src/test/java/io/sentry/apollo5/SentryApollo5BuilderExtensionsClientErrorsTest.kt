@@ -44,7 +44,7 @@ class SentryApollo5BuilderExtensionsClientErrorsTestWithV5Implementation :
 
 abstract class SentryApollo5BuilderExtensionsClientErrorsTest(
   private val executeQueryImplementation:
-    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>,
 ) {
   class Fixture {
     val server = MockWebServer()
@@ -99,7 +99,7 @@ abstract class SentryApollo5BuilderExtensionsClientErrorsTest(
                 sdkVersion = SdkVersion("test", "1.2.3")
                 isSendDefaultPii = sendDefaultPii
                 configureOptions()
-              }
+              },
             )
         }
       whenever(scopes.captureEvent(any(), any<Hint>())).thenReturn(SentryId.EMPTY_ID)
@@ -164,7 +164,7 @@ abstract class SentryApollo5BuilderExtensionsClientErrorsTest(
     fixture.getSut(captureFailedRequests = false)
 
     assertFalse(
-      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo5ClientError")
+      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo5ClientError"),
     )
   }
 
@@ -173,7 +173,7 @@ abstract class SentryApollo5BuilderExtensionsClientErrorsTest(
     fixture.getSut()
 
     assertTrue(
-      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo5ClientError")
+      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo5ClientError"),
     )
   }
 

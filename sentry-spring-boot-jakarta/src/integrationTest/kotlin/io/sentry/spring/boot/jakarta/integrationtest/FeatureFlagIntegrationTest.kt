@@ -17,7 +17,7 @@ class FeatureFlagIntegrationTest : IntegrationTest() {
 
     assertThat(
         awaitTransaction("new-checkout-flow")
-          .hasOp("http.server", FeatureFlag("flag.evaluation.new-checkout-flow", true))
+          .hasOp("http.server", FeatureFlag("flag.evaluation.new-checkout-flow", true)),
       )
       .isTrue()
   }
@@ -28,7 +28,7 @@ class FeatureFlagIntegrationTest : IntegrationTest() {
 
     assertThat(
         awaitTransaction("experimental-feature")
-          .hasOp("http.server", FeatureFlag("flag.evaluation.experimental-feature", false))
+          .hasOp("http.server", FeatureFlag("flag.evaluation.experimental-feature", false)),
       )
       .isTrue()
   }

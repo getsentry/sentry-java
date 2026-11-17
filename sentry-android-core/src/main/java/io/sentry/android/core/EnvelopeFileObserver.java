@@ -73,7 +73,7 @@ final class EnvelopeFileObserver extends FileObserver {
     private final long flushTimeoutMillis;
     private final @NotNull ILogger logger;
 
-    public CachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
+    CachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       reset();
       this.flushTimeoutMillis = flushTimeoutMillis;
       this.logger = Objects.requireNonNull(logger, "ILogger is required.");

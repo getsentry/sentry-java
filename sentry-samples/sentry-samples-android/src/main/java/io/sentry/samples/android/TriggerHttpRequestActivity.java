@@ -174,11 +174,10 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
               @Override
               public void onFailure(Call call, IOException e) {
                 Sentry.captureException(e);
-                runOnUiThread(
-                    () -> {
-                      showLoading(false);
-                      displayResponse("ERROR", null, "Request failed: " + e.getMessage(), 0);
-                    });
+                runOnUiThread(() -> {
+                  showLoading(false);
+                  displayResponse("ERROR", null, "Request failed: " + e.getMessage(), 0);
+                });
               }
 
               @Override
@@ -213,12 +212,11 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
                 }
                 final String finalResponseHeaders = responseHeaders.toString();
 
-                runOnUiThread(
-                    () -> {
-                      showLoading(false);
-                      displayResponse(
-                          statusMessage, statusCode, finalBody, responseTime, finalResponseHeaders);
-                    });
+                runOnUiThread(() -> {
+                  showLoading(false);
+                  displayResponse(
+                      statusMessage, statusCode, finalBody, responseTime, finalResponseHeaders);
+                });
 
                 response.close();
               }

@@ -176,7 +176,7 @@ public final class ActivityLifecycleIntegration
   }
 
   private void startTracing(final @NotNull Activity activity) {
-    if (scopes != null && !isRunningTransactionOrTrace(activity)) {
+    if (scopes != null && options != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
         if (options.isEnableAutoTraceIdGeneration()) {
@@ -282,7 +282,7 @@ public final class ActivityLifecycleIntegration
         // Continue either the foreground app.start above or an earlier headless app.start.
         final @Nullable String continueSentryTrace;
         final @Nullable String continueBaggage;
-        if (createStandaloneAppStart) {
+        if (createStandaloneAppStart && appStartTransaction != null) {
           continueSentryTrace = appStartTransaction.toSentryTrace().getValue();
           final @Nullable BaggageHeader baggageHeader = appStartTransaction.toBaggageHeader(null);
           continueBaggage = baggageHeader == null ? null : baggageHeader.getValue();
@@ -332,7 +332,7 @@ public final class ActivityLifecycleIntegration
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
 
-        if (isAppStart) {
+        if (isAppStart && coldStart != null) {
           if (!createStandaloneAppStart && !options.isEnableStandaloneAppStartTracing()) {
             appStartSpan =
                 transaction.startChild(
@@ -370,10 +370,9 @@ public final class ActivityLifecycleIntegration
         }
 
         // lets bind to the scope so other integrations can pick it up
-        scopes.configureScope(
-            scope -> {
-              applyScope(scope, transaction);
-            });
+        scopes.configureScope(scope -> {
+          applyScope(scope, transaction);
+        });
 
         activitiesWithOngoingTransactions.put(activity, transaction);
       }
@@ -441,31 +440,30 @@ public final class ActivityLifecycleIntegration
 
   @VisibleForTesting
   void applyScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
-    scope.withTransaction(
-        scopeTransaction -> {
-          // we'd not like to overwrite existent transactions bound to the Scope
-          // manually.
-          if (scopeTransaction == null) {
-            scope.setTransaction(transaction);
-          } else if (options != null) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.DEBUG,
-                    "Transaction '%s' won't be bound to the Scope since there's one already in there.",
-                    transaction.getName());
-          }
-        });
+    scope.withTransaction(scopeTransaction -> {
+      // we'd not like to overwrite existent transactions bound to the Scope
+      // manually.
+      if (scopeTransaction == null) {
+        scope.setTransaction(transaction);
+      } else if (options != null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                transaction.getName());
+      }
+    });
   }
 
   @VisibleForTesting
+  @SuppressWarnings("ReferenceEquality")
   void clearScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
-    scope.withTransaction(
-        scopeTransaction -> {
-          if (scopeTransaction == transaction) {
-            scope.clearTransaction();
-          }
-        });
+    scope.withTransaction(scopeTransaction -> {
+      if (scopeTransaction == transaction) {
+        scope.clearTransaction();
+      }
+    });
   }
 
   private boolean isRunningTransactionOrTrace(final @NotNull Activity activity) {
@@ -504,10 +502,9 @@ public final class ActivityLifecycleIntegration
       if (scopes != null) {
         // make sure to remove the transaction from scope, as it may contain running children,
         // therefore `finish` method will not remove it from scope
-        scopes.configureScope(
-            scope -> {
-              clearScope(scope, transaction);
-            });
+        scopes.configureScope(scope -> {
+          clearScope(scope, transaction);
+        });
       }
     }
   }
@@ -925,13 +922,16 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan(final @Nullable SentryDate endDate) {
+    if (!performanceEnabled || options == null) {
+      return;
+    }
     final @Nullable SentryDate appStartEndTime =
         endDate != null
             ? endDate
             : AppStartMetrics.getInstance()
                 .getAppStartTimeSpanWithFallback()
                 .getProjectedStopTimestamp();
-    if (performanceEnabled && appStartEndTime != null) {
+    if (appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
       if (appStartTransaction != null && !appStartTransaction.isFinished()) {
         appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
@@ -980,7 +980,7 @@ public final class ActivityLifecycleIntegration
     }
 
     final @NotNull ITransaction transaction =
-        createStandaloneAppStartTransaction(startTime, null, false);
+        createStandaloneAppStartTransaction(scopes, options, startTime, null, false);
     transaction.finish(SpanStatus.OK, endTime);
   }
 
@@ -991,6 +991,8 @@ public final class ActivityLifecycleIntegration
    * for its children and gets a deadline so it stays open until the extended span finishes.
    */
   private @NotNull ITransaction createStandaloneAppStartTransaction(
+      final @NotNull IScopes scopes,
+      final @NotNull SentryAndroidOptions options,
       final @NotNull SentryDate startTime,
       final @Nullable TracesSamplingDecision samplingDecision,
       final boolean holdOpenForExtension) {
@@ -1008,10 +1010,8 @@ public final class ActivityLifecycleIntegration
       // Persist the end time (covering every finish path: user finish, first frame, deadline) so a
       // later ui.load can tell whether it is close enough to continue this trace; without it the
       // continuation window is unbounded.
-      txnOptions.setTransactionFinishedCallback(
-          finishedTransaction ->
-              AppStartMetrics.getInstance()
-                  .setAppStartEndTime(finishedTransaction.getFinishDate()));
+      txnOptions.setTransactionFinishedCallback(finishedTransaction ->
+          AppStartMetrics.getInstance().setAppStartEndTime(finishedTransaction.getFinishDate()));
     }
 
     final @NotNull TransactionContext txnContext =
@@ -1069,7 +1069,7 @@ public final class ActivityLifecycleIntegration
     metrics.setAppStartSamplingDecision(null);
 
     final @NotNull ITransaction transaction =
-        createStandaloneAppStartTransaction(startTime, samplingDecision, true);
+        createStandaloneAppStartTransaction(scopes, options, startTime, samplingDecision, true);
 
     final SpanOptions spanOptions = new SpanOptions();
     setSpanOrigin(spanOptions);

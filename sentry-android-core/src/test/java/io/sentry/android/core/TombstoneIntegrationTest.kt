@@ -26,7 +26,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [31])
+@Config(sdk = [33])
 class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHint>() {
 
   override val config =
@@ -58,8 +58,8 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
               whenever(mock.traceInputStream)
                 .thenReturn(
                   GZIPInputStream(
-                    TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz")
-                  )
+                    TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz"),
+                  ),
                 )
             }
           }

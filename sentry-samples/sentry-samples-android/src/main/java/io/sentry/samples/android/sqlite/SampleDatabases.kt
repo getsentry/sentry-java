@@ -122,7 +122,7 @@ object SampleDatabases {
             "bridge_room2.db",
           )
           .setDriver(
-            wrapDriver(SupportSQLiteDriver(buildBridgeRoom2Helper(context.applicationContext)))
+            wrapDriver(SupportSQLiteDriver(buildBridgeRoom2Helper(context.applicationContext))),
           )
           .setQueryCoroutineContext(Dispatchers.IO)
           .fallbackToDestructiveMigration(true)
@@ -223,7 +223,7 @@ object SampleDatabases {
                 db.execSQL("PRAGMA user_version = 0")
               }
             }
-          }
+          },
         )
         .build()
     return wrapOpenHelper(FrameworkSQLiteOpenHelperFactory().create(configuration))
@@ -241,7 +241,7 @@ object SampleDatabases {
 
             override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) =
               Unit
-          }
+          },
         )
         .build()
     return wrapOpenHelper(FrameworkSQLiteOpenHelperFactory().create(configuration))

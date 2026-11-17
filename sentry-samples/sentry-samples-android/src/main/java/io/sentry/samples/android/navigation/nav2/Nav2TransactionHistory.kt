@@ -126,18 +126,18 @@ private fun SentrySpan.toNav2TraceSpan(transactionStartTimestamp: Double): Nav2T
   )
 
 private fun List<Nav2TraceSpan>.withChildren(
-  spansByParentId: Map<String?, List<Nav2TraceSpan>>
+  spansByParentId: Map<String?, List<Nav2TraceSpan>>,
 ): List<Nav2TraceSpan> = map { span -> span.withChildren(spansByParentId) }
 
 private fun Nav2TraceSpan.withChildren(
-  spansByParentId: Map<String?, List<Nav2TraceSpan>>
+  spansByParentId: Map<String?, List<Nav2TraceSpan>>,
 ): Nav2TraceSpan =
   copy(
     children =
       spansByParentId[spanId]
         .orEmpty()
         .sortedBy { span -> span.startOffsetMillis }
-        .withChildren(spansByParentId)
+        .withChildren(spansByParentId),
   )
 
 private fun sentryTransactionUrl(

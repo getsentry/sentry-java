@@ -150,7 +150,7 @@ class DuplicateEventDetectionEventProcessorTest {
     val result =
       processor.process(
         SentryEvent(
-          ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread())
+          ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread()),
         ),
         Hint(),
       )
@@ -162,7 +162,7 @@ class DuplicateEventDetectionEventProcessorTest {
     val processor = fixture.getSut()
     val sentryEvent =
       SentryEvent(
-        ExceptionMechanismException(Mechanism(), RuntimeException(), Thread.currentThread())
+        ExceptionMechanismException(Mechanism(), RuntimeException(), Thread.currentThread()),
       )
     processor.process(sentryEvent, Hint())
 

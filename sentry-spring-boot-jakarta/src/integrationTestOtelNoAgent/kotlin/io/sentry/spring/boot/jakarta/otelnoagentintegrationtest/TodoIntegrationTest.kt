@@ -42,7 +42,7 @@ class TodoIntegrationTest : IntegrationTest() {
         transaction.hasSpanWithOpAndDescription(
           "http.client",
           "GET http://localhost:$port/stub/todos/1",
-        )
+        ),
       )
       .isTrue()
     return transaction
