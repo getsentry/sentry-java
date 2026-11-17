@@ -843,11 +843,11 @@
       "input": "SELECT * FROM #orders WHERE id = 1",
       "expected": {
         "text": "SELECT * FROM #orders WHERE id = ?",
-        "summary": "SELECT #orders",
+        "summary": "SELECT orders",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "hashComments is NO: #orders is a temporary table."
+      "note": "hashComments is NO: #orders is a temporary table. The summary drops the #, as upstream's does (D41)."
     },
     {
       "id": "comment.hash.conservative",
@@ -3946,11 +3946,11 @@
       "input": "INSERT INTO #recent ([Id]) SELECT [Id] FROM [dbo].[Orders] WHERE [CreatedAt] > DATEADD(day, -7, GETDATE())",
       "expected": {
         "text": "INSERT INTO #recent ([Id]) SELECT [Id] FROM [dbo].[Orders] WHERE [CreatedAt] > DATEADD(day, ?, GETDATE())",
-        "summary": "INSERT #recent SELECT [dbo].[Orders]",
+        "summary": "INSERT recent SELECT [dbo].[Orders]",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Handwritten T-SQL, as sent through mssql-jdbc. hashComments is NO, so #recent is an identifier; a sign directly before a digit belongs to the number (D32)."
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. hashComments is NO, so #recent is an identifier; the summary drops the #, as upstream's does (D41). A sign directly before a digit belongs to the number (D32)."
     },
     {
       "id": "workload.sqlserver.brackets_with_spaces",
@@ -10736,12 +10736,12 @@
       "input": "SELECT * FROM #users WHERE api_key = 'secret-name'",
       "expected": {
         "text": "SELECT * FROM #users WHERE api_key = ?",
-        "summary": "SELECT #users",
+        "summary": "SELECT users",
         "status": "COMPLETE"
       },
       "secrets": ["secret-name"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_IsOnlyRecognizedWhereValid[1]",
-      "note": "# stops CONSERVATIVE; sqlserver has hashComments NO, so #users is a temporary table."
+      "note": "# stops CONSERVATIVE; sqlserver has hashComments NO, so #users is a temporary table. The summary drops the #, as upstream's does (D41)."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment_where_valid.02",
