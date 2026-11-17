@@ -67,7 +67,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           hint,
           Flushable.class,
           logger,
-          (flushable) -> {
+          flushable -> {
             if (!flushable.waitFlush()) {
               logger.log(SentryLevel.WARNING, "Timed out waiting for envelope submission.");
             }
@@ -83,7 +83,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           hint,
           Retryable.class,
           logger,
-          (retryable) -> {
+          retryable -> {
             retryable.setRetry(false);
             logger.log(SentryLevel.INFO, e, "File '%s' won't retry.", file.getAbsolutePath());
           });
@@ -93,7 +93,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           hint,
           Retryable.class,
           logger,
-          (retryable) -> {
+          retryable -> {
             if (!retryable.isRetry()) {
               safeDelete(file, "after trying to capture it");
               logger.log(SentryLevel.DEBUG, "Deleted file %s.", file.getAbsolutePath());

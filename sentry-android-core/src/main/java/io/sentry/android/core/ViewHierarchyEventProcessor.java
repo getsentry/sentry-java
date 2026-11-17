@@ -185,15 +185,14 @@ public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
       } else {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<ViewHierarchy> viewHierarchy = new AtomicReference<>(null);
-        activity.runOnUiThread(
-            () -> {
-              try {
-                viewHierarchy.set(snapshotViewHierarchy(decorView, exporters));
-                latch.countDown();
-              } catch (Throwable t) {
-                logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
-              }
-            });
+        activity.runOnUiThread(() -> {
+          try {
+            viewHierarchy.set(snapshotViewHierarchy(decorView, exporters));
+            latch.countDown();
+          } catch (Throwable t) {
+            logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+          }
+        });
         if (latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
           return viewHierarchy.get();
         }

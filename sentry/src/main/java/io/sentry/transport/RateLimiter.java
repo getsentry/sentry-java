@@ -181,7 +181,7 @@ public final class RateLimiter implements Closeable {
     HintUtils.runIfHasType(
         hint,
         DiskFlushNotification.class,
-        (diskFlushNotification) -> {
+        diskFlushNotification -> {
           diskFlushNotification.markFlushed();
           config.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
         });

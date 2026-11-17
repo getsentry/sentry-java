@@ -19,7 +19,7 @@ import org.mockito.kotlin.whenever
 class SentryExceptionFactoryTest {
   private class Fixture {
     fun getSut(
-      stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(SentryOptions())
+      stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(SentryOptions()),
     ): SentryExceptionFactory = SentryExceptionFactory(stackTraceFactory)
   }
 
@@ -155,7 +155,7 @@ class SentryExceptionFactoryTest {
     assertTrue(
       queue.first.stacktrace!!.frames!!.any {
         it.module != null && it.module!!.startsWith("io.sentry")
-      }
+      },
     )
   }
 
@@ -183,7 +183,7 @@ class SentryExceptionFactoryTest {
                   lineno = 777
                   module = "io.sentry.samples.MainActivity"
                   function = "run"
-                }
+                },
               )
           }
       }

@@ -39,7 +39,7 @@ class ComposeIntegrationTests {
         val appContext: Application = ApplicationProvider.getApplicationContext()
         Shadows.shadowOf(appContext.packageManager)
           .addActivityIfNotPresent(
-            ComponentName(appContext.packageName, ComponentActivity::class.java.name)
+            ComponentName(appContext.packageName, ComponentActivity::class.java.name),
           )
       }
     }

@@ -89,7 +89,7 @@ class RootCheckerTest {
         fixture.packageManager.getPackageInfo(
           eq("com.devadvance.rootcloak"),
           any<PackageManager.PackageInfoFlags>(),
-        )
+        ),
       )
       .thenReturn(packageInfo)
 
@@ -106,7 +106,7 @@ class RootCheckerTest {
         fixture.packageManager.getPackageInfo(
           eq("com.devadvance.rootcloak"),
           any<PackageManager.PackageInfoFlags>(),
-        )
+        ),
       )
       .thenThrow(PackageManager.NameNotFoundException())
 

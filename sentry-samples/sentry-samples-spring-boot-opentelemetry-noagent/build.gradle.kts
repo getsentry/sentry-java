@@ -78,7 +78,7 @@ tasks.shadowJar {
     MergeSpringMetadataAction(
       runtimeClasspath.get(),
       MergeSpringMetadataAction.DEFAULT_SPRING_METADATA_FILES,
-    )
+    ),
   )
 }
 

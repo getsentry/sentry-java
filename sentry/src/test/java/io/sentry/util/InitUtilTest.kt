@@ -71,7 +71,7 @@ class InitUtilTest {
       SentryOptions().also {
         it.initPriority = InitPriority.LOWEST
         it.isForceInit = true
-      }
+      },
     )
     givenClientEnabled()
 

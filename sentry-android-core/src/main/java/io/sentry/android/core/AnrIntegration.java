@@ -67,14 +67,13 @@ public final class AnrIntegration implements Integration, Closeable {
       try {
         options
             .getExecutorService()
-            .submit(
-                () -> {
-                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
-                    if (!isClosed) {
-                      startAnrWatchdog(scopes, options);
-                    }
-                  }
-                });
+            .submit(() -> {
+              try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
+                if (!isClosed) {
+                  startAnrWatchdog(scopes, options);
+                }
+              }
+            });
       } catch (Throwable e) {
         options
             .getLogger()

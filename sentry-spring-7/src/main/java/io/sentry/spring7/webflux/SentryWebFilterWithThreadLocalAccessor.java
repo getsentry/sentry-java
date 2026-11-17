@@ -30,21 +30,17 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
     return SentryReactorUtils.withSentryForkedRoots(
         webFilterChain
             .filter(serverWebExchange)
-            .doFinally(
-                __ ->
-                    doFinally(
-                        serverWebExchange,
-                        Sentry.getCurrentScopes(),
-                        transactionContainer.transaction))
+            .doFinally(__ ->
+                doFinally(
+                    serverWebExchange, Sentry.getCurrentScopes(), transactionContainer.transaction))
             .doOnError(e -> doOnError(transactionContainer.transaction, e))
-            .doFirst(
-                () -> {
-                  doFirst(serverWebExchange, Sentry.getCurrentScopes());
-                  final ITransaction transaction =
-                      maybeStartTransaction(
-                          Sentry.getCurrentScopes(), serverWebExchange.getRequest(), TRACE_ORIGIN);
-                  transactionContainer.transaction = transaction;
-                }));
+            .doFirst(() -> {
+              doFirst(serverWebExchange, Sentry.getCurrentScopes());
+              final ITransaction transaction =
+                  maybeStartTransaction(
+                      Sentry.getCurrentScopes(), serverWebExchange.getRequest(), TRACE_ORIGIN);
+              transactionContainer.transaction = transaction;
+            }));
   }
 
   private static class TransactionContainer {

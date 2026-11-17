@@ -105,7 +105,7 @@ class ApplicationExitInfoCrossIntegrationTest {
                 at android.os.Looper.loop(Looper.java:313)
               """
                 .trimIndent()
-                .byteInputStream()
+                .byteInputStream(),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)
@@ -121,8 +121,8 @@ class ApplicationExitInfoCrossIntegrationTest {
           whenever(mock.traceInputStream)
             .thenReturn(
               GZIPInputStream(
-                TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz")
-              )
+                TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz"),
+              ),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)

@@ -46,6 +46,6 @@ public object LaunchDetailsQuerySelections {
       CompiledField.Builder(name = "launch", type = Launch.type)
         .arguments(listOf(CompiledArgument("id", CompiledVariable("id"))))
         .selections(launch)
-        .build()
+        .build(),
     )
 }

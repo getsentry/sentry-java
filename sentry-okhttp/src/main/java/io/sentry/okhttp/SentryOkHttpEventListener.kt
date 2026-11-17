@@ -96,13 +96,13 @@ public open class SentryOkHttpEventListener(
   public constructor() : this(ScopesAdapter.getInstance(), originalEventListenerCreator = null)
 
   public constructor(
-    originalEventListener: EventListener
+    originalEventListener: EventListener,
   ) : this(ScopesAdapter.getInstance(), originalEventListenerCreator = { originalEventListener }) {
     fixedOriginalEventListener = originalEventListener
   }
 
   public constructor(
-    originalEventListenerFactory: Factory
+    originalEventListenerFactory: Factory,
   ) : this(
     ScopesAdapter.getInstance(),
     originalEventListenerCreator = { originalEventListenerFactory.create(it) },

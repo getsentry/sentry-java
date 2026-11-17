@@ -114,7 +114,7 @@ internal class ReplayGestureConverter(
             id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
             pointerId = pId
             interactionType = InteractionType.TouchStart
-          }
+          },
         )
       }
       MotionEvent.ACTION_UP,
@@ -137,7 +137,7 @@ internal class ReplayGestureConverter(
             id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
             pointerId = pId
             interactionType = InteractionType.TouchEnd
-          }
+          },
         )
       }
       MotionEvent.ACTION_CANCEL -> {
@@ -151,7 +151,7 @@ internal class ReplayGestureConverter(
             id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
             pointerId = 0 // the pointerId is not used for TouchCancel, so just set it to 0
             interactionType = InteractionType.TouchCancel
-          }
+          },
         )
       }
 

@@ -8,6 +8,8 @@ import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.context.propagation.TextMapSetter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.export.SpanExporter
 import io.sentry.Baggage
 import io.sentry.Sentry
 import kotlin.test.AfterTest
@@ -158,7 +160,7 @@ class OpenTelemetryOtlpPropagatorTest {
     val otelSpan = Span.wrap(otelSpanContext)
     val baggage =
       Baggage.fromHeader(
-        "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
+        "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
       )
     val context =
       Context.root().with(otelSpan).with(OpenTelemetryOtlpPropagator.SENTRY_BAGGAGE_KEY, baggage)
@@ -180,7 +182,10 @@ class OpenTelemetryOtlpPropagatorTest {
     }
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier = mutableMapOf<String, String>()
-    val tracerProvider = SdkTracerProvider.builder().build()
+    val tracerProvider =
+      SdkTracerProvider.builder()
+        .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter.composite()))
+        .build()
     val otelSpan =
       tracerProvider
         .get("test")
@@ -189,7 +194,7 @@ class OpenTelemetryOtlpPropagatorTest {
         .startSpan()
     val baggage =
       Baggage.fromHeader(
-        "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
+        "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
       )
 
     try {
@@ -220,7 +225,10 @@ class OpenTelemetryOtlpPropagatorTest {
     }
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier = mutableMapOf<String, String>()
-    val tracerProvider = SdkTracerProvider.builder().build()
+    val tracerProvider =
+      SdkTracerProvider.builder()
+        .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter.composite()))
+        .build()
     val otelSpan =
       tracerProvider
         .get("test")

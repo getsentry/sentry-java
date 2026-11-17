@@ -102,7 +102,7 @@ class ReplayIntegrationTest {
             on { isMainThread }.thenAnswer { Looper.myLooper() == Looper.getMainLooper() }
           }
         setReplayController(
-          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
+          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) },
         )
         executorService = mock {
           doAnswer { (it.arguments[0] as Runnable).run() }.whenever(mock).submit(any<Runnable>())
@@ -1082,7 +1082,7 @@ class ReplayIntegrationTest {
                 $SEGMENT_KEY_REPLAY_TYPE=SESSION
                 $SEGMENT_KEY_REPLAY_RECORDING={}[{"type":3,"timestamp":1720693523997,"data":{"source":2,"type":7,"id":0,"x":314.2979431152344,"y":625.44140625,"pointerType":2,"pointerId":0}},{"type":3,"timestamp":1720693524774,"data":{"source":2,"type":9,"id":0,"x":322.00390625,"y":424.4384765625,"pointerType":2,"pointerId":0}}]
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
 
@@ -1596,6 +1596,93 @@ class ReplayIntegrationTest {
     replay.onTouchEvent(mock())
 
     verify(captureStrategy, never()).onTouchEvent(any())
+  }
+
+  @Test
+  fun `pauseTouchTracking drops touches but keeps recording screenshots`() {
+    val captureStrategy = mock<CaptureStrategy>()
+    val recorder = mock<Recorder>()
+    val replay =
+      fixture.getSut(
+        context,
+        recorderProvider = { recorder },
+        replayCaptureStrategyProvider = { captureStrategy },
+      )
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    replay.pauseTouchTracking()
+    replay.onTouchEvent(mock())
+
+    verify(captureStrategy, never()).onTouchEvent(any())
+    verify(recorder, never()).pause()
+    verify(captureStrategy, never()).pause()
+    assertTrue(replay.isRecording)
+
+    replay.resumeTouchTracking()
+    replay.onTouchEvent(mock())
+
+    verify(captureStrategy).onTouchEvent(any())
+  }
+
+  @Test
+  fun `resume does not resume paused touch tracking`() {
+    val captureStrategy = mock<CaptureStrategy>()
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    replay.pauseTouchTracking()
+    replay.pause()
+    replay.resume()
+    replay.onTouchEvent(mock())
+
+    verify(captureStrategy, never()).onTouchEvent(any())
+  }
+
+  @Test
+  fun `resumeTouchTracking does not record touches while replay is paused`() {
+    val captureStrategy = mock<CaptureStrategy>()
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    replay.pauseTouchTracking()
+    replay.pause()
+    replay.resumeTouchTracking()
+    replay.onTouchEvent(mock())
+
+    verify(captureStrategy, never()).onTouchEvent(any())
+
+    replay.resume()
+    replay.onTouchEvent(mock())
+
+    verify(captureStrategy).onTouchEvent(any())
+  }
+
+  @Test
+  fun `paused touch tracking stays paused for new replays`() {
+    val firstStrategy = mock<CaptureStrategy>()
+    val secondStrategy = mock<CaptureStrategy>()
+    val thirdStrategy = mock<CaptureStrategy>()
+    val strategies = ArrayDeque(listOf(firstStrategy, secondStrategy, thirdStrategy))
+    val replay =
+      fixture.getSut(context, replayCaptureStrategyProvider = { strategies.removeFirst() })
+
+    replay.register(fixture.scopes, fixture.options)
+    // called before any replay is started
+    replay.pauseTouchTracking()
+    replay.onAppForegrounded(true)
+    replay.onTouchEvent(mock())
+    replay.onAppForegrounded(true)
+    replay.onTouchEvent(mock())
+    replay.stop()
+    replay.start()
+    replay.onTouchEvent(mock())
+
+    verify(firstStrategy, never()).onTouchEvent(any())
+    verify(secondStrategy, never()).onTouchEvent(any())
+    verify(thirdStrategy, never()).onTouchEvent(any())
   }
 
   @Test

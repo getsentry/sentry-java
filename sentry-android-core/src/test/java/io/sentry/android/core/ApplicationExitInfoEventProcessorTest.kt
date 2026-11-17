@@ -820,7 +820,7 @@ class ApplicationExitInfoEventProcessorTest {
             brand = "Pixel"
             model = "3XL"
             memorySize = 4096
-          }
+          },
         )
         platform = "NotAndroid"
 
@@ -837,7 +837,7 @@ class ApplicationExitInfoEventProcessorTest {
                 DebugImage().apply {
                   type = DebugImage.PROGUARD
                   uuid = "uuid1"
-                }
+                },
               )
           }
         user =
@@ -893,7 +893,7 @@ class ApplicationExitInfoEventProcessorTest {
               lineno = 777
               module = "io.sentry.samples.MainActivity"
               function = "run"
-            }
+            },
           )
       }
 
@@ -905,7 +905,7 @@ class ApplicationExitInfoEventProcessorTest {
               name = "main"
               id = 13
               this.stacktrace = stacktrace
-            }
+            },
           )
       }
 
@@ -947,7 +947,7 @@ class ApplicationExitInfoEventProcessorTest {
             SentryThread().apply {
               name = "main"
               stacktrace = SentryStackTrace()
-            }
+            },
           )
       }
 
@@ -966,7 +966,7 @@ class ApplicationExitInfoEventProcessorTest {
             SentryThread().apply {
               name = "main"
               stacktrace = SentryStackTrace()
-            }
+            },
           )
       }
 
@@ -988,10 +988,10 @@ class ApplicationExitInfoEventProcessorTest {
                     SentryStackFrame().apply {
                       module = "io.sentry.samples.MainActivity"
                       function = "run"
-                    }
-                  )
+                    },
+                  ),
                 )
-            }
+            },
           )
       }
     assertEquals(listOf("{{ default }}", "background-anr"), processedBackground.fingerprints)
@@ -1008,10 +1008,10 @@ class ApplicationExitInfoEventProcessorTest {
                     SentryStackFrame().apply {
                       module = "io.sentry.samples.MainActivity"
                       function = "run"
-                    }
-                  )
+                    },
+                  ),
                 )
-            }
+            },
           )
       }
     assertEquals(listOf("{{ default }}", "foreground-anr"), processedForeground.fingerprints)
@@ -1026,7 +1026,7 @@ class ApplicationExitInfoEventProcessorTest {
           NoOpLogger.getInstance(),
           0,
           true,
-        )
+        ),
       )
 
     val processed =
@@ -1054,7 +1054,7 @@ class ApplicationExitInfoEventProcessorTest {
           NoOpLogger.getInstance(),
           1_000,
           true,
-        )
+        ),
       )
 
     val processed =
@@ -1074,7 +1074,7 @@ class ApplicationExitInfoEventProcessorTest {
               type = "MemoryLimitExceeded"
               value = expectedMessage
               mechanism = Mechanism().apply { type = "AppExitInfo" }
-            }
+            },
           )
       }
 
@@ -1113,10 +1113,10 @@ class ApplicationExitInfoEventProcessorTest {
                         module = "java.lang"
                         filename = "Thread.java"
                         function = "run"
-                      }
+                      },
                     )
                 }
-            }
+            },
           )
       }
 
@@ -1142,10 +1142,10 @@ class ApplicationExitInfoEventProcessorTest {
                         module = "java.lang"
                         filename = "Thread.java"
                         function = "run"
-                      }
+                      },
                     )
                 }
-            }
+            },
           )
       }
 
@@ -1170,10 +1170,10 @@ class ApplicationExitInfoEventProcessorTest {
                       SentryStackFrame().apply {
                         module = "com.example.MyApp"
                         function = "onCreate"
-                      }
+                      },
                     )
                 }
-            }
+            },
           )
       }
 
@@ -1197,10 +1197,10 @@ class ApplicationExitInfoEventProcessorTest {
                       SentryStackFrame().apply {
                         module = "com.example.MyApp"
                         function = "onCreate"
-                      }
+                      },
                     )
                 }
-            }
+            },
           )
       }
     assertNull(processed.contexts.profile)
@@ -1237,7 +1237,7 @@ class ApplicationExitInfoEventProcessorTest {
               ),
               StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
             ),
-          )
+          ),
         )
         close()
       }
@@ -1290,7 +1290,7 @@ class ApplicationExitInfoEventProcessorTest {
               StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42),
               StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
             ),
-          )
+          ),
         )
         close()
       }
@@ -1473,7 +1473,7 @@ class ApplicationExitInfoEventProcessorTest {
         timestamp,
         shouldEnrich,
         mechanism == "anr_background",
-      )
+      ),
     )
   }
 
@@ -1487,7 +1487,7 @@ class ApplicationExitInfoEventProcessorTest {
         NoOpLogger.getInstance(),
         timestamp,
         shouldEnrich,
-      )
+      ),
     )
   }
 

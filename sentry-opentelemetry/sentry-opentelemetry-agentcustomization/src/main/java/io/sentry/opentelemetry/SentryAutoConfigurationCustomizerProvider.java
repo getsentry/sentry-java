@@ -35,15 +35,14 @@ public final class SentryAutoConfigurationCustomizerProvider
         ManifestVersionReader.getInstance().readOpenTelemetryVersion();
 
     if (isSentryAutoInitEnabled()) {
-      Sentry.init(
-          options -> {
-            options.setEnableExternalConfiguration(true);
-            options.setInitPriority(InitPriority.HIGH);
-            final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
-            if (sdkVersion != null) {
-              options.setSdkVersion(sdkVersion);
-            }
-          });
+      Sentry.init(options -> {
+        options.setEnableExternalConfiguration(true);
+        options.setInitPriority(InitPriority.HIGH);
+        final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
+        if (sdkVersion != null) {
+          options.setSdkVersion(sdkVersion);
+        }
+      });
     }
 
     autoConfiguration

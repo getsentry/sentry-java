@@ -41,11 +41,11 @@ class SentryExceptionSerializationTest {
                   symbolAddr = "180e12cd-1fa8-405d-8dd8-e87b33fa2eb0"
                   instructionAddr = "19864a78-2466-461f-9f0b-93a5c9ae7622"
                   rawFunction = "f33035a4-0cf0-453d-b6f4-d7c27e9af924"
-                }
+                },
               )
             registers =
               mapOf(
-                "160eef70-2b1f-4ad8-8449-902bf7bef11b" to "6000b565-2a55-4337-99be-edf8a2668d1b"
+                "160eef70-2b1f-4ad8-8449-902bf7bef11b" to "6000b565-2a55-4337-99be-edf8a2668d1b",
               )
             snapshot = true
           }
@@ -57,11 +57,11 @@ class SentryExceptionSerializationTest {
             isHandled = false
             meta =
               mapOf(
-                "91e0d6d4-0818-403e-9826-6e4443f2b54e" to "11707d85-3cae-4a4c-8157-7a9b717cbe1e"
+                "91e0d6d4-0818-403e-9826-6e4443f2b54e" to "11707d85-3cae-4a4c-8157-7a9b717cbe1e",
               )
             data =
               mapOf(
-                "0275caba-1fd8-4de3-9ead-b6c8dcdd5666" to "669cc6ad-1435-4233-b199-2800f901bbcd"
+                "0275caba-1fd8-4de3-9ead-b6c8dcdd5666" to "669cc6ad-1435-4233-b199-2800f901bbcd",
               )
             synthetic = false
           }

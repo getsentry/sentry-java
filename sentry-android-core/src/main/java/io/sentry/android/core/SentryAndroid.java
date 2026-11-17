@@ -201,13 +201,12 @@ public final class SentryAndroid {
           // so only start a session if it's not already started
           // This e.g. happens on React Native, or e.g. on deferred SDK init
           final AtomicBoolean sessionStarted = new AtomicBoolean(false);
-          scopes.configureScope(
-              scope -> {
-                final @Nullable Session currentSession = scope.getSession();
-                if (currentSession != null && currentSession.getStarted() != null) {
-                  sessionStarted.set(true);
-                }
-              });
+          scopes.configureScope(scope -> {
+            final @Nullable Session currentSession = scope.getSession();
+            if (currentSession != null && currentSession.getStarted() != null) {
+              sessionStarted.set(true);
+            }
+          });
           if (!sessionStarted.get()) {
             scopes.startSession();
           }

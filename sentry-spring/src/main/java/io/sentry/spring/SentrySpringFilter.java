@@ -84,23 +84,22 @@ public class SentrySpringFilter extends OncePerRequestFilter {
   private void configureScope(
       final @NotNull IScopes scopes, final @NotNull HttpServletRequest request) {
     try {
-      scopes.configureScope(
-          scope -> {
-            // set basic request information on the scope
-            scope.setRequest(requestResolver.resolveSentryRequest(request));
-            // transaction name is known at the later stage of request processing, thus it cannot
-            // be set on the scope
-            scope.addEventProcessor(
-                new SentryRequestHttpServletRequestProcessor(
-                    transactionNameProvider, request, scopes.getOptions().getLogger()));
-            // only if request caches body, add an event processor that sets body on the event
-            // body is not on the scope, to avoid using memory when no event is triggered during
-            // request processing
-            if (request instanceof ContentCachingRequestWrapper) {
-              scope.addEventProcessor(
-                  new RequestBodyExtractingEventProcessor(request, scopes.getOptions()));
-            }
-          });
+      scopes.configureScope(scope -> {
+        // set basic request information on the scope
+        scope.setRequest(requestResolver.resolveSentryRequest(request));
+        // transaction name is known at the later stage of request processing, thus it cannot
+        // be set on the scope
+        scope.addEventProcessor(
+            new SentryRequestHttpServletRequestProcessor(
+                transactionNameProvider, request, scopes.getOptions().getLogger()));
+        // only if request caches body, add an event processor that sets body on the event
+        // body is not on the scope, to avoid using memory when no event is triggered during
+        // request processing
+        if (request instanceof ContentCachingRequestWrapper) {
+          scope.addEventProcessor(
+              new RequestBodyExtractingEventProcessor(request, scopes.getOptions()));
+        }
+      });
     } catch (Throwable e) {
       scopes
           .getOptions()

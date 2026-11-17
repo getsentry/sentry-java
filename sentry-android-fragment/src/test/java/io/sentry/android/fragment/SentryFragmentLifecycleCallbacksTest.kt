@@ -50,7 +50,7 @@ class SentryFragmentLifecycleCallbacksTest {
           SentryOptions().apply {
             setTracesSampleRate(tracesSampleRate)
             isEnableScreenTracking = enableScreenTracking
-          }
+          },
         )
       whenever(span.spanContext)
         .thenReturn(SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null))

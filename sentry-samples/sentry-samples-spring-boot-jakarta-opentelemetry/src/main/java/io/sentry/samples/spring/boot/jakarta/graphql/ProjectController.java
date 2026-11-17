@@ -76,14 +76,13 @@ public class ProjectController {
     final String creatorId = "creatorcrash".equalsIgnoreCase(projectSlug) ? "Ccrash" : "C1";
     final @NotNull AtomicInteger counter = new AtomicInteger(1000);
     return Flux.interval(Duration.ofSeconds(1))
-        .map(
-            num -> {
-              int i = counter.incrementAndGet();
-              if ("produceerror".equalsIgnoreCase(projectSlug) && i % 2 == 0) {
-                throw new RuntimeException("causing produce error for subscription");
-              }
-              return new Task("T" + i, "A new task arrived ", assigneeId, creatorId);
-            });
+        .map(num -> {
+          int i = counter.incrementAndGet();
+          if ("produceerror".equalsIgnoreCase(projectSlug) && i % 2 == 0) {
+            throw new RuntimeException("causing produce error for subscription");
+          }
+          return new Task("T" + i, "A new task arrived ", assigneeId, creatorId);
+        });
   }
 
   public static class Task {

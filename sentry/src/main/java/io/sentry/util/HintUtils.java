@@ -85,7 +85,7 @@ public final class HintUtils {
     runIfHasType(
         hint,
         clazz,
-        (ignored) -> {},
+        ignored -> {},
         (value, clazz2) -> {
           lambda.accept(value);
         });

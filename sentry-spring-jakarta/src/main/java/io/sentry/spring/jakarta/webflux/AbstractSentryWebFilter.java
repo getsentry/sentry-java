@@ -133,10 +133,9 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
       if (statusCode != null) {
         transaction
             .getContexts()
-            .withResponse(
-                (sentryResponse) -> {
-                  sentryResponse.setStatusCode(statusCode.value());
-                });
+            .withResponse(sentryResponse -> {
+              sentryResponse.setStatusCode(statusCode.value());
+            });
         if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(statusCode.value()));
         }

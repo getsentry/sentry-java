@@ -258,7 +258,7 @@ class UrlUtilsTest {
   fun `does not filter email address in path`() {
     val urlDetails =
       UrlUtils.parseNullable(
-        "https://staging.server.com/api/v4/auth/password/reset/email@example.com"
+        "https://staging.server.com/api/v4/auth/password/reset/email@example.com",
       )!!
     assertEquals(
       "https://staging.server.com/api/v4/auth/password/reset/email@example.com",
@@ -272,7 +272,7 @@ class UrlUtilsTest {
   fun `does not filter email address in path with fragment`() {
     val urlDetails =
       UrlUtils.parseNullable(
-        "https://staging.server.com/api/v4/auth/password/reset/email@example.com#top"
+        "https://staging.server.com/api/v4/auth/password/reset/email@example.com#top",
       )!!
     assertEquals(
       "https://staging.server.com/api/v4/auth/password/reset/email@example.com",
@@ -286,7 +286,7 @@ class UrlUtilsTest {
   fun `does not filter email address in path with query and fragment`() {
     val urlDetails =
       UrlUtils.parseNullable(
-        "https://staging.server.com/api/v4/auth/password/reset/email@example.com?a=b&c=d#top"
+        "https://staging.server.com/api/v4/auth/password/reset/email@example.com?a=b&c=d#top",
       )!!
     assertEquals(
       "https://staging.server.com/api/v4/auth/password/reset/email@example.com",

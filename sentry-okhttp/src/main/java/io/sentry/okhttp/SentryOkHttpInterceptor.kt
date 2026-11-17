@@ -177,7 +177,7 @@ public open class SentryOkHttpInterceptor(
           },
           scopes.options.sessionReplay.networkRequestHeaders,
           { req: Request -> req.headers.toMap() },
-        )
+        ),
       )
 
       request = requestBuilder.build()
@@ -381,7 +381,7 @@ public open class SentryOkHttpInterceptor(
               e,
             )
           }
-        }
+        },
       )
       .build()
   }
@@ -404,7 +404,7 @@ public open class SentryOkHttpInterceptor(
         { body() },
         scopes.options.sessionReplay.networkResponseHeaders,
         { resp: Response -> resp.headers.toMap() },
-      )
+      ),
     )
   }
 

@@ -134,7 +134,7 @@ class SentryStackTraceFactoryTest {
         SentryOptions().apply {
           addInAppExclude("io.mysentry")
           addInAppInclude("io.mysentry")
-        }
+        },
       )
     val sentryElements = sentryStackTraceFactory.getStackFrames(elements, false)
 
@@ -148,7 +148,7 @@ class SentryStackTraceFactoryTest {
         SentryOptions().apply {
           addInAppExclude("io.mysentry.not")
           addInAppInclude("io.mysentry.inApp")
-        }
+        },
       )
     assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.ClassName")!!)
     assertTrue(sentryStackTraceFactory.isInApp("io.mysentry.inApp.somePackage.ClassName")!!)
@@ -172,7 +172,7 @@ class SentryStackTraceFactoryTest {
     assertNull(
       sut.getStackFrames(stacktrace, false)!!.find {
         it.module != null && it.module!!.startsWith("io.sentry")
-      }
+      },
     )
   }
 
@@ -185,7 +185,7 @@ class SentryStackTraceFactoryTest {
     assertTrue(
       sut.getStackFrames(stacktrace, true)!!.any {
         it.module != null && it.module!!.startsWith("io.sentry")
-      }
+      },
     )
   }
 
@@ -198,7 +198,7 @@ class SentryStackTraceFactoryTest {
     assertNotNull(
       sut.getStackFrames(stacktrace, false)!!.find {
         it.module != null && it.module!!.startsWith("io.sentry")
-      }
+      },
     )
   }
 
@@ -211,7 +211,7 @@ class SentryStackTraceFactoryTest {
     assertNotNull(
       sut.getStackFrames(stacktrace, false)!!.find {
         it.module != null && it.module!!.startsWith("io.sentry")
-      }
+      },
     )
   }
 

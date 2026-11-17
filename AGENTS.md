@@ -65,8 +65,8 @@ resolves the per-module test task, including integration test suites, for you.
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
 
-# Build the Android sample, a separate Gradle build that includes this one
-./gradlew -p sentry-samples/sentry-samples-android assembleDebug
+# Build the Android sample, in the same separate Gradle build as the UI tests
+./gradlew -p sentry-android-integration-tests :sentry-samples-android:assembleDebug
 
 # Build the JVM samples, another separate Gradle build that includes this one
 ./gradlew -p sentry-samples assemble
@@ -116,7 +116,7 @@ The repository is organized into multiple modules:
 
 ### Utility Modules
 - **`sentry-test-support`** - Shared test utilities, including `MockSentryServer` and envelope matchers
-- **`sentry-samples`** - Example applications, in two separate Gradle builds that include this one: `sentry-samples` (JVM) and `sentry-samples/sentry-samples-android`. Root tasks such as `check` and `spotlessApply` don't reach them, and `sentry-android-integration-tests` is a separate build too
+- **`sentry-samples`** - Example applications, in two separate Gradle builds that include this one: `sentry-samples` (JVM) and `sentry-android-integration-tests` (the Android sample, next to the Android UI tests, benchmark and size test). Root tasks such as `check` and `spotlessApply` don't reach them
 - **`sentry-bom`** - Bill of Materials for dependency management
 
 ### Key Architectural Patterns

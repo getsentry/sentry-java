@@ -148,7 +148,7 @@ class SentryPerformanceProviderTest {
       .log(
         eq(SentryLevel.WARNING),
         eq(
-          "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start."
+          "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.",
         ),
       )
   }
@@ -163,7 +163,7 @@ class SentryPerformanceProviderTest {
       .log(
         eq(SentryLevel.WARNING),
         eq(
-          "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start."
+          "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.",
         ),
       )
   }

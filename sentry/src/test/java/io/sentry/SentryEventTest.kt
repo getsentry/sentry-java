@@ -27,7 +27,7 @@ class SentryEventTest {
     assertTrue(
       Instant.now()
         .plus(1, ChronoUnit.HOURS)
-        .isAfter(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp)))
+        .isAfter(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))),
     )
 
   @Test
@@ -35,7 +35,7 @@ class SentryEventTest {
     assertTrue(
       Instant.now()
         .minus(1, ChronoUnit.HOURS)
-        .isBefore(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp)))
+        .isBefore(Instant.parse(DateUtils.getTimestamp(SentryEvent().timestamp))),
     )
 
   @Test
@@ -201,7 +201,7 @@ class SentryEventTest {
           try {
             event.set(
               JsonSerializer(SentryOptions())
-                .deserialize(StringReader(json), SentryEvent::class.java)
+                .deserialize(StringReader(json), SentryEvent::class.java),
             )
           } catch (throwable: Throwable) {
             error.set(throwable)

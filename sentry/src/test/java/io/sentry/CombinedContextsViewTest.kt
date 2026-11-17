@@ -411,10 +411,10 @@ class CombinedContextsViewTest {
   fun `prefers spring from current context`() {
     val combined = fixture.getSut()
     fixture.current.setSpring(
-      Spring().also { it.activeProfiles = listOf("current").toTypedArray() }
+      Spring().also { it.activeProfiles = listOf("current").toTypedArray() },
     )
     fixture.isolation.setSpring(
-      Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() }
+      Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() },
     )
     fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
 
@@ -425,7 +425,7 @@ class CombinedContextsViewTest {
   fun `uses isolation spring if current context does not have it`() {
     val combined = fixture.getSut()
     fixture.isolation.setSpring(
-      Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() }
+      Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() },
     )
     fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
 

@@ -78,7 +78,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
       hint.firstValue.getAs(
         TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS,
         NetworkRequestData::class.java,
-      )
+      ),
     )
   }
 
@@ -273,7 +273,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
               thread.set(Thread.currentThread().name)
               done.countDown()
             }
-          }
+          },
         )
 
       assertTrue(done.await(10, TimeUnit.SECONDS), "the callback must be reached")
@@ -350,7 +350,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
         MockResponse()
           .setBody(payload)
           .removeHeader("Content-Length")
-          .setHeader("Content-Type", "text/event-stream")
+          .setHeader("Content-Type", "text/event-stream"),
       )
       sut = sut.newBuilder().protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE)).build()
 
@@ -381,7 +381,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
         MockResponse()
           .setBody(gzipped)
           .setHeader("Content-Encoding", "gzip")
-          .setHeader("Content-Type", "application/json")
+          .setHeader("Content-Type", "application/json"),
       )
 
       val response = sut.newCall(requestTo(server.url("/json").toString())).execute()

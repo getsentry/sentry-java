@@ -168,7 +168,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
             SentryLevel.DEBUG,
             "stop collecting performance info for transactions %s (%s)",
             transaction.getName(),
-            transaction.getSpanContext().getTraceId().toString());
+            transaction.getSpanContext().getTraceId());
 
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
       collector.onSpanFinished(transaction);
@@ -180,7 +180,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   @Override
   public @Nullable List<PerformanceCollectionData> stop(final @NotNull String id) {
     final @Nullable CompositeData data = compositeDataMap.remove(id);
-    options.getLogger().log(SentryLevel.DEBUG, "stop collecting performance info for " + id);
+    options.getLogger().log(SentryLevel.DEBUG, "stop collecting performance info for %s", id);
 
     // close if there are no more running requests
     if (compositeDataMap.isEmpty()) {

@@ -672,8 +672,8 @@ class QueueFileTest {
         .contains(
           "zero=true, length=4096," +
             " size=15," +
-            " first=Element[position=32, length=0], last=Element[position=179, length=14]}"
-        )
+            " first=Element[position=32, length=0], last=Element[position=179, length=14]}",
+        ),
     )
   }
 

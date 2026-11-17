@@ -282,7 +282,7 @@ class ActivityLifecycleIntegrationTest {
       contexts.any {
         it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
           it.operation == ActivityLifecycleIntegration.APP_START_WARM
-      }
+      },
     )
   }
 
@@ -350,7 +350,7 @@ class ActivityLifecycleIntegrationTest {
     assertTrue(
       appStartTransaction.children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_EXTENDED_OP
-      }
+      },
     )
     assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
     assertNotNull(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan)
@@ -482,7 +482,7 @@ class ActivityLifecycleIntegrationTest {
     assertTrue(
       transaction.children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_EXTENDED_OP
-      }
+      },
     )
     assertFalse(transaction.isFinished)
 
@@ -928,7 +928,7 @@ class ActivityLifecycleIntegrationTest {
           it.tracesSampleRate = 1.0
           it.isEnableTimeToFullDisplayTracing = true
           it.idleTimeout = 100
-        }
+        },
       )
     // the transaction idle timeout is scheduled on the dedicated timer executor
     fixture.options.timerExecutorService = SentryExecutorService()
@@ -999,7 +999,7 @@ class ActivityLifecycleIntegrationTest {
         initializer = {
           it.tracesSampleRate = 1.0
           it.isEnableActivityLifecycleTracingAutoFinish = false
-        }
+        },
       )
     sut.register(fixture.scopes, fixture.options)
     val activity = mock<Activity>()
@@ -1482,7 +1482,7 @@ class ActivityLifecycleIntegrationTest {
       uiLoadTransaction.children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
           it.operation == ActivityLifecycleIntegration.APP_START_WARM
-      }
+      },
     )
 
     sut.onActivityPostCreated(activity, fixture.bundle)
@@ -1687,7 +1687,7 @@ class ActivityLifecycleIntegrationTest {
     assertFalse(
       fixture.capturedContexts.drop(1).any {
         it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
-      }
+      },
     )
     assertEquals(appStartTransaction.spanContext.traceId, uiLoadContext.traceId)
     // siblings, not parent/child: ui.load has no parent span id
@@ -1716,7 +1716,7 @@ class ActivityLifecycleIntegrationTest {
     assertTrue(
       fixture.createdTransactions.single().children.any {
         it.operation == ActivityLifecycleIntegration.APP_START_COLD
-      }
+      },
     )
   }
 
@@ -2595,7 +2595,7 @@ class ActivityLifecycleIntegrationTest {
       assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(firstFrameNanos)
     }
     assertThat(
-        (ttidSpan as Span).measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value
+        (ttidSpan as Span).measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value,
       )
       .isEqualTo(TimeUnit.HOURS.toMillis(3))
     assertThat(fixture.transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
@@ -2647,7 +2647,7 @@ class ActivityLifecycleIntegrationTest {
     assertThat(ttidSpan.finishDate!!.nanoTimestamp())
       .isEqualTo(TimeUnit.MILLISECONDS.toNanos(nowMillis))
     assertThat(
-        (ttidSpan as Span).measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value
+        (ttidSpan as Span).measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value,
       )
       .isEqualTo(TimeUnit.SECONDS.toMillis(29))
   }
