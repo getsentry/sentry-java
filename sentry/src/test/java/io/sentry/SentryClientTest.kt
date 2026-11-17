@@ -1422,12 +1422,27 @@ class SentryClientTest {
   }
 
   @Test
-  fun `default HTTP status filter retains server 200`() {
-    fixture
-      .getSut()
-      .captureTransaction(createServerTransaction(200), fixture.sentryTracer.traceContext())
+  fun `default HTTP status filter drops the spec ranges`() {
+    val sut = fixture.getSut()
 
-    verify(fixture.transport).send(any(), anyOrNull())
+    listOf(301, 303, 305, 399, 401, 404).forEach {
+      val eventId =
+        sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+      assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    }
+
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter retains statuses outside the spec ranges`() {
+    val sut = fixture.getSut()
+
+    listOf(200, 300, 304, 400, 405).forEach {
+      sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+    }
+
+    verify(fixture.transport, times(5)).send(any(), anyOrNull())
   }
 
   @Test

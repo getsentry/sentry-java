@@ -1088,11 +1088,16 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `ignored server HTTP status codes for tracing default to 404`() {
-    val ranges = SentryOptions().traceIgnoreStatusCodes
+  fun `ignored server HTTP status codes for tracing use the spec defaults`() {
+    val ranges = SentryOptions().traceIgnoreStatusCodes!!
 
-    assertThat(ranges).hasSize(1)
-    assertThat(ranges!!.single().isInRange(404)).isTrue()
+    assertThat(ranges).hasSize(3)
+    listOf(301, 303, 305, 399, 401, 404).forEach {
+      assertThat(ranges.any { range -> range.isInRange(it) }).isTrue()
+    }
+    listOf(300, 304, 400, 405).forEach {
+      assertThat(ranges.any { range -> range.isInRange(it) }).isFalse()
+    }
   }
 
   @Test
@@ -1102,8 +1107,9 @@ class SentryOptionsTest {
 
     first.clear()
 
-    assertThat(second).hasSize(1)
-    assertThat(second.single().isInRange(404)).isTrue()
+    assertThat(second).hasSize(3)
+    assertThat(second.any { it.isInRange(301) }).isTrue()
+    assertThat(second.any { it.isInRange(404) }).isTrue()
   }
 
   @Test
@@ -1150,8 +1156,9 @@ class SentryOptionsTest {
 
     options.merge(ExternalOptions())
 
-    assertThat(options.traceIgnoreStatusCodes).hasSize(1)
-    assertThat(options.traceIgnoreStatusCodes!!.single().isInRange(404)).isTrue()
+    assertThat(options.traceIgnoreStatusCodes).hasSize(3)
+    assertThat(options.traceIgnoreStatusCodes!!.any { it.isInRange(301) }).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!!.any { it.isInRange(404) }).isTrue()
   }
 
   @Test

@@ -40,6 +40,7 @@ import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -599,7 +600,11 @@ public class SentryOptions implements RateLimiterConfig {
   private @Nullable List<FilterString> ignoredTransactions = null;
 
   private @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes =
-      new ArrayList<>(Collections.singletonList(new HttpStatusCodeRange(404)));
+      new ArrayList<>(
+          Arrays.asList(
+              new HttpStatusCodeRange(301, 303),
+              new HttpStatusCodeRange(305, 399),
+              new HttpStatusCodeRange(401, 404)));
 
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
@@ -3152,7 +3157,7 @@ public class SentryOptions implements RateLimiterConfig {
 
   /**
    * Returns the HTTP status codes and inclusive ranges for which incoming server transactions are
-   * not sent to Sentry. Defaults to a single range containing 404. An empty list disables this
+   * not sent to Sentry. Defaults to 301-303, 305-399, and 401-404. An empty list disables this
    * filter.
    *
    * @return the configured HTTP status code ranges, or {@code null} if explicitly set to null
