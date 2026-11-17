@@ -131,6 +131,8 @@ WHITESPACE           = [ \t\r\n]+
     if (zzBuffer[zzStartRead] == '$') {
       return false;
     }
+    // Sentry: no backslash stop where the dialect documents no backslash escapes (D25, D33).
+    if (dialect.backslashEscapes() == Support.NO) return false;
     char quote = 0;
     int backslashes = 0;
     for (int i = zzStartRead; i < zzMarkedPos; i++) {
