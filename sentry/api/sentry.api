@@ -984,6 +984,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public abstract fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public abstract fun isEnabled ()Z
+	public abstract fun isFromSameSdkInitialization (Lio/sentry/IScopes;)Z
 	public abstract fun isHealthy ()Z
 	public fun isNoOp ()Z
 	public abstract fun logger ()Lio/sentry/logger/ILoggerApi;
@@ -1717,6 +1718,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
+	public fun isFromSameSdkInitialization (Lio/sentry/IScopes;)Z
 	public fun isHealthy ()Z
 	public fun isNoOp ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
@@ -2468,6 +2470,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
+	public fun isFromSameSdkInitialization (Lio/sentry/IScopes;)Z
 	public fun isHealthy ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
@@ -2542,6 +2545,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun isAncestorOf (Lio/sentry/IScopes;)Z
 	public fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public fun isEnabled ()Z
+	public fun isFromSameSdkInitialization (Lio/sentry/IScopes;)Z
 	public fun isHealthy ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;

@@ -106,7 +106,7 @@ public final class Sentry {
       // in global hub mode we never fork implicitly, but scopes that have explicitly been made
       // current (e.g. by withScope) must still be honoured. Anything that did not originate from
       // the present rootScopes is stale (SDK closed or re-initialized) and gets ignored.
-      if (scopes != null && !scopes.isNoOp() && root.isAncestorOf(scopes)) {
+      if (scopes != null && !scopes.isNoOp() && root.isFromSameSdkInitialization(scopes)) {
         return scopes;
       }
       return root;

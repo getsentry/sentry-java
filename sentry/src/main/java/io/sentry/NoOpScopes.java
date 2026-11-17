@@ -211,6 +211,11 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public boolean isFromSameSdkInitialization(@Nullable IScopes otherScopes) {
+    return false;
+  }
+
+  @Override
   public @NotNull SentryId captureTransaction(
       final @NotNull SentryTransaction transaction,
       final @Nullable TraceContext traceContext,

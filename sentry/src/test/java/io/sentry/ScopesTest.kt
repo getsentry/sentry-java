@@ -99,6 +99,20 @@ class ScopesTest {
   }
 
   @Test
+  fun `SDK initialization identity is inherited by forks`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@sentry.io/proj"
+    options.setSerializer(mock())
+    val firstRoot = createScopes(options)
+    val descendant = firstRoot.forkedCurrentScope("parent").forkedCurrentScope("descendant")
+    val secondRoot = createScopes(options)
+
+    assertTrue(firstRoot.isFromSameSdkInitialization(descendant))
+    assertTrue(descendant.isFromSameSdkInitialization(firstRoot))
+    assertFalse(firstRoot.isFromSameSdkInitialization(secondRoot))
+  }
+
+  @Test
   fun `when isolation scope is forked, integrations are not registered`() {
     val integrationMock = mock<Integration>()
     val options = SentryOptions()

@@ -250,6 +250,11 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.getCurrentScopes().isAncestorOf(otherScopes);
   }
 
+  @Override
+  public boolean isFromSameSdkInitialization(final @Nullable IScopes otherScopes) {
+    return Sentry.getCurrentScopes().isFromSameSdkInitialization(otherScopes);
+  }
+
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureTransaction(
