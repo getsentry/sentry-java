@@ -1,5 +1,5 @@
-import com.android.build.api.variant.HasHostTestsBuilder
-import com.android.build.api.variant.HostTestBuilder
+import com.android.build.api.variant.HasTestSuites
+import com.android.build.api.variant.TestSuiteSourceSet
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -7,7 +7,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
   id("com.android.library")
-  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
   id("io.sentry.detekt")
@@ -38,34 +37,40 @@ android {
 
   buildFeatures { compose = true }
 
+  // SPIKE: built-in Kotlin requires test and main code to share one JVM target.
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+  }
+
   composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
 
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
-    composeUiTestVersions.keys.forEach { name ->
-      create(name) {
-        initWith(getByName("release"))
-        matchingFallbacks += "release"
-      }
-    }
   }
 
   // AGP 9 only generates unit tests for the testBuildType. The debug variant is
   // disabled, so unit tests must target release to run at all.
   testBuildType = "release"
 
-  kotlin {
-    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
-    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
-  }
-
   testOptions {
     animationsDisabled = true
     unitTests.apply {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
+    }
+    composeUiTestVersions.keys.forEach { name ->
+      customSuites.create(name) {
+        targetVariants += "release"
+        targets.create("jvm")
+        hostJar { enableAndroidResources = true }
+        useJunitEngine {
+          includeEngines += "junit-vintage"
+          enginesDependencies.add("org.junit.vintage:junit-vintage-engine:5.12.2")
+          enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.12.2")
+        }
+      }
     }
   }
 
@@ -85,13 +90,24 @@ android {
 
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-    if (it.buildType in composeUiTestVersions) {
-      (it as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
+  }
+  androidComponents.onVariants { variant ->
+    (variant as HasTestSuites).suites.values.forEach { suite ->
+      suite.sources.filterIsInstance<TestSuiteSourceSet.HostJar>().forEach {
+        it.kotlin?.addStaticSourceDirectory("src/test/java")
+        it.java?.addStaticSourceDirectory("src/test/java")
+        it.resources.addStaticSourceDirectory("src/test/resources")
+      }
     }
   }
 }
 
-kotlin { explicitApi() }
+kotlin {
+  explicitApi()
+  compilerOptions.jvmTarget = JvmTarget.JVM_21 // SPIKE
+  compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
+  compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
+}
 
 dependencies {
   api(projects.sentry)
@@ -117,9 +133,16 @@ dependencies {
   testImplementation(libs.coil.compose)
 }
 
-composeUiTestVersions.forEach { (buildType, version) ->
+composeUiTestVersions.forEach { (suite, version) ->
+  val variantSuite = "release${suite.replaceFirstChar { it.uppercase() }}"
   configurations
-    .matching { it.name == "${buildType}UnitTestRuntimeClasspath" }
+    .matching { it.name == "${variantSuite}Implementation" }
+    .configureEach { extendsFrom(configurations.testImplementation.get()) }
+  configurations
+    .matching {
+      it.name == "${variantSuite}RuntimeClasspath" ||
+        it.name == "${variantSuite}HostRuntimeClasspath"
+    }
     .configureEach {
       resolutionStrategy.eachDependency {
         if (requested.group == "androidx.compose.ui") useVersion(version)
@@ -134,4 +157,75 @@ tasks.withType<Detekt>().configureEach {
 
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
   compilerOptions.freeCompilerArgs.add("-opt-in=androidx.compose.ui.ExperimentalComposeUiApi")
+}
+
+// SPIKE: suites don't get the mockable android.jar that AGP puts on unit test classpaths.
+afterEvaluate {
+  tasks
+    .withType<Test>()
+    .matching { it.name.endsWith("JvmTestSuite") }
+    .configureEach {
+      classpath +=
+        tasks.named<Test>("testReleaseUnitTest").get().classpath.filter { it.name == "android.jar" }
+      // SPIKE: nor the suite's own processed Java resources.
+      classpath +=
+        files(tasks.named(name.replace("test", "process").replace("JvmTestSuite", "JavaRes")))
+    }
+}
+
+// SPIKE: AGP resolves suite runtime classpaths for the standard JVM, which picks Compose's desktop
+// artifacts instead of the Android ones.
+afterEvaluate {
+  configurations
+    .matching { it.name.endsWith("HostRuntimeClasspath") }
+    .configureEach {
+      attributes {
+        attribute(
+          TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+          objects.named(TargetJvmEnvironment.ANDROID),
+        )
+        attribute(
+          org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.attribute,
+          org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.androidJvm,
+        )
+      }
+    }
+}
+
+// SPIKE: suites don't get the test_config.properties Robolectric reads its resources from.
+composeUiTestVersions.keys.forEach { suite ->
+  val v = "release${suite.replaceFirstChar { it.uppercase() }}"
+  val writeConfig =
+    tasks.register("write${v}TestConfig") {
+      val out = layout.buildDirectory.dir("spike/$v")
+      outputs.dir(out)
+      doLast {
+        val f = out.get().file("com/android/tools/test_config.properties").asFile
+        f.parentFile.mkdirs()
+        f.writeText(
+          """
+        android_custom_package=io.sentry.android.replay
+        android_merged_assets=build/intermediates/assets/$v/merge${v.replaceFirstChar { it.uppercase() }}Assets
+        android_merged_manifest=build/intermediates/packaged_manifests/$v/process${v.replaceFirstChar { it.uppercase() }}Manifest/AndroidManifest.xml
+        android_resource_apk=build/intermediates/apk_for_local_test/$v/package${v.replaceFirstChar { it.uppercase() }}ForUnitTest/apk-for-local-test.ap_
+        """
+            .trimIndent(),
+        )
+      }
+    }
+  afterEvaluate {
+    tasks.named<Test>("test${v.replaceFirstChar { it.uppercase() }}JvmTestSuite") {
+      classpath += files(writeConfig)
+      dependsOn(
+        "package${v.replaceFirstChar { it.uppercase() }}ForUnitTest",
+        "merge${v.replaceFirstChar { it.uppercase() }}Assets",
+        "process${v.replaceFirstChar { it.uppercase() }}Manifest",
+      )
+    }
+  }
+}
+
+// SPIKE: AGP doesn't hook test suites into check.
+afterEvaluate {
+  tasks.named("check") { dependsOn(tasks.matching { it.name.endsWith("JvmTestSuite") }) }
 }

@@ -46,8 +46,6 @@ import io.sentry.android.replay.ReplayIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
-import io.sentry.compose.gestures.ComposeGestureTargetLocator;
-import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.NoOpModulesLoader;
@@ -240,7 +238,8 @@ final class AndroidOptionsInitializer {
                   SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME, options));
 
       if (isComposeAvailable) {
-        gestureTargetLocators.add(new ComposeGestureTargetLocator(options.getLogger()));
+        // SPIKE         gestureTargetLocators.add(new
+        // ComposeGestureTargetLocator(options.getLogger()));
       }
       options.setGestureTargetLocators(gestureTargetLocators);
     }
@@ -251,7 +250,8 @@ final class AndroidOptionsInitializer {
             SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME, options)) {
 
       final List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>(1);
-      viewHierarchyExporters.add(new ComposeViewHierarchyExporter(options.getLogger()));
+      // SPIKE       viewHierarchyExporters.add(new
+      // ComposeViewHierarchyExporter(options.getLogger()));
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 

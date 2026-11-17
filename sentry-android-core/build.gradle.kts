@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 
 plugins {
   id("com.android.library")
-  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -105,7 +104,7 @@ dependencies {
   compileOnly(projects.sentryAndroidFragment)
   compileOnly(projects.sentryAndroidTimber)
   compileOnly(projects.sentryAndroidReplay)
-  compileOnly(projects.sentryCompose)
+  // SPIKE   compileOnly(projects.sentryCompose)
   compileOnly(projects.sentryAndroidDistribution)
 
   // lifecycle processor, session tracking
@@ -140,7 +139,7 @@ dependencies {
   testImplementation(projects.sentryAndroidFragment)
   testImplementation(projects.sentryAndroidTimber)
   testImplementation(projects.sentryAndroidReplay)
-  testImplementation(projects.sentryCompose)
+  // SPIKE   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
 
   testImplementation(libs.androidx.activity.compose)
