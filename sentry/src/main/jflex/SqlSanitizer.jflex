@@ -93,6 +93,9 @@ WHITESPACE           = [ \t\r\n]+
   // maximum sanitized statement length
   static final int LIMIT = 32 * 1024;
 
+  // Sentry: ends an action early without stopping; the driver loop only stops on YYEOF.
+  private static final int CONTINUE = 0;
+
   // Match on strings like "IN(?, ?, ...)"
   private static final Pattern IN_STATEMENT_PATTERN = Pattern.compile("(\\sIN\\s*)\\(\\s*\\?\\s*(?:,\\s*\\?\\s*)*+\\)", Pattern.CASE_INSENSITIVE);
   private static final String IN_STATEMENT_NORMALIZED = "$1(?)";
@@ -163,13 +166,20 @@ WHITESPACE           = [ \t\r\n]+
     }
   }
 
+  // Sentry: where the dialect rule for $$ or $tag$ is NO, the first $ is text (D14).
+  private boolean appendDollarAsText(Support rule) {
+    if (rule != Support.NO) {
+      return false;
+    }
+    yypushback(yylength() - 1);
+    appendCurrentFragment();
+    return true;
+  }
+
   // Sentry: a number never contains -- (D32), it starts a comment. Pushes the match back to the
   // first --, as the [.+-]+ rule does. Returns true after appending what is left when that has
   // no digit (a sign such as "+"). A match never starts with --: {LINE_COMMENT} wins there.
   private boolean appendSignBeforeDashDash() {
-    if (zzBuffer[zzStartRead] == '$') {
-      return false;
-    }
     for (int i = zzStartRead + 2; i < zzMarkedPos; i++) {
       if (zzBuffer[i - 1] == '-' && zzBuffer[i] == '-') {
         yypushback(zzMarkedPos - i + 1);
@@ -1398,7 +1408,7 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   // here is where the actual sanitization happens
-  {BASIC_NUM} | {HEX_NUM} | {DOLLAR_QUOTED_STR} {
+  {BASIC_NUM} | {HEX_NUM} {
           if (!appendSignBeforeDashDash()) {
             builder.append('?');
           }
@@ -1448,9 +1458,26 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   // Sentry: an unterminated literal is replaced by ? and stops (R4).
-  {UNTERMINATED_QUOTED_STR} | {UNTERMINATED_DOUBLE_QUOTED_STR} | {UNTERMINATED_BACKTICK_QUOTED_STR} | {UNTERMINATED_DOLLAR_QUOTED_STR} {
+  {UNTERMINATED_QUOTED_STR} | {UNTERMINATED_DOUBLE_QUOTED_STR} | {UNTERMINATED_BACKTICK_QUOTED_STR} {
           builder.append('?');
           return YYEOF;
+      }
+
+  // Sentry: $$ per dialect (D14). YES: a literal; UNKNOWN: stop.
+  {DOLLAR_QUOTED_STR} {
+          if (!appendDollarAsText(dialect.dollarQuotedStrings())) {
+            builder.append('?');
+            if (dialect.dollarQuotedStrings() == Support.UNKNOWN) return YYEOF;
+          }
+          if (isOverLimit()) return YYEOF;
+      }
+
+  {UNTERMINATED_DOLLAR_QUOTED_STR} {
+          if (!appendDollarAsText(dialect.dollarQuotedStrings())) {
+            builder.append('?');
+            return YYEOF;
+          }
+          if (isOverLimit()) return YYEOF;
       }
 
   // Sentry: Oracle q'…' (D9, D39). YES: a literal; UNKNOWN: stop.
@@ -1472,6 +1499,12 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   {DOLLAR_TAG_START} {
+          // Sentry: $tag$ per dialect (D14). NO: the $ is text; UNKNOWN: stop.
+          if (appendDollarAsText(dialect.taggedDollarQuotes())) return CONTINUE;
+          if (dialect.taggedDollarQuotes() == Support.UNKNOWN) {
+            builder.append('?');
+            return YYEOF;
+          }
           // Start of a tagged dollar-quoted string like $tag$...$tag$
           dollarTag = yytext();
           yybegin(DOLLAR_STRING);
