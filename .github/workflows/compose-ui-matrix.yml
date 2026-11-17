@@ -78,3 +78,24 @@ jobs:
           reporter: java-junit
           output-to: step-summary
           fail-on-error: false
+
+  report-failure:
+    needs: [versions, compose-ui-matrix]
+    # Nobody gets GitHub's notifications for scheduled runs, so open an issue instead.
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    name: Report scheduled failure
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts
+
+      - name: Open or update the failure issue
+        run: ./scripts/report-compose-ui-matrix-failure.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
