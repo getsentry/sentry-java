@@ -14,6 +14,7 @@ plugins {
   id("io.sentry.publish")
   id("io.sentry.api-validation")
   id("io.sentry.robolectric")
+  id("io.sentry.dependency-matrix")
 }
 
 android {
@@ -103,16 +104,13 @@ dependencies {
 }
 
 // Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
-// .github/workflows/compose-ui-matrix.yml sets VERSION_COMPOSE_UI to run the unit tests against the
-// versions in gradle/compose-ui-versions.json.
-System.getenv("VERSION_COMPOSE_UI")?.let { version ->
-  configurations
-    .matching { it.name == "releaseUnitTestRuntimeClasspath" }
-    .configureEach {
-      resolutionStrategy.eachDependency {
-        if (requested.group == "androidx.compose.ui") useVersion(version)
-      }
-    }
+// .github/workflows/compose-ui-matrix.yml runs each version's task.
+dependencyMatrix {
+  matrix(
+    name = "composeUi",
+    group = "androidx.compose.ui",
+    versionsFile = "compose-ui-versions.json",
+  )
 }
 
 tasks.withType<Detekt>().configureEach {
