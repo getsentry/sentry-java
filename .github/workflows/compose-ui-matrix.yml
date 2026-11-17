@@ -1,9 +1,6 @@
 name: Compose UI Matrix
 
 on:
-  # Daily, to catch new Compose releases that break Session Replay without waiting for a PR.
-  schedule:
-    - cron: '0 4 * * *'
   push:
     branches:
       - main
@@ -24,11 +21,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          sparse-checkout: scripts
+          sparse-checkout: |
+            gradle
+            scripts
 
-      - name: Read latest Compose UI versions from Google Maven
+      - name: Read Compose UI versions
         id: versions
-        run: kotlin scripts/compose-ui-versions.main.kts
+        run: ./scripts/read-compose-ui-versions.sh
 
   compose-ui-matrix:
     needs: versions
@@ -78,24 +77,3 @@ jobs:
           reporter: java-junit
           output-to: step-summary
           fail-on-error: false
-
-  report-failure:
-    needs: [versions, compose-ui-matrix]
-    # Nobody gets GitHub's notifications for scheduled runs, so open an issue instead.
-    if: failure() && github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    name: Report scheduled failure
-    permissions:
-      contents: read
-      issues: write
-
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          sparse-checkout: scripts
-
-      - name: Open or update the failure issue
-        run: ./scripts/report-compose-ui-matrix-failure.sh
-        env:
-          GH_TOKEN: ${{ github.token }}

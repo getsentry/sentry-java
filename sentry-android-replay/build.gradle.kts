@@ -104,7 +104,7 @@ dependencies {
 
 // Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
 // .github/workflows/compose-ui-matrix.yml sets VERSION_COMPOSE_UI to run the unit tests against the
-// latest stable and pre-release versions from Google Maven.
+// versions in gradle/compose-ui-versions.json.
 System.getenv("VERSION_COMPOSE_UI")?.let { version ->
   configurations
     .matching { it.name == "releaseUnitTestRuntimeClasspath" }
