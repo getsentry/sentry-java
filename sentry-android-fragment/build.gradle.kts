@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   id("com.android.library")
-  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.gradle.versions)
   id("io.sentry.detekt")
   id("io.sentry.spotless")
