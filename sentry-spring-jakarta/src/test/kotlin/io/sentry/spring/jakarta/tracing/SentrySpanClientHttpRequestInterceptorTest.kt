@@ -54,7 +54,7 @@ class SentrySpanClientHttpRequestInterceptorTest {
     }
 
     fun create(
-      config: Sentry.OptionsConfiguration<SentryOptions>
+      config: Sentry.OptionsConfiguration<SentryOptions>,
     ): SentrySpanClientHttpRequestInterceptor {
       config.configure(options)
       return SentrySpanClientHttpRequestInterceptor(scopes)

@@ -69,9 +69,9 @@ class AppLifecycleIntegrationTest {
     assertNotNull(sut.watcher)
 
     Thread {
-        sut.close()
-        latch.countDown()
-      }
+      sut.close()
+      latch.countDown()
+    }
       .start()
 
     latch.await()

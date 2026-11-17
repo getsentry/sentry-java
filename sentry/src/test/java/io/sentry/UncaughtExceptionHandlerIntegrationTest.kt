@@ -175,10 +175,10 @@ class UncaughtExceptionHandlerIntegrationTest {
       assertTrue(
         outputStreamCaptor
           .toString()
-          .contains("java.lang.RuntimeException: This should be printed!")
+          .contains("java.lang.RuntimeException: This should be printed!"),
       )
       assertTrue(
-        outputStreamCaptor.toString().contains("UncaughtExceptionHandlerIntegrationTest.kt:")
+        outputStreamCaptor.toString().contains("UncaughtExceptionHandlerIntegrationTest.kt:"),
       )
     } finally {
       System.setErr(standardErr)
@@ -258,7 +258,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         any(),
         argThat<Hint> {
           (HintUtils.getSentrySdkHint(this) as UncaughtExceptionHint).isFlushable(
-            eventCaptor.firstValue.eventId
+            eventCaptor.firstValue.eventId,
           )
         },
       )
@@ -281,7 +281,7 @@ class UncaughtExceptionHandlerIntegrationTest {
         any(),
         argThat<Hint> {
           !(HintUtils.getSentrySdkHint(this) as UncaughtExceptionHint).isFlushable(
-            eventCaptor.firstValue.eventId
+            eventCaptor.firstValue.eventId,
           )
         },
       )
@@ -295,7 +295,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
 
     whenever(
-        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>()),
       )
       .then {
         currentDefaultHandler = it.getArgument(0)
@@ -324,7 +324,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
 
     whenever(
-        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>()),
       )
       .then {
         currentDefaultHandler = it.getArgument(0)
@@ -354,7 +354,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
 
     whenever(
-        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>()),
       )
       .then {
         currentDefaultHandler = it.getArgument(0)
@@ -390,7 +390,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
 
     whenever(
-        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>()),
       )
       .then {
         currentDefaultHandler = it.getArgument(0)
@@ -433,7 +433,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
 
     whenever(
-        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>()),
       )
       .then {
         currentDefaultHandler = it.getArgument(0)
@@ -487,7 +487,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
 
     whenever(
-        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>()),
       )
       .then {
         currentDefaultHandler = it.getArgument(0)

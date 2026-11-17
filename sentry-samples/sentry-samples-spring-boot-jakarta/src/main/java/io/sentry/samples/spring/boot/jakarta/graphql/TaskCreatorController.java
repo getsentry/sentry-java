@@ -20,22 +20,20 @@ class TaskCreatorController {
     // using mapped BatchLoader to not have to deal with correct ordering of items
     batchLoaderRegistry
         .forTypePair(String.class, ProjectController.Creator.class)
-        .withOptions((builder) -> builder.setBatchingEnabled(true))
-        .registerMappedBatchLoader(
-            (Set<String> keys, BatchLoaderEnvironment env) -> {
-              return Mono.fromCallable(
-                  () -> {
-                    final @NotNull Map<String, ProjectController.Creator> map = new HashMap<>();
-                    for (String key : keys) {
-                      if ("Ccrash".equalsIgnoreCase(key)) {
-                        throw new RuntimeException("Causing an error while loading creator");
-                      }
-                      map.put(key, new ProjectController.Creator(key, "Name" + key));
-                    }
+        .withOptions(builder -> builder.setBatchingEnabled(true))
+        .registerMappedBatchLoader((Set<String> keys, BatchLoaderEnvironment env) -> {
+          return Mono.fromCallable(() -> {
+            final @NotNull Map<String, ProjectController.Creator> map = new HashMap<>();
+            for (String key : keys) {
+              if ("Ccrash".equalsIgnoreCase(key)) {
+                throw new RuntimeException("Causing an error while loading creator");
+              }
+              map.put(key, new ProjectController.Creator(key, "Name" + key));
+            }
 
-                    return map;
-                  });
-            });
+            return map;
+          });
+        });
   }
 
   @SchemaMapping(typeName = "Task")

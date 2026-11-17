@@ -84,7 +84,7 @@ class WebViewTracePropagationScriptTest {
             "pwned",
             1,
             null,
-          )
+          ),
         )
       return Result(metas, pwned)
     } finally {
@@ -220,7 +220,7 @@ class WebViewTracePropagationScriptTest {
   fun `normalizeHosts drops blank entries and duplicates`() {
     val hosts =
       WebViewTracePropagationScript.normalizeHosts(
-        listOf("   ", "", "example.com", "https://EXAMPLE.com/", "other.com")
+        listOf("   ", "", "example.com", "https://EXAMPLE.com/", "other.com"),
       )
 
     assertThat(hosts).containsExactly("example.com", "other.com").inOrder()
@@ -250,7 +250,7 @@ class WebViewTracePropagationScriptTest {
   fun `originRules keep a non-default port`() {
     val rules =
       WebViewTracePropagationScript.originRules(
-        listOf("example.com:8443", "https://other.com:443/x", "[::1]:8080", "10.0.2.2:3000")
+        listOf("example.com:8443", "https://other.com:443/x", "[::1]:8080", "10.0.2.2:3000"),
       )
 
     assertThat(rules)
@@ -280,7 +280,7 @@ class WebViewTracePropagationScriptTest {
     assertThat(WebViewTracePropagationScript.stripTransactionFromBaggage(baggage))
       .isEqualTo(
         "sentry-trace_id=d4cda95b652f4a1592b449d5929fda1b,sentry-environment=prod," +
-          "sentry-sample_rate=1.0,othervendor=keepme"
+          "sentry-sample_rate=1.0,othervendor=keepme",
       )
   }
 
@@ -288,8 +288,8 @@ class WebViewTracePropagationScriptTest {
   fun `stripTransactionFromBaggage returns null when only sentry-transaction is left`() {
     assertThat(
         WebViewTracePropagationScript.stripTransactionFromBaggage(
-          "sentry-transaction=GET%20%2Fusers%2F123"
-        )
+          "sentry-transaction=GET%20%2Fusers%2F123",
+        ),
       )
       .isNull()
     assertThat(WebViewTracePropagationScript.stripTransactionFromBaggage(null)).isNull()

@@ -96,7 +96,7 @@ class AndroidLoggerBatchProcessorTest {
     val sut = fixture.getSut()
     sut.close(false)
 
-    assertTrue(AppState.getInstance().lifecycleObserver.listeners.isEmpty())
+    assertTrue(AppState.getInstance().lifecycleObserver!!.listeners.isEmpty())
   }
 
   @Test
@@ -104,6 +104,6 @@ class AndroidLoggerBatchProcessorTest {
     val sut = fixture.getSut()
     sut.close(true)
 
-    assertTrue(AppState.getInstance().lifecycleObserver.listeners.isEmpty())
+    assertTrue(AppState.getInstance().lifecycleObserver!!.listeners.isEmpty())
   }
 }

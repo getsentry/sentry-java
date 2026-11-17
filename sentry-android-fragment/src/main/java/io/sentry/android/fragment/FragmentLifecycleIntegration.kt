@@ -26,7 +26,7 @@ public class FragmentLifecycleIntegration(
   }
 
   public constructor(
-    application: Application
+    application: Application,
   ) : this(
     application = application,
     filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states,

@@ -98,45 +98,42 @@ public final class ContextUtils {
    */
   @SuppressLint("NewApi")
   private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo33 =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context
-                  .getPackageManager()
-                  .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context
+              .getPackageManager()
+              .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
+        } catch (Throwable e) {
+          return null;
+        }
+      });
 
   private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+        } catch (Throwable e) {
+          return null;
+        }
+      });
 
   private static final @NotNull AndroidLazyEvaluator<String> applicationName =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              final ApplicationInfo applicationInfo = context.getApplicationInfo();
-              final int stringId = applicationInfo.labelRes;
-              if (stringId == 0) {
-                if (applicationInfo.nonLocalizedLabel != null) {
-                  return applicationInfo.nonLocalizedLabel.toString();
-                }
-                return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
-              } else {
-                return context.getString(stringId);
-              }
-            } catch (Throwable e) {
-              return null;
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          final ApplicationInfo applicationInfo = context.getApplicationInfo();
+          final int stringId = applicationInfo.labelRes;
+          if (stringId == 0) {
+            if (applicationInfo.nonLocalizedLabel != null) {
+              return applicationInfo.nonLocalizedLabel.toString();
             }
-          });
+            return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
+          } else {
+            return context.getString(stringId);
+          }
+        } catch (Throwable e) {
+          return null;
+        }
+      });
 
   /**
    * Since this applicationInfo uses the same flag (METADATA) we can assume it's static and cache it
@@ -145,30 +142,28 @@ public final class ContextUtils {
    */
   @SuppressLint("NewApi")
   private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo33 =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context
-                  .getPackageManager()
-                  .getApplicationInfo(
-                      context.getPackageName(),
-                      PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA));
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context
+              .getPackageManager()
+              .getApplicationInfo(
+                  context.getPackageName(),
+                  PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA));
+        } catch (Throwable e) {
+          return null;
+        }
+      });
 
   private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context
-                  .getPackageManager()
-                  .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context
+              .getPackageManager()
+              .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+        } catch (Throwable e) {
+          return null;
+        }
+      });
 
   /**
    * Return the Application's PackageInfo if possible, or null.
@@ -521,6 +516,7 @@ public final class ContextUtils {
           }
         }
       } catch (Throwable e) {
+        // Split APK info is optional, the app context is still complete without it.
       }
     }
   }

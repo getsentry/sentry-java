@@ -5,11 +5,15 @@ import io.sentry.profiling.ProfileRecordingState
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
+import io.sentry.test.ManualTimerExecutorService
 import io.sentry.test.createTestScopes
 import io.sentry.test.getProperty
+import io.sentry.time.MonotonicTicker
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.thread.IThreadChecker
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -35,7 +39,12 @@ import org.mockito.kotlin.whenever
 
 class SentryTracerTest {
   private class Fixture {
-    val options = SentryOptions()
+    val ticker = TestMonotonicTicker()
+    // SentryOptions has no ticker setter.
+    val options =
+      object : SentryOptions() {
+        override fun getMonotonicTicker(): MonotonicTicker = ticker
+      }
     val scopes: Scopes
     val compositePerformanceCollector: CompositePerformanceCollector
 
@@ -102,11 +111,13 @@ class SentryTracerTest {
   @Test
   fun `does not create child span if origin is ignored`() {
     val tracer =
-      fixture.getSut({
-        it.setDebug(true)
-        it.setLogger(SystemOutLogger())
-        it.setIgnoredSpanOrigins(listOf("ignored"))
-      })
+      fixture.getSut(
+        {
+          it.setDebug(true)
+          it.setLogger(SystemOutLogger())
+          it.setIgnoredSpanOrigins(listOf("ignored"))
+        },
+      )
     tracer.startChild("child1", null, SpanOptions().also { it.origin = "ignored" })
     tracer.startChild("child2")
     assertEquals(1, tracer.children.size)
@@ -115,11 +126,13 @@ class SentryTracerTest {
   @Test
   fun `does not add more spans than configured in options`() {
     val tracer =
-      fixture.getSut({
-        it.maxSpans = 2
-        it.setDebug(true)
-        it.setLogger(SystemOutLogger())
-      })
+      fixture.getSut(
+        {
+          it.maxSpans = 2
+          it.setDebug(true)
+          it.setLogger(SystemOutLogger())
+        },
+      )
     tracer.startChild("child1")
     tracer.startChild("child2")
     tracer.startChild("child3")
@@ -129,11 +142,13 @@ class SentryTracerTest {
   @Test
   fun `when span limit is reached, startChild returns NoOpSpan`() {
     val tracer =
-      fixture.getSut({
-        it.maxSpans = 2
-        it.setDebug(true)
-        it.setLogger(SystemOutLogger())
-      })
+      fixture.getSut(
+        {
+          it.maxSpans = 2
+          it.setDebug(true)
+          it.setLogger(SystemOutLogger())
+        },
+      )
     tracer.startChild("child1")
     tracer.startChild("child2")
     assertTrue(tracer.startChild("child3") is NoOpSpan)
@@ -218,7 +233,7 @@ class SentryTracerTest {
         optionsConfiguration = {
           it.profilesSampleRate = 0.0
           it.setTransactionProfiler(transactionProfiler)
-        }
+        },
       )
     tracer.finish()
     verify(transactionProfiler, never()).onTransactionFinish(any(), anyOrNull(), anyOrNull())
@@ -461,7 +476,7 @@ class SentryTracerTest {
   fun `when continuous profiler is not running, profile context is not set`() {
     val tracer =
       fixture.getSut(
-        optionsConfiguration = { it.setContinuousProfiler(NoOpContinuousProfiler.getInstance()) }
+        optionsConfiguration = { it.setContinuousProfiler(NoOpContinuousProfiler.getInstance()) },
       )
     tracer.finish()
     verify(fixture.scopes)
@@ -509,7 +524,7 @@ class SentryTracerTest {
       fixture.getSut(
         optionsConfiguration = { options ->
           options.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
-        }
+        },
       )
     val span = tracer.startChild("span.op")
     assertNull(span.getData(SpanDataConvention.PROFILER_ID))
@@ -911,10 +926,12 @@ class SentryTracerTest {
   @Test
   fun `returns trace state`() {
     val transaction =
-      fixture.getSut({
-        it.isTraceSampling = true
-        it.isSendDefaultPii = true
-      })
+      fixture.getSut(
+        {
+          it.isTraceSampling = true
+          it.isSendDefaultPii = true
+        },
+      )
     fixture.scopes.setUser(User().apply { id = "user-id" })
     val replayId = SentryId()
     fixture.scopes.configureScope { it.replayId = replayId }
@@ -986,12 +1003,14 @@ class SentryTracerTest {
   @Test
   fun `returns baggage header`() {
     val transaction =
-      fixture.getSut({
-        it.isTraceSampling = true
-        it.environment = "production"
-        it.release = "1.0.99-rc.7"
-        it.isSendDefaultPii = true
-      })
+      fixture.getSut(
+        {
+          it.isTraceSampling = true
+          it.environment = "production"
+          it.release = "1.0.99-rc.7"
+          it.isSendDefaultPii = true
+        },
+      )
 
     fixture.scopes.setUser(User().apply { id = "userId12345" })
     val replayId = SentryId()
@@ -1015,11 +1034,13 @@ class SentryTracerTest {
   @Test
   fun `returns baggage header without userId if not send pii`() {
     val transaction =
-      fixture.getSut({
-        it.isTraceSampling = true
-        it.environment = "production"
-        it.release = "1.0.99-rc.7"
-      })
+      fixture.getSut(
+        {
+          it.isTraceSampling = true
+          it.environment = "production"
+          it.release = "1.0.99-rc.7"
+        },
+      )
 
     fixture.scopes.setUser(User().apply { id = "userId12345" })
 
@@ -1040,12 +1061,14 @@ class SentryTracerTest {
   @Test
   fun `returns baggage header without userId if send pii and null user`() {
     val transaction =
-      fixture.getSut({
-        it.isTraceSampling = true
-        it.environment = "production"
-        it.release = "1.0.99-rc.7"
-        it.isSendDefaultPii = true
-      })
+      fixture.getSut(
+        {
+          it.isTraceSampling = true
+          it.environment = "production"
+          it.release = "1.0.99-rc.7"
+          it.isSendDefaultPii = true
+        },
+      )
 
     fixture.scopes.setUser(null)
 
@@ -1841,7 +1864,7 @@ class SentryTracerTest {
         transactionFinishedCallback = {
           assertFalse(it.isFinished)
           assertNotNull(it.finishDate)
-        }
+        },
       )
     assertFalse(transaction.isFinished)
     assertNull(transaction.finishDate)
@@ -1869,5 +1892,112 @@ class SentryTracerTest {
     transaction.setTag(null, "v")
     assertNull(transaction.getTag(null))
     assertNull(transaction.getTag("k"))
+  }
+
+  @Test
+  fun `when a span and the transaction finish after the deadline passed, only their status changes`() {
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(ManualTimerExecutorService(), clock)
+    val span = transaction.startChild("op")
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    span.finish(SpanStatus.OK)
+    transaction.finish(SpanStatus.OK)
+
+    assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.nowNanos)
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.nowNanos)
+  }
+
+  @Test
+  fun `when the idle timeout runs after the deadline passed, only the transaction status changes`() {
+    val timer = ManualTimerExecutorService()
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(timer, clock, idleTimeout = IDLE_MILLIS)
+    // schedules the idle timeout, since the transaction doesn't wait for children
+    transaction.startChild("op").finish()
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    timer.runScheduled(IDLE_MILLIS)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.nowNanos)
+  }
+
+  @Test
+  fun `when force finished after the deadline passed, the transaction gets the deadline status`() {
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(ManualTimerExecutorService(), clock)
+    val span = transaction.startChild("op")
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    transaction.forceFinish(SpanStatus.ABORTED, false, null)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.nowNanos)
+    assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.nowNanos)
+  }
+
+  @Test
+  fun `when spans finish after the deadline passed, they keep a status the transaction already has`() {
+    val transaction = getSutWithDeadline(ManualTimerExecutorService(), TestDateProvider())
+    val span = transaction.startChild("op")
+    transaction.status = SpanStatus.UNAVAILABLE
+
+    fixture.ticker.advance(3, TimeUnit.HOURS)
+    span.finish(SpanStatus.OK)
+    transaction.finish(SpanStatus.OK)
+
+    assertThat(span.status).isEqualTo(SpanStatus.UNAVAILABLE)
+    assertThat(transaction.status).isEqualTo(SpanStatus.UNAVAILABLE)
+  }
+
+  @Test
+  fun `when spans finish before the deadline, they keep their own status`() {
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(ManualTimerExecutorService(), clock)
+    val span = transaction.startChild("op")
+
+    sleepFor(DEADLINE_MILLIS - 1, TimeUnit.MILLISECONDS, clock)
+    span.finish(SpanStatus.OK)
+    transaction.finish(SpanStatus.OK)
+
+    assertThat(span.status).isEqualTo(SpanStatus.OK)
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.nowNanos)
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.nowNanos)
+  }
+
+  private fun getSutWithDeadline(
+    timer: ManualTimerExecutorService,
+    clock: TestDateProvider,
+    idleTimeout: Long? = null,
+  ): SentryTracer =
+    fixture.getSut(
+      optionsConfiguration = {
+        it.timerExecutorService = timer
+        it.dateProvider = clock
+      },
+      idleTimeout = idleTimeout,
+      deadlineTimeout = DEADLINE_MILLIS,
+    )
+
+  /** Moves both clocks on, as a device does across a suspend that the timers don't notice. */
+  private fun sleepFor(amount: Long, unit: TimeUnit, clock: TestDateProvider) {
+    fixture.ticker.advance(amount, unit)
+    clock.nowNanos += unit.toNanos(amount)
+  }
+
+  private class TestDateProvider : SentryDateProvider {
+    var nowNanos = 1_000_000_000_000L
+
+    override fun now(): SentryDate = SentryLongDate(nowNanos)
+  }
+
+  private companion object {
+    const val DEADLINE_MILLIS = 30_000L
+    const val IDLE_MILLIS = 3_000L
   }
 }

@@ -44,7 +44,7 @@ class SentryJobListenerTest {
   fun `cron trigger is sent as crontab monitor config with timezone`() {
     val config =
       inProgressMonitorConfig(
-        cronTrigger("0 15 10 ? * MON-FRI", TimeZone.getTimeZone("America/New_York"))
+        cronTrigger("0 15 10 ? * MON-FRI", TimeZone.getTimeZone("America/New_York")),
       )
 
     assertThat(config).isNotNull()
@@ -161,7 +161,7 @@ class SentryJobListenerTest {
     val trigger =
       TriggerBuilder.newTrigger()
         .withSchedule(
-          CalendarIntervalScheduleBuilder.calendarIntervalSchedule().withIntervalInDays(1)
+          CalendarIntervalScheduleBuilder.calendarIntervalSchedule().withIntervalInDays(1),
         )
         .build()
 

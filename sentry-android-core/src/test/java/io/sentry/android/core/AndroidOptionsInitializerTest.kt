@@ -52,6 +52,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -125,6 +126,7 @@ class AndroidOptionsInitializerTest {
 
     fun initSutWithClassLoader(
       classesToLoad: List<String> = emptyList(),
+      loadedClasses: Map<String, Class<*>> = emptyMap(),
       isFragmentAvailable: Boolean = false,
       isTimberAvailable: Boolean = false,
       isReplayAvailable: Boolean = false,
@@ -138,6 +140,9 @@ class AndroidOptionsInitializerTest {
       sentryOptions.isDebug = true
       val buildInfo = createBuildInfo()
       val loadClass = createClassMock(classesToLoad)
+      loadedClasses.forEach { (name, clazz) ->
+        whenever(loadClass.loadClass(eq(name), anyOrNull())).thenReturn(clazz)
+      }
       val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
       AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
@@ -274,8 +279,8 @@ class AndroidOptionsInitializerTest {
 
     assertTrue(
       fixture.sentryOptions.cacheDirPath?.endsWith(
-        "${File.separator}cache${File.separator}sentry"
-      )!!
+        "${File.separator}cache${File.separator}sentry",
+      )!!,
     )
   }
 
@@ -285,7 +290,7 @@ class AndroidOptionsInitializerTest {
     assertTrue(
       AndroidOptionsInitializer.getCacheDir(fixture.context)
         .path
-        .endsWith("${File.separator}cache${File.separator}sentry")
+        .endsWith("${File.separator}cache${File.separator}sentry"),
     )
   }
 
@@ -295,8 +300,8 @@ class AndroidOptionsInitializerTest {
 
     assertTrue(
       fixture.sentryOptions.profilingTracesDirPath?.endsWith(
-        "${File.separator}cache${File.separator}sentry${File.separator}profiling_traces"
-      )!!
+        "${File.separator}cache${File.separator}sentry${File.separator}profiling_traces",
+      )!!,
     )
     assertFalse(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
   }
@@ -307,8 +312,8 @@ class AndroidOptionsInitializerTest {
 
     assertTrue(
       fixture.sentryOptions.outboxPath?.endsWith(
-        "${File.separator}cache${File.separator}sentry${File.separator}outbox"
-      )!!
+        "${File.separator}cache${File.separator}sentry${File.separator}outbox",
+      )!!,
     )
   }
 
@@ -370,7 +375,7 @@ class AndroidOptionsInitializerTest {
     assertTrue(fixture.sentryOptions.transportGate is AndroidTransportGate)
   }
 
-  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Config(sdk = [Build.VERSION_CODES.N])
   @Test
   fun `init on API 25 and lower sets SSLSocketFactory with bundled Sentry root CAs`() {
     fixture.initSut(configureOptions = { dsn = SAAS_DSN })
@@ -378,7 +383,7 @@ class AndroidOptionsInitializerTest {
     assertIs<SentryRootCaSslSocketFactory>(fixture.sentryOptions.sslSocketFactory)
   }
 
-  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Config(sdk = [Build.VERSION_CODES.N])
   @Test
   fun `init on API 25 and lower does not set SSLSocketFactory for self-hosted DSN`() {
     fixture.initSut(configureOptions = { dsn = "https://key@sentry.example.com/1" })
@@ -386,7 +391,7 @@ class AndroidOptionsInitializerTest {
     assertNull(fixture.sentryOptions.sslSocketFactory)
   }
 
-  @Config(sdk = [Build.VERSION_CODES.O])
+  @Config(sdk = [30])
   @Test
   fun `init on API 26 and higher does not set SSLSocketFactory`() {
     fixture.initSut(configureOptions = { dsn = SAAS_DSN })
@@ -394,7 +399,7 @@ class AndroidOptionsInitializerTest {
     assertNull(fixture.sentryOptions.sslSocketFactory)
   }
 
-  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Config(sdk = [Build.VERSION_CODES.N])
   @Test
   fun `init on API 25 and lower keeps user provided SSLSocketFactory`() {
     val sslSocketFactory = mock<javax.net.ssl.SSLSocketFactory>()
@@ -402,7 +407,7 @@ class AndroidOptionsInitializerTest {
       configureOptions = {
         dsn = SAAS_DSN
         this.sslSocketFactory = sslSocketFactory
-      }
+      },
     )
 
     assertEquals(sslSocketFactory, fixture.sentryOptions.sslSocketFactory)
@@ -433,11 +438,11 @@ class AndroidOptionsInitializerTest {
     assertTrue(
       SentryIntegrationPackageStorage.getInstance()
         .integrations
-        .contains("PerfettoContinuousProfiling")
+        .contains("PerfettoContinuousProfiling"),
     )
   }
 
-  @Config(sdk = [34])
+  @Config(sdk = [33])
   @Test
   fun `init below API 35 does not report PerfettoContinuousProfiling integration`() {
     SentryIntegrationPackageStorage.getInstance().clearStorage()
@@ -446,18 +451,18 @@ class AndroidOptionsInitializerTest {
     assertFalse(
       SentryIntegrationPackageStorage.getInstance()
         .integrations
-        .contains("PerfettoContinuousProfiling")
+        .contains("PerfettoContinuousProfiling"),
     )
   }
 
-  @Config(sdk = [34])
+  @Config(sdk = [33])
   @Test
   fun `init below API 35 with enableLegacyProfiling true sets AndroidContinuousProfiler`() {
     fixture.initSut(configureOptions = { isEnableLegacyProfiling = true })
     assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
   }
 
-  @Config(sdk = [34])
+  @Config(sdk = [33])
   @Test
   fun `init below API 35 with enableLegacyProfiling false noops profiler`() {
     fixture.initSut(configureOptions = { isEnableLegacyProfiling = false })
@@ -497,7 +502,7 @@ class AndroidOptionsInitializerTest {
       configureOptions = {
         profilesSampleRate = 1.0
         isEnableLegacyProfiling = false
-      }
+      },
     )
 
     assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
@@ -510,7 +515,7 @@ class AndroidOptionsInitializerTest {
       configureOptions = {
         profilesSampler = mock()
         isEnableLegacyProfiling = false
-      }
+      },
     )
 
     assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
@@ -525,7 +530,7 @@ class AndroidOptionsInitializerTest {
       configureOptions = {
         profilesSampleRate = 1.0
         isEnableLegacyProfiling = false
-      }
+      },
     )
 
     assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
@@ -633,11 +638,22 @@ class AndroidOptionsInitializerTest {
   @Test
   fun `NdkIntegration will load SentryNdk class and add to the integration list`() {
     fixture.initSutWithClassLoader(
-      classesToLoad = listOfNotNull(NdkIntegration.SENTRY_NDK_CLASS_NAME)
+      classesToLoad = listOfNotNull(NdkIntegration.SENTRY_NDK_CLASS_NAME),
     )
 
     val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
     assertNotNull((actual as NdkIntegration).sentryNdkClass)
+  }
+
+  @Test
+  fun `NdkIntegration prefers the outproc backend class`() {
+    fixture.initSutWithClassLoader(
+      classesToLoad = listOfNotNull(NdkIntegration.SENTRY_NDK_CLASS_NAME),
+      loadedClasses = mapOf(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME to Any::class.java),
+    )
+
+    val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
+    assertEquals(Any::class.java, (actual as NdkIntegration).sentryNdkClass)
   }
 
   @Test
@@ -802,7 +818,7 @@ class AndroidOptionsInitializerTest {
     assertFalse(
       (activityLifeCycleIntegration as ActivityLifecycleIntegration)
         .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
+        .isFrameMetricsAggregatorAvailable,
     )
   }
 
@@ -823,7 +839,7 @@ class AndroidOptionsInitializerTest {
     assertTrue(
       (activityLifeCycleIntegration as ActivityLifecycleIntegration)
         .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
+        .isFrameMetricsAggregatorAvailable,
     )
   }
 
@@ -841,7 +857,7 @@ class AndroidOptionsInitializerTest {
     assertFalse(
       (activityLifeCycleIntegration as ActivityLifecycleIntegration)
         .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
+        .isFrameMetricsAggregatorAvailable,
     )
   }
 
@@ -860,7 +876,7 @@ class AndroidOptionsInitializerTest {
     assertFalse(
       (activityLifeCycleIntegration as ActivityLifecycleIntegration)
         .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
+        .isFrameMetricsAggregatorAvailable,
     )
   }
 
@@ -882,7 +898,7 @@ class AndroidOptionsInitializerTest {
     assertTrue(
       (activityLifeCycleIntegration as ActivityLifecycleIntegration)
         .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
+        .isFrameMetricsAggregatorAvailable,
     )
   }
 
@@ -938,7 +954,7 @@ class AndroidOptionsInitializerTest {
         listOf(
           AndroidOptionsInitializer.COMPOSE_CLASS_NAME,
           AndroidOptionsInitializer.SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME,
-        )
+        ),
     )
 
     assertTrue { fixture.sentryOptions.gestureTargetLocators.size == 2 }
@@ -965,7 +981,7 @@ class AndroidOptionsInitializerTest {
     fixture.initSut()
 
     assertIs<DefaultCompositePerformanceCollector>(
-      fixture.sentryOptions.compositePerformanceCollector
+      fixture.sentryOptions.compositePerformanceCollector,
     )
   }
 
@@ -1102,7 +1118,7 @@ class AndroidOptionsInitializerTest {
           AndroidOptionsInitializer.getCacheDir(fixture.context),
           PersistingScopeObserver.SCOPE_CACHE,
         )
-        .exists()
+        .exists(),
     )
   }
 
@@ -1118,7 +1134,7 @@ class AndroidOptionsInitializerTest {
         threadChecker = mock<IThreadChecker>()
         setSocketTagger(mock<ISocketTagger>())
         compositePerformanceCollector = mock<CompositePerformanceCollector>()
-      }
+      },
     )
 
     assertFalse { fixture.sentryOptions.transportGate is AndroidTransportGate }

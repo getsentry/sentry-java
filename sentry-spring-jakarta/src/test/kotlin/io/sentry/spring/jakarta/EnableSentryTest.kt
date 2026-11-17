@@ -84,7 +84,7 @@ class EnableSentryTest {
   fun `creates SentryExceptionResolver with order set in the @EnableSentry annotation`() {
     ApplicationContextRunner()
       .withConfiguration(
-        UserConfigurations.of(AppConfigWithExceptionResolverOrderIntegerMaxValue::class.java)
+        UserConfigurations.of(AppConfigWithExceptionResolverOrderIntegerMaxValue::class.java),
       )
       .run {
         assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
@@ -98,7 +98,7 @@ class EnableSentryTest {
   fun `configures custom TracesSamplerCallback`() {
     ApplicationContextRunner()
       .withConfiguration(
-        UserConfigurations.of(AppConfigWithCustomTracesSamplerCallback::class.java)
+        UserConfigurations.of(AppConfigWithCustomTracesSamplerCallback::class.java),
       )
       .run {
         val options = it.getBean(SentryOptions::class.java)
@@ -143,7 +143,7 @@ class EnableSentryTest {
   fun `configures custom before breadcrumb callback`() {
     ApplicationContextRunner()
       .withConfiguration(
-        UserConfigurations.of(AppConfigWithCustomBeforeBreadcrumbCallback::class.java)
+        UserConfigurations.of(AppConfigWithCustomBeforeBreadcrumbCallback::class.java),
       )
       .run {
         val beforeBreadcrumbCallback =

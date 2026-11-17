@@ -55,7 +55,7 @@ class SentryApollo5BuilderExtensionsTestWithV5Implementation :
 
 abstract class SentryApollo5BuilderExtensionsTest(
   private val executeQueryImplementation:
-    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>,
 ) {
   class Fixture {
     val server = MockWebServer()
@@ -90,7 +90,7 @@ abstract class SentryApollo5BuilderExtensionsTest(
         MockResponse()
           .setBody(responseBody)
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       val builder =
@@ -120,7 +120,7 @@ abstract class SentryApollo5BuilderExtensionsTest(
         transportBuilder.httpRequestComposer(
           object : HttpRequestComposer {
             override fun <D : Operation.Data> compose(
-              apolloRequest: ApolloRequest<D>
+              apolloRequest: ApolloRequest<D>,
             ): HttpRequest {
               val request = defaultComposer.compose(apolloRequest)
               return HttpRequest.Builder(request.method, request.url)
@@ -129,14 +129,14 @@ abstract class SentryApollo5BuilderExtensionsTest(
                 .addExecutionContext(apolloRequest.executionContext)
                 .build()
             }
-          }
+          },
         )
       } else {
         transportBuilder.serverUrl(serverUrl)
       }
       if (manuallyInstallHttpInterceptor) {
         transportBuilder.addInterceptor(
-          SentryApollo5HttpInterceptor(scopes = scopes, captureFailedRequests = false)
+          SentryApollo5HttpInterceptor(scopes = scopes, captureFailedRequests = false),
         )
       }
 
@@ -261,7 +261,7 @@ abstract class SentryApollo5BuilderExtensionsTest(
       fixture.getSutWithCustomNetworkTransport(
         manuallyInstallHttpInterceptor = true,
         useCustomRequestComposer = true,
-      )
+      ),
     )
 
     verify(fixture.scopes)
@@ -305,7 +305,7 @@ abstract class SentryApollo5BuilderExtensionsTest(
           operationName = LaunchDetailsQuery.OPERATION_NAME,
           operationType = "query",
           variables = "{id=83}",
-        )
+        ),
       )
   }
 
@@ -371,7 +371,7 @@ abstract class SentryApollo5BuilderExtensionsTest(
     assertThat(
         recordedRequest.headers.names().none {
           it.startsWith("SENTRY-APOLLO-5-", ignoreCase = true)
-        }
+        },
       )
       .isTrue()
   }

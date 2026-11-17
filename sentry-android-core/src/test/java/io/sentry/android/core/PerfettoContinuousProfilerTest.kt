@@ -80,7 +80,7 @@ class PerfettoContinuousProfilerTest {
     }
 
     fun getSut(
-      optionConfig: ((options: SentryAndroidOptions) -> Unit) = {}
+      optionConfig: ((options: SentryAndroidOptions) -> Unit) = {},
     ): PerfettoContinuousProfiler {
       options.executorService = executor
       optionConfig(options)

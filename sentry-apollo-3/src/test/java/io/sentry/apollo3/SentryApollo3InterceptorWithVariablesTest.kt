@@ -63,7 +63,7 @@ class SentryApollo3InterceptorWithVariablesTest {
         MockResponse()
           .setBody(responseBody)
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       return ApolloClient.Builder()

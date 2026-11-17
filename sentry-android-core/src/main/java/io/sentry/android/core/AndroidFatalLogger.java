@@ -27,9 +27,9 @@ public final class AndroidFatalLogger implements ILogger {
       final @NotNull String message,
       final @Nullable Object... args) {
     if (args == null || args.length == 0) {
-      Log.println(toLogcatLevel(level), tag, message);
+      Log.println(Log.ASSERT, tag, message);
     } else {
-      Log.println(toLogcatLevel(level), tag, String.format(message, args));
+      Log.println(Log.ASSERT, tag, String.format(message, args));
     }
   }
 
@@ -58,9 +58,5 @@ public final class AndroidFatalLogger implements ILogger {
   @Override
   public boolean isEnabled(@Nullable SentryLevel level) {
     return true;
-  }
-
-  private int toLogcatLevel(final @NotNull SentryLevel sentryLevel) {
-    return Log.ASSERT;
   }
 }

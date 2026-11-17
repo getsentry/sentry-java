@@ -103,7 +103,7 @@ class SentrySpanProcessorTest {
             anyOrNull<SentryDate>(),
             eq(Instrumenter.OTEL),
             any<SpanOptions>(),
-          )
+          ),
         )
         .thenReturn(span)
 

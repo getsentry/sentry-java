@@ -54,7 +54,7 @@ class ClientReportMultiThreadingTest {
           (1..numberOfIncrementsPerThread).forEach {
             clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
           }
-        }
+        },
       )
     }
 
@@ -97,7 +97,7 @@ class ClientReportMultiThreadingTest {
           (1..numberOfIncrementsPerThread).forEach {
             clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
           }
-        }
+        },
       )
     }
 
@@ -109,7 +109,7 @@ class ClientReportMultiThreadingTest {
           clientReportRecorder.resetCountsAndGenerateClientReport()?.let { clientReports.add(it) }
           Thread.sleep(20)
         }
-      }
+      },
     )
 
     futures.forEach { completionService.take().get() }
@@ -152,7 +152,7 @@ class ClientReportMultiThreadingTest {
           (1..numberOfIncrementsPerThread).forEach {
             clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
           }
-        }
+        },
       )
     }
 
@@ -170,7 +170,7 @@ class ClientReportMultiThreadingTest {
             clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
           }
         }
-      }
+      },
     )
 
     futures.forEach { completionService.take().get() }

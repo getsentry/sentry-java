@@ -411,7 +411,7 @@ class SentryGestureListenerTracingTest {
           // Verify that a new propagation context was set and it's different from the initial one
           assertNotNull(scope.propagationContext)
           assertNotEquals(initialPropagationContext, scope.propagationContext)
-        }
+        },
       )
   }
 

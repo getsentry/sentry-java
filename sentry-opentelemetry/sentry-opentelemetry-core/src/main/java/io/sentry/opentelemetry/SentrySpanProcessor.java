@@ -131,7 +131,6 @@ public final class SentrySpanProcessor implements SpanProcessor {
                       traceData.getBaggage(),
                       spanId,
                       scopes.getOptions()));
-      ;
       transactionContext.setName(transactionName);
       transactionContext.setTransactionNameSource(transactionNameSource);
       transactionContext.setOperation(op);
@@ -326,12 +325,11 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
     spanData
         .getAttributes()
-        .forEach(
-            (attributeKey, value) -> {
-              if (value != null) {
-                sentrySpan.setData(attributeKey.getKey(), value);
-              }
-            });
+        .forEach((attributeKey, value) -> {
+          if (value != null) {
+            sentrySpan.setData(attributeKey.getKey(), value);
+          }
+        });
 
     final @NotNull OtelSpanInfo otelSpanInfo =
         spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null, scopes.getOptions());
@@ -369,12 +367,11 @@ public final class SentrySpanProcessor implements SpanProcessor {
     final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
 
     if (attributes != null) {
-      attributes.forEach(
-          (key, value) -> {
-            if (key != null) {
-              mapWithStringKeys.put(key.getKey(), value);
-            }
-          });
+      attributes.forEach((key, value) -> {
+        if (key != null) {
+          mapWithStringKeys.put(key.getKey(), value);
+        }
+      });
     }
 
     return mapWithStringKeys;

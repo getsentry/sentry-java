@@ -24,6 +24,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @SpringBootApplication
 @EnableCaching
 @EnableScheduling
+@SuppressWarnings("removal")
 public class SentryDemoApplication {
   public static void main(String[] args) {
     SpringApplication.run(SentryDemoApplication.class, args);

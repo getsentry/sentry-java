@@ -470,7 +470,9 @@ class SentryJCacheWrapperTest {
   fun `getConfiguration delegates to underlying cache`() {
     val config = mock<Configuration<String, String>>()
     whenever(
-        delegate.getConfiguration(Configuration::class.java as Class<Configuration<String, String>>)
+        delegate.getConfiguration(
+          Configuration::class.java as Class<Configuration<String, String>>,
+        ),
       )
       .thenReturn(config)
     val wrapper = SentryJCacheWrapper(delegate, scopes)

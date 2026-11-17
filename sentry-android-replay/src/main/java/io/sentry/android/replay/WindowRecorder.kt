@@ -205,7 +205,7 @@ internal class WindowRecorder(
             }
             return true
           }
-        }
+        },
       )
     }
   }

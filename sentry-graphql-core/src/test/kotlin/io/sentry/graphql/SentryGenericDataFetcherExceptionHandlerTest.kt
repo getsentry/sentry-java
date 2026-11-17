@@ -26,7 +26,7 @@ class SentryGenericDataFetcherExceptionHandlerTest {
         .dataFetchingEnvironment(
           DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
             .graphQLContext(GraphQLContext.of(emptyMap<String, Object>()))
-            .build()
+            .build(),
         )
         .build()
     handler.onException(parameters)

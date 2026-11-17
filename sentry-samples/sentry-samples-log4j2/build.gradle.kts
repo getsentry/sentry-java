@@ -25,7 +25,7 @@ tasks.shadowJar {
   mergeServiceFiles()
   // Use Log4j2 cache transformer to properly handle plugin files
   transform(
-    com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer()
+    com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer(),
   )
 }
 

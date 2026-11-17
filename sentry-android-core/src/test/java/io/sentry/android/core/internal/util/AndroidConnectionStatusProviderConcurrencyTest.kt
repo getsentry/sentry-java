@@ -61,7 +61,7 @@ import org.robolectric.annotation.Config
  * that must not wait for them run on a separate caller thread with a bounded wait.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class AndroidConnectionStatusProviderConcurrencyTest {
 
   @AfterTest
@@ -432,7 +432,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         override fun onAvailable(network: Network) {
           stall.block(Unit)
         }
-      }
+      },
     )
     val notification = fixture.startOnCallerThread { networkCallback.onAvailable(fixture.network) }
     stall.awaitEntered()
@@ -464,7 +464,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         override fun onAvailable(network: Network) {
           stall.block(Unit)
         }
-      }
+      },
     )
     val childNetworkCallback = mock<NetworkCallback>()
     fixture.addChildNetworkCallback(childNetworkCallback)
@@ -491,7 +491,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         override fun onAvailable(network: Network) {
           AndroidConnectionStatusProvider.removeNetworkCallback(this)
         }
-      }
+      },
     )
     val otherChildNetworkCallback = mock<NetworkCallback>()
     fixture.addChildNetworkCallback(otherChildNetworkCallback)

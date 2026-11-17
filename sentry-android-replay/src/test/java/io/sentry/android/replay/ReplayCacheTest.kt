@@ -49,7 +49,7 @@ import org.robolectric.shadows.ShadowBitmapFactory
 import org.robolectric.shadows.ShadowCloseGuard
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [26], shadows = [ReplayShadowMediaCodec::class])
+@Config(sdk = [30], shadows = [ReplayShadowMediaCodec::class])
 class ReplayCacheTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
@@ -271,7 +271,7 @@ class ReplayCacheTest {
     assertTrue(
       replayCache.replayCacheDir!!.listFiles()!!.none {
         it.name == "1.jpg" || it.name == "1001.jpg"
-      }
+      },
     )
   }
 
@@ -367,7 +367,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_ID=0
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                 """
-          .trimIndent()
+          .trimIndent(),
       )
       // omitting replay type, which is required, for the test
     }
@@ -396,7 +396,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_REPLAY_TYPE=SESSION
                 $SEGMENT_KEY_REPLAY_RECORDING={}[{"type":3,"timestamp":1720693523997,"data":{"source":2,"type":7,"id":0,"x":314.2979431152344,"y":625.44140625,"pointerType":2,"pointerId":0}},{"type":3,"timestamp":1720693524774,"data":{"source":2,"type":9,"id":0,"x":322.00390625,"y":424.4384765625,"pointerType":2,"pointerId":0}}]
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
 
@@ -449,7 +449,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                 $SEGMENT_KEY_REPLAY_TYPE=SESSION
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
 
@@ -506,7 +506,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                 $SEGMENT_KEY_REPLAY_TYPE=BUFFER
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
 
@@ -543,7 +543,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_SDK_NAME=sentry.java.android
                 $SEGMENT_KEY_SDK_VERSION=8.0.0
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
     File(replayCacheFolder, "1720693523997.jpg").outputStream().use {
@@ -578,7 +578,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                 $SEGMENT_KEY_REPLAY_TYPE=BUFFER
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
     File(replayCacheFolder, "1720693523997.jpg").outputStream().use {
@@ -609,7 +609,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_REPLAY_TYPE=BUFFER
                 $SEGMENT_KEY_FLUSHED=true
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
 

@@ -80,7 +80,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(contextMock.getSystemService(Context.CONNECTIVITY_SERVICE))
       .thenReturn(connectivityManager)
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_GRANTED)
 
@@ -187,7 +187,7 @@ class AndroidConnectionStatusProviderTest {
           eq(Manifest.permission.ACCESS_NETWORK_STATE),
           any(),
           any(),
-        )
+        ),
       )
       .thenReturn(PERMISSION_GRANTED)
 
@@ -258,7 +258,7 @@ class AndroidConnectionStatusProviderTest {
 
   /// Lets a test reject work only after the setup that needs a working executor is done.
   @Test
-  @Config(sdk = [Build.VERSION_CODES.S])
+  @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
   fun `When the network callback cannot be registered, the telephony listener is not started`() {
     // Without ACCESS_NETWORK_STATE the network callback registration fails, and onBackground skips
     // unregistering while there is no network callback, so the listener must not be started here.
@@ -266,7 +266,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
       .thenReturn(telephonyManager)
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_DENIED)
     whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
@@ -305,7 +305,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
       .thenReturn(PERMISSION_DENIED)
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.READ_BASIC_PHONE_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.READ_BASIC_PHONE_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_DENIED)
 
@@ -354,7 +354,7 @@ class AndroidConnectionStatusProviderTest {
         buildInfo,
         null,
         mock(),
-      )
+      ),
     )
   }
 
@@ -384,7 +384,7 @@ class AndroidConnectionStatusProviderTest {
   @Test
   fun `addConnectionStatusObserver adds the observer and returns true when the network callback cannot be registered`() {
     whenever(
-        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any()),
       )
       .thenReturn(PERMISSION_DENIED)
     val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
@@ -836,9 +836,9 @@ class AndroidConnectionStatusProviderTest {
     connectionStatusProvider.onBackground()
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -987,6 +987,7 @@ class AndroidConnectionStatusProviderTest {
   @Test
   fun `registerNetworkCallback with a custom handlers calls connectivityManager with it`() {
     val customHandler = object : Handler(Looper.getMainLooper()) {}
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
     whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
     AndroidConnectionStatusProvider.registerNetworkCallback(
       contextMock,
@@ -998,5 +999,26 @@ class AndroidConnectionStatusProviderTest {
 
     verify(connectivityManager)
       .registerDefaultNetworkCallback(any<NetworkCallback>(), argThat { this == customHandler })
+  }
+
+  @Test
+  fun `registerNetworkCallback with a custom handler below API 26 registers without it`() {
+    val customHandler = object : Handler(Looper.getMainLooper()) {}
+    val callback = mock<NetworkCallback>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N_MR1)
+    whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+    val registered =
+      AndroidConnectionStatusProvider.registerNetworkCallback(
+        contextMock,
+        logger,
+        buildInfo,
+        customHandler,
+        callback,
+      )
+
+    assertThat(registered).isTrue()
+    verify(connectivityManager).registerDefaultNetworkCallback(callback)
+    verify(connectivityManager, never())
+      .registerDefaultNetworkCallback(eq(callback), any<Handler>())
   }
 }

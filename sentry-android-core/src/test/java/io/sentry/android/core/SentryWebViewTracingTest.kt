@@ -275,7 +275,7 @@ class SentryWebViewTracingTest {
           listOf("example.com"),
           Sentry.getCurrentScopes(),
           installer,
-        )
+        ),
       )
       .isTrue()
     shadowOf(Looper.getMainLooper()).idle()
@@ -320,7 +320,7 @@ class SentryWebViewTracingTest {
         loadClass.isClassAvailable(
           eq(SentryWebViewTracing.SCRIPT_HANDLER_CLASS_NAME),
           any<io.sentry.SentryOptions>(),
-        )
+        ),
       )
       .thenReturn(false)
 
@@ -330,7 +330,7 @@ class SentryWebViewTracingTest {
           listOf("example.com"),
           scopes,
           loadClass,
-        )
+        ),
       )
       .isFalse()
     // The adoption marker is registered on use, even when nothing can be installed.

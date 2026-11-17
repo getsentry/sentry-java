@@ -24,7 +24,7 @@ class ViewHierarchyNodeSerializationTest {
             ViewHierarchyNode().apply {
               renderingSystem = "compose"
               type = "Clickable"
-            }
+            },
           )
         width = 100.0
         height = 200.0

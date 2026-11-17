@@ -7,12 +7,9 @@ registries:
     password: dummy # Required by dependabot
 updates:
   - package-ecosystem: "gradle"
-    # The root build doesn't include the separate sample and test builds.
-    directories:
-      - "/"
-      - "/sentry-samples/sentry-samples-android"
-      - "/sentry-android-integration-tests"
-      - "/sentry-samples"
+    # The separate sample and test builds read this build's version catalog, so one directory
+    # covers them. Listing them too opens one PR per directory for the same bump.
+    directory: "/"
     registries:
       - gradle-plugin-portal
     schedule:
@@ -20,6 +17,8 @@ updates:
     ignore:
       - dependency-name: "org.springframework.boot*"
       - dependency-name: "io.opentelemetry*"
+      # DGS 5+ needs Spring Boot 3; the sample is on Spring Boot 2.
+      - dependency-name: "com.netflix.graphql.dgs*"
     commit-message:
       prefix: "chore(deps)"
   - package-ecosystem: "github-actions"

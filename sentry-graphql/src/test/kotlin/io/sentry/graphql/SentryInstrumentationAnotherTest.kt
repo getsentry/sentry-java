@@ -287,7 +287,7 @@ class SentryInstrumentationAnotherTest {
             fixture.executionContext.executionId.toString(),
             breadcrumb.data["operation_id"],
           )
-        }
+        },
       )
   }
 
@@ -332,7 +332,7 @@ class SentryInstrumentationAnotherTest {
       assertSame(
         fixture.scopes,
         fixture.instrumentationExecutionParameters.graphQLContext.get<IScopes>(
-          SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY
+          SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY,
         ),
       )
       assertNotNull(fixture.instrumentationState.transaction)
@@ -349,7 +349,7 @@ class SentryInstrumentationAnotherTest {
           GraphqlErrorException.newErrorException()
             .message("exception message")
             .errorClassification(ErrorType.ValidationError)
-            .build()
+            .build(),
         )
         .build()
     val resultFuture =
@@ -381,7 +381,7 @@ class SentryInstrumentationAnotherTest {
           mapOf(
             SentryGraphqlInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY to listOf(exception),
             SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to fixture.scopes,
-          )
+          ),
       )
     val executionResult = ExecutionResultImpl.newExecutionResult().data("raw result").build()
     val resultFuture =
@@ -414,19 +414,19 @@ class SentryInstrumentationAnotherTest {
           GraphqlErrorException.newErrorException()
             .message("exception message")
             .errorClassification(ErrorType.DataFetchingException)
-            .build()
+            .build(),
         )
         .addError(
           GraphqlErrorException.newErrorException()
             .message("exception message")
             .errorClassification(org.springframework.graphql.execution.ErrorType.INTERNAL_ERROR)
-            .build()
+            .build(),
         )
         .addError(
           GraphqlErrorException.newErrorException()
             .message("exception message")
             .errorClassification(com.netflix.graphql.types.errors.ErrorType.INTERNAL)
-            .build()
+            .build(),
         )
         .build()
     val resultFuture =
@@ -449,7 +449,7 @@ class SentryInstrumentationAnotherTest {
           GraphqlErrorException.newErrorException()
             .message("exception message")
             .errorClassification(SomeErrorClassification.SOME_ERROR)
-            .build()
+            .build(),
         )
         .build()
     val resultFuture =
@@ -485,6 +485,6 @@ class SentryInstrumentationAnotherTest {
   data class Show(val id: Int)
 
   enum class SomeErrorClassification : ErrorClassification {
-    SOME_ERROR
+    SOME_ERROR,
   }
 }

@@ -61,6 +61,8 @@ includeBuild("..")
 // For the io.sentry.spotless and io.sentry.jdk-target convention plugins.
 includeBuild("../build-logic")
 
+include("sentry-samples-android")
 include("sentry-uitest-android")
 include("sentry-uitest-android-critical")
+include("sentry-uitest-android-macrobenchmark")
 include("test-app-size")

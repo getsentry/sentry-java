@@ -9,19 +9,20 @@ androidxCompose = "1.9.5"
 asyncProfiler = "4.4"
 camerax = "1.4.0"
 composeCompiler = "1.5.14"
-coroutines = "1.6.1"
+coroutines = "1.11.0"
+dgs = "4.9.2"
 detekt = "1.23.8"
 dokka = "2.0.0"
 espresso = "3.7.0"
-feign = "11.6"
+feign = "13.17"
 gummyBears = "0.16.0"
 java8Signature = "1.0"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
 kotlin = "2.3.21"
 kotlin-compatible-version = "1.9"
-ksp = "2.3.13"
-ktorClient = "3.0.0"
+ksp = "2.3.14"
+ktorClient = "3.6.1"
 logback = "1.2.9"
 log4j2 = "2.26.1"
 nopen = "1.0.1"
@@ -29,23 +30,23 @@ nopen = "1.0.1"
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "5.5.1"
 openfeature = "1.18.2"
-otel = "1.63.0"
-otelAlpha = "1.63.0-alpha"
-otelInstrumentation = "2.29.0"
-otelInstrumentationAlpha = "2.29.0-alpha"
+otel = "1.67.0"
+otelAlpha = "1.67.0-alpha"
+otelInstrumentation = "2.33.1"
+otelInstrumentationAlpha = "2.33.1-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.42.0"
-otelSemanticConventionsAlpha = "1.42.0-alpha"
+otelSemanticConventions = "1.44.0"
+otelSemanticConventionsAlpha = "1.44.0-alpha"
 retrofit = "3.0.0"
-room2 = "2.8.4"
-room3 = "3.0.0-rc01"
+room2 = "2.8.5"
+room3 = "3.0.3"
 sagp = "6.13.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
-agp = "9.4.0"
+agp = "9.5.1"
 sqlite = "2.6.2"
-sqliteRc = "2.8.0-alpha03" # Required by Room3 3.0.0-rc*
+sqliteDrivers = "2.7.1"
 slf4j = "1.7.30"
-spotless = "8.8.0"
+spotless = "8.11.0"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
 springboot4 = "4.1.0"
@@ -72,7 +73,7 @@ buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
 errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
-gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
+gradle-versions = { id = "com.github.ben-manes.versions", version = "0.67.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechMavenPublish" }
@@ -96,7 +97,7 @@ apollo4-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version =
 apollo5-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version = "5.0.0" }
 apollo5-kotlin-latest = { module = "com.apollographql.apollo:apollo-runtime", version = "5.1.0" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.7.1" }
-androidx-annotation = { module = "androidx.annotation:annotation", version = "1.9.1" }
+androidx-annotation = { module = "androidx.annotation:annotation", version = "1.11.0" }
 androidx-activity = { module = "androidx.activity:activity", version = "1.8.2" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.9.3" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxCompose" }
@@ -128,8 +129,8 @@ androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.re
 androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
 androidx-webkit = { module = "androidx.webkit:webkit", version = "1.14.0" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
-androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteRc" }
-androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteRc" }
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteDrivers" }
+androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteDrivers" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.4.0" }
 androidx-browser = { module = "androidx.browser:browser", version = "1.10.0" }
 aspectjweaver = { module = "org.aspectj:aspectjweaver" }
@@ -146,6 +147,8 @@ feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" 
 graphql-java17 = { module = "com.graphql-java:graphql-java", version = "17.3" }
 graphql-java22 = { module = "com.graphql-java:graphql-java", version = "22.1" }
 graphql-java24 = { module = "com.graphql-java:graphql-java", version = "24.0" }
+netflix-dgs-platform = { module = "com.netflix.graphql.dgs:graphql-dgs-platform-dependencies", version.ref = "dgs" }
+netflix-dgs-subscriptions-websockets-autoconfigure = { module = "com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure", version.ref = "dgs" }
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
@@ -194,11 +197,13 @@ reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.6" }
+sentry-native-ndk-outproc = { module = "io.sentry:sentry-native-ndk-outproc", version = "1.0.0-beta.1" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
+servlet4-api = { module = "javax.servlet:javax.servlet-api", version = "4.0.1" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
-slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
+slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.20" }
 spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
 detektLib = { module = "io.gitlab.arturbosch.detekt:io.gitlab.arturbosch.detekt.gradle.plugin", version.ref = "detekt" }
 vanniktechMavenPublishLib = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version.ref = "vanniktechMavenPublish" }
@@ -263,7 +268,7 @@ java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref =
 # tomcat libraries
 tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
 tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
-tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.22" }
+tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.27" }
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
 # The version comes from the Spring Boot BOM of whichever Spring line uses it.
 tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core" }
@@ -290,7 +295,7 @@ camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref =
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
 google-truth = { module = "com.google.truth:truth", version = "1.4.5" }
-hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
+hsqldb = { module = "org.hsqldb:hsqldb", version = "2.7.4" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 leakcanary-instrumentation = { module = "com.squareup.leakcanary:leakcanary-android-instrumentation", version = "2.14" }
@@ -305,6 +310,7 @@ okhttp-mockwebserver4 = { module = "com.squareup.okhttp3:mockwebserver", version
 okhttp-tls = { module = "com.squareup.okhttp3:okhttp-tls", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
 rhino = { module = "org.mozilla:rhino", version = "1.8.0" }
+# Upgrading Robolectric can change the android-all jars it needs, see SentryRobolectricPlugin.
 roboelectric = { module = "org.robolectric:robolectric", version = "4.15" }
 
 [bundles]

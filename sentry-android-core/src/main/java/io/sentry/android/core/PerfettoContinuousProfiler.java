@@ -458,18 +458,17 @@ public final class PerfettoContinuousProfiler
     // endAndCollect is non-blocking: the listener fires when the OS delivers the trace file.
     // Synchronous: result already available — callback runs inline, lock is still held (re-entrant)
     // Asynchronous: callback runs on an OS thread — acquires lock itself for restart
-    currentProfiler.endAndCollect(
-        traceFile ->
-            onChunkCollected(
-                traceFile,
-                chunkProfilerId,
-                chunkChunkId,
-                chunkRecord,
-                measurements,
-                chunkTimestamp,
-                shouldRestart,
-                scopes,
-                options));
+    currentProfiler.endAndCollect(traceFile ->
+        onChunkCollected(
+            traceFile,
+            chunkProfilerId,
+            chunkChunkId,
+            chunkRecord,
+            measurements,
+            chunkTimestamp,
+            shouldRestart,
+            scopes,
+            options));
   }
 
   private void onChunkCollected(
@@ -527,12 +526,14 @@ public final class PerfettoContinuousProfiler
     }
   }
 
+  @Override
   public void reevaluateSampling() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       shouldSample = true;
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void sendChunk(
       final @NotNull ProfileChunk.Builder builder,
       final @NotNull IScopes scopes,

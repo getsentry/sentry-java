@@ -35,7 +35,7 @@ class SentryRootCaSslSocketFactoryTest {
     assertThat(fingerprints)
       .containsExactly(
         // ISRG Root X1
-        ISRG_ROOT_X1_SHA256
+        ISRG_ROOT_X1_SHA256,
       )
   }
 

@@ -49,9 +49,9 @@ class AppStartExtensionTest {
     val done = CountDownLatch(1)
     val run = {
       Thread {
-          call()
-          done.countDown()
-        }
+        call()
+        done.countDown()
+      }
         .start()
       succeeded.set(done.await(2, TimeUnit.SECONDS))
     }

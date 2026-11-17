@@ -12,6 +12,7 @@ plugins {
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric")
 }
 
 android {
@@ -39,12 +40,21 @@ android {
   }
 
   testOptions {
-    unitTests.isReturnDefaultValues = true
+    unitTests.apply {
+      isReturnDefaultValues = true
+      // AGP 9.5 can't create the Compose Preview task without it, which breaks any
+      // build that creates every task, such as an LSP's Gradle import.
+      isIncludeAndroidResources = true
+    }
   }
 
   lint {
     warningsAsErrors = true
     checkDependencies = true
+
+    // Lifecycle 2.8.3's lint checks are incompatible with AGP 9.5. Lifecycle 2.10.0 fixes them,
+    // but raises minSdk to 23 while this SDK still supports 21.
+    disable += "ObsoleteLintCustomCheck"
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
@@ -67,7 +77,10 @@ dependencies {
   implementation(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
+  compileOnly(libs.androidx.compose.ui)
 
+  testImplementation(projects.sentryAndroidCore)
+  testImplementation(projects.sentryTestSupport)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.fragment.ktx)
   testImplementation(libs.androidx.test.core)

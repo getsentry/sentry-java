@@ -74,7 +74,7 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
     private val sharedApp: Result<AgentApp> by lazy {
       try {
         Result.success(
-          AgentApp().also { app -> Runtime.getRuntime().addShutdownHook(Thread { app.close() }) }
+          AgentApp().also { app -> Runtime.getRuntime().addShutdownHook(Thread { app.close() }) },
         )
       } catch (e: IllegalStateException) {
         Result.failure(e)

@@ -99,7 +99,7 @@ public final class TimeSpan implements Comparable<TimeSpan> {
 
   /** Returns the start timestamp of this measurement, unix time, in seconds. */
   public double getStartTimestampSecs() {
-    return DateUtils.millisToSeconds(startUnixTimeMs);
+    return DateUtils.millisToSeconds((double) startUnixTimeMs);
   }
 
   /**
@@ -120,7 +120,7 @@ public final class TimeSpan implements Comparable<TimeSpan> {
    * @see #getProjectedStopTimestampMs()
    */
   public double getProjectedStopTimestampSecs() {
-    return DateUtils.millisToSeconds(getProjectedStopTimestampMs());
+    return DateUtils.millisToSeconds((double) getProjectedStopTimestampMs());
   }
 
   /**
