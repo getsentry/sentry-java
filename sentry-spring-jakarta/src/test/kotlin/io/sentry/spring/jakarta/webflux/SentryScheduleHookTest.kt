@@ -1,20 +1,31 @@
 package io.sentry.spring.jakarta.webflux
 
+import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.test.initForTest
+import java.lang.ref.WeakReference
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.awaitility.kotlin.await
 
 class SentryScheduleHookTest {
   private val dsn = "http://key@localhost/proj"
   private lateinit var executor: ExecutorService
+
+  private fun applyHookFromChildScopes(): Pair<Runnable, WeakReference<IScopes>> {
+    val childScopes = Sentry.getCurrentScopes().forkedCurrentScope("child")
+    val wrappedRunnable = childScopes.makeCurrent().use { SentryScheduleHook().apply(Runnable {}) }
+    return wrappedRunnable to WeakReference(childScopes)
+  }
 
   @BeforeTest
   fun beforeTest() {
@@ -56,6 +67,20 @@ class SentryScheduleHookTest {
         assertEquals(threadedScopes, Sentry.getCurrentScopes())
       }
       .get()
+  }
+
+  @Test
+  fun `wrapped task does not strongly retain scheduling scopes`() {
+    initForTest { it.dsn = dsn }
+    val (wrappedRunnable, childReference) = applyHookFromChildScopes()
+
+    await.atMost(5, TimeUnit.SECONDS).untilAsserted {
+      System.gc()
+      System.runFinalization()
+      assertNull(childReference.get())
+    }
+
+    wrappedRunnable.run()
   }
 
   @Test

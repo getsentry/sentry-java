@@ -30,6 +30,7 @@ import io.sentry.util.thread.ThreadChecker
 import java.io.Closeable
 import java.io.File
 import java.io.FileReader
+import java.lang.ref.WeakReference
 import java.nio.file.Files
 import java.util.Properties
 import java.util.concurrent.CompletableFuture
@@ -68,6 +69,11 @@ class SentryTest {
   private val dsn = "http://key@localhost/proj"
 
   @get:Rule val tmpDir = TemporaryFolder()
+
+  private fun createScopesWithWeakParent(): Pair<IScopes, WeakReference<IScopes>> {
+    val parentScopes = Sentry.getCurrentScopes().forkedCurrentScope("parent")
+    return parentScopes.forkedCurrentScope("child") to WeakReference(parentScopes)
+  }
 
   @BeforeTest
   @AfterTest
@@ -1536,6 +1542,22 @@ class SentryTest {
     val fromOtherThread = CompletableFuture.supplyAsync { Sentry.getCurrentScopes() }.get()
 
     assertSame(Sentry.getCurrentScopes(), fromOtherThread)
+  }
+
+  @Test
+  fun `in globalHubMode forked scopes remain valid after their weak parent is collected`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+    val (childScopes, parentReference) = createScopesWithWeakParent()
+    Sentry.setCurrentScopes(childScopes)
+
+    await.untilAsserted {
+      System.gc()
+      System.runFinalization()
+      assertNull(parentReference.get())
+    }
+
+    assertNull(childScopes.parentScopes)
+    assertSame(childScopes, Sentry.getCurrentScopes())
   }
 
   @Test

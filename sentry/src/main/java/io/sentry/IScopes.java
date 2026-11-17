@@ -468,8 +468,8 @@ public interface IScopes {
   IScope getGlobalScope();
 
   /**
-   * Returns the parent of this Scopes instance or null, if it does not have a parent. The parent is
-   * the Scopes instance this instance was forked from.
+   * Returns the parent of this Scopes instance while it is alive. Returns null if this instance has
+   * no parent or the parent has been garbage collected.
    *
    * @return parent Scopes or null
    */

@@ -23,9 +23,11 @@ import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
 import java.io.File
+import java.lang.ref.WeakReference
 import java.nio.file.Files
 import java.util.Queue
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import junit.framework.TestCase.assertSame
 import kotlin.test.AfterTest
@@ -39,6 +41,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argWhere
@@ -82,6 +85,23 @@ class ScopesTest {
     return createTestScopes(options).also { it.bindClient(SentryClient(options)) }
   }
 
+  private fun createForkWithWeakParent(
+    options: SentryOptions
+  ): Triple<IScopes, WeakReference<IScopes>, WeakReference<IScopes>> {
+    val rootScopes = createScopes(options)
+    val parentScopes = rootScopes.forkedCurrentScope("parent")
+    val childScopes = parentScopes.forkedCurrentScope("child")
+    return Triple(childScopes, WeakReference(parentScopes), WeakReference(rootScopes))
+  }
+
+  private fun assertEventuallyCollected(reference: WeakReference<*>) {
+    await.atMost(5, TimeUnit.SECONDS).untilAsserted {
+      System.gc()
+      System.runFinalization()
+      assertThat(reference.get()).isNull()
+    }
+  }
+
   @Test
   fun `when no dsn available, ctor throws illegal arg`() {
     val ex =
@@ -110,6 +130,32 @@ class ScopesTest {
     assertTrue(firstRoot.isFromSameSdkInitialization(descendant))
     assertTrue(descendant.isFromSameSdkInitialization(firstRoot))
     assertFalse(firstRoot.isFromSameSdkInitialization(secondRoot))
+  }
+
+  @Test
+  fun `fork does not retain parent or initialization root`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@sentry.io/proj"
+    options.setSerializer(mock())
+    val (childScopes, parentReference, rootReference) = createForkWithWeakParent(options)
+
+    assertSame(parentReference.get(), childScopes.parentScopes)
+    assertEventuallyCollected(parentReference)
+    assertEventuallyCollected(rootReference)
+
+    assertNull(childScopes.parentScopes)
+  }
+
+  @Test
+  fun `ancestor traversal does not overflow for a deep chain`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@sentry.io/proj"
+    options.setSerializer(mock())
+    val rootScopes = createScopes(options)
+    val descendants = mutableListOf<IScopes>(rootScopes)
+    repeat(5_000) { descendants += descendants.last().forkedCurrentScope("child") }
+
+    assertTrue(rootScopes.isAncestorOf(descendants.last()))
   }
 
   @Test
