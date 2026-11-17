@@ -11,8 +11,9 @@ import org.jetbrains.annotations.Nullable;
  * A util for printing the scopes chain from passed in scopes all the way up to its initial
  * ancestor.
  *
- * <p>It walks up the parents of each scopes instance until it reaches a parent of null. The scopes
- * without a parent are the ones created in Sentry.init.
+ * <p>It walks up the parents of each scopes instance until it reaches a parent of null. Parent
+ * references are weak, so collected intermediate parents are skipped and traversal continues from
+ * the root Scopes created in Sentry.init.
  */
 @ApiStatus.Internal
 public final class ScopesUtil {
@@ -31,10 +32,11 @@ public final class ScopesUtil {
 
   @SuppressWarnings("ObjectToString")
   private static void printScopesChainInternal(final @Nullable IScopes someScopes) {
-    if (someScopes != null) {
-      if (someScopes instanceof Scopes) {
-        Scopes scopes = (Scopes) someScopes;
-        String info =
+    @Nullable IScopes current = someScopes;
+    while (current != null) {
+      if (current instanceof Scopes) {
+        final Scopes scopes = (Scopes) current;
+        final String info =
             String.format(
                 "%-25s {g=%-25s, i=%-25s, c=%-25s} [%s]",
                 scopes,
@@ -43,14 +45,14 @@ public final class ScopesUtil {
                 scopes.getScope(),
                 scopes.getCreator());
         System.out.println(info);
-        printScopesChainInternal(someScopes.getParentScopes());
-      } else if (someScopes instanceof ScopesAdapter) {
-        printScopesChainInternal(Sentry.getCurrentScopes());
+        current = current.getParentScopes();
+      } else if (current instanceof ScopesAdapter) {
+        current = Sentry.getCurrentScopes();
       } else {
-        System.out.println("Hit unhandled Scopes class" + someScopes.getClass());
+        System.out.println("Hit unhandled Scopes class" + current.getClass());
+        return;
       }
-    } else {
-      System.out.println("-");
     }
+    System.out.println("-");
   }
 }

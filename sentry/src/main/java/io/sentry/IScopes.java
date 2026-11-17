@@ -468,10 +468,10 @@ public interface IScopes {
   IScope getGlobalScope();
 
   /**
-   * Returns the parent of this Scopes instance or null, if it does not have a parent. The parent is
-   * the Scopes instance this instance was forked from.
+   * Returns the parent of this Scopes instance. If the immediate parent has been garbage collected,
+   * returns the root Scopes from the same SDK initialization. Returns null for root Scopes.
    *
-   * @return parent Scopes or null
+   * @return parent or SDK initialization root Scopes, or null for root Scopes
    */
   @ApiStatus.Internal
   @Nullable

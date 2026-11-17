@@ -14,6 +14,7 @@ import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
+import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
@@ -26,7 +27,7 @@ public final class Scopes implements IScopes {
   private final @NotNull IScope isolationScope;
   private final @NotNull IScope globalScope;
 
-  private final @Nullable Scopes parentScopes;
+  private final @Nullable WeakReference<Scopes> parentScopes;
   private final @NotNull Scopes sdkInitializationRoot;
 
   private final @NotNull String creator;
@@ -56,7 +57,7 @@ public final class Scopes implements IScopes {
     this.scope = scope;
     this.isolationScope = isolationScope;
     this.globalScope = globalScope;
-    this.parentScopes = parentScopes;
+    this.parentScopes = parentScopes == null ? null : new WeakReference<>(parentScopes);
     this.sdkInitializationRoot = sdkInitializationRoot == null ? this : sdkInitializationRoot;
     this.creator = creator;
 
@@ -93,24 +94,23 @@ public final class Scopes implements IScopes {
   @Override
   @ApiStatus.Internal
   public @Nullable IScopes getParentScopes() {
-    return parentScopes;
+    if (parentScopes == null) {
+      return null;
+    }
+    final @Nullable Scopes parent = parentScopes.get();
+    return parent == null ? sdkInitializationRoot : parent;
   }
 
   @Override
   @ApiStatus.Internal
   public boolean isAncestorOf(final @Nullable IScopes otherScopes) {
-    if (otherScopes == null) {
-      return false;
+    @Nullable IScopes current = otherScopes;
+    while (current != null) {
+      if (this == current) {
+        return true;
+      }
+      current = current.getParentScopes();
     }
-
-    if (this == otherScopes) {
-      return true;
-    }
-
-    if (otherScopes.getParentScopes() != null) {
-      return isAncestorOf(otherScopes.getParentScopes());
-    }
-
     return false;
   }
 

@@ -1,18 +1,28 @@
 package io.sentry
 
 import io.sentry.test.initForTest
+import java.lang.ref.WeakReference
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import org.awaitility.kotlin.await
 
 class SentryWrapperTest {
   private val dsn = "http://key@localhost/proj"
   private lateinit var executor: ExecutorService
+
+  private fun wrapRunnableFromChildScopes(): Pair<Runnable, WeakReference<IScopes>> {
+    val childScopes = Sentry.getCurrentScopes().forkedCurrentScope("child")
+    val wrappedRunnable = childScopes.makeCurrent().use { SentryWrapper.wrapRunnable {} }
+    return wrappedRunnable to WeakReference(childScopes)
+  }
 
   @BeforeTest
   fun beforeTest() {
@@ -242,6 +252,20 @@ class SentryWrapperTest {
     assertEquals(2, mainEvent?.breadcrumbs?.size)
     assertEquals(2, clonedEvent?.breadcrumbs?.size)
     assertEquals(2, clonedEvent2?.breadcrumbs?.size)
+  }
+
+  @Test
+  fun `wrapped runnable does not strongly retain scheduling scopes`() {
+    initForTest { it.dsn = dsn }
+    val (wrappedRunnable, childReference) = wrapRunnableFromChildScopes()
+
+    await.atMost(5, TimeUnit.SECONDS).untilAsserted {
+      System.gc()
+      System.runFinalization()
+      assertNull(childReference.get())
+    }
+
+    wrappedRunnable.run()
   }
 
   @Test
