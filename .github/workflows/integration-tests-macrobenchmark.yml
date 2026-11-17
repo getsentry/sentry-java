@@ -33,7 +33,7 @@ jobs:
 
       - name: Assemble target app and Macrobenchmark apk
         if: env.SAUCE_USERNAME != null
-        run: ./gradlew -p sentry-samples/sentry-samples-android :assembleRelease :macrobenchmark:assembleBenchmark
+        run: ./gradlew -p sentry-android-integration-tests :sentry-samples-android:assembleRelease :sentry-uitest-android-macrobenchmark:assembleBenchmark
 
       - name: Run Macrobenchmark in SauceLab
         uses: saucelabs/saucectl-run-action@283660aa934c02723c497efa151d582a3acc5801 # pin@v3

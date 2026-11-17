@@ -28,7 +28,7 @@ android {
     }
   }
 
-  targetProjectPath = ":"
+  targetProjectPath = ":sentry-samples-android"
   // Run the test in its own process so it measures the target app cold, not itself.
   experimentalProperties["android.experimental.self-instrumenting"] = true
 }
