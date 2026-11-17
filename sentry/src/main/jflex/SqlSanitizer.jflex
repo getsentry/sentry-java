@@ -167,6 +167,42 @@ WHITESPACE           = [ \t\r\n]+
   }
 
   // Sentry: where the dialect rule for $$ or $tag$ is NO, the first $ is text (D14).
+  // Sentry: where bracketIdentifiers is not YES, [ is punctuation and the content is lexed
+  // normally (D9). Pushes back to the [ and appends it. Where the rule is UNKNOWN and a quote,
+  // comment or dollar opener occurs before the next ], appends ? instead and returns true (stop).
+  private boolean appendBracketAsPunctuation() {
+    if (dialect.bracketIdentifiers() == Support.UNKNOWN) {
+      for (int i = zzStartRead + 1; i < zzMarkedPos && zzBuffer[i] != ']'; i++) {
+        char c = zzBuffer[i];
+        char next = i + 1 < zzMarkedPos ? zzBuffer[i + 1] : 0;
+        if (c == '\'' || c == '"' || c == '`' || c == '$' || c == '#'
+            || (c == '-' && next == '-') || (c == '/' && (next == '*' || next == '/'))) {
+          builder.append('?');
+          return true;
+        }
+      }
+    }
+    yypushback(yylength() - 1);
+    appendCurrentFragment();
+    return false;
+  }
+
+  // Sentry: offset of the first bracketed part in an {IDENTIFIER} match, or -1.
+  private int firstBracketPart() {
+    char quote = 0;
+    for (int i = zzStartRead; i < zzMarkedPos; i++) {
+      char c = zzBuffer[i];
+      if (quote != 0) {
+        if (c == quote) quote = 0;
+      } else if (c == '"' || c == '`') {
+        quote = c;
+      } else if (c == '[') {
+        return i - zzStartRead;
+      }
+    }
+    return -1;
+  }
+
   private boolean appendDollarAsText(Support rule) {
     if (rule != Support.NO) {
       return false;
@@ -1296,6 +1332,12 @@ WHITESPACE           = [ \t\r\n]+
           if (isOverLimit()) return YYEOF;
       }
   {IDENTIFIER} {
+          // Sentry: a bracketed part where bracketIdentifiers is not YES (D9)
+          if (dialect.bracketIdentifiers() != Support.YES) {
+            int bracket = firstBracketPart();
+            if (bracket == 0) return appendBracketAsPunctuation() ? YYEOF : CONTINUE;
+            if (bracket > 0) yypushback(yylength() - bracket + 1);
+          }
           if (sanitizeAmbiguousRemainder()) return YYEOF;
           if (!insideComment) {
             // If we see an identifier where we expected a subquery, it's a parenthesized table name
@@ -1443,6 +1485,10 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   {BACKTICK_QUOTED_STR} | {BRACKET_QUOTED_STR} | {POSTGRE_PARAM_MARKER} {
+        // Sentry: [ per dialect (D9)
+        if (zzBuffer[zzStartRead] == '[' && dialect.bracketIdentifiers() != Support.YES) {
+          return appendBracketAsPunctuation() ? YYEOF : CONTINUE;
+        }
         if (sanitizeAmbiguousRemainder()) return YYEOF;
         if (!insideComment) {
           operation.handleIdentifier();

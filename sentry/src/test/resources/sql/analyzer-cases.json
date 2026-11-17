@@ -2562,6 +2562,48 @@
       "note": "bracketIdentifiers is UNKNOWN and a quote occurs before ]: stop at [."
     },
     {
+      "id": "dialect.brackets.comment_inside.conservative",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [-- ] 'a\nZq9xK7dm' FROM t",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7dm"],
+      "source": "sentry",
+      "note": "bracketIdentifiers is UNKNOWN and a comment opener occurs before ]: stop at [. Read as punctuation, -- hides the opening quote of a literal that the identifier reading sees, and the canary becomes SQL text."
+    },
+    {
+      "id": "dialect.brackets.double_slash_inside.h2",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "h2",
+      "input": "SELECT [// ] 'a\nZq9xK7dn' FROM t",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7dn"],
+      "source": "sentry",
+      "note": "bracketIdentifiers is UNKNOWN and doubleSlashComments is YES: // before ] hides a literal's opening quote in one reading. Stop at [."
+    },
+    {
+      "id": "dialect.brackets.dotted_quote_inside.conservative",
+      "requirements": ["R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [a].[O'Brien] FROM t WHERE b = 'Zq9xK7dl'",
+      "expected": {
+        "text": "SELECT [a].?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7dl"],
+      "source": "sentry",
+      "note": "bracketIdentifiers is UNKNOWN: a dotted name is checked bracket by bracket, and the quote in the second one stops there."
+    },
+    {
       "id": "dialect.brackets.number.conservative",
       "requirements": ["R2", "R8"],
       "dialect": "CONSERVATIVE",
