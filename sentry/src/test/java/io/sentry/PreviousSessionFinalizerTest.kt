@@ -13,7 +13,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -119,7 +118,7 @@ class PreviousSessionFinalizerTest {
     val sessionCreationToFinalizerInterval = 20000
     val sessionCreationTimestamp =
       DateUtils.getDateTime(
-        DateUtils.getCurrentDateTime().time - sessionCreationToFinalizerInterval
+        DateUtils.getCurrentDateTime().time - sessionCreationToFinalizerInterval,
       )
 
     val finalizer =
@@ -155,7 +154,7 @@ class PreviousSessionFinalizerTest {
             captureTimestamp - session.started!!.time > sessionCreationToFinalizerInterval &&
             session.timestamp!!.time != sessionCreationTimestamp.time &&
             captureTimestamp - session.timestamp!!.time < 1000
-        }
+        },
       )
   }
 
@@ -178,7 +177,7 @@ class PreviousSessionFinalizerTest {
         argThat {
           val session = fixture.sessionFromEnvelope(this)
           session.release == "io.sentry.sample@1.0" && session.timestamp!! == abnormalEndDate
-        }
+        },
       )
   }
 
@@ -197,7 +196,7 @@ class PreviousSessionFinalizerTest {
         argThat {
           val session = fixture.sessionFromEnvelope(this)
           session.release == "io.sentry.sample@1.0" && session.status == Crashed
-        }
+        },
       )
   }
 
@@ -220,7 +219,7 @@ class PreviousSessionFinalizerTest {
           session.release == "io.sentry.sample@1.0" &&
             session.status == Session.State.Unhandled &&
             session.hasNonTerminatingUnhandledError()
-        }
+        },
       )
   }
 
@@ -242,7 +241,7 @@ class PreviousSessionFinalizerTest {
         argThat {
           val session = fixture.sessionFromEnvelope(this)
           session.release == "io.sentry.sample@1.0" && session.status == Crashed
-        }
+        },
       )
   }
 
@@ -278,10 +277,9 @@ class PreviousSessionFinalizerTest {
         any(),
         argThat {
           startsWith(
-            "Timed out waiting to flush previous session to its own file in session finalizer."
+            "Timed out waiting to flush previous session to its own file in session finalizer.",
           )
         },
-        anyVararg<Any>(),
       )
     verify(fixture.scopes, never()).captureEnvelope(any())
   }

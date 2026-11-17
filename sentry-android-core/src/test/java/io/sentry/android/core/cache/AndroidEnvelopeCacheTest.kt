@@ -165,7 +165,7 @@ class AndroidEnvelopeCacheTest {
 
     val hints =
       HintUtils.createWithTypeCheckHint(
-        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
+        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false),
       )
     cache.storeEnvelope(fixture.envelope, hints)
 
@@ -178,7 +178,7 @@ class AndroidEnvelopeCacheTest {
 
     val hints =
       HintUtils.createWithTypeCheckHint(
-        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
+        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false),
       )
     cache.storeEnvelope(fixture.envelope, hints)
 
@@ -224,7 +224,7 @@ class AndroidEnvelopeCacheTest {
 
     val hints =
       HintUtils.createWithTypeCheckHint(
-        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false)
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false),
       )
     cache.storeEnvelope(fixture.envelope, hints)
 
@@ -244,7 +244,7 @@ class AndroidEnvelopeCacheTest {
     cache.storeEnvelope(
       envelope,
       HintUtils.createWithTypeCheckHint(
-        MemoryLimiterHint(0, NoOpLogger.getInstance(), exitTimestamp, true)
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), exitTimestamp, true),
       ),
     )
 
@@ -267,7 +267,7 @@ class AndroidEnvelopeCacheTest {
     cache.storeEnvelope(
       envelope,
       HintUtils.createWithTypeCheckHint(
-        MemoryLimiterHint(0, NoOpLogger.getInstance(), sessionStart.time - 1_000, true)
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), sessionStart.time - 1_000, true),
       ),
     )
 
@@ -284,13 +284,13 @@ class AndroidEnvelopeCacheTest {
     cache.storeEnvelope(
       fixture.envelope,
       HintUtils.createWithTypeCheckHint(
-        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
+        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false),
       ),
     )
     cache.storeEnvelope(
       fixture.envelope,
       HintUtils.createWithTypeCheckHint(
-        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false)
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false),
       ),
     )
 

@@ -39,27 +39,26 @@ public class SentryLogbackInitializer implements GenericApplicationListener {
 
   @Override
   public void onApplicationEvent(final @NotNull ApplicationEvent event) {
-    this.loggers.forEach(
-        loggerName -> {
-          final Logger logger = (Logger) LoggerFactory.getLogger(loggerName);
-          if (!isSentryAppenderRegistered(logger)) {
-            final SentryAppender sentryAppender = getSentryAppender();
+    this.loggers.forEach(loggerName -> {
+      final Logger logger = (Logger) LoggerFactory.getLogger(loggerName);
+      if (!isSentryAppenderRegistered(logger)) {
+        final SentryAppender sentryAppender = getSentryAppender();
 
-            sentryAppender.setLogsEnabled(sentryProperties.getLogging().getLogsEnabled());
-            Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
-                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
-                .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
-            Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
-                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
-                .ifPresent(sentryAppender::setMinimumEventLevel);
-            Optional.ofNullable(sentryProperties.getLogging().getMinimumLevel())
-                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
-                .ifPresent(sentryAppender::setMinimumLevel);
+        sentryAppender.setLogsEnabled(sentryProperties.getLogging().getLogsEnabled());
+        Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
+            .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+            .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);
+        Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
+            .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+            .ifPresent(sentryAppender::setMinimumEventLevel);
+        Optional.ofNullable(sentryProperties.getLogging().getMinimumLevel())
+            .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+            .ifPresent(sentryAppender::setMinimumLevel);
 
-            sentryAppender.start();
-            logger.addAppender(sentryAppender);
-          }
-        });
+        sentryAppender.start();
+        logger.addAppender(sentryAppender);
+      }
+    });
   }
 
   @NotNull

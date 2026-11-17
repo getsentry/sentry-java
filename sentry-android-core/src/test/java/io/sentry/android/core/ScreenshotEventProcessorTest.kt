@@ -602,7 +602,7 @@ private class EllipsizedTextActivity : Activity() {
           LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
             setMargins(0, 8, 0, 0)
           }
-      }
+      },
     )
 
     // Ellipsize middle
@@ -618,7 +618,7 @@ private class EllipsizedTextActivity : Activity() {
           LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
             setMargins(0, 8, 0, 0)
           }
-      }
+      },
     )
 
     // Ellipsize start
@@ -634,7 +634,7 @@ private class EllipsizedTextActivity : Activity() {
           LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
             setMargins(0, 8, 0, 0)
           }
-      }
+      },
     )
 
     // Non-ellipsized text for comparison
@@ -648,7 +648,7 @@ private class EllipsizedTextActivity : Activity() {
           LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
             setMargins(0, 8, 0, 0)
           }
-      }
+      },
     )
 
     setContentView(linearLayout)
@@ -785,7 +785,7 @@ private class MultiLineTextActivity : Activity() {
           LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
             setMargins(0, 8, 0, 0)
           }
-      }
+      },
     )
 
     // Multi-line text with maxLines = 3 (wraps but capped)
@@ -800,7 +800,7 @@ private class MultiLineTextActivity : Activity() {
           LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
             setMargins(0, 8, 0, 0)
           }
-      }
+      },
     )
 
     // Short single-line text for comparison
@@ -814,7 +814,7 @@ private class MultiLineTextActivity : Activity() {
           LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
             setMargins(0, 8, 0, 0)
           }
-      }
+      },
     )
 
     setContentView(linearLayout)

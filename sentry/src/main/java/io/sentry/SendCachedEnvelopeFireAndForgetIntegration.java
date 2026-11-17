@@ -110,62 +110,57 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                try {
-                  if (isClosed.get()) {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.INFO,
-                            "SendCachedEnvelopeFireAndForgetIntegration, not trying to send after closing.");
-                    return;
-                  }
+          .submit(() -> {
+            try {
+              if (isClosed.get()) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.INFO,
+                        "SendCachedEnvelopeFireAndForgetIntegration, not trying to send after closing.");
+                return;
+              }
 
-                  if (!isInitialized.getAndSet(true)) {
-                    connectionStatusProvider = options.getConnectionStatusProvider();
-                    connectionStatusProvider.addConnectionStatusObserver(this);
+              if (!isInitialized.getAndSet(true)) {
+                connectionStatusProvider = options.getConnectionStatusProvider();
+                connectionStatusProvider.addConnectionStatusObserver(this);
 
-                    sender = factory.create(scopes, options);
-                  }
+                sender = factory.create(scopes, options);
+              }
 
-                  // skip run only if we're certainly disconnected
-                  if (connectionStatusProvider != null
-                      && connectionStatusProvider.getConnectionStatus()
-                          == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.INFO,
-                            "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
-                    return;
-                  }
+              // skip run only if we're certainly disconnected
+              if (connectionStatusProvider != null
+                  && connectionStatusProvider.getConnectionStatus()
+                      == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.INFO,
+                        "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
+                return;
+              }
 
-                  // in case there's rate limiting active, skip processing
-                  final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
-                  if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.INFO,
-                            "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
-                    return;
-                  }
+              // in case there's rate limiting active, skip processing
+              final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
+              if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.INFO,
+                        "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
+                return;
+              }
 
-                  if (sender == null) {
-                    options
-                        .getLogger()
-                        .log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
-                    return;
-                  }
+              if (sender == null) {
+                options.getLogger().log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+                return;
+              }
 
-                  sender.send();
-                } catch (Throwable e) {
-                  options
-                      .getLogger()
-                      .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
-                }
-              });
+              sender.send();
+            } catch (Throwable e) {
+              options.getLogger().log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
+            }
+          });
     } catch (RejectedExecutionException e) {
       options
           .getLogger()

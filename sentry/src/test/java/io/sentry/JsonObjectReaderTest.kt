@@ -302,7 +302,7 @@ class JsonObjectReaderTest {
   fun `nextListOrNull keeps elements after a failing object followed by a primitive`() {
     val reader =
       getValuesReader(
-        "[{\"kind\": \"fail\", \"value\": \"bad\"}, \"oops\", {\"kind\": \"ok\", \"value\": \"two\"}]"
+        "[{\"kind\": \"fail\", \"value\": \"bad\"}, \"oops\", {\"kind\": \"ok\", \"value\": \"two\"}]",
       )
     val deserializer =
       JsonDeserializer<String> { objectReader, _ ->

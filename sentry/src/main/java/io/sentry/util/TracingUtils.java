@@ -22,24 +22,20 @@ import org.jetbrains.annotations.Nullable;
 public final class TracingUtils {
 
   public static void startNewTrace(final @NotNull IScopes scopes) {
-    scopes.configureScope(
-        scope -> {
-          scope.withPropagationContext(
-              propagationContext -> {
-                scope.setPropagationContext(new PropagationContext());
-              });
-        });
+    scopes.configureScope(scope -> {
+      scope.withPropagationContext(propagationContext -> {
+        scope.setPropagationContext(new PropagationContext());
+      });
+    });
   }
 
   public static void setTrace(
       final @NotNull IScopes scopes, final @NotNull PropagationContext propagationContext) {
-    scopes.configureScope(
-        scope -> {
-          scope.withPropagationContext(
-              oldPropagationContext -> {
-                scope.setPropagationContext(propagationContext);
-              });
-        });
+    scopes.configureScope(scope -> {
+      scope.withPropagationContext(oldPropagationContext -> {
+        scope.setPropagationContext(propagationContext);
+      });
+    });
   }
 
   public static @Nullable TracingHeaders traceIfAllowed(
@@ -80,7 +76,7 @@ public final class TracingUtils {
       // reads scope data such as the environment across current -> isolation -> global
       scopes.configureScope(
           ScopeType.COMBINED,
-          (scope) -> {
+          scope -> {
             returnValue.propagationContext = maybeUpdateBaggage(scope, sentryOptions);
           });
 
@@ -114,14 +110,13 @@ public final class TracingUtils {
 
   public static @NotNull PropagationContext maybeUpdateBaggage(
       final @NotNull IScope scope, final @NotNull SentryOptions sentryOptions) {
-    return scope.withPropagationContext(
-        propagationContext -> {
-          @NotNull Baggage baggage = propagationContext.getBaggage();
-          if (baggage.isMutable()) {
-            baggage.setValuesFromScope(scope, sentryOptions);
-            baggage.freeze();
-          }
-        });
+    return scope.withPropagationContext(propagationContext -> {
+      @NotNull Baggage baggage = propagationContext.getBaggage();
+      if (baggage.isMutable()) {
+        baggage.setValuesFromScope(scope, sentryOptions);
+        baggage.freeze();
+      }
+    });
   }
 
   private static boolean shouldAttachTracingHeaders(

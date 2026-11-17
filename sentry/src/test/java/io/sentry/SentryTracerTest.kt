@@ -175,11 +175,13 @@ class SentryTracerTest {
   @Test
   fun `does not create child span if origin is ignored`() {
     val tracer =
-      fixture.getSut({
-        it.setDebug(true)
-        it.setLogger(SystemOutLogger())
-        it.setIgnoredSpanOrigins(listOf("ignored"))
-      })
+      fixture.getSut(
+        {
+          it.setDebug(true)
+          it.setLogger(SystemOutLogger())
+          it.setIgnoredSpanOrigins(listOf("ignored"))
+        },
+      )
     tracer.startChild("child1", null, SpanOptions().also { it.origin = "ignored" })
     tracer.startChild("child2")
     assertEquals(1, tracer.children.size)
@@ -188,11 +190,13 @@ class SentryTracerTest {
   @Test
   fun `does not add more spans than configured in options`() {
     val tracer =
-      fixture.getSut({
-        it.maxSpans = 2
-        it.setDebug(true)
-        it.setLogger(SystemOutLogger())
-      })
+      fixture.getSut(
+        {
+          it.maxSpans = 2
+          it.setDebug(true)
+          it.setLogger(SystemOutLogger())
+        },
+      )
     tracer.startChild("child1")
     tracer.startChild("child2")
     tracer.startChild("child3")
@@ -202,11 +206,13 @@ class SentryTracerTest {
   @Test
   fun `when span limit is reached, startChild returns NoOpSpan`() {
     val tracer =
-      fixture.getSut({
-        it.maxSpans = 2
-        it.setDebug(true)
-        it.setLogger(SystemOutLogger())
-      })
+      fixture.getSut(
+        {
+          it.maxSpans = 2
+          it.setDebug(true)
+          it.setLogger(SystemOutLogger())
+        },
+      )
     tracer.startChild("child1")
     tracer.startChild("child2")
     assertTrue(tracer.startChild("child3") is NoOpSpan)
@@ -291,7 +297,7 @@ class SentryTracerTest {
         optionsConfiguration = {
           it.profilesSampleRate = 0.0
           it.setTransactionProfiler(transactionProfiler)
-        }
+        },
       )
     tracer.finish()
     verify(transactionProfiler, never()).onTransactionFinish(any(), anyOrNull(), anyOrNull())
@@ -534,7 +540,7 @@ class SentryTracerTest {
   fun `when continuous profiler is not running, profile context is not set`() {
     val tracer =
       fixture.getSut(
-        optionsConfiguration = { it.setContinuousProfiler(NoOpContinuousProfiler.getInstance()) }
+        optionsConfiguration = { it.setContinuousProfiler(NoOpContinuousProfiler.getInstance()) },
       )
     tracer.finish()
     verify(fixture.scopes)
@@ -582,7 +588,7 @@ class SentryTracerTest {
       fixture.getSut(
         optionsConfiguration = { options ->
           options.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
-        }
+        },
       )
     val span = tracer.startChild("span.op")
     assertNull(span.getData(SpanDataConvention.PROFILER_ID))
@@ -984,9 +990,11 @@ class SentryTracerTest {
   @Test
   fun `returns trace state`() {
     val transaction =
-      fixture.getSut({
-        it.isSendDefaultPii = true
-      })
+      fixture.getSut(
+        {
+          it.isSendDefaultPii = true
+        },
+      )
     fixture.scopes.setUser(User().apply { id = "user-id" })
     val replayId = SentryId()
     fixture.scopes.configureScope { it.replayId = replayId }
@@ -1058,11 +1066,13 @@ class SentryTracerTest {
   @Test
   fun `returns baggage header`() {
     val transaction =
-      fixture.getSut({
-        it.environment = "production"
-        it.release = "1.0.99-rc.7"
-        it.isSendDefaultPii = true
-      })
+      fixture.getSut(
+        {
+          it.environment = "production"
+          it.release = "1.0.99-rc.7"
+          it.isSendDefaultPii = true
+        },
+      )
 
     fixture.scopes.setUser(User().apply { id = "userId12345" })
     val replayId = SentryId()
@@ -1086,10 +1096,12 @@ class SentryTracerTest {
   @Test
   fun `returns baggage header without userId if not send pii`() {
     val transaction =
-      fixture.getSut({
-        it.environment = "production"
-        it.release = "1.0.99-rc.7"
-      })
+      fixture.getSut(
+        {
+          it.environment = "production"
+          it.release = "1.0.99-rc.7"
+        },
+      )
 
     fixture.scopes.setUser(User().apply { id = "userId12345" })
 
@@ -1110,11 +1122,13 @@ class SentryTracerTest {
   @Test
   fun `returns baggage header without userId if send pii and null user`() {
     val transaction =
-      fixture.getSut({
-        it.environment = "production"
-        it.release = "1.0.99-rc.7"
-        it.isSendDefaultPii = true
-      })
+      fixture.getSut(
+        {
+          it.environment = "production"
+          it.release = "1.0.99-rc.7"
+          it.isSendDefaultPii = true
+        },
+      )
 
     fixture.scopes.setUser(null)
 
@@ -1910,7 +1924,7 @@ class SentryTracerTest {
         transactionFinishedCallback = {
           assertFalse(it.isFinished)
           assertNotNull(it.finishDate)
-        }
+        },
       )
     assertFalse(transaction.isFinished)
     assertNull(transaction.finishDate)

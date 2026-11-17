@@ -70,9 +70,9 @@ class AutomaticSpansTest : BaseUiTest() {
 
     relay.assert {
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "ProfilingSampleActivity"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
+          "ProfilingSampleActivity"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           it.assertNoOtherItems()

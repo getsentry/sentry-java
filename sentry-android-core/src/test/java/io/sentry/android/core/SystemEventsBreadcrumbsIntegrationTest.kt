@@ -387,9 +387,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertTrue(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -401,9 +401,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -414,17 +414,17 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertTrue(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
 
     sut.close()
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -436,9 +436,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     Thread {
-        sut.close()
-        latch.countDown()
-      }
+      sut.close()
+      latch.countDown()
+    }
       .start()
 
     latch.await()
@@ -447,9 +447,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -520,9 +520,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertNotNull(sut.receiver)
 
     Thread {
-        sut.close()
-        latch.countDown()
-      }
+      sut.close()
+      latch.countDown()
+    }
       .start()
 
     latch.await()

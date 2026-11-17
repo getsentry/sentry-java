@@ -148,7 +148,7 @@ public final class SentryStackTraceFactory {
     }
 
     final List<SentryStackFrame> inAppFrames =
-        CollectionUtils.filterListEntries(frames, (frame) -> Boolean.TRUE.equals(frame.isInApp()));
+        CollectionUtils.filterListEntries(frames, frame -> Boolean.TRUE.equals(frame.isInApp()));
 
     if (!inAppFrames.isEmpty()) {
       return inAppFrames;
@@ -158,7 +158,7 @@ public final class SentryStackTraceFactory {
     // fallback to all the frames that are not system frames
     return CollectionUtils.filterListEntries(
         frames,
-        (frame) -> {
+        frame -> {
           final String module = frame.getModule();
           boolean isSystemFrame = false;
           if (module != null) {

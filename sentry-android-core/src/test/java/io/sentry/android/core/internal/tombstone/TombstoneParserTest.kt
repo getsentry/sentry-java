@@ -121,7 +121,7 @@ class TombstoneParserTest {
           if (frame.isInApp!!) {
             assert(
               frame.function!!.startsWith(inAppIncludes[0]) ||
-                frame.`package`!!.startsWith(nativeLibraryDir)
+                frame.`package`!!.startsWith(nativeLibraryDir),
             )
           }
         }
@@ -166,7 +166,7 @@ class TombstoneParserTest {
             "/system/lib64/libc.so",
             buildId,
             0,
-          )
+          ),
         )
         // Second mapping: r-xp at offset 0x1000 (executable segment)
         .addMemoryMapping(
@@ -180,7 +180,7 @@ class TombstoneParserTest {
             "/system/lib64/libc.so",
             buildId,
             0,
-          )
+          ),
         )
         // Third mapping: r--p at offset 0x10000 (read-only data)
         .addMemoryMapping(
@@ -194,7 +194,7 @@ class TombstoneParserTest {
             "/system/lib64/libc.so",
             buildId,
             0,
-          )
+          ),
         )
         // Fourth mapping: rw-p at offset 0x11000 (writable data)
         .addMemoryMapping(
@@ -208,7 +208,7 @@ class TombstoneParserTest {
             "/system/lib64/libc.so",
             buildId,
             0,
-          )
+          ),
         )
         .addThread(
           TombstoneThread(
@@ -221,7 +221,7 @@ class TombstoneParserTest {
             emptyList(),
             0,
             0,
-          )
+          ),
         )
         .build()
 
@@ -262,7 +262,7 @@ class TombstoneParserTest {
             "/system/lib64/libdl.so",
             buildId,
             0,
-          )
+          ),
         )
         // Second mapping: r-xp at offset 0 (duplicate!)
         .addMemoryMapping(
@@ -276,7 +276,7 @@ class TombstoneParserTest {
             "/system/lib64/libdl.so",
             buildId,
             0,
-          )
+          ),
         )
         // Third mapping: r--p at offset 0 (another duplicate!)
         .addMemoryMapping(
@@ -290,7 +290,7 @@ class TombstoneParserTest {
             "/system/lib64/libdl.so",
             buildId,
             0,
-          )
+          ),
         )
         .addThread(
           TombstoneThread(
@@ -303,7 +303,7 @@ class TombstoneParserTest {
             emptyList(),
             0,
             0,
-          )
+          ),
         )
         .build()
 
@@ -341,7 +341,7 @@ class TombstoneParserTest {
             apkPath,
             firstBuildId,
             0,
-          )
+          ),
         )
         .addMemoryMapping(
           MemoryMapping(
@@ -354,7 +354,7 @@ class TombstoneParserTest {
             apkPath,
             firstBuildId,
             0,
-          )
+          ),
         )
         .addMemoryMapping(
           MemoryMapping(
@@ -367,7 +367,7 @@ class TombstoneParserTest {
             apkPath,
             secondBuildId,
             0,
-          )
+          ),
         )
         .addMemoryMapping(
           MemoryMapping(
@@ -380,7 +380,7 @@ class TombstoneParserTest {
             apkPath,
             secondBuildId,
             0,
-          )
+          ),
         )
         .build()
 
@@ -417,7 +417,7 @@ class TombstoneParserTest {
             apkPath,
             buildId,
             0,
-          )
+          ),
         )
         // The virtual-address progression can differ from the file-offset progression by one page.
         .addMemoryMapping(
@@ -431,7 +431,7 @@ class TombstoneParserTest {
             apkPath,
             "",
             0,
-          )
+          ),
         )
         // Each PT_LOAD adds one page of alignment drift. Validation must compare adjacent
         // mappings so this drift does not accumulate from the start of the module.
@@ -446,7 +446,7 @@ class TombstoneParserTest {
             apkPath,
             "",
             0,
-          )
+          ),
         )
         .build()
 
@@ -478,7 +478,7 @@ class TombstoneParserTest {
             apkPath,
             buildId,
             0,
-          )
+          ),
         )
         // A different ELF in the APK that does not have a GNU build ID.
         .addMemoryMapping(
@@ -492,7 +492,7 @@ class TombstoneParserTest {
             apkPath,
             "",
             0x4000,
-          )
+          ),
         )
         .build()
 
@@ -526,7 +526,7 @@ class TombstoneParserTest {
             apkPath,
             buildId,
             0,
-          )
+          ),
         )
         .addThread(
           TombstoneThread(
@@ -545,12 +545,12 @@ class TombstoneParserTest {
                 "$apkPath!libnative-sample.so",
                 0x156c000,
                 buildId,
-              )
+              ),
             ),
             emptyList(),
             0,
             0,
-          )
+          ),
         )
         .build()
 
@@ -583,7 +583,7 @@ class TombstoneParserTest {
             "/system/lib64/libc.so",
             invalidBuildId,
             0,
-          )
+          ),
         )
         .addMemoryMapping(
           MemoryMapping(
@@ -596,7 +596,7 @@ class TombstoneParserTest {
             "/system/lib64/libm.so",
             validBuildId,
             0,
-          )
+          ),
         )
         .addThread(
           TombstoneThread(
@@ -609,7 +609,7 @@ class TombstoneParserTest {
             emptyList(),
             0,
             0,
-          )
+          ),
         )
         .build()
 
@@ -633,7 +633,7 @@ class TombstoneParserTest {
   fun `parses APK embedded ELF from full tombstone fixture`() {
     val tombstoneStream =
       GZIPInputStream(
-        TombstoneParserTest::class.java.getResourceAsStream("/tombstone_apk_embedded.pb.gz")
+        TombstoneParserTest::class.java.getResourceAsStream("/tombstone_apk_embedded.pb.gz"),
       )
     val event =
       TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir).parse()
@@ -699,7 +699,7 @@ class TombstoneParserTest {
             emptyList(),
             0,
             0,
-          )
+          ),
         )
         .addThread(
           TombstoneThread(
@@ -712,7 +712,7 @@ class TombstoneParserTest {
             emptyList(),
             0,
             0,
-          )
+          ),
         )
         .addThread(
           TombstoneThread(
@@ -725,7 +725,7 @@ class TombstoneParserTest {
             emptyList(),
             0,
             0,
-          )
+          ),
         )
         .build()
 

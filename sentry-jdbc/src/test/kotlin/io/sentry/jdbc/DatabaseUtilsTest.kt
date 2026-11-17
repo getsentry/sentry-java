@@ -123,7 +123,7 @@ class DatabaseUtilsTest {
   fun `detects db system for dynamodb`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:amazondynamodb:Access Key=xxx;Secret Key=xxx;Domain=amazonaws.com;Region=OREGON;"
+        "jdbc:amazondynamodb:Access Key=xxx;Secret Key=xxx;Domain=amazonaws.com;Region=OREGON;",
       )
     assertEquals("amazondynamodb", details.dbSystem)
     assertNull(details.dbName)
@@ -140,7 +140,7 @@ class DatabaseUtilsTest {
   fun `detects db system for oracle2`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=myoracle.db.server)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=my_servicename)))"
+        "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=myoracle.db.server)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=my_servicename)))",
       )
     assertEquals("oracle", details.dbSystem)
     assertEquals("my_servicename", details.dbName)
@@ -150,7 +150,7 @@ class DatabaseUtilsTest {
   fun `detects db system for mariadb`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:mariadb://example.skysql.net:5001/jdbc_demo?useSsl=true&serverSslCert=/path/to/skysql_chain.pem"
+        "jdbc:mariadb://example.skysql.net:5001/jdbc_demo?useSsl=true&serverSslCert=/path/to/skysql_chain.pem",
       )
     assertEquals("mariadb", details.dbSystem)
     assertEquals("jdbc_demo", details.dbName)
@@ -167,7 +167,7 @@ class DatabaseUtilsTest {
   fun `detects db system for mysql`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:mysql://mysql.db.server:3306/my_database?useSSL=false&serverTimezone=UTC"
+        "jdbc:mysql://mysql.db.server:3306/my_database?useSSL=false&serverTimezone=UTC",
       )
     assertEquals("mysql", details.dbSystem)
     assertEquals("my_database", details.dbName)
@@ -184,7 +184,7 @@ class DatabaseUtilsTest {
   fun `detects db system for mssql`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:sqlserver://mssql.db.server\\\\mssql_instance;databaseName=my_database"
+        "jdbc:sqlserver://mssql.db.server\\\\mssql_instance;databaseName=my_database",
       )
     assertEquals("sqlserver", details.dbSystem)
     assertEquals("my_database", details.dbName)
@@ -194,7 +194,7 @@ class DatabaseUtilsTest {
   fun `detects db system for mssql2`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:sqlserver://mssql.db.server\\\\mssql_instance;databaseName=my_database;otherProperty=value"
+        "jdbc:sqlserver://mssql.db.server\\\\mssql_instance;databaseName=my_database;otherProperty=value",
       )
     assertEquals("sqlserver", details.dbSystem)
     assertEquals("my_database", details.dbName)
@@ -212,7 +212,7 @@ class DatabaseUtilsTest {
   fun `detects db system for postgres`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2"
+        "jdbc:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2",
       )
     assertEquals("postgresql", details.dbSystem)
     assertEquals("my_database", details.dbName)
@@ -229,7 +229,7 @@ class DatabaseUtilsTest {
   fun `detects db system for datadirect postgres`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:datadirect:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2"
+        "jdbc:datadirect:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2",
       )
     assertEquals("postgresql", details.dbSystem)
     assertEquals("my_database", details.dbName)
@@ -239,7 +239,7 @@ class DatabaseUtilsTest {
   fun `detects db system for tibcosoftware postgres`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:tibcosoftware:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2"
+        "jdbc:tibcosoftware:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2",
       )
     assertEquals("postgresql", details.dbSystem)
     assertEquals("my_database", details.dbName)
@@ -249,7 +249,7 @@ class DatabaseUtilsTest {
   fun `detects db system for jtds postgres`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:jtds:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2"
+        "jdbc:jtds:postgresql://postgresql.db.server:5430/my_database?ssl=true&loglevel=2",
       )
     assertEquals("postgresql", details.dbSystem)
     assertEquals("my_database", details.dbName)
@@ -259,7 +259,7 @@ class DatabaseUtilsTest {
   fun `detects db system for microsoft sqlserver`() {
     val details =
       DatabaseUtils.parse(
-        "jdbc:microsoft:sqlserver://mssql.db.server\\\\mssql_instance;databaseName=my_database"
+        "jdbc:microsoft:sqlserver://mssql.db.server\\\\mssql_instance;databaseName=my_database",
       )
     assertEquals("sqlserver", details.dbSystem)
     assertEquals("my_database", details.dbName)

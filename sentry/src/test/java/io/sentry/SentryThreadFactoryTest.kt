@@ -13,7 +13,7 @@ class SentryThreadFactoryTest {
   class Fixture {
     internal fun getSut() =
       SentryThreadFactory(
-        SentryStackTraceFactory(SentryOptions().apply { addInAppExclude("io.sentry") })
+        SentryStackTraceFactory(SentryOptions().apply { addInAppExclude("io.sentry") }),
       )
   }
 
@@ -54,7 +54,7 @@ class SentryThreadFactoryTest {
       sut
         .getCurrentThreads(null, true)!!
         .filter { it.stacktrace != null }
-        .any { it.stacktrace!!.frames!!.count() > 0 }
+        .any { it.stacktrace!!.frames!!.count() > 0 },
     )
   }
 
@@ -65,7 +65,7 @@ class SentryThreadFactoryTest {
       sut
         .getCurrentThreads(null, true)!!
         .filter { it.stacktrace != null }
-        .any { it.stacktrace!!.snapshot == true }
+        .any { it.stacktrace!!.snapshot == true },
     )
   }
 
@@ -76,7 +76,7 @@ class SentryThreadFactoryTest {
       sut
         .getCurrentThreads(null, false)!!
         .filter { it.stacktrace != null }
-        .any { it.stacktrace!!.frames!!.count() > 0 }
+        .any { it.stacktrace!!.frames!!.count() > 0 },
     )
   }
 

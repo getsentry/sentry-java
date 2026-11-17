@@ -105,12 +105,12 @@ internal class Nav2TopBar(
       val selected = tabScenario == scenario
       tabView.label.setTextColor(
         if (selected) context.themeColor(androidx.appcompat.R.attr.colorPrimary)
-        else tabView.defaultTextColor
+        else tabView.defaultTextColor,
       )
       tabView.label.setTypeface(null, if (selected) Typeface.BOLD else Typeface.NORMAL)
       tabView.indicator.setBackgroundColor(
         if (selected) context.themeColor(androidx.appcompat.R.attr.colorPrimary)
-        else color(android.R.color.transparent)
+        else color(android.R.color.transparent),
       )
     }
   }
@@ -129,11 +129,11 @@ internal class Nav2TopBar(
               textSize = 20f
               setTextColor(context.themeColor(android.R.attr.textColorPrimary))
               layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
-            }
+            },
           )
           addView(transactionHistoryIcon())
           addView(routeWorkSettingsIcon())
-        }
+        },
       )
       addView(View(context), LinearLayout.LayoutParams(MATCH_PARENT, 12.dp))
       addView(currentRouteScroll)

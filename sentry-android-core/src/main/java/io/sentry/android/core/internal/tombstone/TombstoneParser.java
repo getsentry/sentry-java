@@ -32,7 +32,7 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TombstoneParser implements Closeable {
+public final class TombstoneParser implements Closeable {
 
   @Nullable private final InputStream tombstoneStream;
   @NotNull private final List<String> inAppIncludes;
@@ -316,6 +316,7 @@ public class TombstoneParser implements Closeable {
       this.previousOffset = mapping.offset;
     }
 
+    @Nullable
     DebugImage toDebugImage() {
       if (buildId.isEmpty()) {
         return null;

@@ -40,7 +40,7 @@ class OtelInternalSpanDetectionUtilTest {
         UrlAttributes.URL_QUERY to "q=123456&b=X",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
         ServerAttributes.SERVER_PORT to 8081L,
-      )
+      ),
     )
 
     thenRequestIsConsideredInternal()
@@ -67,7 +67,7 @@ class OtelInternalSpanDetectionUtilTest {
         UrlAttributes.URL_QUERY to "q=123456&b=X",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
         ServerAttributes.SERVER_PORT to 8081L,
-      )
+      ),
     )
 
     thenRequestIsConsideredInternal()

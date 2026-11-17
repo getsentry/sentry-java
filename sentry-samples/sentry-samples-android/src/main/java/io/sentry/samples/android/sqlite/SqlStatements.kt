@@ -179,7 +179,7 @@ object SqlStatements {
       // Batch insert: one insertAll() runs all rows in a single transaction, vs. a naive per-row
       // loop.
       dao.insertAll(
-        List(HEAVY_ROW_COUNT) { SongEntity3(title = "song $it", artist = "artist $it") }
+        List(HEAVY_ROW_COUNT) { SongEntity3(title = "song $it", artist = "artist $it") },
       )
       dao.getAll().forEach { appWork("${it.id}:${it.title}:${it.artist}") }
     }

@@ -28,7 +28,7 @@ class SpanTest {
         .thenReturn(
           SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
-          }
+          },
         )
     }
 
@@ -395,7 +395,7 @@ class SpanTest {
         SpanOptions().apply {
           isTrimStart = true
           isTrimEnd = true
-        }
+        },
       )
 
     // and two child spans are started
@@ -430,7 +430,7 @@ class SpanTest {
         TransactionOptions().apply {
           isTrimStart = true
           isTrimEnd = true
-        }
+        },
       )
 
     // and two child spans are started
@@ -595,7 +595,7 @@ class SpanTest {
   }
 
   private fun getTransaction(
-    transactionContext: TransactionContext = TransactionContext("name", "op")
+    transactionContext: TransactionContext = TransactionContext("name", "op"),
   ): SentryTracer = SentryTracer(transactionContext, fixture.scopes)
 
   private fun startChildFromSpan(): Span {

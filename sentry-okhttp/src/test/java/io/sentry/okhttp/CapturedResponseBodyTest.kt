@@ -71,12 +71,16 @@ class CapturedResponseBodyTest {
     private val closed = CountDownLatch(1)
     private var sent = false
 
+    /** Counts down once a read is blocked waiting for [close]. */
+    val parked = CountDownLatch(1)
+
     override fun read(sink: Buffer, byteCount: Long): Long {
       if (!sent) {
         sent = true
         sink.write(chunk)
         return chunk.size.toLong()
       }
+      parked.countDown()
       closed.await(10, TimeUnit.SECONDS)
       return -1L
     }
@@ -260,19 +264,19 @@ class CapturedResponseBodyTest {
     val chunk = "data: event-0\n\n".toByteArray()
     val source = ParkingSource(chunk)
     val (wrapper, captured) = capture(source, 1024)
-    val chunkRead = CountDownLatch(1)
     val readDone = CountDownLatch(1)
     val reader = Thread {
       val bodySource = wrapper.source()
       bodySource.readByteArray(chunk.size.toLong())
-      chunkRead.countDown()
       bodySource.readByteArray()
       readDone.countDown()
     }
     reader.isDaemon = true
     reader.start()
 
-    assertTrue(chunkRead.await(10, TimeUnit.SECONDS), "the reader must have received the chunk")
+    // Wait until the reader is blocked inside read(). Closing before that would make the next read
+    // throw "closed" on the reader thread instead of returning end of stream.
+    assertTrue(source.parked.await(10, TimeUnit.SECONDS), "the reader must be blocked in read()")
     wrapper.close()
 
     assertTrue(

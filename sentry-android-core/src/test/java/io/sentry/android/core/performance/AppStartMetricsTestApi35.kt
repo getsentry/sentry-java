@@ -169,8 +169,8 @@ class AppStartMetricsTestApi35 {
       .thenReturn(
         mapOf(
           ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to
-            TimeUnit.MILLISECONDS.toNanos(onCreateStartUptimeMs)
-        )
+            TimeUnit.MILLISECONDS.toNanos(onCreateStartUptimeMs),
+        ),
       )
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
     SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_CACHED)
@@ -255,7 +255,7 @@ class AppStartMetricsTestApi35 {
   @Test
   fun `does not crash when getHistoricalProcessStartReasons throws RuntimeException`() {
     SentryShadowActivityManager.setHistoricalProcessStartReasonsException(
-      RuntimeException("isolated process")
+      RuntimeException("isolated process"),
     )
     val metrics = AppStartMetrics.getInstance()
 

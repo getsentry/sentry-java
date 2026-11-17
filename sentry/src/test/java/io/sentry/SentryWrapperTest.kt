@@ -135,7 +135,7 @@ class SentryWrapperTest {
           Sentry.addBreadcrumb("MyClonedBreadcrumb")
           Sentry.captureMessage("ClonedMessage")
           "Result 1"
-        }
+        },
       )
 
     val future2 =
@@ -145,7 +145,7 @@ class SentryWrapperTest {
           Sentry.addBreadcrumb("MyClonedBreadcrumb2")
           Sentry.captureMessage("ClonedMessage2")
           "Result 2"
-        }
+        },
       )
 
     Sentry.addBreadcrumb("MyOriginalBreadcrumb")
@@ -180,7 +180,7 @@ class SentryWrapperTest {
           assertNotEquals(mainScopes, Sentry.getCurrentScopes())
           assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
           "Result 1"
-        }
+        },
       )
 
     callableFuture.get()
@@ -216,7 +216,7 @@ class SentryWrapperTest {
           Sentry.addBreadcrumb("MyClonedBreadcrumb")
           Sentry.captureMessage("ClonedMessage")
           "Result 1"
-        }
+        },
       )
 
     val future2 =
@@ -226,7 +226,7 @@ class SentryWrapperTest {
           Sentry.addBreadcrumb("MyClonedBreadcrumb2")
           Sentry.captureMessage("ClonedMessage2")
           "Result 2"
-        }
+        },
       )
 
     Sentry.addBreadcrumb("MyOriginalBreadcrumb")
@@ -261,7 +261,7 @@ class SentryWrapperTest {
           assertNotEquals(mainScopes, Sentry.getCurrentScopes())
           assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
           "Result 1"
-        }
+        },
       )
 
     runnableFuture.get()

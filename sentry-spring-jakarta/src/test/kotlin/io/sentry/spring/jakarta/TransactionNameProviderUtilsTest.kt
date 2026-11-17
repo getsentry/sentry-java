@@ -31,7 +31,7 @@ class TransactionNameProviderUtilsTest {
     assertThat(
         assertFailsWith<OutOfMemoryError> {
           TransactionNameProviderUtils.provideTransactionName(provider, request, logger)
-        }
+        },
       )
       .isSameAs(failure)
   }

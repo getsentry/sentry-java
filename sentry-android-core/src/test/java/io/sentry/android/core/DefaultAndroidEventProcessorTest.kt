@@ -194,7 +194,7 @@ class DefaultAndroidEventProcessorTest {
             SentryThread().apply {
               id = 10L
               isCurrent = true
-            }
+            },
           )
       }
 
@@ -582,8 +582,8 @@ class DefaultAndroidEventProcessorTest {
                       function = "onCreate"
                       module = "com.example.Application"
                       filename = "Application.java"
-                    }
-                  )
+                    },
+                  ),
                 )
             },
             SentryException().apply {
@@ -598,8 +598,8 @@ class DefaultAndroidEventProcessorTest {
                       function = "run"
                       module = "com.android.internal.os.RuntimeInit\$MethodAndArgsCaller"
                       filename = "RuntimeInit.java"
-                    }
-                  )
+                    },
+                  ),
                 )
             },
           )
@@ -629,8 +629,8 @@ class DefaultAndroidEventProcessorTest {
                       function = "onCreate"
                       module = "com.example.Application"
                       filename = "Application.java"
-                    }
-                  )
+                    },
+                  ),
                 )
             },
             SentryException().apply {
@@ -643,8 +643,8 @@ class DefaultAndroidEventProcessorTest {
                       function = "onCreate"
                       module = "com.example.Application"
                       filename = "Application.java"
-                    }
-                  )
+                    },
+                  ),
                 )
             },
           )
@@ -689,7 +689,7 @@ class DefaultAndroidEventProcessorTest {
           DateUtils.dateToSeconds(DateUtils.getDateTime("2004-04-10T18:24:03.000Z")),
           "message",
           SentryLogLevel.WARN,
-        )
+        ),
       )
 
     assertNotNull(processedEvent?.attributes?.get("device.brand"))

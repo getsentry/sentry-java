@@ -57,13 +57,13 @@ object AgentApp {
           app.close()
           kafka.destroy()
           server.close()
-        }
+        },
       )
   }
 
   // The agent instruments classes as they load, which on a busy CI runner has taken over a minute.
   val restTemplate =
     TestRestTemplate(
-      RestTemplateBuilder().rootUri("http://localhost:${app.awaitPort(timeoutSeconds = 180)}")
+      RestTemplateBuilder().rootUri("http://localhost:${app.awaitPort(timeoutSeconds = 180)}"),
     )
 }

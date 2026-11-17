@@ -65,7 +65,7 @@ tasks.named<JavaCompile>("compileJava") {
     listOf(
       "-Alog4j.graalvm.groupId=${project.group}",
       "-Alog4j.graalvm.artifactId=${project.name}",
-    )
+    ),
   )
 }
 

@@ -59,7 +59,7 @@ class BufferCaptureStrategyTest {
     val options =
       SentryOptions().apply {
         setReplayController(
-          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
+          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) },
         )
       }
     val scope = Scope(options)
@@ -329,7 +329,7 @@ class BufferCaptureStrategyTest {
           anyInt(),
           anyInt(),
           any(),
-        )
+        ),
       )
       .thenAnswer { invocation ->
         capturedFrom = invocation.arguments[1] as Long
@@ -363,7 +363,7 @@ class BufferCaptureStrategyTest {
           anyInt(),
           anyInt(),
           any(),
-        )
+        ),
       )
       .thenAnswer { invocation ->
         capturedFrom = invocation.arguments[1] as Long

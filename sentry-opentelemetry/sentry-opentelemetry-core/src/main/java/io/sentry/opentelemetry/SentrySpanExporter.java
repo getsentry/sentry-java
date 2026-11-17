@@ -119,7 +119,7 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull SentryInstantDate now = new SentryInstantDate();
 
     final @NotNull List<SpanData> nonExpired =
-        remaining.stream().filter((span) -> !isSpanTooOld(span, now)).collect(Collectors.toList());
+        remaining.stream().filter(span -> !isSpanTooOld(span, now)).collect(Collectors.toList());
 
     this.finishedSpans.addAll(nonExpired);
 
@@ -145,7 +145,7 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private @NotNull List<SpanData> filterOutSentrySpans(final @NotNull Collection<SpanData> spans) {
     return spans.stream()
-        .filter((span) -> !isSentryRequest(scopes, span.getKind(), span.getAttributes()))
+        .filter(span -> !isSentryRequest(scopes, span.getKind(), span.getAttributes()))
         .collect(Collectors.toList());
   }
 
@@ -176,8 +176,8 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     return remaining.stream()
-        .map((node) -> node.getSpan())
-        .filter((it) -> it != null)
+        .map(node -> node.getSpan())
+        .filter(it -> it != null)
         .collect(Collectors.toList());
   }
 
@@ -381,7 +381,7 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private List<SpanNode> findCompletedRootNodes(final @NotNull List<SpanNode> grouped) {
     final @NotNull Predicate<SpanNode> isRootPredicate =
-        (node) -> {
+        node -> {
           return node.getParentNode() == null && node.getSpan() != null;
         };
     return grouped.stream().filter(isRootPredicate).collect(Collectors.toList());
@@ -509,15 +509,14 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
 
     if (attributes != null) {
-      attributes.forEach(
-          (key, value) -> {
-            if (key != null) {
-              final @NotNull String stringKey = key.getKey();
-              if (!shouldRemoveAttribute(stringKey)) {
-                mapWithStringKeys.put(stringKey, value);
-              }
-            }
-          });
+      attributes.forEach((key, value) -> {
+        if (key != null) {
+          final @NotNull String stringKey = key.getKey();
+          if (!shouldRemoveAttribute(stringKey)) {
+            mapWithStringKeys.put(stringKey, value);
+          }
+        }
+      });
     }
 
     return mapWithStringKeys;

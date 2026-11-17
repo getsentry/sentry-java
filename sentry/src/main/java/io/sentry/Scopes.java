@@ -1084,13 +1084,11 @@ public final class Scopes implements IScopes {
     PropagationContext propagationContext =
         PropagationContext.fromHeaders(
             getOptions().getLogger(), sentryTrace, baggageHeaders, getOptions());
-    configureScope(
-        (scope) -> {
-          scope.withPropagationContext(
-              oldPropagationContext -> {
-                scope.setPropagationContext(propagationContext);
-              });
-        });
+    configureScope(scope -> {
+      scope.withPropagationContext(oldPropagationContext -> {
+        scope.setPropagationContext(propagationContext);
+      });
+    });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);
     } else {

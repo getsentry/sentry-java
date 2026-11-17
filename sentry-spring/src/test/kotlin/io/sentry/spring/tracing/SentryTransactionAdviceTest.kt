@@ -55,7 +55,7 @@ class SentryTransactionAdviceTest {
             assertTrue(it.isBindToScope)
             assertThat(it.origin).isEqualTo("auto.function.spring.advice")
           },
-        )
+        ),
       )
       .thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
     whenever(scopes.options)

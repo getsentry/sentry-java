@@ -27,7 +27,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
         AutoConfigurations.of(
           SentryLogbackAppenderAutoConfiguration::class.java,
           SentryAutoConfiguration::class.java,
-        )
+        ),
       )
       .withPropertyValues(
         // Speed up tests by reducing timeouts and disabling expensive operations
@@ -48,7 +48,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
   // Use the optimized base runner by default
   private val contextRunner =
     baseContextRunner.withUserConfiguration(
-      NoOpTransportConfiguration::class.java
+      NoOpTransportConfiguration::class.java,
     ) // Use no-op transport to avoid network calls
 
   // Specialized context runner for tests requiring DSN
@@ -56,7 +56,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
     baseContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(
-        NoOpTransportConfiguration::class.java
+        NoOpTransportConfiguration::class.java,
       ) // Use no-op transport to avoid network calls
 
   private val rootLogger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger

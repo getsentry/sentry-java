@@ -26,14 +26,13 @@ public class Main {
   public static void main(String[] args) throws InterruptedException {
     AutoConfiguredOpenTelemetrySdk.builder()
         .setResultAsGlobal()
-        .addPropertiesSupplier(
-            () -> {
-              final Map<String, String> properties = new HashMap<>();
-              properties.put("otel.logs.exporter", "none");
-              properties.put("otel.metrics.exporter", "none");
-              properties.put("otel.traces.exporter", "none");
-              return properties;
-            })
+        .addPropertiesSupplier(() -> {
+          final Map<String, String> properties = new HashMap<>();
+          properties.put("otel.logs.exporter", "none");
+          properties.put("otel.metrics.exporter", "none");
+          properties.put("otel.traces.exporter", "none");
+          return properties;
+        })
         .build();
 
     Sentry.addBreadcrumb(
@@ -41,22 +40,20 @@ public class Main {
 
     // Data added to the root scope (no PushScope called up to this point)
     // The modifications done here will affect all events sent and will propagate to child scopes.
-    Sentry.configureScope(
-        scope -> {
-          scope.addEventProcessor(new SomeEventProcessor());
+    Sentry.configureScope(scope -> {
+      scope.addEventProcessor(new SomeEventProcessor());
 
-          scope.setExtra("SomeExtraInfo", "Some value for extra info");
-        });
+      scope.setExtra("SomeExtraInfo", "Some value for extra info");
+    });
 
     // Configures a scope which is only valid within the callback
-    Sentry.withScope(
-        scope -> {
-          scope.setLevel(SentryLevel.FATAL);
-          scope.setTransaction("main");
+    Sentry.withScope(scope -> {
+      scope.setLevel(SentryLevel.FATAL);
+      scope.setTransaction("main");
 
-          // This message includes the data set to the scope in this block:
-          Sentry.captureMessage("Fatal message!");
-        });
+      // This message includes the data set to the scope in this block:
+      Sentry.captureMessage("Fatal message!");
+    });
 
     // Only data added to the scope on `configureScope` above is included.
     Sentry.captureMessage("Some warning!", SentryLevel.WARNING);

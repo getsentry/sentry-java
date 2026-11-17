@@ -72,13 +72,12 @@ public final class ExceptionReporter {
       final @NotNull IScopes scopes,
       final @NotNull ExceptionDetails exceptionDetails,
       final @NotNull SentryEvent event) {
-    scopes.configureScope(
-        (scope) -> {
-          final @Nullable Request scopeRequest = scope.getRequest();
-          final @NotNull Request request = scopeRequest == null ? new Request() : scopeRequest;
-          setDetailsOnRequest(scopes, exceptionDetails, request);
-          event.setRequest(request);
-        });
+    scopes.configureScope(scope -> {
+      final @Nullable Request scopeRequest = scope.getRequest();
+      final @NotNull Request request = scopeRequest == null ? new Request() : scopeRequest;
+      setDetailsOnRequest(scopes, exceptionDetails, request);
+      event.setRequest(request);
+    });
   }
 
   private void setDetailsOnRequest(

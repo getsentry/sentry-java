@@ -7,7 +7,7 @@ import io.sentry.samples.android.navigation.common.NavigationSampleConfig
 import io.sentry.samples.android.navigation.common.NavigationSampleConfigSnapshot
 
 internal fun Intent.previousNav3SampleConfigSnapshot(
-  fallback: NavigationSampleConfigSnapshot
+  fallback: NavigationSampleConfigSnapshot,
 ): NavigationSampleConfigSnapshot =
   NavigationSampleConfigSnapshot(
     enableScreenTracking =

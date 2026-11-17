@@ -50,6 +50,7 @@ include(
     "sentry-android-distribution",
     "sentry-android-core",
     "sentry-android-ndk",
+    "sentry-android-ndk-outproc",
     "sentry-android",
     "sentry-android-timber",
     "sentry-android-fragment",

@@ -72,7 +72,7 @@ class SentryClientTransactionProfileTest(
       )
     if (hasProfile) {
       expected.add(
-        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Profile.category, 1)
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Profile.category, 1),
       )
       verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Profile, 1)
     }

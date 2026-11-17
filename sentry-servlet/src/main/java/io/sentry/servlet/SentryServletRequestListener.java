@@ -57,11 +57,10 @@ public class SentryServletRequestListener implements ServletRequestListener {
       scopes.addBreadcrumb(
           Breadcrumb.http(httpRequest.getRequestURI(), httpRequest.getMethod()), hint);
 
-      scopes.configureScope(
-          scope -> {
-            scope.addEventProcessor(
-                new SentryRequestHttpServletRequestProcessor(httpRequest, scopes.getOptions()));
-          });
+      scopes.configureScope(scope -> {
+        scope.addEventProcessor(
+            new SentryRequestHttpServletRequestProcessor(httpRequest, scopes.getOptions()));
+      });
     }
   }
 }

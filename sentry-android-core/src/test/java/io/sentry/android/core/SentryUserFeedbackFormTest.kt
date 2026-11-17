@@ -365,7 +365,7 @@ class SentryUserFeedbackFormTest {
         eq(SentryLevel.WARNING),
         eq(
           "Feedback screenshot button won't be shown. It requires the androidx.activity " +
-            "dependency and the feedback form being shown from a ComponentActivity."
+            "dependency and the feedback form being shown from a ComponentActivity.",
         ),
       )
   }
@@ -507,7 +507,7 @@ class SentryUserFeedbackFormTest {
         eq(SentryLevel.WARNING),
         eq(
           "Unable to determine the size of the selected screenshot, the attachment size limit " +
-            "is applied when the feedback is captured."
+            "is applied when the feedback is captured.",
         ),
         any<SecurityException>(),
       )

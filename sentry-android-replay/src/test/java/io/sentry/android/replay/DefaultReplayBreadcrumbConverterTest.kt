@@ -426,7 +426,7 @@ class DefaultReplayBreadcrumbConverterTest {
         100L,
         NetworkBody("request body content"),
         mapOf("Content-Type" to "application/json"),
-      )
+      ),
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
       ReplayNetworkRequestOrResponse(
@@ -434,7 +434,7 @@ class DefaultReplayBreadcrumbConverterTest {
         500L,
         NetworkBody(mapOf("status" to "success", "message" to "OK")),
         mapOf("Content-Type" to "text/plain"),
-      )
+      ),
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set(SENTRY_REPLAY_NETWORK_DETAILS, fakeOkHttpNetworkDetails)
@@ -488,7 +488,7 @@ class DefaultReplayBreadcrumbConverterTest {
         150L,
         NetworkBody(listOf("item1", "item2", "item3")),
         mapOf("Content-Type" to "application/json"),
-      )
+      ),
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
       ReplayNetworkRequestOrResponse(
@@ -496,7 +496,7 @@ class DefaultReplayBreadcrumbConverterTest {
         550L,
         NetworkBody(mapOf("status" to "success", "message" to "OK")),
         mapOf("Content-Type" to "text/plain"),
-      )
+      ),
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set(SENTRY_REPLAY_NETWORK_DETAILS, fakeOkHttpNetworkDetails)
@@ -543,7 +543,7 @@ class DefaultReplayBreadcrumbConverterTest {
       }
     val networkRequestData = NetworkRequestData("GET")
     networkRequestData.setResponseDetails(
-      ReplayNetworkRequestOrResponse(200, null, null, mapOf("Content-Type" to "application/json"))
+      ReplayNetworkRequestOrResponse(200, null, null, mapOf("Content-Type" to "application/json")),
     )
     // Simulates Scopes.addBreadcrumb, which hands the network details to the converter
     options.beforeBreadcrumb?.execute(
@@ -558,7 +558,7 @@ class DefaultReplayBreadcrumbConverterTest {
         21L,
         NetworkBody("response body content"),
         mapOf("Content-Type" to "application/json"),
-      )
+      ),
     )
 
     check(rrwebEvent is RRWebSpanEvent)
@@ -584,7 +584,7 @@ class DefaultReplayBreadcrumbConverterTest {
         100L,
         NetworkBody("request body content"),
         mapOf("Content-Type" to "application/json"),
-      )
+      ),
     )
     networkRequestData.setResponseDetails(
       ReplayNetworkRequestOrResponse(
@@ -592,7 +592,7 @@ class DefaultReplayBreadcrumbConverterTest {
         100L,
         NetworkBody("response body content"),
         mapOf("Content-Type" to "application/json"),
-      )
+      ),
     )
     hint.set(SENTRY_REPLAY_NETWORK_DETAILS, networkRequestData)
 

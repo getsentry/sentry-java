@@ -16,10 +16,17 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
 
   public final StackTraceElement[] stack;
   public final long timestampMs;
+  public final @Nullable Thread.State state;
 
   public AnrStackTrace(final long timestampMs, final StackTraceElement[] stack) {
+    this(timestampMs, stack, null);
+  }
+
+  public AnrStackTrace(
+      final long timestampMs, final StackTraceElement[] stack, final @Nullable Thread.State state) {
     this.timestampMs = timestampMs;
     this.stack = stack;
+    this.state = state;
   }
 
   @Override
@@ -27,9 +34,32 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
     return Long.compare(timestampMs, o.timestampMs);
   }
 
+  /**
+   * Writes this sample in format version 2. All numbers are big-endian, and strings use the
+   * modified UTF-8 of {@link DataOutputStream#writeUTF(String)}.
+   *
+   * <pre>
+   * short   version (2)
+   * long    timestampMs
+   * boolean isStateNull
+   * UTF     state name, or "" if isStateNull
+   * int     number of frames
+   * for each frame:
+   *   UTF     className
+   *   UTF     methodName
+   *   boolean isFileNameNull
+   *   UTF     fileName, or "" if isFileNameNull
+   *   int     lineNumber
+   * </pre>
+   *
+   * <p>Version 1 is the same without the two state fields. {@link #deserialize(DataInputStream)}
+   * reads both versions.
+   */
   public void serialize(final @NotNull DataOutputStream dos) throws IOException {
-    dos.writeShort(1); // version
+    dos.writeShort(2); // version
     dos.writeLong(timestampMs);
+    dos.writeBoolean(state == null);
+    dos.writeUTF(state == null ? "" : state.name());
     dos.writeInt(stack.length);
     for (final @NotNull StackTraceElement element : stack) {
       dos.writeUTF(StringUtils.getOrEmpty(element.getClassName()));
@@ -46,8 +76,20 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
   public static AnrStackTrace deserialize(final @NotNull DataInputStream dis) throws IOException {
     try {
       final short version = dis.readShort();
-      if (version == 1) {
+      if (version == 1 || version == 2) {
         final long timestampMs = dis.readLong();
+        @Nullable Thread.State state = null;
+        if (version == 2) {
+          final boolean isStateNull = dis.readBoolean();
+          final @NotNull String stateName = dis.readUTF();
+          if (!isStateNull) {
+            try {
+              state = Thread.State.valueOf(stateName);
+            } catch (IllegalArgumentException e) {
+              // written by a runtime with a state this one does not know
+            }
+          }
+        }
         final int stackLength = dis.readInt();
         if (stackLength < 0 || stackLength > MAX_STACK_LENGTH) {
           return null;
@@ -67,7 +109,7 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
           stack[i] = element;
         }
 
-        return new AnrStackTrace(timestampMs, stack);
+        return new AnrStackTrace(timestampMs, stack, state);
       } else {
         // unsupported future version
         return null;

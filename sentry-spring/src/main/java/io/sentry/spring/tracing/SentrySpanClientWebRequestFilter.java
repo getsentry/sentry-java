@@ -55,22 +55,20 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     final ClientRequest clientRequestWithSentryTraceHeader = maybeAddHeaders(request, span);
 
     return next.exchange(clientRequestWithSentryTraceHeader)
-        .flatMap(
-            response -> {
-              span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.statusCode().value());
-              span.setStatus(SpanStatus.fromHttpStatusCode(response.statusCode().value()));
-              addBreadcrumb(request, response);
-              span.finish();
-              return Mono.just(response);
-            })
-        .onErrorMap(
-            throwable -> {
-              span.setThrowable(throwable);
-              span.setStatus(SpanStatus.INTERNAL_ERROR);
-              addBreadcrumb(request, null);
-              span.finish();
-              return throwable;
-            });
+        .flatMap(response -> {
+          span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, response.statusCode().value());
+          span.setStatus(SpanStatus.fromHttpStatusCode(response.statusCode().value()));
+          addBreadcrumb(request, response);
+          span.finish();
+          return Mono.just(response);
+        })
+        .onErrorMap(throwable -> {
+          span.setThrowable(throwable);
+          span.setStatus(SpanStatus.INTERNAL_ERROR);
+          addBreadcrumb(request, null);
+          span.finish();
+          return throwable;
+        });
   }
 
   private ClientRequest maybeAddHeaders(
@@ -95,11 +93,10 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
       final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
       if (baggageHeader != null) {
-        requestBuilder.headers(
-            httpHeaders -> {
-              httpHeaders.remove(BaggageHeader.BAGGAGE_HEADER);
-              httpHeaders.add(baggageHeader.getName(), baggageHeader.getValue());
-            });
+        requestBuilder.headers(httpHeaders -> {
+          httpHeaders.remove(BaggageHeader.BAGGAGE_HEADER);
+          httpHeaders.add(baggageHeader.getName(), baggageHeader.getValue());
+        });
       }
     }
 

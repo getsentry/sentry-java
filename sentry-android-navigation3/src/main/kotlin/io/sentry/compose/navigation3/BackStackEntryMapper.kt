@@ -165,7 +165,7 @@ public fun interface BackStackEntryMapper<T : Any> {
  * logic or recreating its own state whenever the mapper changed.
  */
 internal class ForwardingBackStackEntryMapper<T : Any>(
-  private val currentMapper: () -> BackStackEntryMapper<T>
+  private val currentMapper: () -> BackStackEntryMapper<T>,
 ) {
   fun map(backStackEntry: T): SentryBackStackEntry? = Snapshot.withoutReadObservation {
     currentMapper().map(backStackEntry)

@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
 import android.os.Trace;
@@ -48,8 +50,10 @@ public final class SentryAndroid {
   private static final String FRAGMENT_CLASS_NAME =
       "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
 
-  protected static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
+  // the process of SentryNdkCrashService in sentry-android-ndk-outproc
+  private static final String NDK_CRASH_SERVICE_PROCESS_SUFFIX = ".sentry_ndk_crash";
+
+  static final @NotNull AutoClosableReentrantLock staticLock = new AutoClosableReentrantLock();
 
   private SentryAndroid() {}
 
@@ -95,6 +99,12 @@ public final class SentryAndroid {
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    if (isNdkCrashServiceProcess()) {
+      logger.log(
+          SentryLevel.DEBUG, "Skipping SentryAndroid.init in the NDK crash service process.");
+      return;
+    }
+
     // Started before acquiring the lock so it stays balanced with the endSection() in the finally
     // even if acquire() throws.
     Trace.beginSection("SentryAndroid.init");
@@ -180,13 +190,12 @@ public final class SentryAndroid {
           // so only start a session if it's not already started
           // This e.g. happens on React Native, or e.g. on deferred SDK init
           final AtomicBoolean sessionStarted = new AtomicBoolean(false);
-          scopes.configureScope(
-              scope -> {
-                final @Nullable Session currentSession = scope.getSession();
-                if (currentSession != null && currentSession.getStarted() != null) {
-                  sessionStarted.set(true);
-                }
-              });
+          scopes.configureScope(scope -> {
+            final @Nullable Session currentSession = scope.getSession();
+            if (currentSession != null && currentSession.getStarted() != null) {
+              sessionStarted.set(true);
+            }
+          });
           if (!sessionStarted.get()) {
             scopes.startSession();
           }
@@ -268,5 +277,15 @@ public final class SentryAndroid {
         options.getIntegrations().remove(integration);
       }
     }
+  }
+
+  // the crash service only runs on API 30+
+  @SuppressLint("NewApi")
+  private static boolean isNdkCrashServiceProcess() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+      return false;
+    }
+    final @Nullable String processName = Application.getProcessName();
+    return processName != null && processName.endsWith(NDK_CRASH_SERVICE_PROCESS_SUFFIX);
   }
 }

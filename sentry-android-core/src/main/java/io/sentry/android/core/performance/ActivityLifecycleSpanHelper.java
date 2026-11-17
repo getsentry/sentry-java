@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class ActivityLifecycleSpanHelper {
+public final class ActivityLifecycleSpanHelper {
   private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
 
   private final @NotNull String activityName;

@@ -14,29 +14,26 @@ import java.util.List;
 public class Main {
 
   public static void main(String[] args) {
-    Sentry.init(
-        options -> {
-          // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
-          // your Sentry project/dashboard
-          options.setDsn(
-              "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
+    Sentry.init(options -> {
+      // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
+      // your Sentry project/dashboard
+      options.setDsn("https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
 
-          // Performance configuration options
-          // Set what percentage of traces should be collected
-          options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
-        });
+      // Performance configuration options
+      // Set what percentage of traces should be collected
+      options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
+    });
 
     TodoApi todoApi =
         Feign.builder()
             .addCapability(
-                new SentryCapability(
-                    (span, request, response) -> {
-                      // attach tag to request with urls ending with /todos
-                      if (request.url().endsWith("/todos")) {
-                        span.setTag("tag-name", "tag-value");
-                      }
-                      return span;
-                    }))
+                new SentryCapability((span, request, response) -> {
+                  // attach tag to request with urls ending with /todos
+                  if (request.url().endsWith("/todos")) {
+                    span.setTag("tag-name", "tag-value");
+                  }
+                  return span;
+                }))
             .encoder(new GsonEncoder())
             .decoder(new GsonDecoder())
             .target(TodoApi.class, "https://jsonplaceholder.typicode.com/");

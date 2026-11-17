@@ -4,7 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class ActivityLifecycleTimeSpan implements Comparable<ActivityLifecycleTimeSpan> {
+public final class ActivityLifecycleTimeSpan implements Comparable<ActivityLifecycleTimeSpan> {
   private final @NotNull TimeSpan onCreate = new TimeSpan();
   private final @NotNull TimeSpan onStart = new TimeSpan();
 

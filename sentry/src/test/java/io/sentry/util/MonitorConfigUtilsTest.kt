@@ -62,7 +62,7 @@ class MonitorConfigUtilsTest {
         .thenReturn(
           SentryOptions().apply {
             cron = SentryOptions.Cron().apply { defaultCheckinMargin = margin }
-          }
+          },
         )
       block()
     }
@@ -316,7 +316,7 @@ class MonitorConfigUtilsTest {
           null,
           null,
           TimeUnit.MINUTES.toMillis(Int.MAX_VALUE.toLong() + 1),
-        )
+        ),
       )
       .isNull()
   }
@@ -350,7 +350,7 @@ class MonitorConfigUtilsTest {
       )
     for ((cron, crontab) in expected) {
       assertThat(
-          MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, false)?.schedule?.value
+          MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, false)?.schedule?.value,
         )
         .isEqualTo(crontab)
     }
@@ -362,11 +362,11 @@ class MonitorConfigUtilsTest {
     TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
     try {
       assertThat(
-          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null, false)?.timezone
+          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null, false)?.timezone,
         )
         .isEqualTo("Asia/Tokyo")
       assertThat(
-          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "", null, null, false)?.timezone
+          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "", null, null, false)?.timezone,
         )
         .isEqualTo("Asia/Tokyo")
     } finally {
@@ -388,7 +388,7 @@ class MonitorConfigUtilsTest {
       assertThat(MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, false)).isNull()
     }
     assertThat(
-        MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+05:30", null, null, false)
+        MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+05:30", null, null, false),
       )
       .isNull()
     assertThat(MonitorConfigUtils.fromSpringScheduled(null, null, 30_000L, null, false)).isNull()
@@ -433,7 +433,7 @@ class MonitorConfigUtilsTest {
       )
     for ((cron, crontab) in expected) {
       assertThat(
-          MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, true)?.schedule?.value
+          MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, true)?.schedule?.value,
         )
         .isEqualTo(crontab)
     }
@@ -453,7 +453,7 @@ class MonitorConfigUtilsTest {
     TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
     try {
       assertThat(
-          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null, true)?.timezone
+          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null, true)?.timezone,
         )
         .isEqualTo("Asia/Tokyo")
     } finally {

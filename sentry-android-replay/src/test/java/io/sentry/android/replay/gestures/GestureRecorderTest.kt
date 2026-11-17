@@ -28,7 +28,7 @@ class GestureRecorderTest {
     val options = SentryOptions()
 
     fun getSut(
-      touchRecorderCallback: TouchRecorderCallback = NoOpTouchRecorderCallback()
+      touchRecorderCallback: TouchRecorderCallback = NoOpTouchRecorderCallback(),
     ): GestureRecorder = GestureRecorder(options, touchRecorderCallback)
   }
 
@@ -65,7 +65,7 @@ class GestureRecorderTest {
             override fun onTouchEvent(event: MotionEvent) {
               called = true
             }
-          }
+          },
       )
 
     gestureRecorder.onRootViewsChanged(activity.root, true)
@@ -92,7 +92,7 @@ class GestureRecorderTest {
               assertEquals(MotionEvent.ACTION_DOWN, event.action)
               called = true
             }
-          }
+          },
       )
 
     gestureRecorder.onRootViewsChanged(activity.root, true)

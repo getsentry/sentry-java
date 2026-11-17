@@ -82,7 +82,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
           hint,
           Retryable.class,
           logger,
-          (retryable) -> {
+          retryable -> {
             if (!retryable.isRetry()) {
               try {
                 if (!file.delete()) {
@@ -227,7 +227,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       }
 
       // reset the Hint to its initial state as we use it multiple times.
-      HintUtils.runIfHasType(hint, Resettable.class, (resettable) -> resettable.reset());
+      HintUtils.runIfHasType(hint, Resettable.class, resettable -> resettable.reset());
     }
   }
 

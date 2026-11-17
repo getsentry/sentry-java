@@ -133,7 +133,7 @@ private fun ScenarioBar(
       Modifier.fillMaxWidth()
         .horizontalScroll(rememberScrollState())
         .padding(start = 24.dp, end = 24.dp)
-        .testTag(nav3TestTag("scenario_bar"))
+        .testTag(nav3TestTag("scenario_bar")),
   ) {
     scenarios.forEach { scenario ->
       val selected = selectedScenario == scenario
@@ -157,7 +157,7 @@ private fun ScenarioBar(
               .background(
                 if (selected) selectedTabColor else Color.Transparent,
                 RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
-              )
+              ),
         )
       }
     }
