@@ -487,6 +487,15 @@ public interface IScopes {
   boolean isAncestorOf(final @Nullable IScopes otherScopes);
 
   /**
+   * Checks whether this and the other Scopes belong to the same SDK initialization.
+   *
+   * @param otherScopes Scopes instance to compare with
+   * @return true if both Scopes belong to the same SDK initialization
+   */
+  @ApiStatus.Internal
+  boolean isFromSameSdkInitialization(final @Nullable IScopes otherScopes);
+
+  /**
    * Captures the transaction and enqueues it for sending to Sentry server.
    *
    * @param transaction the transaction

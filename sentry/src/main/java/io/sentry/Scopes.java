@@ -27,6 +27,7 @@ public final class Scopes implements IScopes {
   private final @NotNull IScope globalScope;
 
   private final @Nullable Scopes parentScopes;
+  private final @NotNull Object sdkInitializationToken;
 
   private final @NotNull String creator;
   private final @NotNull CompositePerformanceCollector compositePerformanceCollector;
@@ -41,7 +42,7 @@ public final class Scopes implements IScopes {
       final @NotNull IScope isolationScope,
       final @NotNull IScope globalScope,
       final @NotNull String creator) {
-    this(scope, isolationScope, globalScope, null, creator);
+    this(scope, isolationScope, globalScope, null, null, creator);
   }
 
   private Scopes(
@@ -49,12 +50,15 @@ public final class Scopes implements IScopes {
       final @NotNull IScope isolationScope,
       final @NotNull IScope globalScope,
       final @Nullable Scopes parentScopes,
+      final @Nullable Object sdkInitializationToken,
       final @NotNull String creator) {
     this.combinedScope = new CombinedScopeView(globalScope, isolationScope, scope);
     this.scope = scope;
     this.isolationScope = isolationScope;
     this.globalScope = globalScope;
     this.parentScopes = parentScopes;
+    this.sdkInitializationToken =
+        sdkInitializationToken == null ? new Object() : sdkInitializationToken;
     this.creator = creator;
 
     final @NotNull SentryOptions options = getOptions();
@@ -112,13 +116,23 @@ public final class Scopes implements IScopes {
   }
 
   @Override
+  @ApiStatus.Internal
+  @SuppressWarnings("ReferenceEquality")
+  public boolean isFromSameSdkInitialization(final @Nullable IScopes otherScopes) {
+    return otherScopes instanceof Scopes
+        && sdkInitializationToken == ((Scopes) otherScopes).sdkInitializationToken;
+  }
+
+  @Override
   public @NotNull IScopes forkedScopes(final @NotNull String creator) {
-    return new Scopes(scope.clone(), isolationScope.clone(), globalScope, this, creator);
+    return new Scopes(
+        scope.clone(), isolationScope.clone(), globalScope, this, sdkInitializationToken, creator);
   }
 
   @Override
   public @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
-    return new Scopes(scope.clone(), isolationScope, globalScope, this, creator);
+    return new Scopes(
+        scope.clone(), isolationScope, globalScope, this, sdkInitializationToken, creator);
   }
 
   @Override
