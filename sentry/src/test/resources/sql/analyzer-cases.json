@@ -1804,6 +1804,19 @@
       "note": ""
     },
     {
+      "id": "shape.create_table.modifier_word_as_name",
+      "requirements": ["R6"],
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE TABLE temp (id INT)",
+      "expected": {
+        "text": "CREATE TABLE temp (id INT)",
+        "summary": "CREATE TABLE temp",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "DDL modifiers are skipped only before the object kind; after it, a modifier word is the name."
+    },
+    {
       "id": "shape.alter_table",
       "requirements": ["R6"],
       "dialect": "CONSERVATIVE",

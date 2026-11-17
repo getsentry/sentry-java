@@ -246,6 +246,26 @@ WHITESPACE           = [ \t\r\n]+
     return true;
   }
 
+  // Sentry: a modifier between CREATE/ALTER/DROP and the object kind (the D23 list). It is not the
+  // summary target: CREATE OR REPLACE TEMP VIEW v gives CREATE VIEW v.
+  private static boolean isDdlModifier(String word) {
+    switch (word.toUpperCase(Locale.ROOT)) {
+      case "OR": case "REPLACE": case "TEMPORARY": case "TEMP": case "GLOBAL": case "LOCAL":
+      case "UNIQUE": case "UNLOGGED": case "MATERIALIZED": case "CLUSTERED": case "NONCLUSTERED":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  // Sentry: word `index` of SQLite's conflict clause after UPDATE (OR ABORT, OR FAIL, OR IGNORE).
+  // OR REPLACE and OR ROLLBACK need no entry: those keywords have their own rules.
+  private static boolean isConflictClauseWord(String word, int index) {
+    if (index == 0) return word.equalsIgnoreCase("OR");
+    return index == 1 && (word.equalsIgnoreCase("ABORT") || word.equalsIgnoreCase("FAIL")
+        || word.equalsIgnoreCase("IGNORE"));
+  }
+
   // Sentry: a /* after the opener, also one sharing its * with the closing */ (D35).
   private boolean blockCommentNests() {
     for (int i = zzStartRead + 3; i < zzMarkedPos; i++) {
@@ -445,6 +465,8 @@ WHITESPACE           = [ \t\r\n]+
     }
 
     void handleIdentifier() {
+      // Sentry: modifiers before the object kind are not the target.
+      if (expectingOperationTarget && isDdlModifier(yytext())) return;
       if (!identifierCaptured && !inEmbeddedSelect) {
         appendTargetToSummary();
         if (operationTarget.equalsIgnoreCase("TABLE")) {
@@ -685,6 +707,8 @@ WHITESPACE           = [ \t\r\n]+
 
   private class Update extends Operation {
     boolean identifierCaptured = false;
+    // Sentry: words of SQLite's conflict clause seen so far (UPDATE OR ABORT t).
+    int conflictClauseWords = 0;
 
     void handleSelect() {
       // Once we've captured the UPDATE table, any SELECT is a subquery
@@ -695,6 +719,11 @@ WHITESPACE           = [ \t\r\n]+
     }
 
     void handleIdentifier() {
+      // Sentry: the conflict clause is not the target.
+      if (!identifierCaptured && isConflictClauseWord(yytext(), conflictClauseWords)) {
+        conflictClauseWords++;
+        return;
+      }
       if (!identifierCaptured) {
         appendTargetToSummary();
         recordCollectionName();
@@ -970,7 +999,7 @@ WHITESPACE           = [ \t\r\n]+
           appendCurrentFragment();
           if (isOverLimit()) return YYEOF;
       }
-  "INSERT" {
+  "INSERT" | "UPSERT" {
           if (shouldStartMainOperation()) {
             setOperation(new Insert());
             recordOperationName();
