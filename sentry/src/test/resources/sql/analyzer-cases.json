@@ -2134,6 +2134,32 @@
       "note": "Savepoint names are not part of the summary."
     },
     {
+      "id": "shape.release_savepoint.sqlite",
+      "requirements": ["R6"],
+      "dialect": "sqlite",
+      "input": "RELEASE SAVEPOINT sp_1",
+      "expected": {
+        "text": "RELEASE SAVEPOINT sp_1",
+        "summary": "RELEASE",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "The statement's first keyword is the operation, not the SAVEPOINT after it."
+    },
+    {
+      "id": "shape.operation_keyword_as_table.postgresql",
+      "requirements": ["R6"],
+      "dialect": "postgresql",
+      "input": "INSERT INTO checkpoint (id) VALUES (1)",
+      "expected": {
+        "text": "INSERT INTO checkpoint (id) VALUES (?)",
+        "summary": "INSERT checkpoint",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "A statement keyword such as CHECKPOINT is an ordinary name when it does not start the statement."
+    },
+    {
       "id": "shape.pragma.sqlite",
       "requirements": ["R6"],
       "dialect": "sqlite",

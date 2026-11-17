@@ -897,6 +897,9 @@ WHITESPACE           = [ \t\r\n]+
   /** SHOW operation - blocks other keywords from being parsed. */
   private class Show extends Operation {}
 
+  /** Sentry: a statement summarized by its operation only (SET, FETCH, PREPARE, ...). */
+  private class OperationOnly extends Operation {}
+
   /**
    * WITH clause operation - handles CTE (Common Table Expression) definitions.
    * CTEs have the form: WITH name AS (query), name2 AS (query2), ... main_query
@@ -1209,6 +1212,20 @@ WHITESPACE           = [ \t\r\n]+
             setOperation(new Show());
             recordOperationName();
             appendOperationToSummary();
+          }
+          appendCurrentFragment();
+          if (isOverLimit()) return YYEOF;
+      }
+  // Sentry: statements whose summary is the operation only (README Output conventions, D26).
+  // START keeps TRANSACTION, as BEGIN does. Elsewhere in a statement the word is an identifier.
+  "SAVEPOINT" | "RELEASE" | "SET" | "DO" | "END" | "LISTEN" | "UNLISTEN" | "NOTIFY" | "CLOSE" | "DEALLOCATE" | "CHECKPOINT" | "KILL" | "FLUSH" | "RESET" | "DISCARD" | "ABORT" | "XA" | "FETCH" | "PREPARE" | "START" {
+          if (shouldStartNewOperation()) {
+            setOperation(yytext().equalsIgnoreCase("START") ? new TransactionControl() : new OperationOnly());
+            recordOperationName();
+            appendOperationToSummary();
+          } else if (!insideComment) {
+            cancelPendingSubqueryIfNeeded();
+            operation.handleIdentifier();
           }
           appendCurrentFragment();
           if (isOverLimit()) return YYEOF;
