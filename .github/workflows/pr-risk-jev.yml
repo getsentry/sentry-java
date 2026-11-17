@@ -36,6 +36,21 @@ jobs:
           pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
           expected-head-sha: ${{ github.event.pull_request.head.sha }}
           result-path: risk-pr-result.json
+          # Read from the base branch, so a PR cannot change the guidance it is graded by.
+          # Keep it in sync with .cursor/BUGBOT.md.
+          risk-guidance-path: .github/pr-risk.md
+          # Only used when the diff does not fit: core SDK code keeps its budget first, and tests,
+          # samples, generated API dumps and the changelog are cut first.
+          prioritize-paths: |
+            sentry/src/main/*
+            sentry-android-core/src/main/*
+          deprioritize-paths: |
+            */src/test/*
+            */src/androidTest/*
+            */api/*.api
+            sentry-samples/*
+            sentry-android-integration-tests/*
+            CHANGELOG.md
 
       - name: Publish risk label
         if: ${{ !cancelled() && steps.risk.outcome != 'skipped' }}

@@ -6,6 +6,10 @@ Read [`AGENTS.md`](../AGENTS.md) for build commands and contributing rules, and 
 rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `options`, `scopes`,
 `offline`, `opentelemetry`, ...).
 
+If the diff changes what this file counts as risky, ask the author to update
+[`.github/pr-risk.md`](../.github/pr-risk.md) too. The PR Risk (Jev) workflow grades PRs with that
+shorter summary.
+
 ## Critical
 
 ### Never crash or hang the host application
