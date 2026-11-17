@@ -34,7 +34,7 @@ android {
 
 kotlin {
   compilerOptions.jvmTarget = JVM_11
-  compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
+  compilerOptions.languageVersion = KotlinVersion.KOTLIN_2_1
   explicitApi()
 }
 

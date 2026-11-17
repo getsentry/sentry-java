@@ -25,20 +25,20 @@ kotlin {
   androidTarget {
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_11)
-      apiVersion.set(KotlinVersion.KOTLIN_1_9)
-      languageVersion.set(KotlinVersion.KOTLIN_1_9)
+      apiVersion.set(KotlinVersion.KOTLIN_2_1)
+      languageVersion.set(KotlinVersion.KOTLIN_2_1)
     }
     publishLibraryVariants("release")
   }
   jvm("desktop") {
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_11)
-      apiVersion.set(KotlinVersion.KOTLIN_1_9)
-      languageVersion.set(KotlinVersion.KOTLIN_1_9)
+      apiVersion.set(KotlinVersion.KOTLIN_2_1)
+      languageVersion.set(KotlinVersion.KOTLIN_2_1)
     }
   }
 
-  coreLibrariesVersion = "1.8"
+  coreLibrariesVersion = "2.1.21"
 
   sourceSets.all {
     // Allow all experimental APIs, since MPP projects are themselves experimental
@@ -51,8 +51,8 @@ kotlin {
   sourceSets {
     getByName("commonMain") {
       compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_1_9)
-        languageVersion.set(KotlinVersion.KOTLIN_1_9)
+        apiVersion.set(KotlinVersion.KOTLIN_2_1)
+        languageVersion.set(KotlinVersion.KOTLIN_2_1)
       }
     }
     getByName("androidMain") {
