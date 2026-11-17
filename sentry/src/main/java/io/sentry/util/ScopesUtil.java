@@ -12,8 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * ancestor.
  *
  * <p>It walks up the parents of each scopes instance until it reaches a parent of null. Parent
- * references are weak, so collected intermediate parents are skipped and traversal continues from
- * the root Scopes created in Sentry.init.
+ * references are weak, so the chain ends if an intermediate parent has been garbage collected.
  */
 @ApiStatus.Internal
 public final class ScopesUtil {

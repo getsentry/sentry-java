@@ -133,7 +133,7 @@ class ScopesTest {
   }
 
   @Test
-  fun `fork retains initialization root instead of immediate parent`() {
+  fun `fork does not retain parent or initialization root`() {
     val options = SentryOptions()
     options.dsn = "https://key@sentry.io/proj"
     options.setSerializer(mock())
@@ -141,12 +141,9 @@ class ScopesTest {
 
     assertSame(parentReference.get(), childScopes.parentScopes)
     assertEventuallyCollected(parentReference)
+    assertEventuallyCollected(rootReference)
 
-    val rootScopes = rootReference.get()
-    assertNotNull(rootScopes)
-    assertSame(rootScopes, childScopes.parentScopes)
-    assertTrue(rootScopes.isAncestorOf(childScopes))
-    assertTrue(rootScopes.isFromSameSdkInitialization(childScopes))
+    assertNull(childScopes.parentScopes)
   }
 
   @Test

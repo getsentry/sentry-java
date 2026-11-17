@@ -1547,7 +1547,6 @@ class SentryTest {
   @Test
   fun `in globalHubMode forked scopes remain valid after their weak parent is collected`() {
     initForTest({ o -> o.dsn = dsn }, true)
-    val rootScopes = Sentry.getCurrentScopes()
     val (childScopes, parentReference) = createScopesWithWeakParent()
     Sentry.setCurrentScopes(childScopes)
 
@@ -1557,7 +1556,7 @@ class SentryTest {
       assertNull(parentReference.get())
     }
 
-    assertTrue(rootScopes.isAncestorOf(childScopes))
+    assertNull(childScopes.parentScopes)
     assertSame(childScopes, Sentry.getCurrentScopes())
   }
 

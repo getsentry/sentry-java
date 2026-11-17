@@ -468,10 +468,10 @@ public interface IScopes {
   IScope getGlobalScope();
 
   /**
-   * Returns the parent of this Scopes instance. If the immediate parent has been garbage collected,
-   * returns the root Scopes from the same SDK initialization. Returns null for root Scopes.
+   * Returns the parent of this Scopes instance while it is alive. Returns null if this instance has
+   * no parent or the parent has been garbage collected.
    *
-   * @return parent or SDK initialization root Scopes, or null for root Scopes
+   * @return parent Scopes or null
    */
   @ApiStatus.Internal
   @Nullable

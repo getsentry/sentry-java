@@ -28,7 +28,7 @@ public final class Scopes implements IScopes {
   private final @NotNull IScope globalScope;
 
   private final @Nullable WeakReference<Scopes> parentScopes;
-  private final @NotNull Scopes sdkInitializationRoot;
+  private final @NotNull Object sdkInitializationToken;
 
   private final @NotNull String creator;
   private final @NotNull CompositePerformanceCollector compositePerformanceCollector;
@@ -51,14 +51,15 @@ public final class Scopes implements IScopes {
       final @NotNull IScope isolationScope,
       final @NotNull IScope globalScope,
       final @Nullable Scopes parentScopes,
-      final @Nullable Scopes sdkInitializationRoot,
+      final @Nullable Object sdkInitializationToken,
       final @NotNull String creator) {
     this.combinedScope = new CombinedScopeView(globalScope, isolationScope, scope);
     this.scope = scope;
     this.isolationScope = isolationScope;
     this.globalScope = globalScope;
     this.parentScopes = parentScopes == null ? null : new WeakReference<>(parentScopes);
-    this.sdkInitializationRoot = sdkInitializationRoot == null ? this : sdkInitializationRoot;
+    this.sdkInitializationToken =
+        sdkInitializationToken == null ? new Object() : sdkInitializationToken;
     this.creator = creator;
 
     final @NotNull SentryOptions options = getOptions();
@@ -94,11 +95,7 @@ public final class Scopes implements IScopes {
   @Override
   @ApiStatus.Internal
   public @Nullable IScopes getParentScopes() {
-    if (parentScopes == null) {
-      return null;
-    }
-    final @Nullable Scopes parent = parentScopes.get();
-    return parent == null ? sdkInitializationRoot : parent;
+    return parentScopes == null ? null : parentScopes.get();
   }
 
   @Override
@@ -118,19 +115,19 @@ public final class Scopes implements IScopes {
   @ApiStatus.Internal
   public boolean isFromSameSdkInitialization(final @Nullable IScopes otherScopes) {
     return otherScopes instanceof Scopes
-        && sdkInitializationRoot == ((Scopes) otherScopes).sdkInitializationRoot;
+        && sdkInitializationToken.equals(((Scopes) otherScopes).sdkInitializationToken);
   }
 
   @Override
   public @NotNull IScopes forkedScopes(final @NotNull String creator) {
     return new Scopes(
-        scope.clone(), isolationScope.clone(), globalScope, this, sdkInitializationRoot, creator);
+        scope.clone(), isolationScope.clone(), globalScope, this, sdkInitializationToken, creator);
   }
 
   @Override
   public @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
     return new Scopes(
-        scope.clone(), isolationScope, globalScope, this, sdkInitializationRoot, creator);
+        scope.clone(), isolationScope, globalScope, this, sdkInitializationToken, creator);
   }
 
   @Override
