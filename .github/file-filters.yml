@@ -1,7 +1,5 @@
 # This is used by the action https://github.com/dorny/paths-filter
 
-# pr-risk-jev.yml also reads high_risk_code from the base branch and never labels these files `risk: low`.
-# It supports exact paths only, so its job fails if a glob is added here.
 high_risk_code: &high_risk_code
   # Transport classes
   - "sentry/src/main/java/io/sentry/transport/AsyncHttpTransport.java"
