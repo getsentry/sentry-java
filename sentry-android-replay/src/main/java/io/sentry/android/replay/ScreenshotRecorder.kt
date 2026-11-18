@@ -17,6 +17,7 @@ import io.sentry.android.replay.screenshot.ScreenshotStrategy
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.removeOnDrawListenerSafe
+import io.sentry.util.ExceptionUtils
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
@@ -92,6 +93,9 @@ internal class ScreenshotRecorder(
       contentChanged.set(false)
       screenshotStrategy.capture(root)
     } catch (e: Throwable) {
+      // Capturing draws the app's own views and goes through the device's graphics stack, so we
+      // can't know what it throws. The frame is skipped.
+      ExceptionUtils.rethrowIfFatal(e)
       options.logger.log(WARNING, "Failed to capture replay recording", e)
     }
   }

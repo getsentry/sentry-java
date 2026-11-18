@@ -17,6 +17,7 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.util.AutoClosableReentrantLock
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.FileUtils
 import java.io.Closeable
 import java.io.File
@@ -232,6 +233,9 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
       bitmap.recycle()
       true
     } catch (e: Throwable) {
+      // The encoder goes through the device's MediaCodec, so we can't know what it throws. The
+      // frame is left out of the video.
+      ExceptionUtils.rethrowIfFatal(e)
       options.logger.log(
         WARNING,
         "Unable to decode bitmap and encode it into a video, skipping frame",

@@ -61,6 +61,11 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     /**
      * Called when a masked replay frame is captured.
      *
+     * <p>If this method throws, the SDK recycles the bitmap and still records the frame. The
+     * exception is only reported as an error through {@link SentryOptions#getLogger()}, which by
+     * default prints only when {@link SentryOptions#isDebug()} is enabled, so enable debug to find
+     * out whether your observer fails. Errors such as {@link OutOfMemoryError} are not caught.
+     *
      * @param hint contains the frame bitmap under {@link TypeCheckHint#REPLAY_FRAME_BITMAP}
      * @param frameTimestamp the timestamp (in milliseconds since epoch) when the frame was captured
      * @param screenName the current screen name, or {@code null} if unknown

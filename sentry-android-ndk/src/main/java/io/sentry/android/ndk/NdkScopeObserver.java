@@ -11,6 +11,7 @@ import io.sentry.SpanContext;
 import io.sentry.ndk.INativeScope;
 import io.sentry.ndk.NativeScope;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.util.Locale;
 import java.util.Map;
@@ -81,6 +82,10 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                 data = options.getSerializer().serialize(dataRef);
               }
             } catch (Throwable e) {
+              // The data can hold any object the app put there, and the serializer reads it
+              // reflectively, so we can't know what it throws. The breadcrumb is synced to the
+              // native scope without its data.
+              ExceptionUtils.rethrowIfFatal(e);
               options.getLogger().log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
             }
 

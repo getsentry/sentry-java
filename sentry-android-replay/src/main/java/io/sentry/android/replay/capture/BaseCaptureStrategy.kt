@@ -39,6 +39,7 @@ import io.sentry.time.Deadline
 import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
+import java.io.IOException
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -260,9 +261,13 @@ constructor(
         if (options.threadChecker.isMainThread) {
           persistingExecutor.submit(ReplayRunnable("$TAG.runInBackground") { task() })
         } else {
+          // every task ends in ReplayCache.persistSegmentValues, which writes the segment file
           try {
             task()
-          } catch (e: Throwable) {
+          } catch (e: IOException) {
+            options.logger.log(ERROR, "Failed to execute task $TAG.runInBackground", e)
+          } catch (@Suppress("TooGenericExceptionCaught") e: IndexOutOfBoundsException) {
+            // a line of the segment file has no "=", so the file is corrupt
             options.logger.log(ERROR, "Failed to execute task $TAG.runInBackground", e)
           }
         }
