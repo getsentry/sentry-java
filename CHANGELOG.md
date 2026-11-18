@@ -102,7 +102,6 @@
 - Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
 - Avoid duplicate serialization debug logs when calculating serialized object sizes ([#6255](https://github.com/getsentry/sentry-java/pull/6255))
-- Stop swallowing fatal errors such as `OutOfMemoryError` in the SDK code that loads native libraries and optional dependencies ([#6666](https://github.com/getsentry/sentry-java/pull/6666))
 
 ### Dependencies
 
