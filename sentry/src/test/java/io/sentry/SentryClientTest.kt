@@ -307,6 +307,20 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when an SDK event processor throws a LinkageError, it is skipped and the event is sent`() {
+    // an SDK processor whose optional dependency is missing at runtime
+    val processor = mock<SentryEventProcessor>()
+    whenever(processor.process(any<SentryEvent>(), any()))
+      .thenThrow(NoClassDefFoundError("androidx/Missing"))
+    fixture.sentryOptions.addEventProcessor(processor)
+    val sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
   fun `when beforeSend captures another event, the nested capture is dropped and does not recurse`() {
     var invocations = 0
     lateinit var sut: SentryClient

@@ -500,7 +500,11 @@ public final class SentryClient implements ISentryClient {
       } catch (Throwable e) {
         // Event processors come from integrations and the app, so we can't know what they throw.
         // An SDK processor is skipped; any other processor's failure drops the event.
-        ExceptionUtils.rethrowIfFatal(e);
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -560,7 +564,11 @@ public final class SentryClient implements ISentryClient {
       } catch (Throwable e) {
         // Event processors come from integrations and the app, so we can't know what they throw.
         // An SDK processor is skipped; any other processor's failure drops the log.
-        ExceptionUtils.rethrowIfFatal(e);
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -600,7 +608,11 @@ public final class SentryClient implements ISentryClient {
       } catch (Throwable e) {
         // Event processors come from integrations and the app, so we can't know what they throw.
         // An SDK processor is skipped; any other processor's failure drops the metric.
-        ExceptionUtils.rethrowIfFatal(e);
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -640,7 +652,11 @@ public final class SentryClient implements ISentryClient {
       } catch (Throwable e) {
         // Event processors come from integrations and the app, so we can't know what they throw.
         // An SDK processor is skipped; any other processor's failure drops the transaction.
-        ExceptionUtils.rethrowIfFatal(e);
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -716,7 +732,11 @@ public final class SentryClient implements ISentryClient {
       } catch (Throwable e) {
         // Event processors come from integrations and the app, so we can't know what they throw.
         // An SDK processor is skipped; any other processor's failure drops the replay segment.
-        ExceptionUtils.rethrowIfFatal(e);
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -759,7 +779,11 @@ public final class SentryClient implements ISentryClient {
       } catch (Throwable e) {
         // Event processors come from integrations and the app, so we can't know what they throw.
         // An SDK processor is skipped; any other processor's failure drops the feedback.
-        ExceptionUtils.rethrowIfFatal(e);
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
