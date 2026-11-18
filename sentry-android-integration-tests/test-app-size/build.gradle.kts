@@ -9,6 +9,8 @@ val sentryVersion = libs.versions.sentry.get()
 
 android {
   namespace = "io.sentry.tests.size"
+  // No Kotlin sources, and the size measurement shouldn't include the Kotlin stdlib.
+  enableKotlin = false
   compileSdk = libs.versions.compileSdk.get().toInt()
   compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
 

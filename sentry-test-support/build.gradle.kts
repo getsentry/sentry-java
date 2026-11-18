@@ -8,6 +8,12 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+// Android unit tests compile for the SDK's Java 11 target, and Kotlin can't inline bytecode of a
+// higher target into theirs.
+tasks.compileKotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 }
+
+tasks.compileJava { options.release = 11 }
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9

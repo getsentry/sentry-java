@@ -46,7 +46,7 @@ Determine the Gradle test task:
 | Module Pattern | Test Task |
 |---------------|-----------|
 | `sentry-android-*` | `testReleaseUnitTest` |
-| `sentry-compose*` | `testReleaseUnitTest` |
+| `sentry-compose*` | `testAndroidHostTest` |
 | `*-android` | `testReleaseUnitTest` |
 | Everything else | `test` |
 

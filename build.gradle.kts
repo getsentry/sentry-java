@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.detekt)
     `maven-publish`
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.spring) apply false
@@ -57,6 +56,10 @@ tasks.register("buildForCodeQL") {
         .forEach { proj ->
             if (proj.plugins.hasPlugin("com.android.library")) {
                 proj.tasks.findByName("compileReleaseUnitTestSources")?.let { testTask ->
+                    this.dependsOn(testTask)
+                }
+            } else if (proj.plugins.hasPlugin("com.android.kotlin.multiplatform.library")) {
+                proj.tasks.findByName("compileAndroidHostTest")?.let { testTask ->
                     this.dependsOn(testTask)
                 }
             } else {

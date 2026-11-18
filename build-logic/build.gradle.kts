@@ -9,6 +9,7 @@ dependencies {
   implementation(libs.vanniktechMavenPublishLib)
   implementation(libs.asm)
   compileOnly(libs.kotlin.gradle.plugin)
+  compileOnly(libs.kotlin.abi.tools.api)
   compileOnly(libs.android.gradle.plugin)
 }
 

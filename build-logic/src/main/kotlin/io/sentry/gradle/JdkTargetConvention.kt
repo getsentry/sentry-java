@@ -1,7 +1,10 @@
 package io.sentry.gradle
 
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -12,9 +15,7 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
@@ -27,7 +28,9 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_11
  * Holds every toolchain, bytecode level decision and compilation option of a module. It does the
  * following
  * - sample apps target the build JDK (21)
- * - unit test code will target the build JDK (21) (required for Mockito 5)
+ * - JVM and KMP unit test code targets the build JDK (21). Android unit tests share the main code's
+ *   target, because AGP's built-in Kotlin compiles every component of a module for its single
+ *   compileOptions target
  * - published JVM modules main code pins the Java 11 release, for Java and for Kotlin
  * - published modules Java code drops the MethodParameters attribute javac 21 adds, and their
  *   archives are checked for it
@@ -81,6 +84,15 @@ class JdkTargetConvention : Plugin<Project> {
           }
         }
       }
+      project.plugins.withId("com.android.kotlin.multiplatform.library") {
+        project.extensions
+          .getByType(KotlinMultiplatformAndroidComponentsExtension::class.java)
+          .onVariants { variant ->
+            verifyMethodParameters.configure {
+              archives.from(variant.artifacts.get(SingleArtifact.AAR))
+            }
+          }
+      }
       // Only works for non-android modules
       // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {
@@ -109,8 +121,21 @@ class JdkTargetConvention : Plugin<Project> {
       android.defaultConfig { aarMetadata { minCompileSdk = project.minSdk() } }
     }
 
-    listOf("com.android.library", "com.android.application").forEach { pluginId ->
-      project.plugins.withId(pluginId) { project.targetBuildJdkForUnitTests() }
+    project.plugins.withId("com.android.kotlin.multiplatform.library") {
+      project.extensions
+        .getByType(KotlinMultiplatformExtension::class.java)
+        .targets
+        .withType(KotlinMultiplatformAndroidLibraryTarget::class.java)
+        .configureEach {
+          aarMetadata { minCompileSdk = project.minSdk() }
+          compilations
+            .withType(KotlinMultiplatformAndroidHostTestCompilation::class.java)
+            .configureEach {
+              compileTaskProvider.configure {
+                compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
+              }
+            }
+        }
     }
   }
 
@@ -122,37 +147,4 @@ class JdkTargetConvention : Plugin<Project> {
       .orElseThrow { IllegalStateException("libs.versions.minSdk is missing") }
       .requiredVersion
       .toInt()
-
-  /**
-   * Test code - which is never published - targets the build JDK, as it does in the JVM modules,
-   * instead of the Java 11 target of the main code. AGP has no per variant compileOptions, so this
-   * goes through the Kotlin compilations: their compile task providers are configured after AGP
-   * wrote its own compileOptions, which an apply time configureEach would lose against.
-   */
-  private fun Project.targetBuildJdkForUnitTests() {
-    plugins.withId("org.jetbrains.kotlin.android") {
-      extensions.getByType(KotlinAndroidProjectExtension::class.java).target.targetBuildJdk()
-    }
-    plugins.withId("org.jetbrains.kotlin.multiplatform") {
-      extensions
-        .getByType(KotlinMultiplatformExtension::class.java)
-        .targets
-        .withType(KotlinAndroidTarget::class.java)
-        .configureEach { targetBuildJdk() }
-    }
-  }
-
-  private fun KotlinAndroidTarget.targetBuildJdk() {
-    compilations.configureEach {
-      if (name.endsWith("UnitTest")) {
-        compileTaskProvider.configure {
-          compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
-        }
-        compileJavaTaskProvider?.configure {
-          sourceCompatibility = BUILD_JDK.toString()
-          targetCompatibility = BUILD_JDK.toString()
-        }
-      }
-    }
-  }
 }

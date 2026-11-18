@@ -12,13 +12,13 @@ import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 private val KOTLIN_PLUGIN_IDS =
   listOf(
     "org.jetbrains.kotlin.jvm",
-    "org.jetbrains.kotlin.android",
     "org.jetbrains.kotlin.multiplatform",
   )
 
 /**
  * Checks the public ABI of a module against the dump checked into its `api` directory, using the
- * Kotlin Gradle plugin's own ABI validation. Adds `checkKotlinAbi`, which `check` depends on, and
+ * Kotlin Gradle plugin's own ABI validation, or [validateAndroidAbi] for Android modules, which it
+ * doesn't cover. Adds `checkKotlinAbi`, which `check` depends on, and
  * `updateKotlinAbi`, which rewrites the dump.
  */
 @OptIn(ExperimentalAbiValidation::class)
@@ -30,6 +30,14 @@ class SentryApiValidationPlugin : Plugin<Project> {
     // may list this plugin before that one.
     KOTLIN_PLUGIN_IDS.forEach {
       project.pluginManager.withPlugin(it) { enable(project, extension) }
+    }
+    project.pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
+      project.validateAndroidAbi(extension, "api/android/${project.name}.api") { it }
+    }
+    project.pluginManager.withPlugin("com.android.library") {
+      project.validateAndroidAbi(extension, "api/${project.name}.api") {
+        it.withBuildType("release")
+      }
     }
   }
 
