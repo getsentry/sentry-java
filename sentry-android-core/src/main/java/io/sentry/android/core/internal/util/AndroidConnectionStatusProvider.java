@@ -25,6 +25,7 @@ import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1037,7 +1038,7 @@ public final class AndroidConnectionStatusProvider
   private void submitSafe(@NotNull Runnable r) {
     try {
       options.getExecutorService().submit(r);
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, "AndroidConnectionStatusProvider submit failed", e);

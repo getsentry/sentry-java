@@ -14,7 +14,9 @@ import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.RateLimiter
 import io.sentry.util.LazyEvaluator
+import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
@@ -136,6 +138,20 @@ class SendCachedEnvelopeIntegrationTest {
     // then wait until the async send finishes in background
     await.untilFalse(fixture.flag)
     verify(fixture.sender).send()
+  }
+
+  @Test
+  fun `when has startup crash marker and the executor cancels the task, register does not throw`() {
+    // the executor hands back a cancelled future instead of throwing when its queue is full
+    val cancelledFuture = mock<Future<Any>>()
+    whenever(cancelledFuture.get(any(), any())).thenThrow(CancellationException())
+    val executor = mock<ISentryExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(cancelledFuture)
+    val sut = fixture.getSut(hasStartupCrashMarker = true, mockExecutorService = executor)
+
+    sut.register(fixture.scopes, fixture.options)
+
+    verify(fixture.sender, never()).send()
   }
 
   @Test

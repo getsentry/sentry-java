@@ -4,6 +4,7 @@ import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
 
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -57,7 +58,10 @@ public final class ManifestModulesLoader extends ModulesLoader {
           modules.add(module);
         }
       }
-    } catch (Throwable e) {
+    } catch (IOException | RuntimeException e) {
+      // The class loader belongs to the app or its container, so it can also throw unchecked
+      // exceptions, e.g. an IllegalStateException for a jar that was already closed. The modules
+      // found so far are returned and cached, so events are still processed, without modules.
       logger.log(SentryLevel.ERROR, "Unable to detect modules via manifest files.", e);
     }
 

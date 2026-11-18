@@ -457,7 +457,9 @@ public final class DeviceInfoUtil {
   private String getDeviceId() {
     try {
       return Installation.id(context);
-    } catch (Throwable e) {
+    } catch (RuntimeException e) {
+      // Installation.id wraps file errors in a plain RuntimeException, so there is no narrower
+      // type to catch. The device context is sent without an id.
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
     return null;

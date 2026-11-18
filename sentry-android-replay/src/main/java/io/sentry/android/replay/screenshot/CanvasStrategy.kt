@@ -209,13 +209,11 @@ internal class CanvasStrategy(
   }
 
   fun Handler.postSafely(runnable: ReplayRunnable) {
-    try {
-      post(runnable)
-    } catch (t: Throwable) {
+    // post() doesn't throw, it returns false when the handler thread's looper is quitting
+    if (!post(runnable)) {
       options.logger.log(
         SentryLevel.ERROR,
         "Canvas Strategy: failed to post runnable ${runnable.taskName}",
-        t,
       )
     }
   }

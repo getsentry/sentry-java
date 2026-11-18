@@ -2561,7 +2561,7 @@ public class SentryOptions implements RateLimiterConfig {
     try {
       final @Nullable String dsnOrgId = retrieveParsedDsn().getOrgId();
       return dsnOrgId;
-    } catch (Throwable e) {
+    } catch (IllegalArgumentException e) {
       return null;
     }
   }
