@@ -56,6 +56,8 @@ IDENTIFIER_PART      = {UNQUOTED_IDENTIFIER} | {DOUBLE_QUOTED_STR} | {BACKTICK_Q
 IDENTIFIER           = ({UNQUOTED_IDENTIFIER} | ({IDENTIFIER_PART} ("." {IDENTIFIER_PART})+)) ("@" {UNQUOTED_IDENTIFIER})?
 BASIC_NUM            = [.+-]* [0-9] ([0-9] | [eE.+-])*
 HEX_NUM              = "0x" ([a-f] | [A-F] | [0-9])+
+// Sentry: a binary literal; without it the digits after 0b are kept as an identifier.
+BIN_NUM              = "0b" [01]+
 QUOTED_STR           = "'" ("''" | [^'])* "'"
 DOUBLE_QUOTED_STR    = "\"" ("\"\"" | [^\"])* "\""
 DOLLAR_QUOTED_STR    = "$$" [^$]* "$$"
@@ -289,6 +291,47 @@ WHITESPACE           = [ \t\r\n]+
         || word.equalsIgnoreCase("IGNORE"));
   }
 
+  // Sentry: a prefix directly before a string literal is part of it: N'…', E'…', X'…', B'…',
+  // U&'…' and MySQL's _charset'…'. Removes it from the text, so the literal's ? replaces both.
+  // Whitespace or a comment before the quote has appended a space, so only an adjacent word counts.
+  private void dropLiteralPrefix() {
+    if (zzBuffer[zzStartRead] != '\'') return;
+    int end = builder.length();
+    int start = end;
+    while (start > 0 && isWordChar(builder.charAt(start - 1))) {
+      start--;
+    }
+    if (end - start == 1 ? "NnEeXxBb".indexOf(builder.charAt(start)) >= 0
+        : end - start > 1 && builder.charAt(start) == '_') {
+      builder.setLength(start);
+    } else if (start == end && end >= 2 && builder.charAt(end - 1) == '&'
+        && (builder.charAt(end - 2) == 'U' || builder.charAt(end - 2) == 'u')
+        && (end == 2 || !isWordChar(builder.charAt(end - 3)))) {
+      builder.setLength(end - 2);
+    }
+  }
+
+  // Sentry: BY after IDENTIFIED and a comment, which leaves a space; upstream's IDENTIFIED BY rule
+  // allows only whitespace between the words (D23).
+  private boolean isByAfterIdentified() {
+    int n = builder.length() - 11;
+    return yylength() == 2 && (zzBuffer[zzStartRead] | 0x20) == 'b'
+        && (zzBuffer[zzStartRead + 1] | 0x20) == 'y' && n >= 0 && builder.charAt(n + 10) == ' '
+        && builder.substring(n, n + 10).equalsIgnoreCase("IDENTIFIED")
+        && (n == 0 || !isWordChar(builder.charAt(n - 1)));
+  }
+
+  private static boolean isWordChar(char c) {
+    return Character.isLetterOrDigit(c) || c == '_';
+  }
+
+  // Sentry: a character outside a literal or comment that is no letter, digit, operator,
+  // punctuation or whitespace (D12). The rule that matched it lets it through unchanged.
+  private boolean isUnknownCharacter() {
+    int c = Character.codePointAt(zzBuffer, zzStartRead, zzMarkedPos);
+    return !Character.isLetterOrDigit(c) && "_+-*/%=<>!~^&|(),.;:?@[]{}$#\u000B\f".indexOf(c) < 0;
+  }
+
   // Sentry: a /* after the opener, also one sharing its * with the closing */ (D35).
   private boolean blockCommentNests() {
     for (int i = zzStartRead + 3; i < zzMarkedPos; i++) {
@@ -441,7 +484,8 @@ WHITESPACE           = [ \t\r\n]+
       return false;
     }
     boolean shouldSanitizeRemainderAfterIdentifiedBy() {
-      return shouldSanitizeRemainderAfterPassword();
+      // Sentry: IDENTIFIED BY stops in every statement, e.g. Oracle's SET ROLE r IDENTIFIED BY p (D23)
+      return true;
     }
     /** Returns true if open paren should start a subquery context. */
     boolean isEnteringSubquery() {
@@ -1447,6 +1491,11 @@ WHITESPACE           = [ \t\r\n]+
           if (isOverLimit()) return YYEOF;
       }
   {IDENTIFIER} {
+          if (isByAfterIdentified() && shouldSanitizeRemainderAfterIdentifiedBy()) {
+            appendCurrentFragment();
+            builder.append(" ?");
+            return YYEOF;
+          }
           // Sentry: a bracketed part where bracketIdentifiers is not YES (D9)
           if (dialect.bracketIdentifiers() != Support.YES) {
             int bracket = firstBracketPart();
@@ -1565,7 +1614,7 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   // here is where the actual sanitization happens
-  {BASIC_NUM} | {HEX_NUM} {
+  {BASIC_NUM} | {HEX_NUM} | {BIN_NUM} {
           if (!appendSignBeforeDashDash()) {
             builder.append('?');
           }
@@ -1573,6 +1622,7 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   {QUOTED_STR} {
+          dropLiteralPrefix();
           if (sanitizeAmbiguousRemainder()) return YYEOF;
           builder.append('?');
           if (isOverLimit()) return YYEOF;
@@ -1620,6 +1670,7 @@ WHITESPACE           = [ \t\r\n]+
 
   // Sentry: an unterminated literal is replaced by ? and stops (R4).
   {UNTERMINATED_QUOTED_STR} | {UNTERMINATED_DOUBLE_QUOTED_STR} | {UNTERMINATED_BACKTICK_QUOTED_STR} {
+          dropLiteralPrefix();
           builder.append('?');
           return YYEOF;
       }
@@ -1676,6 +1727,11 @@ WHITESPACE           = [ \t\r\n]+
           if (isOverLimit()) return YYEOF;
       }
   [^] {
+          // Sentry: an unknown character stops (D12)
+          if (isUnknownCharacter()) {
+            builder.append('?');
+            return YYEOF;
+          }
           appendCurrentFragment();
           if (isOverLimit()) return YYEOF;
       }
