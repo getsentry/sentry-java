@@ -22,6 +22,7 @@ import io.sentry.test.createTestScopes
 import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
+import java.io.Closeable
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -830,6 +831,33 @@ class ScopesTest {
   // endregion
 
   // region close tests
+  @Test
+  fun `when an integration's close throws a LinkageError, the other integrations are still closed`() {
+    val failing = mock<Integration>(extraInterfaces = arrayOf(Closeable::class))
+    doThrow(NoClassDefFoundError("missing")).whenever(failing as Closeable).close()
+    val next = mock<Integration>(extraInterfaces = arrayOf(Closeable::class))
+    val (sut) =
+      getEnabledScopes {
+        it.addIntegration(failing)
+        it.addIntegration(next)
+      }
+
+    sut.close()
+
+    verify(next as Closeable).close()
+  }
+
+  @Test
+  fun `when an integration's close throws a fatal error, it propagates`() {
+    val failing = mock<Integration>(extraInterfaces = arrayOf(Closeable::class))
+    doThrow(OutOfMemoryError("close")).whenever(failing as Closeable).close()
+    val (sut) = getEnabledScopes { it.addIntegration(failing) }
+
+    assertFailsWith<OutOfMemoryError> { sut.close() }
+    // the scopes are closed again after the test
+    reset(failing)
+  }
+
   @Test
   fun `when close is called on disabled client, do nothing`() {
     val (sut, mockClient) = getEnabledScopes()

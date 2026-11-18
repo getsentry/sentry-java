@@ -9,6 +9,7 @@ import io.sentry.NoOpProfileConverter;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import java.util.Iterator;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +39,8 @@ public final class ProfilingServiceLoader {
       logger.log(
           SentryLevel.DEBUG, "No continuous profiler provider found, using NoOpContinuousProfiler");
       return NoOpContinuousProfiler.getInstance();
-    } catch (Throwable t) {
+    } catch (ServiceConfigurationError | LinkageError t) {
+      // The provider is broken, or async-profiler's native library failed to load
       logger.log(
           SentryLevel.ERROR,
           "Failed to load continuous profiler provider, using NoOpContinuousProfiler",
@@ -68,7 +70,8 @@ public final class ProfilingServiceLoader {
             SentryLevel.DEBUG, "No profile converter provider found, using NoOpProfileConverter");
         return NoOpProfileConverter.getInstance();
       }
-    } catch (Throwable t) {
+    } catch (ServiceConfigurationError | LinkageError t) {
+      // The provider is broken, or a class it needs is missing
       logger.log(
           SentryLevel.ERROR,
           "Failed to load profile converter provider, using NoOpProfileConverter",

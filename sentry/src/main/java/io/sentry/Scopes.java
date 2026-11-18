@@ -9,6 +9,7 @@ import io.sentry.metrics.IMetricsApi;
 import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.*;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
@@ -417,7 +418,16 @@ public final class Scopes implements IScopes {
           if (integration instanceof Closeable) {
             try {
               ((Closeable) integration).close();
+            } catch (LinkageError e) {
+              // The integration needs an optional dependency that is missing or has an
+              // incompatible version. The remaining integrations are still closed.
+              getOptions()
+                  .getLogger()
+                  .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
             } catch (Throwable e) {
+              // Integrations can be user-provided, so we can't know what they throw. The
+              // remaining integrations are still closed.
+              ExceptionUtils.rethrowIfFatal(e);
               getOptions()
                   .getLogger()
                   .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
@@ -476,6 +486,9 @@ public final class Scopes implements IScopes {
         configureScope(ScopeType.ISOLATION, scope -> scope.getClient().close(isRestarting));
         configureScope(ScopeType.GLOBAL, scope -> scope.getClient().close(isRestarting));
       } catch (Throwable e) {
+        // A public API entry point: closing shuts down components that integrations and the app
+        // can replace, so we can't know what it throws. The remaining shutdown steps are skipped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
       }
     }

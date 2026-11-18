@@ -57,6 +57,7 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
@@ -678,6 +679,49 @@ class SentryTest {
     }
 
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(initException))
+  }
+
+  @Test
+  fun `init skips an integration whose dependency is missing and registers the rest`() {
+    val failing = mock<Integration>()
+    doThrow(NoClassDefFoundError("missing")).whenever(failing).register(any(), any())
+    val next = mock<Integration>()
+
+    initForTest {
+      it.dsn = dsn
+      it.addIntegration(failing)
+      it.addIntegration(next)
+    }
+
+    verify(next).register(any(), any())
+  }
+
+  @Test
+  fun `init skips an integration that throws on register and registers the rest`() {
+    val failing = mock<Integration>()
+    doThrow(IllegalStateException("register")).whenever(failing).register(any(), any())
+    val next = mock<Integration>()
+
+    initForTest {
+      it.dsn = dsn
+      it.addIntegration(failing)
+      it.addIntegration(next)
+    }
+
+    verify(next).register(any(), any())
+  }
+
+  @Test
+  fun `init rethrows a fatal error from an integration's register`() {
+    val failing = mock<Integration>()
+    doThrow(OutOfMemoryError("register")).whenever(failing).register(any(), any())
+
+    assertThrows(OutOfMemoryError::class.java) {
+      initForTest {
+        it.dsn = dsn
+        it.addIntegration(failing)
+      }
+    }
   }
 
   @Test

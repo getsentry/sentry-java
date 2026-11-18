@@ -21,6 +21,7 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.DebugMetaPropertiesApplier;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
@@ -362,7 +363,21 @@ public final class Sentry {
         for (final Integration integration : options.getIntegrations()) {
           try {
             integration.register(ScopesAdapter.getInstance(), options);
+          } catch (LinkageError e) {
+            // The integration needs an optional dependency that is missing or has an incompatible
+            // version. It is skipped and init continues.
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Failed to register the integration "
+                        + integration.getClass().getName()
+                        + ", a dependency it needs is missing or incompatible",
+                    e);
           } catch (Throwable t) {
+            // Integrations can be user-provided, so we can't know what they throw. A failing
+            // integration is skipped and init continues.
+            ExceptionUtils.rethrowIfFatal(t);
             options
                 .getLogger()
                 .log(

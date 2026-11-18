@@ -122,6 +122,37 @@ class SentrySQLiteDriverTest {
     }
   }
 
+  @Test
+  fun `open returns the unwrapped delegate if wrapping fails with a LinkageError`() {
+    val brokenScopes = mock<IScopes>()
+    val validOptions = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
+    whenever(brokenScopes.options)
+      .thenThrow(NoClassDefFoundError("androidx/sqlite/SQLiteConnection"))
+      .thenReturn(validOptions)
+
+    Mockito.mockStatic(Sentry::class.java).use { mockedSentry ->
+      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(brokenScopes)
+
+      val driver = fixture.getSut("myapp.db")
+      val result = driver.open("myapp.db")
+
+      assertSame(fixture.mockConnection, result)
+    }
+  }
+
+  @Test
+  fun `open rethrows a fatal error while wrapping`() {
+    val brokenScopes = mock<IScopes>()
+    whenever(brokenScopes.options).thenThrow(OutOfMemoryError("wrapping"))
+
+    Mockito.mockStatic(Sentry::class.java).use { mockedSentry ->
+      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(brokenScopes)
+
+      val driver = fixture.getSut("myapp.db")
+      assertFailsWith<OutOfMemoryError> { driver.open("myapp.db") }
+    }
+  }
+
   // Smoke test ensuring all layers are properly wired up.
   @Test
   fun `full stack produces a span with correct metadata`() {

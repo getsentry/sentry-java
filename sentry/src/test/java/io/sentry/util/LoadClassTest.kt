@@ -74,6 +74,17 @@ class LoadClassTest {
 
     assertTrue(LoadClassInitFlag.initialized)
   }
+
+  @Test
+  fun `loadClass returns null when the static initializer of the class throws`() {
+    assertNull(LoadClass().loadClass(LoadClassFailingInitProbe::class.java.name, null))
+  }
+}
+
+private object LoadClassFailingInitProbe {
+  init {
+    throw IllegalStateException("init")
+  }
 }
 
 private object IsClassAvailableNoInitFlag {

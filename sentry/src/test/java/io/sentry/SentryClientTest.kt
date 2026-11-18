@@ -1275,6 +1275,30 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when an event processor throws a fatal error, it propagates`() {
+    val processor = mock<EventProcessor>()
+    whenever(processor.process(any<SentryEvent>(), any())).thenThrow(StackOverflowError())
+    fixture.sentryOptions.addEventProcessor(processor)
+    val sut = fixture.getSut()
+
+    assertFailsWith<StackOverflowError> { sut.captureEvent(SentryEvent()) }
+  }
+
+  @Test
+  fun `when an SDK event processor throws a LinkageError, it is skipped and the event is sent`() {
+    // an SDK processor whose optional dependency is missing at runtime
+    val processor = mock<SentryEventProcessor>()
+    whenever(processor.process(any<SentryEvent>(), any()))
+      .thenThrow(NoClassDefFoundError("androidx/Missing"))
+    fixture.sentryOptions.addEventProcessor(processor)
+    val sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
   fun `when options have event processors, apply for transactions`() {
     val processor = mock<EventProcessor>()
     fixture.sentryOptions.addEventProcessor(processor)

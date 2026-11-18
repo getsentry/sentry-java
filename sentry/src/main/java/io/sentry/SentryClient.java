@@ -20,6 +20,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.*;
+import io.sentry.util.ExceptionUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -494,6 +495,13 @@ public final class SentryClient implements ISentryClient {
           event = processor.process(event, hint);
         }
       } catch (Throwable e) {
+        // Event processors come from integrations and the app, so we can't know what they throw.
+        // An SDK processor is skipped; any other processor's failure drops the event.
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -551,6 +559,13 @@ public final class SentryClient implements ISentryClient {
       try {
         event = processor.process(event);
       } catch (Throwable e) {
+        // Event processors come from integrations and the app, so we can't know what they throw.
+        // An SDK processor is skipped; any other processor's failure drops the log.
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -588,6 +603,13 @@ public final class SentryClient implements ISentryClient {
       try {
         event = processor.process(event, hint);
       } catch (Throwable e) {
+        // Event processors come from integrations and the app, so we can't know what they throw.
+        // An SDK processor is skipped; any other processor's failure drops the metric.
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -625,6 +647,13 @@ public final class SentryClient implements ISentryClient {
       try {
         transaction = processor.process(transaction, hint);
       } catch (Throwable e) {
+        // Event processors come from integrations and the app, so we can't know what they throw.
+        // An SDK processor is skipped; any other processor's failure drops the transaction.
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -698,6 +727,13 @@ public final class SentryClient implements ISentryClient {
       try {
         replayEvent = processor.process(replayEvent, hint);
       } catch (Throwable e) {
+        // Event processors come from integrations and the app, so we can't know what they throw.
+        // An SDK processor is skipped; any other processor's failure drops the replay segment.
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
@@ -738,6 +774,13 @@ public final class SentryClient implements ISentryClient {
       try {
         feedbackEvent = processor.process(feedbackEvent, hint);
       } catch (Throwable e) {
+        // Event processors come from integrations and the app, so we can't know what they throw.
+        // An SDK processor is skipped; any other processor's failure drops the feedback.
+        // A LinkageError means the processor needs an optional dependency that is missing or has an
+        // incompatible version, which is handled like any other failure.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options
             .getLogger()
             .log(
