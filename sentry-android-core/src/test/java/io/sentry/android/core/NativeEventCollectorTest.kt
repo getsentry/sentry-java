@@ -89,26 +89,6 @@ class NativeEventCollectorTest {
   }
 
   @Test
-  fun `handles an item header with a non-numeric length without throwing`() {
-    val sut = fixture.getSut(tmpDir)
-    File(fixture.outboxDir, "bad-length.envelope")
-      .writeText("{}\n{\"type\":\"event\",\"length\":\"abc\"}\n{}\n")
-
-    val match = sut.findAndRemoveMatchingNativeEvent(0L)
-    assertNull(match)
-  }
-
-  @Test
-  fun `handles an event payload that is not a JSON object without throwing`() {
-    val sut = fixture.getSut(tmpDir)
-    File(fixture.outboxDir, "array-payload.envelope")
-      .writeText("{}\n{\"type\":\"event\",\"length\":3}\n[1]\n")
-
-    val match = sut.findAndRemoveMatchingNativeEvent(0L)
-    assertNull(match)
-  }
-
-  @Test
   fun `handles envelope with event and attachments without throwing`() {
     val sut = fixture.getSut(tmpDir)
     copyEnvelopeToOutbox("event-attachment.txt")

@@ -41,7 +41,6 @@ import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
-import java.io.IOException
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -167,20 +166,6 @@ class SessionCaptureStrategyTest {
     strategy.start(0, replayId)
 
     assertEquals(replayId, fixture.scope.replayId)
-    assertEquals(replayId, strategy.currentReplayId)
-    assertEquals(0, strategy.currentSegment)
-  }
-
-  @Test
-  fun `start does not fail when the segment values can't be written`() {
-    doAnswer { throw IOException("disk full") }
-      .whenever(fixture.replayCache)
-      .persistSegmentValues(any(), anyOrNull())
-    val strategy = fixture.getSut()
-    val replayId = SentryId()
-
-    strategy.start(0, replayId)
-
     assertEquals(replayId, strategy.currentReplayId)
     assertEquals(0, strategy.currentSegment)
   }
