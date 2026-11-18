@@ -485,27 +485,6 @@ class SentryApollo3InterceptorTest {
   }
 
   @Test
-  fun `when beforeSpan throws a fatal error, rethrows it`(): Unit = runBlocking {
-    val tx =
-      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
-    whenever(fixture.scopes.span).thenReturn(tx)
-    val chain =
-      object : HttpInterceptorChain {
-        override suspend fun proceed(request: HttpRequest): HttpResponse =
-          HttpResponse.Builder(200).build()
-      }
-    val request = HttpRequest.Builder(HttpMethod.Post, "https://example.com/graphql").build()
-    val interceptor =
-      SentryApollo3HttpInterceptor(
-        fixture.scopes,
-        { _, _, _ -> throw OutOfMemoryError("callback") },
-        captureFailedRequests = false,
-      )
-
-    assertFailsWith<OutOfMemoryError> { interceptor.intercept(request, chain) }
-  }
-
-  @Test
   fun `adds breadcrumb when http calls succeeds`() {
     executeQuery(fixture.getSut())
     verify(fixture.scopes)

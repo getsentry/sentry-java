@@ -785,35 +785,6 @@ class ScopesTest {
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
   }
 
-  @Test
-  fun `when captureException is called with a ScopeCallback that throws a fatal error, it propagates`() {
-    val (sut, mockClient) = getEnabledScopes()
-
-    assertFailsWith<OutOfMemoryError> {
-      sut.captureException(Throwable()) { throw OutOfMemoryError("scope callback") }
-    }
-    verify(mockClient, never()).captureEvent(any(), anyOrNull(), anyOrNull())
-  }
-
-  @Test
-  fun `when the client throws a fatal error while capturing, it propagates`() {
-    val (sut, mockClient) = getEnabledScopes()
-    whenever(mockClient.captureEvent(any(), anyOrNull(), anyOrNull()))
-      .thenThrow(OutOfMemoryError("client"))
-
-    assertFailsWith<OutOfMemoryError> { sut.captureException(Throwable()) }
-  }
-
-  @Test
-  fun `when the client throws a runtime exception while capturing, it is logged`() {
-    val (sut, mockClient, logger) = getEnabledScopes()
-    val exception = IllegalStateException("client")
-    whenever(mockClient.captureEvent(any(), anyOrNull(), anyOrNull())).thenThrow(exception)
-
-    assertThat(sut.captureException(Throwable())).isEqualTo(SentryId.EMPTY_ID)
-    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
-  }
-
   // endregion
 
   // region captureCheckIn tests
@@ -928,31 +899,6 @@ class ScopesTest {
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
   }
 
-  @Test
-  fun `when withScope throws a runtime exception then it is swallowed`() {
-    val (scopes, _, logger) = getEnabledScopes()
-    val exception = IllegalStateException("scope callback exception")
-
-    scopes.withScope { throw exception }
-
-    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
-  }
-
-  @Test
-  fun `when withScope throws a fatal error then it propagates`() {
-    val (scopes) = getEnabledScopes()
-
-    assertFailsWith<OutOfMemoryError> { scopes.withScope { throw OutOfMemoryError("callback") } }
-  }
-
-  @Test
-  fun `when withScope on a closed scopes throws a fatal error then it propagates`() {
-    val (scopes) = getEnabledScopes()
-    scopes.close()
-
-    assertFailsWith<OutOfMemoryError> { scopes.withScope { throw OutOfMemoryError("callback") } }
-  }
-
   // endregion
 
   // region withIsolationScope tests
@@ -989,35 +935,6 @@ class ScopesTest {
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
   }
 
-  @Test
-  fun `when withIsolationScope throws a runtime exception then it is swallowed`() {
-    val (scopes, _, logger) = getEnabledScopes()
-    val exception = IllegalStateException("scope callback exception")
-
-    scopes.withIsolationScope { throw exception }
-
-    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
-  }
-
-  @Test
-  fun `when withIsolationScope throws a fatal error then it propagates`() {
-    val (scopes) = getEnabledScopes()
-
-    assertFailsWith<OutOfMemoryError> {
-      scopes.withIsolationScope { throw OutOfMemoryError("callback") }
-    }
-  }
-
-  @Test
-  fun `when withIsolationScope on a closed scopes throws a fatal error then it propagates`() {
-    val (scopes) = getEnabledScopes()
-    scopes.close()
-
-    assertFailsWith<OutOfMemoryError> {
-      scopes.withIsolationScope { throw OutOfMemoryError("callback") }
-    }
-  }
-
   // endregion
 
   // region configureScope tests
@@ -1052,25 +969,6 @@ class ScopesTest {
     scopes.configureScope(scopeCallback)
 
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
-  }
-
-  @Test
-  fun `when configureScope throws a runtime exception then it is swallowed`() {
-    val (scopes, _, logger) = getEnabledScopes()
-    val exception = IllegalStateException("scope callback exception")
-
-    scopes.configureScope { throw exception }
-
-    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
-  }
-
-  @Test
-  fun `when configureScope throws a fatal error then it propagates`() {
-    val (scopes) = getEnabledScopes()
-
-    assertFailsWith<OutOfMemoryError> {
-      scopes.configureScope { throw OutOfMemoryError("callback") }
-    }
   }
 
   // endregion

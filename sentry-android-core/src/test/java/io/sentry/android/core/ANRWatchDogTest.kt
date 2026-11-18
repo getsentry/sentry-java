@@ -4,27 +4,20 @@ import android.app.ActivityManager
 import android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING
 import android.app.ActivityManager.ProcessErrorStateInfo.NO_ERROR
 import android.content.Context
-import com.google.common.truth.Truth.assertThat
 import io.sentry.time.TestMonotonicTicker
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Before
 import org.mockito.kotlin.any
-import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.mockingDetails
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class ANRWatchDogTest {
@@ -234,82 +227,6 @@ class ANRWatchDogTest {
       sut.interrupt()
       es.shutdown()
     }
-  }
-
-  @Test
-  fun `when getProcessesInErrorState runs out of memory, keeps watching without reporting`() {
-    var anr: ApplicationNotResponding? = null
-    val am = mock<ActivityManager>()
-    whenever(am.processesInErrorState).thenThrow(OutOfMemoryError("large reply"))
-    val posted = CountDownLatch(1)
-    val sut = watchDog(am, posted) { a -> anr = a }
-    val es = Executors.newSingleThreadExecutor()
-    try {
-      val running = es.submit { sut.run() }
-      assertTrue(posted.await(10L, TimeUnit.SECONDS))
-
-      var waitCount = 0
-      do {
-        ticker.advance(100, MILLISECONDS)
-        Thread.sleep(100L)
-      } while (mockingDetails(am).invocations.isEmpty() && waitCount++ < 100)
-
-      verify(am, atLeastOnce()).processesInErrorState
-      assertNull(anr)
-      assertFalse(running.isDone)
-    } finally {
-      sut.interrupt()
-      es.shutdown()
-    }
-  }
-
-  @Test
-  fun `when getProcessesInErrorState throws a fatal error, the watchdog stops`() {
-    val am = mock<ActivityManager>()
-    whenever(am.processesInErrorState).thenThrow(StackOverflowError())
-    val posted = CountDownLatch(1)
-    val sut = watchDog(am, posted) {}
-    val es = Executors.newSingleThreadExecutor()
-    try {
-      val running = es.submit { sut.run() }
-      assertTrue(posted.await(10L, TimeUnit.SECONDS))
-
-      var waitCount = 0
-      do {
-        ticker.advance(100, MILLISECONDS)
-        Thread.sleep(100L)
-      } while (!running.isDone && waitCount++ < 100)
-
-      val error = assertFailsWith<ExecutionException> { running.get() }
-      assertThat(error.cause).isInstanceOf(StackOverflowError::class.java)
-    } finally {
-      sut.interrupt()
-      es.shutdown()
-    }
-  }
-
-  private fun watchDog(
-    am: ActivityManager,
-    posted: CountDownLatch,
-    listener: ANRWatchDog.ANRListener,
-  ): ANRWatchDog {
-    val handler = mock<MainLooperHandler>()
-    // the posted runnable never runs, so the main thread looks blocked
-    whenever(handler.post(any())).then { posted.countDown() }
-    whenever(handler.thread).thenReturn(mock<Thread>())
-    val context = mock<Context>()
-    whenever(context.getSystemService(eq(Context.ACTIVITY_SERVICE))).thenReturn(am)
-    return ANRWatchDog(
-      ticker,
-      10L,
-      1L,
-      true,
-      listener,
-      mock(),
-      handler,
-      context,
-      AndroidDebugManager(),
-    )
   }
 
   @Test

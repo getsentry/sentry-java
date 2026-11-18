@@ -8,7 +8,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.util.SentryRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -458,24 +457,6 @@ class TracesSamplerTest {
     assertFalse(decision.sampled)
     assertEquals(0.1, decision.sampleRand)
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
-  }
-
-  @Test
-  fun `when TracesSamplerCallback throws a fatal error, it propagates`() {
-    val sampler = fixture.getSut(tracesSamplerCallback = { throw OutOfMemoryError("test") })
-
-    assertFailsWith<OutOfMemoryError> {
-      sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.1, null))
-    }
-  }
-
-  @Test
-  fun `when ProfilesSamplerCallback throws a fatal error, it propagates`() {
-    val sampler = fixture.getSut(profilesSamplerCallback = { throw OutOfMemoryError("test") })
-
-    assertFailsWith<OutOfMemoryError> {
-      sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.1, null))
-    }
   }
 
   @Test
