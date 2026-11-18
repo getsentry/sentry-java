@@ -10,7 +10,6 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.ExceptionUtils;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,7 +47,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       items.add(SentryEnvelopeItem.fromClientReport(options.getSerializer(), clientReport));
 
       return new SentryEnvelope(envelope.getHeader(), items);
-    } catch (IOException e) {
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to attach client report to envelope.");
       return envelope;
     }
