@@ -100,6 +100,10 @@ class SqlQueryAnalyzerPathologicalTest(
             "[".repeat(4096) +
             " WHERE CustomerName = 'secret-name' AND Id = 123 AND Token = 0xDEADBEEF"
         },
+        // Where `[` is punctuation, the lexer goes back to each `[` after matching it (D40), so a
+        // `[` must not scan past the next one (option 06 step 6).
+        Input("128 KiB of opening brackets, closed") { "SELECT " + "[".repeat(128 * KIB) + "]" },
+        Input("128 KiB of opening brackets, unterminated") { "SELECT " + "[".repeat(128 * KIB) },
         // OTel Java SqlQueryAnalyzerTest#longInStatementDoesntCauseStackOverflow
         Input("10001-item IN list") {
           "select col from table where col in (" + "?,".repeat(10_000) + "?)"

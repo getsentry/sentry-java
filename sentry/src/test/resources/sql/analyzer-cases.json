@@ -629,6 +629,20 @@
       "note": "A keyword directly before a quote is not a literal prefix."
     },
     {
+      "id": "literal.prefix_after_dot.sqlite",
+      "requirements": ["R2", "R8"],
+      "dialect": "sqlite",
+      "input": "SELECT \"a\".N'Zq9xK7sg' FROM t",
+      "expected": {
+        "text": "SELECT \"a\".N? FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7sg"],
+      "source": "sentry",
+      "note": "A letter directly after . is part of the dotted name, not a literal prefix, so it stays. Dropping it would leave \"a\". before ?, which reads as a separate literal when the text is analyzed again (D28, D45)."
+    },
+    {
       "id": "literal.boolean_null_kept",
       "requirements": ["R2"],
       "dialect": "CONSERVATIVE",
@@ -933,6 +947,20 @@
       "note": "dashDashCommentNeedsWhitespace is YES: 1--1 is 1 - -1."
     },
     {
+      "id": "comment.dash_dash.before_comment.mysql",
+      "requirements": ["R3", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT a--/* Zq9xK7sf */b FROM t",
+      "expected": {
+        "text": "SELECT a--b FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7sf"],
+      "source": "sentry",
+      "note": "dashDashCommentNeedsWhitespace is YES: -- before a comment is two minus signs. The removed comment leaves no space after them, which would turn them into a comment opener when the text is analyzed again (D28)."
+    },
+    {
       "id": "comment.dash_dash.postgresql",
       "requirements": ["R3", "R8"],
       "dialect": "postgresql",
@@ -1055,6 +1083,34 @@
       "secrets": ["Zq9xK7au"],
       "source": "sentry",
       "note": "doubleSlashComments is UNKNOWN: stop at //."
+    },
+    {
+      "id": "comment.block.after_star.postgresql",
+      "requirements": ["R3"],
+      "dialect": "postgresql",
+      "input": "SELECT */* Zq9xK7sa */ FROM t",
+      "expected": {
+        "text": "SELECT * FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7sa"],
+      "source": "sentry",
+      "note": "Outside a comment, */ is * followed by /, so */* is * and a comment opener. OTel Java reads */ first and keeps the comment text."
+    },
+    {
+      "id": "comment.double_slash.after_star.h2",
+      "requirements": ["R3", "R8"],
+      "dialect": "h2",
+      "input": "SELECT a*// Zq9xK7sb\nFROM t",
+      "expected": {
+        "text": "SELECT a* FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7sb"],
+      "source": "sentry",
+      "note": "doubleSlashComments is YES: *// is * and a line comment, not */ and /."
     },
     {
       "id": "param.question",
@@ -1562,6 +1618,19 @@
       "secrets": ["Zq9xK7pb"],
       "source": "sentry",
       "note": "A comment between IDENTIFIED and BY does not hide the credential clause (D23). OTel Java's rule allows only whitespace there."
+    },
+    {
+      "id": "credentials.identified_by.comment_before_glued_by.postgresql",
+      "requirements": ["R4"],
+      "dialect": "postgresql",
+      "input": "UPDATE t SET a = 1 IDENTIFIED/**/BYpw",
+      "expected": {
+        "text": "UPDATE t SET a = ? IDENTIFIED BY ?",
+        "summary": "UPDATE t",
+        "status": "STOPPED"
+      },
+      "source": "sentry",
+      "note": "With a comment between the words, IDENTIFIED BY stops as OTel Java's whitespace rule does, which also matches the BY at the start of BYpw (D23). Without that, the removed comment's space would make the text stop when analyzed again (D28)."
     },
     {
       "id": "credentials.password_stop.double_quoted.postgresql",
@@ -2616,6 +2685,20 @@
       "note": ""
     },
     {
+      "id": "dialect.brackets.bracket_inside.sqlserver",
+      "requirements": ["R4", "R8"],
+      "dialect": "sqlserver",
+      "input": "SELECT [a[b] FROM t WHERE c = 'Zq9xK7sh'",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sh"],
+      "source": "sentry",
+      "note": "A bracketed name cannot contain [ here, although T-SQL allows it: the analyzer stops at the first [. This keeps bracket scanning linear where [ is punctuation (option 06 step 6)."
+    },
+    {
       "id": "dialect.brackets.sqlite",
       "requirements": ["R6", "R8"],
       "dialect": "sqlite",
@@ -2710,6 +2793,34 @@
       "secrets": ["Zq9xK7dl"],
       "source": "sentry",
       "note": "bracketIdentifiers is UNKNOWN: a dotted name is checked bracket by bracket, and the quote in the second one stops there."
+    },
+    {
+      "id": "dialect.brackets.unterminated_after_literal.mysql",
+      "requirements": ["R2", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT a[ 'Zq9xK7sc]'",
+      "expected": {
+        "text": "SELECT a[ ?",
+        "summary": "SELECT",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7sc"],
+      "source": "sentry",
+      "note": "bracketIdentifiers is NO: [ is punctuation, also when no ] follows, so analyzing the text again gives the same text (D28). OTel Java stops at an unterminated [ in every dialect."
+    },
+    {
+      "id": "dialect.brackets.unterminated_quote_inside.conservative",
+      "requirements": ["R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [O'Brien FROM t WHERE a = 'Zq9xK7sd'",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sd"],
+      "source": "sentry",
+      "note": "bracketIdentifiers is UNKNOWN and a quote follows the [ with no ] after it: stop at [ (D40). Read as punctuation, 'Brien FROM t WHERE a = ' is a literal and the canary becomes SQL text."
     },
     {
       "id": "dialect.brackets.number.conservative",
@@ -4827,12 +4938,12 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT x, y, z FROM \"schema\".\"table\"",
       "expected": {
-        "text": "SELECT x, y, z FROM ?.?",
+        "text": "SELECT x, y, z FROM \"schema\".\"table\"",
         "summary": "SELECT \"?\".\"?\"",
         "status": "COMPLETE"
       },
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[5]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6). OTel Java keeps dotted double-quoted names as identifiers in every dialect."
+      "note": "D45: a double-quoted part of a dotted name stays in the text in every dialect, as in OTel Java, although doubleQuotedIdentifiers is UNKNOWN here. The summary target still becomes \"?\" (D15)."
     },
     {
       "id": "otel_java.simplify_sql.006",
@@ -9037,12 +9148,12 @@
       "dialect": "sqlite",
       "input": "SELECT * FROM \"schema\".`table` JOIN [other] ON \"schema\".`table`.id = [other].id",
       "expected": {
-        "text": "SELECT * FROM ?.`table` JOIN [other] ON ?.`table`.id = [other].id",
+        "text": "SELECT * FROM \"schema\".`table` JOIN [other] ON \"schema\".`table`.id = [other].id",
         "summary": "SELECT \"?\".`table` [other]",
         "status": "COMPLETE"
       },
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[5]",
-      "note": "Upstream asserts only the summary. sqlite accepts all three quoting styles: bracketIdentifiers YES, doubleQuotedIdentifiers UNKNOWN. doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
+      "note": "Upstream asserts only the summary. sqlite accepts all three quoting styles: bracketIdentifiers YES, doubleQuotedIdentifiers UNKNOWN. D45: a double-quoted part of a dotted name stays in the text in every dialect, as in OTel Java, although doubleQuotedIdentifiers is UNKNOWN here. The summary target still becomes \"?\" (D15)."
     },
     {
       "id": "otel_java.identifiers_and_table_references.006",
