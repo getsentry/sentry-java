@@ -63,8 +63,9 @@ DOUBLE_QUOTED_STR    = "\"" ("\"\"" | [^\"])* "\""
 DOLLAR_QUOTED_STR    = "$$" [^$]* "$$"
 DOLLAR_TAG_START     = "$" {UNQUOTED_IDENTIFIER} "$"
 BACKTICK_QUOTED_STR  = "`" ("``" | [^`])* "`"
-BRACKET_QUOTED_STR   = "[" [^\]]* "]"
-UNTERMINATED_BRACKET_STR = "[" [^\]]*
+// Sentry: no [ inside, so where [ is punctuation (D40) a [ never scans past the next one.
+BRACKET_QUOTED_STR   = "[" [^\]\[]* "]"
+UNTERMINATED_BRACKET_STR = "[" [^\]\[]*
 // Sentry: the literals above without their closing quote, so they run to the end of input.
 UNTERMINATED_QUOTED_STR          = "'" ("''" | [^'])*
 UNTERMINATED_DOUBLE_QUOTED_STR   = "\"" ("\"\"" | [^\"])*
@@ -186,8 +187,14 @@ WHITESPACE           = [ \t\r\n]+
   }
 
   // Sentry: one space for removed comments and whitespace runs, collapsed, none at the start.
+  // Where -- needs whitespace after it, no space after two minus signs, so they never become a
+  // comment opener when the text is analyzed again (D28).
   private void appendSpace() {
     int length = builder.length();
+    if (length > 1 && builder.charAt(length - 1) == '-' && builder.charAt(length - 2) == '-'
+        && dialect.dashDashCommentNeedsWhitespace() == Support.YES) {
+      return;
+    }
     if (length > 0 && builder.charAt(length - 1) != ' ') {
       builder.append(' ');
     }
@@ -196,7 +203,7 @@ WHITESPACE           = [ \t\r\n]+
   // Sentry: where the dialect rule for $$ or $tag$ is NO, the first $ is text (D14).
   // Sentry: where bracketIdentifiers is not YES, [ is punctuation and the content is lexed
   // normally (D9). Pushes back to the [ and appends it. Where the rule is UNKNOWN and a quote,
-  // comment or dollar opener occurs before the next ], appends ? instead and returns true (stop).
+  // comment or dollar opener occurs before the next [ or ], appends ? instead and returns true (stop).
   private boolean appendBracketAsPunctuation() {
     if (dialect.bracketIdentifiers() == Support.UNKNOWN) {
       for (int i = zzStartRead + 1; i < zzMarkedPos && zzBuffer[i] != ']'; i++) {
@@ -301,21 +308,24 @@ WHITESPACE           = [ \t\r\n]+
     while (start > 0 && isWordChar(builder.charAt(start - 1))) {
       start--;
     }
+    // A word directly after . is the last part of a dotted name, not a prefix (D28).
+    if (start > 0 && builder.charAt(start - 1) == '.') return;
     if (end - start == 1 ? "NnEeXxBb".indexOf(builder.charAt(start)) >= 0
         : end - start > 1 && builder.charAt(start) == '_') {
       builder.setLength(start);
     } else if (start == end && end >= 2 && builder.charAt(end - 1) == '&'
         && (builder.charAt(end - 2) == 'U' || builder.charAt(end - 2) == 'u')
-        && (end == 2 || !isWordChar(builder.charAt(end - 3)))) {
+        && (end == 2 || !isWordChar(builder.charAt(end - 3)) && builder.charAt(end - 3) != '.')) {
       builder.setLength(end - 2);
     }
   }
 
   // Sentry: BY after IDENTIFIED and a comment, which leaves a space; upstream's IDENTIFIED BY rule
-  // allows only whitespace between the words (D23).
+  // allows only whitespace between the words (D23). Like that rule, it also takes the BY at the
+  // start of a longer word (D28).
   private boolean isByAfterIdentified() {
     int n = builder.length() - 11;
-    return yylength() == 2 && (zzBuffer[zzStartRead] | 0x20) == 'b'
+    return yylength() >= 2 && (zzBuffer[zzStartRead] | 0x20) == 'b'
         && (zzBuffer[zzStartRead + 1] | 0x20) == 'y' && n >= 0 && builder.charAt(n + 10) == ' '
         && builder.substring(n, n + 10).equalsIgnoreCase("IDENTIFIED")
         && (n == 0 || !isWordChar(builder.charAt(n - 1)));
@@ -1492,6 +1502,7 @@ WHITESPACE           = [ \t\r\n]+
       }
   {IDENTIFIER} {
           if (isByAfterIdentified() && shouldSanitizeRemainderAfterIdentifiedBy()) {
+            yypushback(yylength() - 2);
             appendCurrentFragment();
             builder.append(" ?");
             return YYEOF;
@@ -1557,6 +1568,11 @@ WHITESPACE           = [ \t\r\n]+
   {OPEN_COMMENT}  {
           insideComment = true;
           yybegin(BLOCK_COMMENT);
+          appendCurrentFragment();
+          if (isOverLimit()) return YYEOF;
+      }
+  // Sentry: outside a comment, */* and *// are * and a comment opener, not */ (R3).
+  "*" / "/" [*/] {
           appendCurrentFragment();
           if (isOverLimit()) return YYEOF;
       }
@@ -1663,6 +1679,10 @@ WHITESPACE           = [ \t\r\n]+
     }
 
   {UNTERMINATED_BRACKET_STR} {
+          // Sentry: [ per dialect (D9), also without a ] after it (D28)
+          if (dialect.bracketIdentifiers() != Support.YES) {
+            return appendBracketAsPunctuation() ? YYEOF : CONTINUE;
+          }
           // Consume an unfinished identifier once instead of retrying from every opening bracket.
           builder.append('?');
           return YYEOF;
