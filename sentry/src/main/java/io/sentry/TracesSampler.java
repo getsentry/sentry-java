@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -31,6 +32,8 @@ public final class TracesSampler {
       try {
         profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
       } catch (Throwable t) {
+        // A user callback, so we can't know what it throws. The transaction is not profiled.
+        ExceptionUtils.rethrowIfFatal(t);
         profilesSamplerFailed = true;
         options
             .getLogger()
@@ -47,6 +50,9 @@ public final class TracesSampler {
       try {
         samplerResult = options.getTracesSampler().sample(samplingContext);
       } catch (Throwable t) {
+        // A user callback, so we can't know what it throws. As the spec asks, the transaction is
+        // dropped.
+        ExceptionUtils.rethrowIfFatal(t);
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'TracesSamplerCallback' callback.", t);

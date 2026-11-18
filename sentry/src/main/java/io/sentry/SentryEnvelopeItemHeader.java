@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -33,8 +34,11 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (getLength != null) {
       try {
         return getLength.call();
-      } catch (Throwable ignored) {
+      } catch (Throwable t) {
+        // The length comes from the item's data factory, which serializes data from integrations
+        // and the app, so we can't know what it throws. The header reports an unknown length.
         // TODO: Take ILogger via ctor or hook into internal static logger
+        ExceptionUtils.rethrowIfFatal(t);
         return -1;
       }
     }
@@ -62,7 +66,9 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (calculateMetaLength != null) {
       try {
         return calculateMetaLength.call();
-      } catch (Throwable ignored) {
+      } catch (Exception e) {
+        // Callable.call() declares Exception, but the only factory reads a value that the data
+        // factory stored. The header is written without a meta length.
         return null;
       }
     }

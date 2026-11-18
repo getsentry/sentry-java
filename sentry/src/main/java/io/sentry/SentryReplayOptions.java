@@ -32,6 +32,11 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
      * integration that routes logs back into Sentry. Such nested captures are silently dropped to
      * prevent infinite recursion.
      *
+     * <p>If this callback throws, the replay is not captured for this error and the exception is
+     * logged at {@link SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by
+     * default prints only when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as
+     * {@link OutOfMemoryError}, are rethrown.
+     *
      * @param event the error event that triggered the replay capture
      * @param hint the hint associated with the event
      * @return {@code true} if the error sample rate should be checked, {@code false} to skip replay

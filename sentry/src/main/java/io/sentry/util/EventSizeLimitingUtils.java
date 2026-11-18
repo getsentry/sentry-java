@@ -69,6 +69,9 @@ public final class EventSizeLimitingUtils {
             return reducedEvent;
           }
         } catch (Throwable e) {
+          // A user callback, so we can't know what it throws. Its result is ignored, and the
+          // automatic reduction continues with the original event.
+          ExceptionUtils.rethrowIfFatal(e);
           options
               .getLogger()
               .log(
@@ -96,6 +99,9 @@ public final class EventSizeLimitingUtils {
 
       return reducedEvent;
     } catch (Throwable e) {
+      // Measuring the size serializes the event, which holds data from integrations and the app,
+      // reflectively, so we can't know what this throws. The event is sent as is.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(

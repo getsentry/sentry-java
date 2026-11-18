@@ -22,6 +22,7 @@ import io.sentry.test.createTestScopes
 import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
+import java.io.Closeable
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -785,6 +786,35 @@ class ScopesTest {
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
   }
 
+  @Test
+  fun `when captureException is called with a ScopeCallback that throws a fatal error, it propagates`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    assertFailsWith<OutOfMemoryError> {
+      sut.captureException(Throwable()) { throw OutOfMemoryError("scope callback") }
+    }
+    verify(mockClient, never()).captureEvent(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `when the client throws a fatal error while capturing, it propagates`() {
+    val (sut, mockClient) = getEnabledScopes()
+    whenever(mockClient.captureEvent(any(), anyOrNull(), anyOrNull()))
+      .thenThrow(OutOfMemoryError("client"))
+
+    assertFailsWith<OutOfMemoryError> { sut.captureException(Throwable()) }
+  }
+
+  @Test
+  fun `when the client throws a runtime exception while capturing, it is logged`() {
+    val (sut, mockClient, logger) = getEnabledScopes()
+    val exception = IllegalStateException("client")
+    whenever(mockClient.captureEvent(any(), anyOrNull(), anyOrNull())).thenThrow(exception)
+
+    assertThat(sut.captureException(Throwable())).isEqualTo(SentryId.EMPTY_ID)
+    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+  }
+
   // endregion
 
   // region captureCheckIn tests
@@ -830,6 +860,33 @@ class ScopesTest {
   // endregion
 
   // region close tests
+  @Test
+  fun `when an integration's close throws a LinkageError, the other integrations are still closed`() {
+    val failing = mock<Integration>(extraInterfaces = arrayOf(Closeable::class))
+    doThrow(NoClassDefFoundError("missing")).whenever(failing as Closeable).close()
+    val next = mock<Integration>(extraInterfaces = arrayOf(Closeable::class))
+    val (sut) =
+      getEnabledScopes {
+        it.addIntegration(failing)
+        it.addIntegration(next)
+      }
+
+    sut.close()
+
+    verify(next as Closeable).close()
+  }
+
+  @Test
+  fun `when an integration's close throws a fatal error, it propagates`() {
+    val failing = mock<Integration>(extraInterfaces = arrayOf(Closeable::class))
+    doThrow(OutOfMemoryError("close")).whenever(failing as Closeable).close()
+    val (sut) = getEnabledScopes { it.addIntegration(failing) }
+
+    assertFailsWith<OutOfMemoryError> { sut.close() }
+    // the scopes are closed again after the test
+    reset(failing)
+  }
+
   @Test
   fun `when close is called on disabled client, do nothing`() {
     val (sut, mockClient) = getEnabledScopes()

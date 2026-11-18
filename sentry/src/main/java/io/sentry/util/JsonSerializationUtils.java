@@ -61,6 +61,9 @@ public final class JsonSerializationUtils {
         return stream.toByteArray();
       }
     } catch (Throwable t) {
+      // The serializable can hold data from integrations and the app that is serialized
+      // reflectively, so we can't know what this throws. The caller gets no bytes.
+      ExceptionUtils.rethrowIfFatal(t);
       logger.log(SentryLevel.ERROR, "Could not serialize serializable", t);
       return null;
     }
@@ -88,6 +91,9 @@ public final class JsonSerializationUtils {
       serializer.serialize(serializable, writer, false);
       return writer.getByteCount();
     } catch (Throwable t) {
+      // The serializable can hold data from integrations and the app that is serialized
+      // reflectively, so we can't know what this throws. Its size is reported as 0.
+      ExceptionUtils.rethrowIfFatal(t);
       logger.log(SentryLevel.ERROR, "Could not calculate size of serializable", t);
       return 0;
     }

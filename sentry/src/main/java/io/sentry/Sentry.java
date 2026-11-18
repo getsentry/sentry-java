@@ -254,6 +254,9 @@ public final class Sentry {
     try {
       optionsConfiguration.configure(options);
     } catch (Throwable t) {
+      // A user callback, so we can't know what it throws. The SDK is initialized with the options
+      // the callback set before it threw.
+      ExceptionUtils.rethrowIfFatal(t);
       options
           .getLogger()
           .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
@@ -1280,6 +1283,12 @@ public final class Sentry {
 
     /**
      * configure the options
+     *
+     * <p>If this callback throws, the SDK is initialized with the options it set before the
+     * exception, and the exception is logged at {@link SentryLevel#ERROR} through {@link
+     * SentryOptions#getLogger()}. By default that prints only when {@link SentryOptions#isDebug()}
+     * was enabled before the exception. Fatal errors, such as {@link OutOfMemoryError}, are
+     * rethrown.
      *
      * @param options the options
      */

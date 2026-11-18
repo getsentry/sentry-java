@@ -10,6 +10,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LazyDirectory;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
@@ -258,6 +259,9 @@ abstract class CacheStrategy {
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
       return serializer.getValue().deserialize(reader, Session.class);
     } catch (Throwable e) {
+      // getData() runs the item's data factory and the cached payload may be corrupt, so we can't
+      // know what this throws. The item is treated as if it had no session.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(ERROR, "Failed to deserialize the session.", e);
     }
     return null;
@@ -270,6 +274,9 @@ abstract class CacheStrategy {
       // we need to set the same timestamp so the sorting from oldest to newest wont break.
       file.setLastModified(timestamp);
     } catch (Throwable e) {
+      // Serializing the envelope runs its items' data factories, e.g. an attachment's byte
+      // provider, so we can't know what this throws. The cached file may be left incomplete.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(ERROR, "Failed to serialize the new envelope to the disk.", e);
     }
   }
