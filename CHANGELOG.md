@@ -13,7 +13,7 @@
 - Remove the deprecated `io.sentry.android.core.LoadClass`. Use `io.sentry.util.LoadClass` instead ([#6594](https://github.com/getsentry/sentry-java/pull/6594))
 - `SentryOptions.getIgnoredErrors()`, `getIgnoredTransactions()`, `getIgnoredCheckIns()` and `getIgnoredSpanOrigins()` now return `List<String>` instead of `List<FilterString>`, matching their setters ([#6489](https://github.com/getsentry/sentry-java/pull/6489))
 - The SDK is now compiled for Java 11 instead of Java 8. JVM applications need Java 11 or newer ([#6459](https://github.com/getsentry/sentry-java/pull/6459))
-- The SDK is now compiled with Kotlin language/API version 2.1 and depends on `kotlin-stdlib` 2.1.21. Apps that compile Kotlin need Kotlin 2.0 or newer, up from 1.8. Apps written only in Java are not affected ([#6646](https://github.com/getsentry/sentry-java/pull/6646))
+- The SDK is now compiled with Kotlin language/API version 2.1. Apps that compile Kotlin need Kotlin 2.0 or newer, up from 1.8. Apps written only in Java are not affected. Modules that depend on `kotlin-stdlib` now pin 2.1.21, up from 1.9.24. The other modules use the app's own stdlib ([#6646](https://github.com/getsentry/sentry-java/pull/6646))
 - Default trace context status to `ok` when an active span has no explicit status ([#6418](https://github.com/getsentry/sentry-java/pull/6418))
 - Remove the deprecated `traceSampling` option (`SentryOptions.setTraceSampling`/`isTraceSampling` and the `io.sentry.traces.trace-sampling` manifest key) ([#6415](https://github.com/getsentry/sentry-java/pull/6415))
   - Use `tracePropagationTargets` to control which URL-aware outgoing requests get tracing headers.
