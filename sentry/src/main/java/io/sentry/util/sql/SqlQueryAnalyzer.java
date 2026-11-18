@@ -20,7 +20,8 @@ public final class SqlQueryAnalyzer {
   /**
    * Analyzes a SQL statement.
    *
-   * <p>Never throws for any input.
+   * <p>Does not throw for any input: an internal failure gives a result with status {@link
+   * SqlQuery.Status#ERROR} and no text.
    *
    * @param sql the statement as passed to the database driver, may be {@code null}
    * @param dialect how dialect-specific syntax is interpreted
@@ -33,13 +34,15 @@ public final class SqlQueryAnalyzer {
     if (sql == null) {
       return SqlQuery.EMPTY;
     }
-    // Option 06: the vendored OpenTelemetry grammar with our patch; the wrapper follows in step 5.
-    final io.sentry.util.sql.otel.SqlQuery result =
-        OtelSqlSanitizer.sanitize(sql, dialect, maxQueryTextLength);
-    return new SqlQuery(
-        result.getQueryText(),
-        result.getQuerySummary(),
-        result.getStoredProcedureName(),
-        result.getStatus());
+    try {
+      return SqlQueryPostProcessor.process(
+          OtelSqlSanitizer.sanitize(sql, dialect, maxQueryTextLength), dialect, maxQueryTextLength);
+    } catch (RuntimeException e) {
+      // R5: the generated lexer and the post-processing must fail closed. A bug in either must
+      // neither crash the caller nor return unsanitized text, so any RuntimeException gives an
+      // empty ERROR result. Errors are not caught. The input is never logged: it may contain the
+      // values this class exists to remove.
+      return SqlQuery.FAILED;
+    }
   }
 }
