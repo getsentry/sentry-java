@@ -1,6 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   id("com.android.library")
@@ -35,8 +34,6 @@ android {
 
   kotlin {
     compilerOptions.jvmTarget = JVM_11
-    compilerOptions.languageVersion = KotlinVersion.KOTLIN_2_1
-    compilerOptions.apiVersion = KotlinVersion.KOTLIN_2_1
   }
 
   testOptions {

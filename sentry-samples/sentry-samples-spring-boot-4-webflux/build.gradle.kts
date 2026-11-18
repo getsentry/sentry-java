@@ -41,7 +41,5 @@ tasks.withType<KotlinCompile>().configureEach {
     // skip metadata version check, as Spring 7 / Spring Boot 4 is
     // compiled against a newer version of Kotlin
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict", "-Xskip-metadata-version-check")
-    compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
-    compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
   }
 }

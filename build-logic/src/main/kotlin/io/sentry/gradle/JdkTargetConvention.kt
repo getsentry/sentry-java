@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
@@ -25,6 +26,12 @@ private val BUILD_JDK = JavaLanguageVersion.of(21)
 
 /** The level the SDK publishes. */
 private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_11
+
+/**
+ * The Kotlin language and API version the SDK publishes. A Kotlin compiler reads metadata up to one
+ * version newer than its own, so apps that compile Kotlin need Kotlin 2.0 or newer.
+ */
+private val PUBLISHED_KOTLIN_VERSION = KotlinVersion.KOTLIN_2_1
 
 /**
  * Holds every toolchain, bytecode level decision and compilation option of a module. It does the
@@ -38,6 +45,7 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_11
  * - minSdk is set for Android libraries
  * - javac warnings fail the build
  * - Kotlin module names stay the project name
+ * - published modules main code compiles Kotlin with the published language/API version
  * - Kotlin doesn't warn about the deprecated language/API version the SDK targets
  */
 class JdkTargetConvention : Plugin<Project> {
@@ -119,6 +127,16 @@ class JdkTargetConvention : Plugin<Project> {
     }
 
     project.keepKotlinModuleNameWithoutGroup()
+
+    // Test code isn't published, so it keeps the compiler's default and may use newer features.
+    project.plugins.withId("com.vanniktech.maven.publish") {
+      project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
+        if (!name.contains("Test")) {
+          compilerOptions.languageVersion.set(PUBLISHED_KOTLIN_VERSION)
+          compilerOptions.apiVersion.set(PUBLISHED_KOTLIN_VERSION)
+        }
+      }
+    }
 
     // The SDK targets the oldest language/API version its consumers' Kotlin can read, which newer
     // compilers deprecate. That's deliberate, so the warning on every compilation is noise.
