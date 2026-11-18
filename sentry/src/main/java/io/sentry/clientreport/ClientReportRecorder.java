@@ -46,7 +46,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       items.add(SentryEnvelopeItem.fromClientReport(options.getSerializer(), clientReport));
 
       return new SentryEnvelope(envelope.getHeader(), items);
-    } catch (Throwable e) {
+    } catch (java.io.IOException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to attach client report to envelope.");
       return envelope;
     }
