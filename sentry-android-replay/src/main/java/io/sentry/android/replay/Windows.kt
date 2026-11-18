@@ -23,6 +23,7 @@ import android.util.Log
 import android.view.View
 import android.view.Window
 import io.sentry.util.AutoClosableReentrantLock
+import io.sentry.util.ExceptionUtils
 import java.io.Closeable
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
@@ -195,7 +196,8 @@ internal object WindowManagerSpy {
         mViewsField?.let { mViewsField ->
           @Suppress("UNCHECKED_CAST")
           val mViews = mViewsField[windowManagerInstance] as ArrayList<View>
-          mViewsField[windowManagerInstance] = swap(mViews)
+          val swapped = swapSafely(swap, mViews) ?: return
+          mViewsField[windowManagerInstance] = swapped
         }
       }
     } catch (ignored: ReflectiveOperationException) {
@@ -205,4 +207,19 @@ internal object WindowManagerSpy {
       Log.w("WindowManagerSpy", ignored)
     }
   }
+
+  private fun swapSafely(
+    swap: (ArrayList<View>) -> ArrayList<View>,
+    mViews: ArrayList<View>,
+  ): ArrayList<View>? =
+    try {
+      swap(mViews)
+    } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+      // swap notifies the root view listeners about the existing views, and those run replay's
+      // recorders, so we can't know what they throw. mViews is left as it was, so replay doesn't
+      // learn about root views being added or removed.
+      ExceptionUtils.rethrowIfFatal(e)
+      Log.w("WindowManagerSpy", e)
+      null
+    }
 }
