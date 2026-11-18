@@ -700,6 +700,8 @@ public final class ApplicationExitInfoEventProcessor
     try {
       return Installation.id(context);
     } catch (RuntimeException e) {
+      // Installation.id wraps file errors in a plain RuntimeException, so there is no narrower
+      // type to catch. The event is sent without a user id and a device id.
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
     return null;
