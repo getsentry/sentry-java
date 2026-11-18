@@ -2,154 +2,45 @@ name: PR Risk (Jev)
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review, edited]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: Pull request number to analyze
-        required: true
-        type: number
+    # Keep `edited`: it is the only event fired when the base branch changes.
+    types: [opened, synchronize, reopened, ready_for_review, edited, converted_to_draft]
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 concurrency:
-  group: pr-risk-jev-${{ github.event.pull_request.number || inputs.pr_number }}
-  cancel-in-progress: true
+  group: pr-risk-jev-${{ github.event.pull_request.number }}
+  # Every started run must reach its label clear; an overtaken run ends as `pr_changed`.
+  cancel-in-progress: false
 
 jobs:
   risk:
     name: PR risk (Jev)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      # The Action reads PR Git objects without checking out or executing PR code.
+      # The Action reads PR Git objects without checking out or executing PR code. It clears the
+      # PR's risk labels first and publishes the new one itself, using the shared SDK rubric and
+      # the sentry-java fact sheet in getsentry/sdk-pr-risk-action.
       - name: Classify PR risk
         id: risk
-        uses: getsentry/pr-risk-action@1cdeab5ada06969e5376666b3a79f444c2f41a67 # main
+        uses: getsentry/sdk-pr-risk-action@46f2c96d3085a7a1ccde115de9a10f941816e439 # main
         env:
           AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
         with:
           repo: ${{ github.repository }}
-          pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
+          pr-number: ${{ github.event.pull_request.number }}
           expected-head-sha: ${{ github.event.pull_request.head.sha }}
           result-path: risk-pr-result.json
-
-      - name: Publish risk label
-        if: ${{ !cancelled() && steps.risk.outcome != 'skipped' }}
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
-        with:
-          script: |
-            // Only this trusted workflow publishes labels; PR source is never executed.
-            const fs = require('node:fs');
-            if (!fs.existsSync('risk-pr-result.json')) {
-              core.warning('Risk analysis did not produce a result; no label was published.');
-              return;
-            }
-            const result = JSON.parse(fs.readFileSync('risk-pr-result.json', 'utf8'));
-            const prNumber = Number(process.env.PR_NUMBER);
-            const repo = context.repo;
-            const colors = { low: '0E8A16', medium: 'FBCA04', high: 'B60205' };
-            const riskLabels = Object.keys(colors).map(risk => `risk: ${risk}`);
-            if (!Number.isSafeInteger(prNumber) || prNumber <= 0
-                || result.number !== prNumber || result.repo !== `${repo.owner}/${repo.repo}`
-                || typeof result.status !== 'string'
-                || (result.status === 'ok' && !Object.hasOwn(colors, result.risk_label))) {
-              throw new Error('Risk result does not match this PR or a valid risk class.');
-            }
-            const snapshot = result.snapshot;
-            if (result.status === 'pr_changed' || !snapshot?.source_head_sha || !snapshot?.source_base_sha) {
-              core.warning('Risk analysis has no current revision; no label was published.');
-              return;
-            }
-            const { data: pr } = await github.rest.pulls.get({ ...repo, pull_number: prNumber });
-            if (pr.state !== 'open' || pr.head.sha !== snapshot.source_head_sha
-                || pr.base.sha !== snapshot.source_base_sha) {
-              core.warning('PR changed after risk analysis; no label was published.');
-              return;
-            }
-            let riskLabel = result.risk_label;
-            if (result.status === 'ok' && riskLabel === 'low') {
-              // Files in the high_risk_code filter, which also drives the "Changes In High Risk Code"
-              // comment, are never low. Read the filter from the base revision so a PR cannot edit it.
-              const { data: filterFile } = await github.rest.repos.getContent({
-                ...repo, path: '.github/file-filters.yml', ref: pr.base.sha,
-              });
-              const filterLines = Buffer.from(filterFile.content, 'base64').toString('utf8').split('\n');
-              const start = filterLines.findIndex(line => /^high_risk_code:/.test(line));
-              if (start < 0) throw new Error('.github/file-filters.yml has no high_risk_code filter.');
-              const highRiskFiles = new Set();
-              for (const line of filterLines.slice(start + 1)) {
-                if (/^\S/.test(line)) break;
-                const entry = line.match(/^\s+-\s+"([^"]+)"\s*$/);
-                if (!entry) {
-                  if (line.trim() && !line.trim().startsWith('#')) {
-                    throw new Error(`Unsupported high_risk_code entry: ${line.trim()}`);
-                  }
-                  continue;
-                }
-                // Exact paths only: fail loudly rather than silently miss a glob added later.
-                if (/[*?[\]{}!]/.test(entry[1])) throw new Error(`Globs are not supported here: ${entry[1]}`);
-                highRiskFiles.add(entry[1]);
-              }
-              const changedFiles = await github.paginate(github.rest.pulls.listFiles, {
-                ...repo, pull_number: prNumber, per_page: 100,
-              });
-              const touched = changedFiles
-                .flatMap(file => [file.filename, file.previous_filename])
-                .filter(name => name && highRiskFiles.has(name));
-              if (touched.length > 0) {
-                core.notice(`Raised risk: low to risk: medium for high-risk files: ${touched.join(', ')}`);
-                riskLabel = 'medium';
-              }
-            }
-            const target = result.status === 'ok' ? `risk: ${riskLabel}` : null;
-            const existing = pr.labels.map(label => label.name);
-            if (target && !existing.includes(target)) {
-              try {
-                await github.rest.issues.getLabel({ ...repo, name: target });
-              } catch (error) {
-                if (error.status !== 404) throw error;
-                try {
-                  await github.rest.issues.createLabel({
-                    ...repo, name: target, color: colors[riskLabel],
-                    description: `PR risk score: ${riskLabel}`,
-                  });
-                } catch (error) {
-                  if (error.status !== 422) throw error;
-                  // Another PR may have created the shared repository label.
-                  await github.rest.issues.getLabel({ ...repo, name: target });
-                }
-              }
-              await github.rest.issues.addLabels({ ...repo, issue_number: prNumber, labels: [target] });
-            }
-            // A failed classification must not leave an earlier low/medium/high verdict.
-            for (const name of existing.filter(name => riskLabels.includes(name) && name !== target)) {
-              try {
-                await github.rest.issues.removeLabel({ ...repo, issue_number: prNumber, name });
-              } catch (error) {
-                if (error.status !== 404) throw error;
-              }
-            }
-            const { data: latest } = await github.rest.pulls.get({ ...repo, pull_number: prNumber });
-            if (target && (latest.state !== 'open' || latest.head.sha !== pr.head.sha
-                || latest.base.sha !== pr.base.sha || latest.title !== pr.title || latest.body !== pr.body)) {
-              await github.rest.issues.removeLabel({ ...repo, issue_number: prNumber, name: target });
-              core.warning('PR changed while publishing; removed the outdated risk label.');
-              return;
-            }
-            if (!target) core.warning(`PR remains unclassified: ${result.status}. Previous risk labels were cleared.`);
-            core.info(target ? `Published ${target}` : 'No risk label published.');
+          publish-label: true
 
       - name: Upload risk result
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: pr-risk-jev-${{ github.event.pull_request.number || inputs.pr_number }}
+          name: pr-risk-jev-${{ github.event.pull_request.number }}
           path: risk-pr-result.json
           if-no-files-found: warn
           retention-days: 30
