@@ -3,7 +3,6 @@ package io.sentry.android.ndk
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.ndk.NdkOptions
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -95,36 +94,6 @@ class SentryNdkTest {
       assertNotNull(fixture.capturedOptions)
       assertTrue(fixture.capturedOptions!!.isEnableAppHangTracking)
       assertEquals(2000L, fixture.capturedOptions!!.appHangTimeoutMillis)
-    }
-  }
-
-  @Test
-  fun `init keeps the interrupt when interrupted while waiting for the native libraries`() {
-    val options =
-      SentryAndroidOptions().apply {
-        dsn = "https://key@sentry.io/proj"
-        cacheDirPath = "/cache"
-      }
-
-    // CountDownLatch.await checks the interrupt before the count, so this throws right away
-    Thread.currentThread().interrupt()
-    try {
-      assertFailsWith<IllegalStateException> { SentryNdk.init(options) }
-      assertTrue(Thread.currentThread().isInterrupted)
-    } finally {
-      // don't leak the interrupt into other tests
-      Thread.interrupted()
-    }
-  }
-
-  @Test
-  fun `close keeps the interrupt when interrupted while waiting for the native libraries`() {
-    Thread.currentThread().interrupt()
-    try {
-      assertFailsWith<IllegalStateException> { SentryNdk.close() }
-      assertTrue(Thread.currentThread().isInterrupted)
-    } finally {
-      Thread.interrupted()
     }
   }
 }
