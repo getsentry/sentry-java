@@ -21,8 +21,6 @@ plugins {
 tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 
 kotlin {
-  compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
-  compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
   compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
 }
 

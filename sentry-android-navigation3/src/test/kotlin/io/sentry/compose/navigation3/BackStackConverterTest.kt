@@ -372,7 +372,7 @@ class BackStackConverterTest {
               "nil" to null,
               "nested" to mapOf("inner" to "value"),
               "tags" to listOf("a", "b", "c"),
-              "array" to arrayOf("a", 1, false, PrivacyMode.PUBLIC, 'z'),
+              "array" to arrayOf<Any>("a", 1, false, PrivacyMode.PUBLIC, 'z'),
               "ints" to intArrayOf(1, 2, 3),
               "chars" to charArrayOf('a', 'b'),
               "bytes" to byteArrayOf(4, 5),
