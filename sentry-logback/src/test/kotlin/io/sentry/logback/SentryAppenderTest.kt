@@ -32,6 +32,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -327,6 +328,22 @@ class SentryAppenderTest {
         },
         anyOrNull(),
       )
+  }
+
+  class FatalEncoder : EncoderBase<ILoggingEvent>() {
+    override fun headerBytes(): ByteArray = ByteArray(0)
+
+    override fun footerBytes(): ByteArray = ByteArray(0)
+
+    override fun encode(event: ILoggingEvent?): ByteArray = throw OutOfMemoryError("encoder")
+  }
+
+  @Test
+  fun `rethrows a fatal error from the encoder`() {
+    fixture =
+      Fixture(minimumEventLevel = Level.DEBUG, encoder = FatalEncoder(), sendDefaultPii = true)
+
+    assertFailsWith<OutOfMemoryError> { fixture.logger.info("testing a fatal encoder error") }
   }
 
   @Test

@@ -30,6 +30,7 @@ import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.util.CookieUtils
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.GraphqlUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -229,6 +230,9 @@ constructor(
             span.spanContext.sampled = false
           }
         } catch (e: Throwable) {
+          // beforeSpan is the user's callback, so we can't know what it throws. The span is
+          // dropped, as if the callback had returned null.
+          ExceptionUtils.rethrowIfFatal(e)
           span.spanContext.sampled = false
           if (wasSampled) {
             scopes.options.clientReportRecorder.recordLostEvent(
@@ -434,6 +438,9 @@ constructor(
                 it.writeTo(buffer)
                 data = GraphqlUtils.filterRequestBody(buffer.readUtf8(), scopes.options)
               } catch (e: Throwable) {
+                // writeTo runs the app's own request body code, so we can't know what it throws.
+                // The event is sent without the request body.
+                ExceptionUtils.rethrowIfFatal(e)
                 scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
                 // continue because the response body alone can already give some insights
               } finally {
@@ -466,6 +473,9 @@ constructor(
 
       scopes.captureEvent(event, hint)
     } catch (e: Throwable) {
+      // This runs inside the app's GraphQL request, which must not fail because reporting it
+      // failed. The failed-request event is not sent.
+      ExceptionUtils.rethrowIfFatal(e)
       scopes.options.logger.log(SentryLevel.ERROR, "Error capturing the GraphQL error.", e)
     }
   }
@@ -474,6 +484,10 @@ constructor(
   fun interface BeforeSpanCallback {
     /**
      * Mutates span before being added.
+     *
+     * If this throws, the span is dropped, as if this had returned null. Fatal errors such as
+     * [OutOfMemoryError] are rethrown instead. The failure is only logged at ERROR level through
+     * [io.sentry.SentryOptions.getLogger], which by default prints only when debug is enabled.
      *
      * @param span the span to mutate or drop
      * @param request the Apollo request object

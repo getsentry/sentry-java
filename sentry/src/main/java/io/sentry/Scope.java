@@ -496,6 +496,9 @@ public final class Scope implements IScope {
     try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
       return callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
+      // A user callback, so we can't know what it throws. As the spec asks, the breadcrumb is
+      // dropped.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(

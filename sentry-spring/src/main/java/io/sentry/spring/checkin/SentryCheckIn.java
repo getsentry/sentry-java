@@ -42,6 +42,11 @@ public @interface SentryCheckIn {
   /**
    * Monitor slug. If not set, no check-in will be sent.
    *
+   * <p>Placeholders and SpEL expressions in the slug are resolved. If resolving fails, the
+   * unresolved slug is used, so check-ins go to a monitor that likely does not exist. The failure
+   * is only logged as a warning through {@link io.sentry.SentryOptions#getLogger()}, which by
+   * default prints only when debug is enabled.
+   *
    * @return monitor slug
    */
   @AliasFor("monitorSlug")

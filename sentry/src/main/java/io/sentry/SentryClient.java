@@ -20,6 +20,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.*;
+import io.sentry.util.ExceptionUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -229,6 +230,9 @@ public final class SentryClient implements ISentryClient {
         try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
           shouldCaptureReplay = beforeErrorSampling.execute(event, hint);
         } catch (Throwable e) {
+          // A user callback, so we can't know what it throws. As the spec asks, the replay is not
+          // captured for this error.
+          ExceptionUtils.rethrowIfFatal(e);
           options
               .getLogger()
               .log(
@@ -953,6 +957,9 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
+        // A callback set by an integration or a hybrid SDK, so we can't know what it throws. The
+        // envelope is still sent.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
@@ -1641,6 +1648,9 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSend.execute(event, hint);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. As the spec asks, the event is
+        // dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -1670,6 +1680,9 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         transaction = beforeSendTransaction.execute(transaction, hint);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. As the spec asks, the transaction is
+        // dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -1730,6 +1743,9 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendFeedback.execute(event, hint);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. As the spec asks, the feedback is
+        // dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -1757,6 +1773,9 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendReplay.execute(event, hint);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. As the spec asks, the replay segment
+        // is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -1785,6 +1804,8 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendLog.execute(event);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. As the spec asks, the log is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -1810,6 +1831,9 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendMetric.execute(event, hint);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. As the spec asks, the metric is
+        // dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(

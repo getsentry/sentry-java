@@ -10,6 +10,7 @@ import io.sentry.test.callMethod
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
@@ -376,6 +377,17 @@ class ScopeTest {
 
     assertThat(invocationCount).isEqualTo(2)
     assertThat(scope.breadcrumbs.single().message).isEqualTo("kept")
+  }
+
+  @Test
+  fun `when beforeBreadcrumb throws a fatal error, it propagates`() {
+    val options =
+      SentryOptions().apply { setBeforeBreadcrumb { _, _ -> throw OutOfMemoryError("test") } }
+
+    val scope = Scope(options)
+
+    assertFailsWith<OutOfMemoryError> { scope.addBreadcrumb(Breadcrumb()) }
+    assertThat(scope.breadcrumbs).isEmpty()
   }
 
   @Test

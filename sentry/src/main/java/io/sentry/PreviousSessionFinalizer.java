@@ -8,6 +8,7 @@ import static io.sentry.cache.EnvelopeCache.NATIVE_CRASH_MARKER_FILE;
 
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.util.ExceptionUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -127,6 +128,10 @@ final class PreviousSessionFinalizer implements Runnable {
           scopes.captureEnvelope(fromSession);
         }
       } catch (Throwable e) {
+        // The session file was written by an earlier launch and may be corrupt, so we can't know
+        // what deserializing it throws. The previous session is not sent, and its file is still
+        // deleted below.
+        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
       }
 

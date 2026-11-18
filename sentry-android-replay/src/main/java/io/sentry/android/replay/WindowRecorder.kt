@@ -16,6 +16,7 @@ import io.sentry.android.replay.util.addOnPreDrawListenerSafe
 import io.sentry.android.replay.util.hasSize
 import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
 import io.sentry.util.AutoClosableReentrantLock
+import io.sentry.util.ExceptionUtils
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService
@@ -96,6 +97,9 @@ internal class WindowRecorder(
         }
         recorder?.capture()
       } catch (e: Throwable) {
+        // Capturing draws the app's own views and goes through the device's graphics stack, so we
+        // can't know what it throws. This frame is skipped, and the next one is still scheduled.
+        ExceptionUtils.rethrowIfFatal(e)
         options.logger.log(ERROR, "Failed to capture a frame", e)
       }
 

@@ -13,6 +13,7 @@ import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.profiling.ChunkRecord;
 import io.sentry.profiling.ProfileRecordingState;
+import io.sentry.util.ExceptionUtils;
 import java.io.File;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
@@ -109,6 +110,9 @@ public final class PerfettoProfiler {
           Runnable::run,
           this::onProfilingResult);
     } catch (Throwable e) {
+      // A Binder call into the profiling service, which can rethrow any runtime exception from
+      // the other side. This chunk is not profiled.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Failed to request Profiling.", e);
       // No profiling was requested, so a late result from the OS must not write into the record
       this.chunkRecord = null;

@@ -30,6 +30,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
@@ -204,8 +205,12 @@ public final class AnrV2Integration implements Integration, Closeable {
           return new ParseResult(ParseResult.Type.NO_DUMP);
         }
         dump = NativeEventUtils.readBytes(trace);
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.WARNING, "Failed to read ANR thread dump", e);
+      } catch (Throwable t) {
+        // getTraceInputStream() is a Binder call into system_server, which can rethrow any runtime
+        // exception from the other side. As with a missing dump, this ANR is not reported, and the
+        // remaining exit infos are still processed.
+        ExceptionUtils.rethrowIfFatal(t);
+        options.getLogger().log(SentryLevel.WARNING, "Failed to read ANR thread dump", t);
         return new ParseResult(ParseResult.Type.NO_DUMP);
       }
 
@@ -229,6 +234,10 @@ public final class AnrV2Integration implements Integration, Closeable {
         }
         return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages, artContext);
       } catch (Throwable e) {
+        // The dump is written by ART in a format that changes between Android versions and
+        // vendors, so we can't know how the parser fails on unexpected input. The ANR is still
+        // reported, with a message asking to attach the raw dump.
+        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
       }

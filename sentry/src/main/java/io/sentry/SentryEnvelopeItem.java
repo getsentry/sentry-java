@@ -8,6 +8,7 @@ import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.profiling.SentryProfile;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -550,6 +551,10 @@ public final class SentryEnvelopeItem {
               return serializeToMsgpack(replayPayload);
             }
           } catch (Throwable t) {
+            // The recording holds data from integrations and the app, such as breadcrumb data and
+            // network details, that is serialized reflectively, so we can't know what this throws.
+            // The item is sent with an empty payload, so the replay segment is lost.
+            ExceptionUtils.rethrowIfFatal(t);
             logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
             return null;
           } finally {

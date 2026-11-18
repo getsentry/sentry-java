@@ -16,6 +16,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LazyEvaluator;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -110,6 +111,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
                         new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
                   return options.getSerializer().deserialize(reader, Breadcrumb.class);
                 } catch (Throwable e) {
+                  // The queue file was written by an earlier launch and may be corrupt, so we
+                  // can't know what deserializing it throws. The breadcrumb is skipped.
+                  ExceptionUtils.rethrowIfFatal(e);
                   options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
                 }
                 return null;
@@ -324,6 +328,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     try {
       task.run();
     } catch (Throwable e) {
+      // The task serializes scope values, which can hold arbitrary app objects, so we can't know
+      // what it throws. The changes it had not written yet are not persisted.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(ERROR, "Serialization task failed", e);
     }
   }

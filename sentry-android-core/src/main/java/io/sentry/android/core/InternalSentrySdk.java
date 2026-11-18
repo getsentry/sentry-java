@@ -30,6 +30,7 @@ import io.sentry.protocol.App;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.MapObjectWriter;
 import io.sentry.util.TracingUtils;
 import java.io.ByteArrayInputStream;
@@ -139,6 +140,10 @@ public final class InternalSentrySdk {
       writer.name("level").value(logger, scope.getLevel());
       writer.name("breadcrumbs").value(logger, scope.getBreadcrumbs());
     } catch (Throwable e) {
+      // An entry point for hybrid SDKs. Serializing the scope reaches into the device and package
+      // manager over Binder and into whatever objects the app put in extras, so we can't know what
+      // it throws. The caller gets an empty map.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Could not serialize scope.", e);
       return new HashMap<>();
     }
@@ -204,6 +209,9 @@ public final class InternalSentrySdk {
           new SentryEnvelope(envelope.getHeader(), envelopeItems);
       return scopes.captureEnvelope(repackagedEnvelope);
     } catch (Throwable t) {
+      // An entry point for hybrid SDKs, which hand over an envelope we didn't build, so we can't
+      // know what processing it throws. The envelope is dropped and the caller gets null.
+      ExceptionUtils.rethrowIfFatal(t);
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
     return null;

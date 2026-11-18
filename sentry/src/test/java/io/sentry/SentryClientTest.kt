@@ -288,6 +288,15 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeSend throws a fatal error, it propagates`() {
+    fixture.sentryOptions.setBeforeSend { _, _ -> throw OutOfMemoryError("test") }
+    val sut = fixture.getSut()
+
+    assertFailsWith<OutOfMemoryError> { sut.captureEvent(SentryEvent()) }
+    verifyNoInteractions(fixture.transport)
+  }
+
+  @Test
   fun `when beforeSend captures another event, the nested capture is dropped and does not recurse`() {
     var invocations = 0
     lateinit var sut: SentryClient

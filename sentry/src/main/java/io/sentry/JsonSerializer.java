@@ -37,6 +37,7 @@ import io.sentry.rrweb.RRWebInteractionMoveEvent;
 import io.sentry.rrweb.RRWebMetaEvent;
 import io.sentry.rrweb.RRWebSpanEvent;
 import io.sentry.rrweb.RRWebVideoEvent;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -168,6 +169,9 @@ public final class JsonSerializer implements ISerializer {
         return (T) jsonObjectReader.nextObjectOrNull();
       }
     } catch (Throwable e) {
+      // The JSON may be corrupt and the element deserializer is supplied by the caller, so we
+      // can't know what this throws. The collection is treated as absent.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
       return null;
     }

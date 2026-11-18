@@ -25,6 +25,7 @@ import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -262,6 +263,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           writeSessionToDisk(previousSessionFile, session);
         }
       } catch (Throwable e) {
+        // The session file was written by an earlier launch and may be corrupt, and the exit hint
+        // comes from another integration, so we can't know what this throws. The previous session
+        // is left as it is on disk.
+        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
       }
     } else {
@@ -303,6 +308,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
             return session;
           }
         } catch (Throwable e) {
+          // getData() runs the item's data factory, so we can't know what this throws. The
+          // envelope is treated as if it had no session.
+          ExceptionUtils.rethrowIfFatal(e);
           options.getLogger().log(ERROR, "Item failed to process.", e);
         }
       } else {
@@ -350,6 +358,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     try (final OutputStream outputStream = new FileOutputStream(file)) {
       serializer.getValue().serialize(envelope, outputStream);
     } catch (Throwable e) {
+      // Serializing the envelope runs its items' data factories, e.g. an attachment's byte
+      // provider, so we can't know what this throws. The envelope is not cached.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(ERROR, e, "Error writing Envelope %s to offline storage", file.getAbsolutePath());

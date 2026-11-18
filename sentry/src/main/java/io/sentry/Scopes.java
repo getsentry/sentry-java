@@ -9,6 +9,7 @@ import io.sentry.metrics.IMetricsApi;
 import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.*;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
@@ -164,6 +165,9 @@ public final class Scopes implements IScopes {
         sentryId = getClient().captureEvent(event, localScope, hint);
         updateLastEventId(sentryId);
       } catch (Throwable e) {
+        // A public API entry point: capturing runs integration and app code, such as event
+        // processors, so we can't know what it throws. The event is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(
@@ -192,6 +196,9 @@ public final class Scopes implements IScopes {
         callback.run(localScope);
         return localScope;
       } catch (Throwable t) {
+        // A user callback, so we can't know what it throws. The event is captured with the
+        // unchanged scope.
+        ExceptionUtils.rethrowIfFatal(t);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
@@ -235,6 +242,9 @@ public final class Scopes implements IScopes {
 
         sentryId = getClient().captureMessage(message, level, localScope);
       } catch (Throwable e) {
+        // A public API entry point: capturing runs integration and app code, such as event
+        // processors, so we can't know what it throws. The message is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
@@ -266,6 +276,9 @@ public final class Scopes implements IScopes {
 
         sentryId = getClient().captureFeedback(feedback, hint, localScope);
       } catch (Throwable e) {
+        // A public API entry point: capturing runs integration and app code, such as event
+        // processors, so we can't know what it throws. The feedback is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error while capturing feedback: " + feedback.getMessage(), e);
@@ -294,6 +307,9 @@ public final class Scopes implements IScopes {
           sentryId = capturedEnvelopeId;
         }
       } catch (Throwable e) {
+        // An entry point for hybrid SDKs and cached envelopes, whose items may run their own data
+        // factories, so we can't know what it throws. The envelope is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
     }
@@ -339,6 +355,9 @@ public final class Scopes implements IScopes {
 
         sentryId = getClient().captureEvent(event, localScope, hint);
       } catch (Throwable e) {
+        // A public API entry point: capturing runs integration and app code, such as event
+        // processors, so we can't know what it throws. The exception is not reported.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(
@@ -429,6 +448,9 @@ public final class Scopes implements IScopes {
             try {
               ((Closeable) eventProcessor).close();
             } catch (Throwable e) {
+              // Event processors can be user-provided, so we can't know what they throw. The
+              // remaining event processors are still closed.
+              ExceptionUtils.rethrowIfFatal(e);
               getOptions()
                   .getLogger()
                   .log(
@@ -670,6 +692,8 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
 
@@ -678,6 +702,8 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
     }
@@ -689,6 +715,8 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -699,6 +727,8 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getIsolationScope());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -719,6 +749,8 @@ public final class Scopes implements IScopes {
       try {
         callback.run(combinedScope.getSpecificScope(scopeType));
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
@@ -752,6 +784,9 @@ public final class Scopes implements IScopes {
       try {
         getClient().flush(timeoutMillis);
       } catch (Throwable e) {
+        // A public API entry point: flushing runs the transport, which integrations and the app can
+        // replace, so we can't know what it throws. Whatever was not flushed stays queued.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
       }
     }
@@ -821,6 +856,10 @@ public final class Scopes implements IScopes {
                         hint,
                         profilingTraceData);
           } catch (Throwable e) {
+            // An entry point that finishing a transaction calls on the app's thread: capturing
+            // runs integration and app code, such as event processors, so we can't know what it
+            // throws. The transaction is dropped.
+            ExceptionUtils.rethrowIfFatal(e);
             getOptions()
                 .getLogger()
                 .log(
@@ -851,6 +890,10 @@ public final class Scopes implements IScopes {
       try {
         sentryId = getClient().captureProfileChunk(profilingContinuousData, getCombinedScopeView());
       } catch (Throwable e) {
+        // Capturing reads and converts the profiler's trace file, possibly with a third-party
+        // converter, and runs event processors, so we can't know what it throws. The chunk is
+        // dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(
@@ -1145,6 +1188,9 @@ public final class Scopes implements IScopes {
       try {
         sentryId = getClient().captureCheckIn(checkIn, getCombinedScopeView(), null);
       } catch (Throwable e) {
+        // A public API entry point: capturing runs integration and app code, such as the
+        // transport, so we can't know what it throws. The check-in is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
@@ -1168,6 +1214,9 @@ public final class Scopes implements IScopes {
       try {
         sentryId = getClient().captureReplayEvent(replay, getCombinedScopeView(), hint);
       } catch (Throwable e) {
+        // Capturing runs integration and app code, such as event processors, so we can't know
+        // what it throws. The replay segment is dropped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
       }
     }

@@ -36,6 +36,7 @@ import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.util.AutoClosableReentrantLock
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -144,6 +145,9 @@ internal class CanvasStrategy(
         executor.getBackgroundHandler(),
       )
     } catch (t: Throwable) {
+      // Drawing into the hardware surface and PixelCopy go through the device's graphics stack,
+      // so we can't know what they throw. The frame is skipped.
+      ExceptionUtils.rethrowIfFatal(t)
       // if the request itself threw, no callback will clear the flag
       pixelCopyInFlight = false
       options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)

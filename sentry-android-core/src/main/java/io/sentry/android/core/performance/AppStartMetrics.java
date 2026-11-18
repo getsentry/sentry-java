@@ -29,6 +29,7 @@ import io.sentry.android.core.CurrentActivityHolder;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -626,8 +627,10 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           stopHeadlessAppStartAt(onCreateStartUptimeMs);
           return;
         }
-      } catch (Throwable ignored) {
-        // Best effort: never let optional startup timestamp enrichment break app startup.
+      } catch (Throwable e) {
+        // The start info came from system_server over Binder and the timestamp is optional, so a
+        // malformed record must not break app startup. The process init time is used instead.
+        ExceptionUtils.rethrowIfFatal(e);
       }
     }
 

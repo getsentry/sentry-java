@@ -9,6 +9,8 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.ExceptionUtils;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -46,7 +48,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       items.add(SentryEnvelopeItem.fromClientReport(options.getSerializer(), clientReport));
 
       return new SentryEnvelope(envelope.getHeader(), items);
-    } catch (Throwable e) {
+    } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to attach client report to envelope.");
       return envelope;
     }
@@ -125,6 +127,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         }
       }
     } catch (Throwable e) {
+      // getData() runs the item's data factory, which may also deserialize a dropped transaction,
+      // so we can't know what this throws. The lost item may not be counted in the client report.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
     }
   }
@@ -151,6 +156,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       try {
         options.getOnDiscard().execute(reason, category, countToAdd);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. Only this notification is lost; the
+        // discard is still counted in the client report.
+        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(SentryLevel.ERROR, "The onDiscard callback threw an exception.", e);
       }
     }
