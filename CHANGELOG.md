@@ -83,6 +83,9 @@
 
 - Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#6482](https://github.com/getsentry/sentry-java/pull/6482))
 - Nav3: `ui.load` transactions are bound to `IScope` in preference to Nav3 transactions when transitioning between Activities, matching Nav2 behavior (API 29+) ([#6484](https://github.com/getsentry/sentry-java/pull/6484))
+- The SDK no longer swallows fatal errors such as `OutOfMemoryError` and `StackOverflowError`. They now propagate to the caller, for example out of `Sentry.captureException` or from a throwing `beforeSend` callback, instead of only being logged ([#6657](https://github.com/getsentry/sentry-java/pull/6657))
+  - `LinkageError`s propagate too, except where the SDK expects them because an optional dependency is missing or has an incompatible version.
+  - Other exceptions thrown by your callbacks are still caught and logged at `ERROR`, which prints only with `debug` enabled.
 
 ### Improvements
 
