@@ -1305,7 +1305,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7ba", "Zq9xK7bb"],
       "source": "sentry",
@@ -1319,7 +1319,7 @@
       "expected": {
         "text": "ALTER USER ?",
         "summary": "ALTER USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7bc", "Zq9xK7bd", "Zq9xK7be"],
       "source": "sentry",
@@ -1333,7 +1333,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7bf", "Zq9xK7bg"],
       "source": "sentry",
@@ -1347,7 +1347,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7bh", "Zq9xK7bi"],
       "source": "sentry",
@@ -1361,7 +1361,7 @@
       "expected": {
         "text": "ALTER USER ?",
         "summary": "ALTER USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7bj", "Zq9xK7bk"],
       "source": "sentry",
@@ -1389,7 +1389,7 @@
       "expected": {
         "text": "CREATE LOGIN ?",
         "summary": "CREATE LOGIN",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7bm", "Zq9xK7bn"],
       "source": "sentry",
@@ -1445,7 +1445,7 @@
       "expected": {
         "text": "GRANT ?",
         "summary": "GRANT",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7bs", "Zq9xK7bt"],
       "source": "sentry",
@@ -1485,26 +1485,27 @@
       "dialect": "postgresql",
       "input": "CREATE USER Zq9xK7ne WITH PASSWORD 'x; DROP TABLE Zq9xK7nf'; UPDATE t SET a = 'Zq9xK7ng'",
       "expected": {
-        "text": "CREATE USER ?; UPDATE t SET a = ?",
-        "status": "COMPLETE"
+        "text": "CREATE USER ?",
+        "summary": "CREATE USER",
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7ne", "Zq9xK7nf", "Zq9xK7ng"],
       "source": "sentry",
-      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The reduced part is still lexed: the ; inside the literal does not end the statement, the one after it does. No summary (D34): multi-statement input with a reduced statement."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The analyzer stops at PASSWORD inside the reduced statement (D43), so the ; inside the literal never splits the statement, and the statement after it is dropped."
     },
     {
       "id": "credentials.unterminated_in_reduced_part.postgresql",
       "requirements": ["R4", "R6"],
       "dialect": "postgresql",
-      "input": "CREATE USER Zq9xK7nj WITH PASSWORD 'Zq9xK7nk",
+      "input": "CREATE ROLE Zq9xK7nj VALID UNTIL 'Zq9xK7nk",
       "expected": {
-        "text": "CREATE USER ?",
-        "summary": "CREATE USER",
+        "text": "CREATE ROLE ?",
+        "summary": "CREATE ROLE",
         "status": "STOPPED"
       },
       "secrets": ["Zq9xK7nj", "Zq9xK7nk"],
       "source": "sentry",
-      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The literal in the reduced part never closes, so the analyzer stops there: STOPPED, not COMPLETE (D27)."
+      "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The literal in the reduced part never closes, so the analyzer stops there: STOPPED, not COMPLETE (D27). No credential clause precedes it, so it is the literal that stops the analyzer (D43)."
     },
     {
       "id": "credentials.identified_by.database_link.oracle",
@@ -1535,6 +1536,34 @@
       "note": "doubleQuotedIdentifiers is YES, so the password is a quoted identifier; the stop at IDENTIFIED BY still redacts it (D23)."
     },
     {
+      "id": "credentials.identified_by.set_role.oracle",
+      "requirements": ["R2", "R4"],
+      "dialect": "oracle",
+      "input": "SET ROLE app_role IDENTIFIED BY Zq9xK7pa",
+      "expected": {
+        "text": "SET ROLE app_role IDENTIFIED BY ?",
+        "summary": "SET",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7pa"],
+      "source": "sentry",
+      "note": "IDENTIFIED BY stops in every statement, not only in CREATE/ALTER/DROP and GRANT as in OTel Java (D23)."
+    },
+    {
+      "id": "credentials.identified_by.comment_between.oracle",
+      "requirements": ["R2", "R3", "R4"],
+      "dialect": "oracle",
+      "input": "SET ROLE app_role IDENTIFIED /* role password */ BY Zq9xK7pb",
+      "expected": {
+        "text": "SET ROLE app_role IDENTIFIED BY ?",
+        "summary": "SET",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7pb"],
+      "source": "sentry",
+      "note": "A comment between IDENTIFIED and BY does not hide the credential clause (D23). OTel Java's rule allows only whitespace there."
+    },
+    {
       "id": "credentials.password_stop.double_quoted.postgresql",
       "requirements": ["R2", "R4"],
       "dialect": "postgresql",
@@ -1563,30 +1592,30 @@
       "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23). = after PASSWORD counts as a value following it."
     },
     {
-      "id": "credentials.password_kept.before_punctuation.postgresql",
+      "id": "credentials.password_stop.before_punctuation.postgresql",
       "requirements": ["R6"],
       "dialect": "postgresql",
       "input": "CREATE STATISTICS user_stats ON password, email FROM users",
       "expected": {
-        "text": "CREATE STATISTICS user_stats ON password, email FROM users",
+        "text": "CREATE STATISTICS user_stats ON password ?",
         "summary": "CREATE STATISTICS",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "source": "sentry",
-      "note": "PASSWORD is kept (D23): punctuation follows it, so it is a name, not a credential clause."
+      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23). The analyzer does not look at the token after PASSWORD, so a column name before punctuation stops too (D44): over-redaction, not a leak."
     },
     {
-      "id": "credentials.password_kept.object_name",
+      "id": "credentials.password_stop.after_object_kind",
       "requirements": ["R6"],
       "dialect": "CONSERVATIVE",
       "input": "CREATE SCHEMA password AUTHORIZATION app_owner",
       "expected": {
-        "text": "CREATE SCHEMA password AUTHORIZATION app_owner",
+        "text": "CREATE SCHEMA password ?",
         "summary": "CREATE SCHEMA",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "source": "sentry",
-      "note": "PASSWORD is kept (D23): it is the object name."
+      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23). SCHEMA is no object kind OTel Java knows, so it takes SCHEMA as the name, and PASSWORD after it stops (D44): over-redaction, not a leak."
     },
     {
       "id": "credentials.password_kept.safe_kinds",
@@ -2518,6 +2547,20 @@
       "note": "doubleQuotedIdentifiers is UNKNOWN: the summary target becomes \"?\" (D15), and a redacted name gives no stored procedure."
     },
     {
+      "id": "dialect.double_quotes.unknown_target_after_quoted_names.sqlite",
+      "requirements": ["R6", "R8"],
+      "dialect": "sqlite",
+      "input": "SELECT * FROM [a\"b], `c\"d`, \"Zq9xK7og\"",
+      "expected": {
+        "text": "SELECT * FROM [a\"b], `c\"d`, ?",
+        "summary": "SELECT [a\"b] `c\"d` \"?\"",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7og"],
+      "source": "sentry",
+      "note": "doubleQuotedIdentifiers is UNKNOWN: only the double-quoted target becomes \"?\" (D15). A \" inside a bracket or backtick name is part of that name and opens nothing."
+    },
+    {
       "id": "dialect.double_quotes.backslash.mysql",
       "requirements": ["R4", "R8"],
       "dialect": "mysql",
@@ -2979,6 +3022,58 @@
       "note": "No summary (D34): multi-statement input with a stopped statement."
     },
     {
+      "id": "unrecognized.after_semicolon.double_quoted_name.postgresql",
+      "requirements": ["R4", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT \"a;b\" FROM t; AUTH Zq9xK7oc",
+      "expected": {
+        "text": "SELECT \"a;b\" FROM t; ?",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7oc"],
+      "source": "sentry",
+      "note": "A ; inside a quoted identifier does not end the statement, so the next statement starts at AUTH (D12). No summary (D34): multi-statement input with a stopped statement."
+    },
+    {
+      "id": "unrecognized.after_semicolon.bracket_name.sqlserver",
+      "requirements": ["R4", "R6"],
+      "dialect": "sqlserver",
+      "input": "SELECT [a;b] FROM t; AUTH Zq9xK7od",
+      "expected": {
+        "text": "SELECT [a;b] FROM t; ?",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7od"],
+      "source": "sentry",
+      "note": "A ; inside a quoted identifier does not end the statement, so the next statement starts at AUTH (D12). No summary (D34): multi-statement input with a stopped statement."
+    },
+    {
+      "id": "unrecognized.after_semicolon.backtick_name.mysql",
+      "requirements": ["R4", "R6"],
+      "dialect": "mysql",
+      "input": "SELECT `a;b` FROM t; AUTH Zq9xK7oe",
+      "expected": {
+        "text": "SELECT `a;b` FROM t; ?",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7oe"],
+      "source": "sentry",
+      "note": "A ; inside a quoted identifier does not end the statement, so the next statement starts at AUTH (D12). No summary (D34): multi-statement input with a stopped statement."
+    },
+    {
+      "id": "unrecognized.after_semicolon.inside_subscript.postgresql",
+      "requirements": ["R4", "R6"],
+      "dialect": "postgresql",
+      "input": "SELECT a[1; AUTH Zq9xK7of]",
+      "expected": {
+        "text": "SELECT a[?; ?",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7of"],
+      "source": "sentry",
+      "note": "bracketIdentifiers is NO, so [ is punctuation and the ; ends the statement; AUTH is not on the D12 allowlist. No summary (D34): multi-statement input with a stopped statement."
+    },
+    {
       "id": "unrecognized.backslash_outside_literal",
       "requirements": ["R4"],
       "dialect": "CONSERVATIVE",
@@ -3092,6 +3187,34 @@
       "secrets": ["Zq9xK7fb"],
       "source": "sentry",
       "note": "The stop's ? for the unterminated literal would exceed the limit, so it is cut and the status is TRUNCATED, not STOPPED (D27)."
+    },
+    {
+      "id": "size.limit.dcl_before_credential.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "CREATE USER Zq9xK7oa IDENTIFIED BY 'Zq9xK7ob'",
+      "maxQueryTextLength": 20,
+      "expected": {
+        "text": "CREATE USER ?",
+        "summary": "CREATE USER",
+        "status": "TRUNCATED"
+      },
+      "secrets": ["Zq9xK7oa", "Zq9xK7ob"],
+      "source": "sentry",
+      "note": "The limit cuts the text before IDENTIFIED BY, after the user name. The DCL reduction (D23) keys on the statement start, so the name is still reduced."
+    },
+    {
+      "id": "size.limit.before_first_keyword",
+      "requirements": ["R6"],
+      "dialect": "CONSERVATIVE",
+      "input": "{? = call calc_total(?, ?)}",
+      "maxQueryTextLength": 4,
+      "expected": {
+        "text": "{? =",
+        "status": "TRUNCATED"
+      },
+      "source": "sentry",
+      "note": "The limit cuts the JDBC escape before its keyword. The statement was cut, not refused, so this is no D12 stop (found by the option 06 step 5 limit sweep)."
     },
     {
       "id": "size.summary.over_255",
@@ -6509,7 +6632,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["new_user", "Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[1]",
@@ -6523,7 +6646,7 @@
       "expected": {
         "text": "ALTER USER ?",
         "summary": "ALTER USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[2]",
@@ -6657,7 +6780,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["new_user", "Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[12]",
@@ -6671,7 +6794,7 @@
       "expected": {
         "text": "ALTER USER ?",
         "summary": "ALTER USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Password1", "Password2"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[13]",
@@ -6685,7 +6808,7 @@
       "expected": {
         "text": "GRANT ?",
         "summary": "GRANT",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[14]",
@@ -6828,7 +6951,7 @@
       "input": "SELECT 1; GRANT ALL PRIVILEGES ON database.* TO user IDENTIFIED BY Password1",
       "expected": {
         "text": "SELECT ?; GRANT ?",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeGrantIdentifiedByAfterPreviousStatement[1]",
@@ -6842,7 +6965,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeDdlObjectNamedPassword[1]",
@@ -10822,7 +10945,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Alice Smith", "Pa55w0rd!"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[2]",
@@ -10836,7 +10959,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["svc-payments", "Pa55w0rd!"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[3]",
@@ -10906,7 +11029,7 @@
       "expected": {
         "text": "CREATE LOGIN ?",
         "summary": "CREATE LOGIN",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["Pa55w0rd!"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[8]",
