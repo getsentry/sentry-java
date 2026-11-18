@@ -86,4 +86,20 @@ class ManifestModulesLoaderTest {
 
     verifyNoMoreInteractions(classLoader)
   }
+
+  @Test
+  fun `reading modules from manifest caches an empty map on a runtime exception`() {
+    val logger = mock<ILogger>()
+    val classLoader = mock<ClassLoader>()
+
+    whenever(classLoader.getResources(any())).thenThrow(IllegalStateException("zip file closed"))
+
+    val sut = ManifestModulesLoader(classLoader, logger)
+
+    assertEquals(emptyMap(), sut.orLoadModules)
+    assertEquals(emptyMap(), sut.orLoadModules)
+
+    verify(classLoader).getResources(any())
+    verifyNoMoreInteractions(classLoader)
+  }
 }

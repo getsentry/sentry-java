@@ -58,7 +58,10 @@ public final class ManifestModulesLoader extends ModulesLoader {
           modules.add(module);
         }
       }
-    } catch (IOException e) {
+    } catch (IOException | RuntimeException e) {
+      // The class loader belongs to the app or its container, so it can also throw unchecked
+      // exceptions, e.g. an IllegalStateException for a jar that was already closed. The modules
+      // found so far are returned and cached, so events are still processed, without modules.
       logger.log(SentryLevel.ERROR, "Unable to detect modules via manifest files.", e);
     }
 
