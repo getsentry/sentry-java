@@ -9,6 +9,7 @@
 
 ### Breaking Changes
 
+- The Spring Boot 3 integrations are tested against Spring Boot 3.4 and newer. Spring Boot 3.2 and 3.3 are no longer supported ([#6656](https://github.com/getsentry/sentry-java/pull/6656))
 - Remove the deprecated `io.sentry.android.core.LoadClass`. Use `io.sentry.util.LoadClass` instead ([#6594](https://github.com/getsentry/sentry-java/pull/6594))
 - `SentryOptions.getIgnoredErrors()`, `getIgnoredTransactions()`, `getIgnoredCheckIns()` and `getIgnoredSpanOrigins()` now return `List<String>` instead of `List<FilterString>`, matching their setters ([#6489](https://github.com/getsentry/sentry-java/pull/6489))
 - The SDK is now compiled for Java 11 instead of Java 8. JVM applications need Java 11 or newer ([#6459](https://github.com/getsentry/sentry-java/pull/6459))
