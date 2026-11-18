@@ -383,7 +383,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.timezone = timezone;
   }
 
-  public @Nullable String[] getArchs() {
+  public String @Nullable [] getArchs() {
     return archs;
   }
 
