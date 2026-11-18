@@ -956,6 +956,31 @@ class ScopesTest {
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
   }
 
+  @Test
+  fun `when withScope throws a runtime exception then it is swallowed`() {
+    val (scopes, _, logger) = getEnabledScopes()
+    val exception = IllegalStateException("scope callback exception")
+
+    scopes.withScope { throw exception }
+
+    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+  }
+
+  @Test
+  fun `when withScope throws a fatal error then it propagates`() {
+    val (scopes) = getEnabledScopes()
+
+    assertFailsWith<OutOfMemoryError> { scopes.withScope { throw OutOfMemoryError("callback") } }
+  }
+
+  @Test
+  fun `when withScope on a closed scopes throws a fatal error then it propagates`() {
+    val (scopes) = getEnabledScopes()
+    scopes.close()
+
+    assertFailsWith<OutOfMemoryError> { scopes.withScope { throw OutOfMemoryError("callback") } }
+  }
+
   // endregion
 
   // region withIsolationScope tests
@@ -992,6 +1017,35 @@ class ScopesTest {
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
   }
 
+  @Test
+  fun `when withIsolationScope throws a runtime exception then it is swallowed`() {
+    val (scopes, _, logger) = getEnabledScopes()
+    val exception = IllegalStateException("scope callback exception")
+
+    scopes.withIsolationScope { throw exception }
+
+    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+  }
+
+  @Test
+  fun `when withIsolationScope throws a fatal error then it propagates`() {
+    val (scopes) = getEnabledScopes()
+
+    assertFailsWith<OutOfMemoryError> {
+      scopes.withIsolationScope { throw OutOfMemoryError("callback") }
+    }
+  }
+
+  @Test
+  fun `when withIsolationScope on a closed scopes throws a fatal error then it propagates`() {
+    val (scopes) = getEnabledScopes()
+    scopes.close()
+
+    assertFailsWith<OutOfMemoryError> {
+      scopes.withIsolationScope { throw OutOfMemoryError("callback") }
+    }
+  }
+
   // endregion
 
   // region configureScope tests
@@ -1026,6 +1080,25 @@ class ScopesTest {
     scopes.configureScope(scopeCallback)
 
     verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+  }
+
+  @Test
+  fun `when configureScope throws a runtime exception then it is swallowed`() {
+    val (scopes, _, logger) = getEnabledScopes()
+    val exception = IllegalStateException("scope callback exception")
+
+    scopes.configureScope { throw exception }
+
+    verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+  }
+
+  @Test
+  fun `when configureScope throws a fatal error then it propagates`() {
+    val (scopes) = getEnabledScopes()
+
+    assertFailsWith<OutOfMemoryError> {
+      scopes.configureScope { throw OutOfMemoryError("callback") }
+    }
   }
 
   // endregion

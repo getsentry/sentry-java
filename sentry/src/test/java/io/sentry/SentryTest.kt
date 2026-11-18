@@ -39,6 +39,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
@@ -1558,6 +1559,32 @@ class SentryTest {
       }
 
       assertThat(events.single().tags).containsEntry("http-url", "https://example.com")
+    }
+  }
+
+  @Test
+  fun `scope callbacks that throw a runtime exception are swallowed`() {
+    initForTest { o -> o.dsn = dsn }
+
+    Sentry.withScope { throw IllegalStateException("withScope") }
+    Sentry.withIsolationScope { throw IllegalStateException("withIsolationScope") }
+    Sentry.configureScope { throw IllegalStateException("configureScope") }
+    ScopesAdapter.getInstance().withScope { throw IllegalStateException("adapter withScope") }
+  }
+
+  @Test
+  fun `scope callbacks that throw a fatal error propagate`() {
+    initForTest { o -> o.dsn = dsn }
+
+    assertFailsWith<OutOfMemoryError> { Sentry.withScope { throw OutOfMemoryError("withScope") } }
+    assertFailsWith<OutOfMemoryError> {
+      Sentry.withIsolationScope { throw OutOfMemoryError("withIsolationScope") }
+    }
+    assertFailsWith<OutOfMemoryError> {
+      Sentry.configureScope { throw OutOfMemoryError("configureScope") }
+    }
+    assertFailsWith<OutOfMemoryError> {
+      ScopesAdapter.getInstance().configureScope { throw OutOfMemoryError("adapter") }
     }
   }
 

@@ -351,6 +351,12 @@ public interface IScopes {
    * changes may be dropped when executed in parallel. Use {@link
    * IScopes#configureScope(ScopeCallback)} instead.
    *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link Sentry#init}, the callback runs on a no-op scope and nothing it throws
+   * is caught.
+   *
    * @param callback the callback
    */
   void withScope(@NotNull ScopeCallback callback);
@@ -364,12 +370,23 @@ public interface IScopes {
    * changes may be dropped when executed in parallel. Use {@link IScopes#configureScope(ScopeType,
    * ScopeCallback)} instead.
    *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link Sentry#init}, the callback runs on a no-op scope and nothing it throws
+   * is caught.
+   *
    * @param callback the callback
    */
   void withIsolationScope(@NotNull ScopeCallback callback);
 
   /**
    * Configures the scope through the callback.
+   *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link Sentry#init}, the callback isn't run.
    *
    * @param callback The configure scope callback.
    */
@@ -379,6 +396,11 @@ public interface IScopes {
 
   /**
    * Configures the scope through the callback.
+   *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link Sentry#init}, the callback isn't run.
    *
    * @param callback The configure scope callback.
    */

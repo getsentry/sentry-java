@@ -1050,6 +1050,12 @@ public final class Sentry {
    * <p>Unlike {@link Sentry#pushScope()} this also forks in global hub mode, since the previous
    * scopes are always restored once the callback returns.
    *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link #init} and after {@link #close}, the callback runs on a no-op scope and
+   * nothing it throws is caught.
+   *
    * @param callback the callback
    */
   public static void withScope(final @NotNull ScopeCallback callback) {
@@ -1063,6 +1069,12 @@ public final class Sentry {
    * <p>Unlike {@link Sentry#pushIsolationScope()} this also forks in global hub mode, since the
    * previous scopes are always restored once the callback returns.
    *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link #init} and after {@link #close}, the callback runs on a no-op scope and
+   * nothing it throws is caught.
+   *
    * @param callback the callback
    */
   public static void withIsolationScope(final @NotNull ScopeCallback callback) {
@@ -1072,6 +1084,11 @@ public final class Sentry {
   /**
    * Configures the scope through the callback.
    *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link #init} and after {@link #close}, the callback isn't run.
+   *
    * @param callback The configure scope callback.
    */
   public static void configureScope(final @NotNull ScopeCallback callback) {
@@ -1080,6 +1097,11 @@ public final class Sentry {
 
   /**
    * Configures the scope through the callback.
+   *
+   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
+   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
+   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
+   * rethrown. Before {@link #init} and after {@link #close}, the callback isn't run.
    *
    * @param callback The configure scope callback.
    */
