@@ -17,12 +17,14 @@ import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -193,6 +195,9 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
               .getContexts()
               .setDevice(deviceInfoUtil.get().collectDeviceInformation(errorEvent, applyScopeData));
         } catch (Throwable e) {
+          // Collecting the device info makes Binder calls into several system services, which can
+          // rethrow any runtime exception from the other side. The device context is left out.
+          ExceptionUtils.rethrowIfFatal(e);
           options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
         }
       } else {
@@ -210,7 +215,10 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
         final OperatingSystem androidOS = deviceInfoUtil.get().getOperatingSystem();
         // make Android OS the main OS using the 'os' key
         event.getContexts().setOperatingSystem(androidOS);
-      } catch (Throwable e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+      } catch (ExecutionException e) {
         options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
       }
     } else {
@@ -310,7 +318,10 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
       if (this.deviceInfoUtil != null) {
         try {
           deviceInfoUtil = this.deviceInfoUtil.get();
-        } catch (Throwable e) {
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        } catch (ExecutionException e) {
           options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
         }
       } else {
@@ -367,7 +378,10 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
             event.setTag(entry.getKey(), entry.getValue());
           }
         }
-      } catch (Throwable e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+      } catch (ExecutionException e) {
         options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
       }
     } else {

@@ -35,6 +35,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.ByteArrayInputStream;
@@ -189,6 +190,10 @@ public final class TombstoneIntegration implements Integration, Closeable {
           }
         }
       } catch (Throwable e) {
+        // getTraceInputStream() is a Binder call into system_server, and the tombstone was written
+        // by debuggerd for a crashing process, so we can't know what reading and parsing it
+        // throws. This tombstone is not reported.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -218,6 +223,10 @@ public final class TombstoneIntegration implements Integration, Closeable {
           event = mergedEvent;
         }
       } catch (Throwable e) {
+        // The native events were written by sentry-native while the process was crashing, so we
+        // can't know what parsing and merging them throws. The tombstone is reported without
+        // them.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -282,7 +291,8 @@ public final class TombstoneIntegration implements Integration, Closeable {
                   item.getHeader().getContentType(),
                   item.getHeader().getAttachmentType(),
                   false));
-        } catch (Throwable e) {
+        } catch (Exception e) {
+          // getData() is declared to throw Exception for items that are created lazily
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Failed to process envelope item: %s", e.getMessage());

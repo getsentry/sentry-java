@@ -12,6 +12,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -136,6 +137,10 @@ final class SendCachedEnvelopeIntegration
 
                   sender.send();
                 } catch (Throwable e) {
+                  // send() reads every envelope earlier processes left in the cache and hands them
+                  // to the transport, so we can't know what it throws. The envelopes stay cached
+                  // and are retried on the next connection change or app start.
+                  ExceptionUtils.rethrowIfFatal(e);
                   options
                       .getLogger()
                       .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);

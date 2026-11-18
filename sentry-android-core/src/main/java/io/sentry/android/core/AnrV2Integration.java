@@ -30,6 +30,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
@@ -229,6 +230,10 @@ public final class AnrV2Integration implements Integration, Closeable {
         }
         return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages, artContext);
       } catch (Throwable e) {
+        // The dump is written by ART in a format that changes between Android versions and
+        // vendors, so we can't know how the parser fails on unexpected input. The ANR is still
+        // reported, with a message asking to attach the raw dump.
+        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
       }

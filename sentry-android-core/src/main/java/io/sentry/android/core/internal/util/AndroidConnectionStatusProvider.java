@@ -23,6 +23,7 @@ import io.sentry.android.core.ContextUtils;
 import io.sentry.time.Deadline;
 import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -553,6 +554,9 @@ public final class AndroidConnectionStatusProvider
           ? connectivityManager.getNetworkCapabilities(activeNetwork)
           : null;
     } catch (Throwable t) {
+      // Binder calls into the connectivity service, which can rethrow any runtime exception from
+      // the other side. The connection status stays unknown until the next refresh.
+      ExceptionUtils.rethrowIfFatal(t);
       options.getLogger().log(SentryLevel.WARNING, "Failed to update connection status cache", t);
       return null;
     }
@@ -722,6 +726,9 @@ public final class AndroidConnectionStatusProvider
           ? ConnectionStatus.CONNECTED
           : ConnectionStatus.DISCONNECTED;
     } catch (Throwable t) {
+      // A Binder call into the connectivity service, which can rethrow any runtime exception from
+      // the other side. The status is reported as unknown.
+      ExceptionUtils.rethrowIfFatal(t);
       logger.log(SentryLevel.WARNING, "Could not retrieve Connection Status", t);
       return ConnectionStatus.UNKNOWN;
     }
@@ -787,6 +794,9 @@ public final class AndroidConnectionStatusProvider
         return "cellular";
       }
     } catch (Throwable exception) {
+      // Binder calls into the connectivity service, which can rethrow any runtime exception from
+      // the other side. The connection type is left out.
+      ExceptionUtils.rethrowIfFatal(exception);
       logger.log(SentryLevel.ERROR, "Failed to retrieve network info", exception);
     }
 
@@ -877,6 +887,10 @@ public final class AndroidConnectionStatusProvider
         connectivityManager.registerDefaultNetworkCallback(networkCallback);
       }
     } catch (Throwable t) {
+      // A Binder call into the connectivity service, which can rethrow any runtime exception from
+      // the other side, e.g. when the app has too many callbacks registered. Network changes are
+      // not observed.
+      ExceptionUtils.rethrowIfFatal(t);
       logger.log(SentryLevel.WARNING, "registerDefaultNetworkCallback failed", t);
       return false;
     }
@@ -895,6 +909,9 @@ public final class AndroidConnectionStatusProvider
     try {
       connectivityManager.unregisterNetworkCallback(networkCallback);
     } catch (Throwable t) {
+      // A Binder call into the connectivity service, which can rethrow any runtime exception from
+      // the other side. The callback may stay registered until the process ends.
+      ExceptionUtils.rethrowIfFatal(t);
       logger.log(SentryLevel.WARNING, "unregisterNetworkCallback failed", t);
     }
   }

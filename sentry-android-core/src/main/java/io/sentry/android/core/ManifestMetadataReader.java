@@ -15,6 +15,7 @@ import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -842,6 +843,10 @@ final class ManifestMetadataReader {
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
     } catch (Throwable e) {
+      // A metadata bundle from the package manager is unparceled on first access, and its values
+      // are whatever the app put in its manifest, so we can't know what reading it throws. The
+      // options keep their defaults for every key not read yet.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(
@@ -1134,6 +1139,9 @@ final class ManifestMetadataReader {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
     } catch (Throwable e) {
+      // A metadata bundle from the package manager is unparceled on first access, so we can't know
+      // what reading it throws. Auto-init stays enabled.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
     }
     return autoInit;

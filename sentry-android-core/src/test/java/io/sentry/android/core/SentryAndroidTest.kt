@@ -218,6 +218,19 @@ class SentryAndroidTest {
   }
 
   @Test
+  fun `when the configuration handler throws, init continues with the options it set`() {
+    var refOptions: SentryAndroidOptions? = null
+    fixture.initSut {
+      it.anrTimeoutIntervalMillis = 3000
+      refOptions = it
+      throw IllegalStateException("configuration failed")
+    }
+
+    assertEquals(3000, refOptions!!.anrTimeoutIntervalMillis)
+    assertTrue(Sentry.isEnabled())
+  }
+
+  @Test
   fun `init won't throw exception`() {
     val logger = mock<ILogger>()
 

@@ -37,6 +37,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -173,6 +174,10 @@ public final class SystemEventsBreadcrumbsIntegration
                   addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
                 }
               } catch (Throwable e) {
+                // registerReceiver is a Binder call into the activity manager, which can rethrow
+                // any runtime exception from the other side. System event breadcrumbs are
+                // disabled.
+                ExceptionUtils.rethrowIfFatal(e);
                 options.setEnableSystemEventBreadcrumbs(false);
                 options
                     .getLogger()
@@ -221,6 +226,10 @@ public final class SystemEventsBreadcrumbsIntegration
       try {
         context.unregisterReceiver(receiverRef);
       } catch (Throwable exception) {
+        // unregisterReceiver is a Binder call into the activity manager, which can rethrow any
+        // runtime exception from the other side. The receiver may stay registered until the
+        // process ends.
+        ExceptionUtils.rethrowIfFatal(exception);
         options
             .getLogger()
             .log(
@@ -409,6 +418,10 @@ public final class SystemEventsBreadcrumbsIntegration
                 newExtras.put(item, value.toString());
               }
             } catch (Throwable exception) {
+              // The extras were parceled by the broadcast's sender and are unparceled here, and the
+              // value's class implements toString(), so we can't know what this throws. The extra
+              // is left out of the breadcrumb.
+              ExceptionUtils.rethrowIfFatal(exception);
               options
                   .getLogger()
                   .log(
