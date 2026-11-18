@@ -17,6 +17,7 @@ import io.sentry.SentryOptions.RequestSize;
 import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.TransactionNameProvider;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -101,6 +102,9 @@ public class SentrySpringFilter extends OncePerRequestFilter {
         }
       });
     } catch (Throwable e) {
+      // This runs inside the app's HTTP request and reads the container's request object, so we
+      // can't know what it throws. The request continues without Sentry request data on the scope.
+      ExceptionUtils.rethrowIfFatal(e);
       scopes
           .getOptions()
           .getLogger()
