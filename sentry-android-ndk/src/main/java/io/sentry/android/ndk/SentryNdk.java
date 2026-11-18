@@ -101,6 +101,8 @@ public final class SentryNdk {
         throw new IllegalStateException("Timeout waiting for Sentry NDK library to load");
       }
     } catch (InterruptedException e) {
+      // we don't own the calling thread, so keep its interrupt for the code that does
+      Thread.currentThread().interrupt();
       throw new IllegalStateException(
           "Thread interrupted while waiting for NDK libs to be loaded", e);
     }
@@ -116,6 +118,8 @@ public final class SentryNdk {
         throw new IllegalStateException("Timeout waiting for Sentry NDK library to load");
       }
     } catch (InterruptedException e) {
+      // we don't own the calling thread, so keep its interrupt for the code that does
+      Thread.currentThread().interrupt();
       throw new IllegalStateException(
           "Thread interrupted while waiting for NDK libs to be loaded", e);
     }
