@@ -85,6 +85,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.core.env.MapPropertySource
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.quartz.SchedulerFactoryBean
@@ -263,6 +264,7 @@ class SentryAutoConfigurationTest {
         "sentry.ignored-checkins=slug1,slugB",
         "sentry.ignored-errors=Some error,Another .*",
         "sentry.ignored-transactions=transactionName1,transactionNameB",
+        "sentry.trace-ignore-status-codes=404,500-599",
         "sentry.enable-backpressure-handling=false",
         "sentry.enable-database-transaction-tracing=true",
         "sentry.enable-cache-tracing=true",
@@ -316,6 +318,10 @@ class SentryAutoConfigurationTest {
         assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
         assertThat(options.ignoredErrors).containsOnly("Some error", "Another .*")
         assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
+        assertThat(options.traceIgnoreStatusCodes).hasSize(2)
+        assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
+        assertThat(options.traceIgnoreStatusCodes!![1].isInRange(500)).isTrue()
+        assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
         assertThat(options.isEnableDatabaseTransactionTracing).isEqualTo(true)
         assertThat(options.isEnableCacheTracing).isEqualTo(true)
@@ -333,6 +339,42 @@ class SentryAutoConfigurationTest {
         assertThat(options.logging.logsEnabled).isTrue()
         assertThat(options.isStrictTraceContinuation).isEqualTo(true)
         assertThat(options.orgId).isEqualTo("12345")
+      }
+  }
+
+  @Test
+  fun `YAML list binds integer ignored server HTTP status codes`() {
+    dsnEnabledRunner
+      .withInitializer { context ->
+        // YAML exposes unquoted numbers as Integer values in indexed property sources.
+        context.environment.propertySources.addFirst(
+          MapPropertySource(
+            "yaml",
+            mapOf<String, Any>(
+              "sentry.trace-ignore-status-codes[0]" to 404,
+              "sentry.trace-ignore-status-codes[1]" to "500-599",
+            ),
+          )
+        )
+      }
+      .run {
+        val ranges = it.getBean(SentryProperties::class.java).traceIgnoreStatusCodes
+        assertThat(ranges).hasSize(2)
+        assertThat(ranges!![0].isInRange(404)).isTrue()
+        assertThat(ranges[1].isInRange(500)).isTrue()
+        assertThat(ranges[1].isInRange(599)).isTrue()
+      }
+  }
+
+  @Test
+  fun `empty ignored server HTTP status codes disable the configuration`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.trace-ignore-status-codes=",
+      )
+      .run {
+        assertThat(it.getBean(SentryProperties::class.java).traceIgnoreStatusCodes).isEmpty()
       }
   }
 
