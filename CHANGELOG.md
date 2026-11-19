@@ -57,8 +57,8 @@
       `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
 - Disable tracing for HTTP `OPTIONS` requests by default. Set `traceOptionsRequests` to `true` to
   preserve the previous behavior ([#6254](https://github.com/getsentry/sentry-java/pull/6254))
-- Incoming HTTP server transactions that finish with status 301-303, 305-399, or 401-404 are no
-  longer sent to Sentry by default. This includes matched endpoints that intentionally return one
+- Incoming HTTP server transactions that finish with status 301, 305-399, or 401-404 are no longer
+  sent to Sentry by default. This includes matched endpoints that intentionally return one
   of these statuses. Outgoing HTTP requests with matching statuses are unaffected.
 
   Restore the previous behavior and trace every incoming HTTP status with an empty configuration:

@@ -352,14 +352,14 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
-  fun `ignored server HTTP status codes use the spec defaults`() {
+  fun `ignored server HTTP status codes use the defaults`() {
     contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
       val ranges = it.getBean(SentryProperties::class.java).traceIgnoreStatusCodes!!
       assertThat(ranges).hasSize(3)
-      listOf(301, 303, 305, 399, 401, 404).forEach { statusCode ->
+      listOf(301, 305, 399, 401, 404).forEach { statusCode ->
         assertThat(ranges.any { it.isInRange(statusCode) }).isTrue()
       }
-      listOf(300, 304, 400, 405).forEach { statusCode ->
+      listOf(300, 302, 303, 304, 400, 405).forEach { statusCode ->
         assertThat(ranges.any { it.isInRange(statusCode) }).isFalse()
       }
     }

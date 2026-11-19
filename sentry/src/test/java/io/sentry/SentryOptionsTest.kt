@@ -1181,15 +1181,15 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `ignored server HTTP status codes for tracing use the spec defaults`() {
+  fun `ignored server HTTP status codes for tracing use the defaults`() {
     val ranges = SentryOptions().traceIgnoreStatusCodes!!
 
     assertThat(ranges).isInstanceOf(CopyOnWriteArrayList::class.java)
     assertThat(ranges).hasSize(3)
-    listOf(301, 303, 305, 399, 401, 404).forEach {
+    listOf(301, 305, 399, 401, 404).forEach {
       assertThat(ranges.any { range -> range.isInRange(it) }).isTrue()
     }
-    listOf(300, 304, 400, 405).forEach {
+    listOf(300, 302, 303, 304, 400, 405).forEach {
       assertThat(ranges.any { range -> range.isInRange(it) }).isFalse()
     }
   }
