@@ -39,7 +39,7 @@ class SentrySpanExporterTest {
 
   init {
     whenever(
-        client.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+        client.captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull()),
       )
       .thenReturn(SentryId())
     Sentry.setCurrentScopes(scopes)
