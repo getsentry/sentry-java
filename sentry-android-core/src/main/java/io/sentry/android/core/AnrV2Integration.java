@@ -15,10 +15,13 @@ import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.anr.NonFatalAnrMarker;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.threaddump.Lines;
 import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
 import io.sentry.android.core.internal.util.NativeEventUtils;
+import io.sentry.cache.EnvelopeCache;
+import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
@@ -72,12 +75,22 @@ public final class AnrV2Integration implements Integration, Closeable {
     }
 
     if (this.options.isAnrEnabled()) {
+      final @NotNull SentryAndroidOptions androidOptions = this.options;
       try {
+        final @NotNull ApplicationExitInfoHistoryDispatcher dispatcher =
+            new ApplicationExitInfoHistoryDispatcher(
+                context, scopes, androidOptions, new AnrV2Policy(androidOptions));
+        // This process writes its marker only from a later task on this executor, so this never
+        // deletes it.
         options
             .getExecutorService()
-            .submit(
-                new ApplicationExitInfoHistoryDispatcher(
-                    context, scopes, this.options, new AnrV2Policy(this.options)));
+            .submit(() -> {
+              try {
+                dispatcher.run();
+              } finally {
+                NonFatalAnrMarker.delete(androidOptions);
+              }
+            });
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start ANR processor.", e);
       }
@@ -133,6 +146,25 @@ public final class AnrV2Integration implements Integration, Closeable {
       final long anrTimestamp = exitInfo.getTimestamp();
       final boolean isBackground =
           exitInfo.getImportance() != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+      final AnrV2Hint anrHint =
+          new AnrV2Hint(
+              options.getFlushTimeoutMillis(),
+              options.getLogger(),
+              anrTimestamp,
+              shouldEnrich,
+              isBackground);
+
+      if (shouldEnrich && wasReportedAsNonFatal(exitInfo)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not reporting ANR event as it was already reported as a non-fatal ANR %s",
+                exitInfo.toString());
+        endPreviousSession(anrHint);
+        markReported(anrTimestamp);
+        return null;
+      }
 
       final ParseResult result = parseThreadDump(exitInfo, isBackground);
       if (result.type == ParseResult.Type.NO_DUMP) {
@@ -144,13 +176,6 @@ public final class AnrV2Integration implements Integration, Closeable {
                 exitInfo.toString());
         return null;
       }
-      final AnrV2Hint anrHint =
-          new AnrV2Hint(
-              options.getFlushTimeoutMillis(),
-              options.getLogger(),
-              anrTimestamp,
-              shouldEnrich,
-              isBackground);
 
       final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
 
@@ -183,6 +208,19 @@ public final class AnrV2Integration implements Integration, Closeable {
       }
 
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, anrHint);
+    }
+
+    private boolean wasReportedAsNonFatal(final @NotNull ApplicationExitInfo exitInfo) {
+      final @Nullable NonFatalAnrMarker marker = NonFatalAnrMarker.read(options);
+      return marker != null && marker.matches(exitInfo.getPid(), exitInfo.getTimestamp());
+    }
+
+    // Without an event, PreviousSessionFinalizer would end the session as normal.
+    private void endPreviousSession(final @NotNull AnrV2Hint anrHint) {
+      final @NotNull IEnvelopeCache cache = options.getEnvelopeDiskCache();
+      if (cache instanceof EnvelopeCache) {
+        ((EnvelopeCache) cache).endPreviousSessionAbnormally(anrHint);
+      }
     }
 
     private @NotNull ParseResult parseThreadDump(

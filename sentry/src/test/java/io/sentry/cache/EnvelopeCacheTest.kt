@@ -595,6 +595,39 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `endPreviousSessionAbnormally ends the session without storing an envelope`() {
+    val cache = fixture.getSUT()
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val sessionStarted = Date(2023, 10, 1)
+    val sessionExitedWithAbnormal = sessionStarted.time + TimeUnit.HOURS.toMillis(3)
+    fixture.options.serializer.serialize(
+      createSession(sessionStarted),
+      previousSessionFile.bufferedWriter(),
+    )
+
+    cache.endPreviousSessionAbnormally(
+      object : AbnormalExit {
+        override fun mechanism(): String = "abnormal_mechanism"
+
+        override fun ignoreCurrentThread(): Boolean = false
+
+        override fun timestamp(): Long = sessionExitedWithAbnormal
+      },
+    )
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(updatedSession.status).isEqualTo(State.Abnormal)
+    assertThat(updatedSession.abnormalMechanism).isEqualTo("abnormal_mechanism")
+    assertThat(updatedSession.timestamp!!.time).isEqualTo(sessionExitedWithAbnormal)
+    assertThat(cache.iterator().hasNext()).isFalse()
+  }
+
+  @Test
   fun `NativeCrashExit hint marks previous session as crashed with crash timestamp`() {
     val cache = fixture.getSUT()
 
