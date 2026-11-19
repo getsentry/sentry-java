@@ -17,6 +17,7 @@ import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.util.Collections;
@@ -193,6 +194,9 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
               .getContexts()
               .setDevice(deviceInfoUtil.get().collectDeviceInformation(errorEvent, applyScopeData));
         } catch (Throwable e) {
+          // Collecting the device info makes Binder calls into several system services, which can
+          // rethrow any runtime exception from the other side. The device context is left out.
+          ExceptionUtils.rethrowIfFatal(e);
           options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
         }
       } else {

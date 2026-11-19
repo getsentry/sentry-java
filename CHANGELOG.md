@@ -109,6 +109,7 @@
   - App starts are measured from process start on Android 7.0+ (API 24), and slow and frozen frames are measured per span
   - `ActivityFramesTracker` is removed, and the `ActivityLifecycleIntegration` constructor no longer takes it
 - Screenshots attached to errors and user feedback now mask all text and images by default. Turn it off with `options.screenshot.setMaskAllText(false)` and `setMaskAllImages(false)`, or the `io.sentry.screenshot.mask-all-text` and `io.sentry.screenshot.mask-all-images` manifest options. Masking needs `sentry-android-replay`, so apps that depend on `sentry-android-core` alone get no screenshot until they add it or turn masking off ([#6437](https://github.com/getsentry/sentry-java/pull/6437))
+- Non-recoverable errors such as `OutOfMemoryError` and `StackOverflowError` are no longer swallowed by the SDK. This means that callbacks into app code will now rethrow these exceptions instead of silently swallowing them since they are not recoverable ([#6665](https://github.com/getsentry/sentry-java/pull/6665), [#6666](https://github.com/getsentry/sentry-java/pull/6666), [#6667](https://github.com/getsentry/sentry-java/pull/6667), [#6668](https://github.com/getsentry/sentry-java/pull/6668), [#6669](https://github.com/getsentry/sentry-java/pull/6669), [#6670](https://github.com/getsentry/sentry-java/pull/6670), [#6678](https://github.com/getsentry/sentry-java/pull/6678))
 
 ### Features
 

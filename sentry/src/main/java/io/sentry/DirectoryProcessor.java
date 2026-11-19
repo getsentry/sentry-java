@@ -8,6 +8,7 @@ import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import java.io.File;
 import java.util.Queue;
@@ -101,6 +102,10 @@ abstract class DirectoryProcessor {
           "Thread interrupted during processing '%s'",
           directory.getAbsolutePath());
     } catch (Throwable e) {
+      // Processing a file deserializes data written by an earlier launch, another process or a
+      // hybrid SDK and captures it, so we can't know what it throws. The remaining files are left
+      // for the next run.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
   }

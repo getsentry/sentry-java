@@ -11,6 +11,7 @@ import io.sentry.Integration;
 import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -298,6 +299,9 @@ public final class FeedbackShakeIntegration
               dialog = dialogFactory.create(active);
               dialog.show();
             } catch (Throwable e) {
+              // show() adds a window over Binder and the dialog inflates with the app's theme, so
+              // we can't know what this throws. No dialog is shown for this shake.
+              ExceptionUtils.rethrowIfFatal(e);
               if (dialog != null) {
                 onDialogGone(dialog);
               }

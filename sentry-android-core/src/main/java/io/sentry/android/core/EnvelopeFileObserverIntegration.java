@@ -10,6 +10,7 @@ import io.sentry.OutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -92,7 +93,10 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
       addIntegrationToSdkVersion("EnvelopeFileObserver");
     } catch (Throwable e) {
-      // it could throw eg NoSuchFileException or NullPointerException
+      // startWatching() sets up inotify through native code, which can throw e.g.
+      // NoSuchFileException or NullPointerException, so we can't know what it throws. Envelopes
+      // written to the outbox, e.g. by the NDK, are not picked up while the process runs.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);

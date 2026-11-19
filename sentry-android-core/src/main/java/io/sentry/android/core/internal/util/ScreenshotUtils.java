@@ -15,6 +15,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.thread.IThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -251,6 +252,9 @@ public final class ScreenshotUtils {
       // screenshot png is around ~100-150 kb
       return byteArrayOutputStream.toByteArray();
     } catch (Throwable e) {
+      // compress() runs the native image encoder, so we can't know what it throws. No screenshot is
+      // attached.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Compressing bitmap failed.", e);
     }
     return null;

@@ -22,6 +22,7 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.util.ExceptionUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -160,6 +161,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
     } catch (Throwable e) {
+      // Runs in a ContentProvider before Application.onCreate: it parses a config file written by
+      // the previous launch and starts a profiler through the platform's tracing, so we can't
+      // know what it throws, and it must not stop the app from starting. App start profiling
+      // doesn't start.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Error reading app start profiling config file. ", e);
     }
   }

@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.ExceptionUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -125,6 +126,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         }
       }
     } catch (Throwable e) {
+      // getData() runs the item's data factory, which may also deserialize a dropped transaction,
+      // so we can't know what this throws. The lost item may not be counted in the client report.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
     }
   }

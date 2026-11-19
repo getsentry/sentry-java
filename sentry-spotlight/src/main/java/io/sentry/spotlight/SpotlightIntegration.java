@@ -16,6 +16,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryExecutorService;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Platform;
 import java.io.Closeable;
 import java.io.IOException;
@@ -81,6 +82,9 @@ public final class SpotlightIntegration
           final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
         options.getSerializer().serialize(envelope, gzip);
       } catch (Throwable e) {
+        // Serializing reads the app's own data, such as attachments and serializable extras, so
+        // we can't know what it throws. The envelope is not sent to Spotlight.
+        ExceptionUtils.rethrowIfFatal(e);
         logger.log(
             ERROR, "An exception occurred while submitting the envelope to the Sentry server.", e);
       } finally {

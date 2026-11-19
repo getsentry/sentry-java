@@ -12,6 +12,7 @@ import io.sentry.hints.SubmissionResult;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
@@ -153,6 +154,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             }
           }
         } catch (Throwable e) {
+          // Outbox items are written by other processes, such as the native SDK or a hybrid SDK,
+          // so we can't know what deserializing and capturing them throws. The item is skipped.
+          ExceptionUtils.rethrowIfFatal(e);
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else if (SentryItemType.Transaction.equals(item.getHeader().getType())) {
@@ -190,6 +194,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             }
           }
         } catch (Throwable e) {
+          // Outbox items are written by other processes, such as the native SDK or a hybrid SDK,
+          // so we can't know what deserializing and capturing them throws. The item is skipped.
+          ExceptionUtils.rethrowIfFatal(e);
           logger.log(ERROR, "Item failed to process.", e);
         }
       } else {

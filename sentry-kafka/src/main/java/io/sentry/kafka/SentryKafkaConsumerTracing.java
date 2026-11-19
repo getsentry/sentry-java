@@ -12,6 +12,7 @@ import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.SpanUtils;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -85,6 +86,9 @@ public final class SentryKafkaConsumerTracing {
       forkedScopes = scopes.forkedRootScopes(CREATOR);
       lifecycleToken = forkedScopes.makeCurrent();
     } catch (Throwable t) {
+      // Tracing must never stop the app from processing the record. The record is processed
+      // without a transaction.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()
@@ -181,6 +185,9 @@ public final class SentryKafkaConsumerTracing {
 
       return transaction;
     } catch (Throwable t) {
+      // This parses headers written by whichever producer sent the record, and tracing must never
+      // stop the app from processing it. The record is processed without a transaction.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()
@@ -204,6 +211,9 @@ public final class SentryKafkaConsumerTracing {
       }
       transaction.finish();
     } catch (Throwable t) {
+      // finish() runs the event processors and beforeSendTransaction, which can be the app's own
+      // code, and the record's processing result must stand. The transaction is not sent.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()

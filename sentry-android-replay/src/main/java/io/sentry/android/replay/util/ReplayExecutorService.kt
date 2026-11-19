@@ -2,6 +2,7 @@ package io.sentry.android.replay.util
 
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
+import io.sentry.util.ExceptionUtils
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -35,6 +36,10 @@ internal class ReplayExecutorService(
         try {
           task.run()
         } catch (e: Throwable) {
+          // Replay's tasks mask frames, write the cache, and encode video through the device's
+          // graphics and media stacks, so we can't know what they throw. The failure is logged
+          // here because nobody reads the returned future, and that task's work is lost.
+          ExceptionUtils.rethrowIfFatal(e)
           options.logger.log(
             ERROR,
             "Failed to execute task ${if (task is ReplayRunnable) task.taskName else ""}",

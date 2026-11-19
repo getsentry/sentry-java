@@ -69,6 +69,7 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.protocol.profiling.SentryProfile;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.SentryRandom;
 import java.io.File;
@@ -447,6 +448,9 @@ public final class ApplicationExitInfoEventProcessor
         }
       }
     } catch (Throwable e) {
+      // The first DeviceInfoUtil.getInstance call queries the package manager over Binder, which
+      // can rethrow any runtime exception from the other side. The split APK info is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
     }
 
@@ -716,6 +720,9 @@ public final class ApplicationExitInfoEventProcessor
         }
       }
     } catch (Throwable e) {
+      // The first DeviceInfoUtil.getInstance call queries the package manager over Binder, which
+      // can rethrow any runtime exception from the other side. The side-loaded tags are left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
     }
   }
@@ -975,6 +982,9 @@ public final class ApplicationExitInfoEventProcessor
           options.getLogger().log(SentryLevel.DEBUG, "No ANR profile file found");
         }
       } catch (Throwable t) {
+        // The profile file was written by the previous process, possibly while it was being
+        // killed, so we can't know how reading it fails. The ANR is sent without a profile.
+        ExceptionUtils.rethrowIfFatal(t);
         options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile", t);
       } finally {
         if (!AnrProfileRotationHelper.deleteLastFile(cacheDir)) {

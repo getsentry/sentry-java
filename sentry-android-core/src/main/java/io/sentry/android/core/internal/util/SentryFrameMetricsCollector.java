@@ -21,6 +21,7 @@ import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryFramesDelayResult;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -129,6 +130,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           try {
             choreographer = Choreographer.getInstance();
           } catch (Throwable e) {
+            // The first call creates the Choreographer, which connects to the display's vsync
+            // through native code, so we can't know what it throws. Slow and frozen frames are not
+            // reported.
+            ExceptionUtils.rethrowIfFatal(e);
             logger.log(
                 SentryLevel.ERROR,
                 "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
@@ -358,6 +363,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                   window, frameMetricsAvailableListener);
             }
           } catch (Throwable e) {
+            // The window hands the listener to its native renderer, so we can't know what this
+            // throws. The listener may stay attached until the window is gone.
+            ExceptionUtils.rethrowIfFatal(e);
             logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
           }
         });
@@ -393,6 +401,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                 windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
                     window, frameMetricsAvailableListener, handler);
               } catch (Throwable e) {
+                // The window hands the listener to its native renderer, so we can't know what this
+                // throws, e.g. for a window that isn't hardware accelerated. Frames of this window
+                // are not measured.
+                ExceptionUtils.rethrowIfFatal(e);
                 logger.log(SentryLevel.ERROR, "Failed to add frameMetricsAvailableListener", e);
               }
             }
