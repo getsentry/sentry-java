@@ -154,6 +154,7 @@
   - OpenTelemetry Semantic Conventions to 1.44.0 (was 1.42.0)
   - OpenTelemetry Semantic Conventions Alpha to 1.44.0-alpha (was 1.42.0-alpha)
   - OpenTelemetry 1.67 creates no-op spans when no `SpanProcessor` is configured. If you construct the OpenTelemetry SDK manually while using `sentry-opentelemetry-otlp` classes directly, configure a span processor. Without one, Sentry cannot inspect outgoing request URLs and may inject `sentry-trace` and `baggage` headers into destinations excluded by `tracePropagationTargets`. Standard OTLP exporter, Sentry Java agent, and agentless setups already configure one.
+- Bump `androidx.lifecycle:lifecycle-runtime-compose`, which `sentry-android-navigation3` brings in transitively, from 2.8.3 to 2.10.0. Navigation 3 1.0.0 already requires 2.10.0, so apps that use it resolve the same version as before ([#6664](https://github.com/getsentry/sentry-java/pull/6664))
 
 ### Internal
 
