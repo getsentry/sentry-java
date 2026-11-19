@@ -11,6 +11,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
@@ -134,6 +135,13 @@ public final class AppState implements Closeable {
           SentryLevel.ERROR,
           "AppState failed to get Lifecycle and could not install lifecycle observer.",
           e);
+    } catch (Throwable t) {
+      // addObserver dispatches ON_START synchronously to the app state listeners that are already
+      // registered, such as session tracking and the scope observers of hybrid SDKs, so we can't
+      // know what it throws. Posted from a background init, nothing else would catch it on the
+      // main looper. The listeners miss this ON_START.
+      ExceptionUtils.rethrowIfFatal(t);
+      logger.log(SentryLevel.ERROR, "AppState failed to notify the app state listeners.", t);
     }
   }
 

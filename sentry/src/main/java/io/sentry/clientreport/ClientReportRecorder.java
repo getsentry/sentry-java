@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.ExceptionUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -151,6 +152,12 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       try {
         options.getOnDiscard().execute(reason, category, countToAdd);
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated like
+        // any other exception. Only this notification is lost; the discard is still counted in the
+        // client report.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         options.getLogger().log(SentryLevel.ERROR, "The onDiscard callback threw an exception.", e);
       }
     }
