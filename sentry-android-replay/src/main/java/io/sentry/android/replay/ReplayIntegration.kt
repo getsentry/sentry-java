@@ -21,6 +21,7 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.TypeCheckHint
@@ -480,7 +481,15 @@ public class ReplayIntegration(
     state.get().captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
       val observer = options.sessionReplay.frameObserver
       if (observer != null) {
-        val copy = bitmap.copy(bitmap.config!!, false)
+        val copy =
+          try {
+            bitmap.copy(bitmap.config!!, false)
+          } catch (e: OutOfMemoryError) {
+            // A copy of the whole frame is one large allocation, which can fail while the rest of
+            // the heap is healthy. The observer doesn't get this frame, but it is still recorded.
+            options.logger.log(WARNING, "Not enough memory to copy the frame for the observer", e)
+            null
+          }
         if (copy != null) {
           try {
             val hint = Hint()
@@ -503,7 +512,16 @@ public class ReplayIntegration(
     state.get().captureStrategy?.onScreenshotRecorded { _ ->
       val observer = options.sessionReplay.frameObserver
       if (observer != null) {
-        val bitmap = BitmapFactory.decodeFile(screenshot.absolutePath)
+        val bitmap =
+          try {
+            BitmapFactory.decodeFile(screenshot.absolutePath)
+          } catch (e: OutOfMemoryError) {
+            // A bitmap of the whole frame is one large allocation, which can fail while the rest
+            // of the heap is healthy. The observer doesn't get this frame, but it is still
+            // recorded.
+            options.logger.log(WARNING, "Not enough memory to decode the frame for the observer", e)
+            null
+          }
         if (bitmap != null) {
           try {
             val hint = Hint()

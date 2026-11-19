@@ -24,6 +24,7 @@ import io.sentry.android.replay.util.MaskRenderer
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
+import io.sentry.util.ExceptionUtils
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.LazyThreadSafetyMode.NONE
@@ -177,6 +178,9 @@ internal class PixelCopyStrategy(
         mainLooperHandler.handler,
       )
     } catch (e: Throwable) {
+      // PixelCopy goes through the device's graphics stack, so we can't know what it throws. The
+      // frame is skipped, and the frame gate is released for the next one.
+      ExceptionUtils.rethrowIfFatal(e)
       options.logger.log(WARNING, "Failed to capture replay recording", e)
       unstableCaptures.set(0)
       lastCaptureSuccessful.set(false)
@@ -261,9 +265,17 @@ internal class PixelCopyStrategy(
 
       var svBitmap: Bitmap? = null
       try {
-        svBitmap =
-          Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
-        val bitmapToCapture = svBitmap
+        val bitmapToCapture: Bitmap =
+          try {
+            Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
+          } catch (e: OutOfMemoryError) {
+            // A bitmap of the whole SurfaceView is one large allocation, which can fail while the
+            // rest of the heap is healthy. This SurfaceView is left out of the frame.
+            options.logger.log(WARNING, "Not enough memory to capture the SurfaceView", e)
+            onCaptureComplete()
+            continue
+          }
+        svBitmap = bitmapToCapture
 
         surfaceView.getLocationOnScreen(svLocation)
         val capturedX = svLocation[0]
@@ -294,6 +306,9 @@ internal class PixelCopyStrategy(
         // double-recycle if the recycle paths above already ran.
         svBitmap = null
       } catch (e: Throwable) {
+        // PixelCopy goes through the device's graphics stack, so we can't know what it throws.
+        // This SurfaceView is left out of the frame.
+        ExceptionUtils.rethrowIfFatal(e)
         options.logger.log(WARNING, "Failed to capture SurfaceView", e)
         svBitmap?.recycle()
         onCaptureComplete()

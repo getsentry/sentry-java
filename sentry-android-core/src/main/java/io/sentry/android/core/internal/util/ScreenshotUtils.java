@@ -15,6 +15,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.thread.IThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -155,8 +156,15 @@ public final class ScreenshotUtils {
     }
 
     try {
-      final Bitmap bitmap =
-          Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
+      final Bitmap bitmap;
+      try {
+        bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
+      } catch (OutOfMemoryError e) {
+        // A bitmap of the whole window is one large allocation, which can fail while the rest of
+        // the heap is healthy. The screenshot is skipped instead of crashing the app.
+        logger.log(SentryLevel.WARNING, "Not enough memory for the screenshot bitmap.", e);
+        return null;
+      }
 
       final @NotNull CountDownLatch latch = new CountDownLatch(1);
 
@@ -183,7 +191,9 @@ public final class ScreenshotUtils {
           final boolean completed = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
           success = completed && copyResultCode.get() == PixelCopy.SUCCESS;
         } catch (Throwable e) {
-          // ignored
+          // PixelCopy reads the window's surface through the system compositor, so we can't know
+          // what it throws. No screenshot is attached.
+          ExceptionUtils.rethrowIfFatal(e);
           logger.log(SentryLevel.ERROR, "Taking screenshot using PixelCopy failed.", e);
         } finally {
           thread.quit();
@@ -206,6 +216,9 @@ public final class ScreenshotUtils {
             try {
               view.draw(canvas);
             } catch (Throwable e) {
+              // draw() runs the app's own views, so we can't know what it throws. No screenshot is
+              // attached.
+              ExceptionUtils.rethrowIfFatal(e);
               logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
             } finally {
               latch.countDown();
@@ -219,6 +232,9 @@ public final class ScreenshotUtils {
       }
       return bitmap;
     } catch (Throwable e) {
+      // On the main thread, draw() runs the app's own views, so we can't know what it throws. No
+      // screenshot is attached.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Taking screenshot failed.", e);
     }
     return null;

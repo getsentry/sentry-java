@@ -16,6 +16,7 @@ import io.sentry.android.replay.util.addOnPreDrawListenerSafe
 import io.sentry.android.replay.util.hasSize
 import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
 import io.sentry.util.AutoClosableReentrantLock
+import io.sentry.util.ExceptionUtils
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService
@@ -96,6 +97,9 @@ internal class WindowRecorder(
         }
         recorder?.capture()
       } catch (e: Throwable) {
+        // Capturing draws the app's own views and goes through the device's graphics stack, so we
+        // can't know what it throws. This frame is skipped, and the next one is still scheduled.
+        ExceptionUtils.rethrowIfFatal(e)
         options.logger.log(ERROR, "Failed to capture a frame", e)
       }
 
@@ -229,7 +233,16 @@ internal class WindowRecorder(
     }
 
     capturer?.config = config
-    capturer?.recorder = ScreenshotRecorder(config, options, this, screenshotRecorderCallback)
+    capturer?.recorder =
+      try {
+        ScreenshotRecorder(config, options, this, screenshotRecorderCallback)
+      } catch (e: OutOfMemoryError) {
+        // The PixelCopy strategy allocates a bitmap of the whole recording, one large allocation
+        // that can fail while the rest of the heap is healthy. No frames are captured until the
+        // next configuration change.
+        options.logger.log(ERROR, "Not enough memory to record replay frames", e)
+        null
+      }
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {
