@@ -296,6 +296,10 @@ public final class SentryAndroid {
 
   @SuppressLint("NewApi")
   private static boolean isNdkCrashServiceProcess() {
+    if (!new io.sentry.util.LoadClass()
+        .isClassAvailable(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME, (ILogger) null)) {
+      return false;
+    }
     final @Nullable String processName =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
             ? Application.getProcessName()
