@@ -1385,8 +1385,7 @@ class SentryClientTest {
   }
 
   @Test
-  fun `server transaction with ignored HTTP status is dropped before callbacks`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
+  fun `server transaction with default ignored HTTP status is dropped before callbacks`() {
     val processor = mock<EventProcessor>()
     val beforeSend = mock<SentryOptions.BeforeSendTransactionCallback>()
     val replayController = mock<ReplayController>()
@@ -1423,16 +1422,42 @@ class SentryClientTest {
   }
 
   @Test
-  fun `server transaction with ignored HTTP status range accepts OTel long value`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(500, 599)))
+  fun `default HTTP status filter drops the spec ranges`() {
+    val sut = fixture.getSut()
 
-    val eventId =
-      fixture
-        .getSut()
-        .captureTransaction(createServerTransaction(503L), fixture.sentryTracer.traceContext())
+    listOf(301, 303, 305, 399, 401, 404).forEach {
+      val eventId =
+        sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+      assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    }
 
-    assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
     verify(fixture.transport, never()).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter retains statuses outside the spec ranges`() {
+    val sut = fixture.getSut()
+
+    listOf(200, 300, 304, 400, 405).forEach {
+      sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+    }
+
+    verify(fixture.transport, times(5)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `custom HTTP status range replaces default and accepts OTel long value`() {
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(500, 599)))
+    val sut = fixture.getSut()
+
+    val ignoredEventId =
+      sut.captureTransaction(createServerTransaction(503L), fixture.sentryTracer.traceContext())
+    val retainedEventId =
+      sut.captureTransaction(createServerTransaction(404), fixture.sentryTracer.traceContext())
+
+    assertThat(ignoredEventId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(retainedEventId).isNotEqualTo(SentryId.EMPTY_ID)
+    verify(fixture.transport).send(any(), anyOrNull())
   }
 
   @Test
@@ -1447,8 +1472,7 @@ class SentryClientTest {
   }
 
   @Test
-  fun `HTTP status filter only applies to server transactions`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
+  fun `default HTTP status filter only applies to server transactions`() {
     val clientTransaction = createServerTransaction(404)
     clientTransaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "client"
     val missingKindTransaction = createServerTransaction(404)
@@ -1462,8 +1486,7 @@ class SentryClientTest {
   }
 
   @Test
-  fun `HTTP status filter ignores missing and invalid root status values`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
+  fun `default HTTP status filter ignores missing and invalid root status values`() {
     val invalidStatusValues = listOf("404", 404.0, 404.5f, 99, 600, Long.MAX_VALUE)
     val sut = fixture.getSut()
 
@@ -1481,8 +1504,7 @@ class SentryClientTest {
   }
 
   @Test
-  fun `HTTP status filter does not read child span attributes`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
+  fun `default HTTP status filter does not read child span attributes`() {
     val tracer =
       SentryTracer(
         TransactionContext("child-status-transaction", "op", TracesSamplingDecision(true)),
@@ -1501,8 +1523,7 @@ class SentryClientTest {
   }
 
   @Test
-  fun `profiling trace deletion failure for ignored transaction is logged`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(404)))
+  fun `profiling trace deletion failure for default ignored transaction is logged`() {
     val traceFile = mock<File>()
     whenever(traceFile.delete()).thenReturn(false)
     whenever(traceFile.path).thenReturn("undeletable.trace")
