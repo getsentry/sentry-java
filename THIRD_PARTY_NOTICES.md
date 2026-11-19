@@ -448,6 +448,40 @@ limitations under the License.
 
 ---
 
+## OpenTelemetry Java Instrumentation — SQL grammar (Apache 2.0)
+
+**Source:** https://github.com/open-telemetry/opentelemetry-java-instrumentation (Commit: 38e68968be30491d74065230e6bf5cfdcf0c13d8)<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright The OpenTelemetry Authors
+
+### Scope
+
+The Sentry Java SDK's SQL query analyzer is built on the JFlex SQL grammar `instrumentation-api-incubator/src/main/jflex/SqlSanitizer.jflex`:
+
+- `sentry/otel-upstream/SqlSanitizer.jflex` is an unmodified copy of the grammar, kept to merge upstream changes.
+- `sentry/src/main/jflex/SqlSanitizer.jflex` is the grammar modified by Sentry: changed package and imports, plus additional sanitization, dialect, summary and length-limit rules.
+- `io.sentry.util.sql.otel.AutoSqlSanitizer` is generated from the modified grammar at build time and is included in the published `sentry` artifact. It contains the JFlex skeleton, which is licensed under CC0-1.0; JFlex itself is a build-time tool and is not distributed.
+- `io.sentry.util.sql.otel.SqlQuery` and `io.sentry.util.sql.otel.StringUtils` are adapted from `instrumentation-api-incubator/src/main/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/SqlQuery.java` and `instrumentation-api/src/main/java/io/opentelemetry/instrumentation/api/internal/StringUtils.java`.
+
+```
+Copyright The OpenTelemetry Authors
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
 ## OpenTelemetry .NET Contrib — SQL processor tests (Apache 2.0)
 
 **Source:** https://github.com/open-telemetry/opentelemetry-dotnet-contrib (Commit: 4e3aba9ddf89f9accac004f44f32ebde335dd115)<br>
