@@ -110,7 +110,11 @@
 
 ### Features
 
-- Drop incoming server transactions whose root HTTP response status matches `traceIgnoreStatusCodes`. Configure individual statuses such as `404`, inclusive ranges such as `400-499` or `500-599`, or combine them ([#6566](https://github.com/getsentry/sentry-java/pull/6566)).
+- Drop incoming server transactions whose root HTTP response status matches
+  `traceIgnoreStatusCodes`. The option defaults to `301-303`, `305-399`, and `401-404`. Replace
+  the default with individual statuses such as `404`, inclusive ranges such as `400-499` or
+  `500-599`, or a combination of statuses and ranges
+  ([#6566](https://github.com/getsentry/sentry-java/pull/6566)).
 
   Java:
 
