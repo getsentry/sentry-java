@@ -63,7 +63,7 @@ class SentryUserFilterTest {
   fun `when processor returns empty User, user data is not changed`() {
     val filter =
       fixture.getSut(
-        userProviders = listOf(SentryUserProvider { sampleUser }, SentryUserProvider { User() })
+        userProviders = listOf(SentryUserProvider { sampleUser }, SentryUserProvider { User() }),
       )
 
     filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -75,7 +75,7 @@ class SentryUserFilterTest {
   fun `when processor returns null, user data is not changed`() {
     val filter =
       fixture.getSut(
-        userProviders = listOf(SentryUserProvider { sampleUser }, SentryUserProvider { null })
+        userProviders = listOf(SentryUserProvider { sampleUser }, SentryUserProvider { null }),
       )
 
     filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -91,7 +91,7 @@ class SentryUserFilterTest {
           listOf(
             SentryUserProvider { User().apply { data = mapOf("key" to "value") } },
             SentryUserProvider { User().apply { data = mapOf("new-key" to "new-value") } },
-          )
+          ),
       )
 
     filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -166,7 +166,7 @@ class SentryUserFilterTest {
             SentryUserProvider { sampleUser },
             SentryUserProvider { throw failure },
             laterProvider,
-          )
+          ),
       )
 
     filter.doFilter(fixture.request, fixture.response, fixture.chain)
@@ -184,7 +184,7 @@ class SentryUserFilterTest {
     assertThat(
         assertFailsWith<OutOfMemoryError> {
           filter.doFilter(fixture.request, fixture.response, fixture.chain)
-        }
+        },
       )
       .isSameAs(failure)
     verify(fixture.chain, never()).doFilter(fixture.request, fixture.response)

@@ -81,10 +81,9 @@ class SentrySpanRestTemplateCustomizerTest {
       }
 
       sentryOptions.dsn = "https://key@sentry.io/proj"
-      sentryOptions.isTraceSampling = true
 
       mockServer.enqueue(
-        MockResponse().setBody("OK").setSocketPolicy(socketPolicy).setResponseCode(status.value())
+        MockResponse().setBody("OK").setSocketPolicy(socketPolicy).setResponseCode(status.value()),
       )
 
       if (isTransactionActive) {
@@ -142,8 +141,8 @@ class SentrySpanRestTemplateCustomizerTest {
     assertEquals(baggageHeaderValues.size, 1)
     assertTrue(
       baggageHeaderValues[0].startsWith(
-        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
-      )
+        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=aTransaction"))
@@ -230,8 +229,8 @@ class SentrySpanRestTemplateCustomizerTest {
     assertEquals(baggageHeaderValues.size, 1)
     assertTrue(
       baggageHeaderValues[0].startsWith(
-        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
-      )
+        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))

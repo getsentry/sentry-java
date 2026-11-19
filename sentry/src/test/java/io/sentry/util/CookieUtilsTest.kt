@@ -60,7 +60,7 @@ class CookieUtilsTest {
           "name=value",
           KeyValueCollectionBehavior.off(),
           emptyList(),
-        )
+        ),
       )
       .isNull()
   }
@@ -72,10 +72,10 @@ class CookieUtilsTest {
           "name=value; sessionId=secret; customerId=123; frameworkSession=456",
           KeyValueCollectionBehavior.denyList("customer"),
           listOf("frameworkSession"),
-        )
+        ),
       )
       .isEqualTo(
-        "name=value; sessionId=[Filtered]; customerId=[Filtered]; frameworkSession=[Filtered]"
+        "name=value; sessionId=[Filtered]; customerId=[Filtered]; frameworkSession=[Filtered]",
       )
   }
 
@@ -86,7 +86,7 @@ class CookieUtilsTest {
           "theme=dark; sessionId=secret; language=en",
           KeyValueCollectionBehavior.allowList("theme", "session"),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("theme=dark; sessionId=[Filtered]; language=[Filtered]")
   }
@@ -98,7 +98,7 @@ class CookieUtilsTest {
           "empty=; data=YWJjZA==",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("empty=; data=YWJjZA==")
   }
@@ -110,7 +110,7 @@ class CookieUtilsTest {
           "theme=dark=contrast; token=abc=123",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("theme=dark=contrast; token=[Filtered]")
   }
@@ -122,7 +122,7 @@ class CookieUtilsTest {
           "theme=dark; opaque; =secret; empty=; sessionId=secret",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("theme=dark;[Filtered];[Filtered]; empty=; sessionId=[Filtered]")
   }
@@ -134,7 +134,7 @@ class CookieUtilsTest {
           "theme=dark, sessionId=secret",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("[Filtered]")
   }
@@ -146,7 +146,7 @@ class CookieUtilsTest {
           "theme=dark sessionId=secret",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("[Filtered]")
   }
@@ -161,7 +161,7 @@ class CookieUtilsTest {
           cookies,
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo(cookies)
   }
@@ -173,7 +173,7 @@ class CookieUtilsTest {
           "theme=dark ",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("theme=dark ")
   }
@@ -185,7 +185,7 @@ class CookieUtilsTest {
           "theme=dark;",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("theme=dark;")
     assertThat(
@@ -193,7 +193,7 @@ class CookieUtilsTest {
           "theme=dark; ",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("theme=dark; ")
   }
@@ -205,7 +205,7 @@ class CookieUtilsTest {
           "theme=\"dark, sessionId=secret\"",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("[Filtered]")
   }
@@ -217,7 +217,7 @@ class CookieUtilsTest {
           "theme=\"dark sessionId=secret\"",
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("[Filtered]")
   }
@@ -229,7 +229,7 @@ class CookieUtilsTest {
           "theme=dark; opaque; =secret",
           KeyValueCollectionBehavior.allowList("theme", "opaque"),
           emptyList(),
-        )
+        ),
       )
       .isEqualTo("theme=dark;[Filtered];[Filtered]")
   }
@@ -240,7 +240,7 @@ class CookieUtilsTest {
         CookieUtils.filterSetCookie(
           "sessionId=secret; Path=/; HttpOnly; SameSite=Lax",
           KeyValueCollectionBehavior.denyList(),
-        )
+        ),
       )
       .isEqualTo("sessionId=[Filtered]; Path=/; HttpOnly; SameSite=Lax")
   }
@@ -251,16 +251,16 @@ class CookieUtilsTest {
         CookieUtils.filterSetCookie(
           "data=YWJjZA==; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Lax",
           KeyValueCollectionBehavior.denyList(),
-        )
+        ),
       )
       .isEqualTo(
-        "data=YWJjZA==; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Lax"
+        "data=YWJjZA==; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Lax",
       )
     assertThat(
         CookieUtils.filterSetCookie(
           "empty=; Path=/",
           KeyValueCollectionBehavior.denyList(),
-        )
+        ),
       )
       .isEqualTo("empty=; Path=/")
   }
@@ -271,7 +271,7 @@ class CookieUtilsTest {
         CookieUtils.filterSetCookie(
           "theme=dark; Path=/; Secure",
           KeyValueCollectionBehavior.allowList("theme"),
-        )
+        ),
       )
       .isEqualTo("theme=dark; Path=/; Secure")
   }
@@ -282,14 +282,14 @@ class CookieUtilsTest {
         CookieUtils.filterSetCookie(
           "opaque; Path=/; HttpOnly",
           KeyValueCollectionBehavior.denyList(),
-        )
+        ),
       )
       .isEqualTo("[Filtered]")
     assertThat(
         CookieUtils.filterSetCookie(
           "=secret; Path=/; HttpOnly",
           KeyValueCollectionBehavior.denyList(),
-        )
+        ),
       )
       .isEqualTo("[Filtered]")
   }
@@ -300,7 +300,7 @@ class CookieUtilsTest {
         CookieUtils.filterSetCookie(
           "opaque; Path=/; HttpOnly",
           KeyValueCollectionBehavior.allowList("opaque"),
-        )
+        ),
       )
       .isEqualTo("[Filtered]")
   }
@@ -311,7 +311,7 @@ class CookieUtilsTest {
         CookieUtils.filterSetCookie(
           "theme=dark; Path=/",
           KeyValueCollectionBehavior.off(),
-        )
+        ),
       )
       .isNull()
   }
@@ -323,7 +323,7 @@ class CookieUtilsTest {
           listOf("theme=dark; SID=secret", "language=en"),
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .containsExactly("theme=dark; SID=[Filtered]", "language=en")
       .inOrder()
@@ -336,7 +336,7 @@ class CookieUtilsTest {
           java.util.Arrays.asList("theme=dark", null),
           KeyValueCollectionBehavior.denyList(),
           emptyList(),
-        )
+        ),
       )
       .containsExactly("theme=dark")
   }

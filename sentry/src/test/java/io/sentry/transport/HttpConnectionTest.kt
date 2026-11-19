@@ -199,7 +199,7 @@ class HttpConnectionTest {
         ) = println(String.format(message))
 
         override fun isEnabled(level: SentryLevel?): Boolean = true
-      }
+      },
     )
 
     // when error message contains funky formatting symbols
@@ -236,7 +236,7 @@ class HttpConnectionTest {
         check<ProxyAuthenticator> {
           assertEquals("some-user", it.user)
           assertEquals("some-password", it.password)
-        }
+        },
       )
   }
 

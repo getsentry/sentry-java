@@ -73,7 +73,7 @@ private val cautionTint = Color(0xFFFFF1DB)
 private val failureTint = Color(0xFFFFE1E3)
 
 private enum class AllocationOutcome {
-  JAVA_OOM
+  JAVA_OOM,
 }
 
 /**
@@ -164,7 +164,7 @@ class MemoryLimiterActivity : ComponentActivity() {
 
   private fun releaseBuffers() {
     resetAllocatorState(
-      status = "Released retained buffers and requested a fresh start for the next run."
+      status = "Released retained buffers and requested a fresh start for the next run.",
     )
   }
 
@@ -260,7 +260,7 @@ private fun MemoryLimiterScreen(
           StepText("2. Run the Apply limit command for this launch's PID.")
           StepText("3. Tap Start memory pressure and optionally send the app to the background.")
           StepText(
-            "4. Reopen the app after the process dies; Sentry should recover the kill on startup."
+            "4. Reopen the app after the process dies; Sentry should recover the kill on startup.",
           )
         }
       }

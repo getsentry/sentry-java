@@ -42,7 +42,7 @@ class OpenTelemetryAttributesExtractorTest {
         UrlAttributes.URL_QUERY to "q=123456&b=X",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
         ServerAttributes.SERVER_PORT to 8081L,
-      )
+      ),
     )
 
     whenExtractingAttributes()
@@ -63,7 +63,7 @@ class OpenTelemetryAttributesExtractorTest {
         UrlAttributes.URL_QUERY to "q=123456&b=X",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
         ServerAttributes.SERVER_PORT to 8081L,
-      )
+      ),
     )
 
     whenExtractingAttributes()
@@ -89,7 +89,7 @@ class OpenTelemetryAttributesExtractorTest {
         UrlAttributes.URL_QUERY to "q=123456&b=X",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
         ServerAttributes.SERVER_PORT to 8081L,
-      )
+      ),
     )
 
     whenExtractingAttributes()
@@ -107,7 +107,7 @@ class OpenTelemetryAttributesExtractorTest {
         it.queryString = "s=abc"
       }
     givenAttributes(
-      mapOf(UrlAttributes.URL_FULL to "https://io.sentry:8081/path/to/123?q=123456&b=X")
+      mapOf(UrlAttributes.URL_FULL to "https://io.sentry:8081/path/to/123?q=123456&b=X"),
     )
 
     whenExtractingAttributes()
@@ -125,7 +125,7 @@ class OpenTelemetryAttributesExtractorTest {
         UrlAttributes.URL_SCHEME to "https",
         UrlAttributes.URL_PATH to "/path/to/123",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
-      )
+      ),
     )
 
     whenExtractingAttributes()
@@ -141,7 +141,7 @@ class OpenTelemetryAttributesExtractorTest {
         HttpAttributes.HTTP_REQUEST_METHOD to "GET",
         UrlAttributes.URL_SCHEME to "https",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
-      )
+      ),
     )
 
     whenExtractingAttributes()
@@ -153,7 +153,7 @@ class OpenTelemetryAttributesExtractorTest {
   @Test
   fun `does not set URL if server address is missing`() {
     givenAttributes(
-      mapOf(HttpAttributes.HTTP_REQUEST_METHOD to "GET", UrlAttributes.URL_SCHEME to "https")
+      mapOf(HttpAttributes.HTTP_REQUEST_METHOD to "GET", UrlAttributes.URL_SCHEME to "https"),
     )
 
     whenExtractingAttributes()
@@ -168,7 +168,7 @@ class OpenTelemetryAttributesExtractorTest {
       mapOf(
         HttpAttributes.HTTP_REQUEST_METHOD to "GET",
         ServerAttributes.SERVER_ADDRESS to "io.sentry",
-      )
+      ),
     )
 
     whenExtractingAttributes()
@@ -203,7 +203,7 @@ class OpenTelemetryAttributesExtractorTest {
         ServerAttributes.SERVER_ADDRESS to "sentry.io",
         ServerAttributes.SERVER_PORT to 8082L,
         UrlAttributes.URL_PATH to "/some/path",
-      )
+      ),
     )
 
     val url = whenExtractingUrl()
@@ -218,7 +218,7 @@ class OpenTelemetryAttributesExtractorTest {
         UrlAttributes.URL_SCHEME to "https",
         ServerAttributes.SERVER_ADDRESS to "sentry.io",
         UrlAttributes.URL_PATH to "/some/path",
-      )
+      ),
     )
 
     val url = whenExtractingUrl()
@@ -233,7 +233,7 @@ class OpenTelemetryAttributesExtractorTest {
         ServerAttributes.SERVER_ADDRESS to "sentry.io",
         ServerAttributes.SERVER_PORT to 8082L,
         UrlAttributes.URL_PATH to "/some/path",
-      )
+      ),
     )
 
     val url = whenExtractingUrl()
@@ -248,7 +248,7 @@ class OpenTelemetryAttributesExtractorTest {
         UrlAttributes.URL_SCHEME to "https",
         ServerAttributes.SERVER_PORT to 8082L,
         UrlAttributes.URL_PATH to "/some/path",
-      )
+      ),
     )
 
     val url = whenExtractingUrl()
@@ -259,7 +259,7 @@ class OpenTelemetryAttributesExtractorTest {
   @Test
   fun `returns reconstructed URL if attributes present without port and path`() {
     givenAttributes(
-      mapOf(UrlAttributes.URL_SCHEME to "https", ServerAttributes.SERVER_ADDRESS to "sentry.io")
+      mapOf(UrlAttributes.URL_SCHEME to "https", ServerAttributes.SERVER_ADDRESS to "sentry.io"),
     )
 
     val url = whenExtractingUrl()
@@ -274,7 +274,7 @@ class OpenTelemetryAttributesExtractorTest {
         UrlAttributes.URL_SCHEME to "https",
         ServerAttributes.SERVER_ADDRESS to "sentry.io",
         ServerAttributes.SERVER_PORT to 8082L,
-      )
+      ),
     )
 
     val url = whenExtractingUrl()
@@ -304,7 +304,7 @@ class OpenTelemetryAttributesExtractorTest {
               "__" +
               UUID.randomUUID().toString() +
               "__" +
-              UUID.randomUUID().toString()
+              UUID.randomUUID().toString(),
           ),
       )
     givenAttributes(map)
@@ -336,7 +336,7 @@ class OpenTelemetryAttributesExtractorTest {
   @Test
   fun `if there is no request method attribute does not set request on scope`() {
     givenAttributes(
-      mapOf(UrlAttributes.URL_SCHEME to "https", ServerAttributes.SERVER_ADDRESS to "io.sentry")
+      mapOf(UrlAttributes.URL_SCHEME to "https", ServerAttributes.SERVER_ADDRESS to "io.sentry"),
     )
 
     whenExtractingAttributes()

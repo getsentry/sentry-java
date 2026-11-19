@@ -56,7 +56,7 @@ class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable
       }
       if (deadline.hasPassed()) {
         throw AssertionError(
-          "No matching envelope within ${timeoutMillis}ms, received ${received.size} envelopes"
+          "No matching envelope within ${timeoutMillis}ms, received ${received.size} envelopes",
         )
       }
       Thread.sleep(POLL_INTERVAL_MILLIS)

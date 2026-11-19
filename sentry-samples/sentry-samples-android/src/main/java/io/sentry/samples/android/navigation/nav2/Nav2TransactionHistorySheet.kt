@@ -259,7 +259,7 @@ private fun TraceRow(
             .height(12.dp)
             .align(Alignment.CenterStart)
             .clip(RoundedCornerShape(2.dp))
-            .background(color)
+            .background(color),
       )
       Text(
         durationMillis.formatMillis(),
@@ -283,7 +283,7 @@ private fun TimelineGrid() {
             Modifier.width(1.dp)
               .height(24.dp)
               .align(Alignment.CenterEnd)
-              .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+              .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
         )
       }
     }

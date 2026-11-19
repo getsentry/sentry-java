@@ -281,7 +281,7 @@ class PerformanceAndroidEventProcessorTest {
         emptyMap(),
         emptyMap(),
         null,
-      )
+      ),
     )
     tr.spans.add(
       SentrySpan(
@@ -297,7 +297,7 @@ class PerformanceAndroidEventProcessorTest {
         emptyMap(),
         emptyMap(),
         null,
-      )
+      ),
     )
     tr.spans.add(
       SentrySpan(
@@ -313,7 +313,7 @@ class PerformanceAndroidEventProcessorTest {
         emptyMap(),
         emptyMap(),
         null,
-      )
+      ),
     )
 
     tr = sut.process(tr, Hint())
@@ -606,7 +606,7 @@ class PerformanceAndroidEventProcessorTest {
     assertTrue(tr.spans.any { "process.load" == it.op && appStartSpan.spanId == it.parentSpanId })
 
     assertTrue(
-      tr.spans.any { "contentprovider.load" == it.op && appStartSpan.spanId == it.parentSpanId }
+      tr.spans.any { "contentprovider.load" == it.op && appStartSpan.spanId == it.parentSpanId },
     )
 
     assertTrue(tr.spans.any { "application.load" == it.op })
@@ -707,7 +707,7 @@ class PerformanceAndroidEventProcessorTest {
           "contentprovider.load" == it.op ||
           "application.load" == it.op ||
           "activity.load" == it.op
-      }
+      },
     )
   }
 
@@ -758,7 +758,7 @@ class PerformanceAndroidEventProcessorTest {
           "contentprovider.load" == it.op ||
           "application.load" == it.op ||
           "activity.load" == it.op
-      }
+      },
     )
   }
 
@@ -1228,7 +1228,7 @@ class PerformanceAndroidEventProcessorTest {
   }
 
   private fun createUiLoadTransactionWithAppStartChildSpan(
-    coldStart: Boolean = true
+    coldStart: Boolean = true,
   ): SentryTransaction =
     createUiLoadTransaction().also { txn ->
       txn.spans.add(createAppStartSpan(txn.contexts.trace!!.traceId, coldStart))
@@ -1237,7 +1237,7 @@ class PerformanceAndroidEventProcessorTest {
   private fun createUiLoadTransaction(): SentryTransaction = createTransaction(UI_LOAD_OP)
 
   private fun createStandaloneAppStartTransaction(
-    appStartScreen: String? = null
+    appStartScreen: String? = null,
   ): SentryTransaction =
     createTransaction(STANDALONE_APP_START_OP).also { txn ->
       if (appStartScreen != null) {

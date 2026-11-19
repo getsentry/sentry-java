@@ -44,7 +44,8 @@ fun UiLoadScreen(status: String, onClose: () -> Unit) {
   MaterialTheme {
     Surface {
       Box(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(24.dp)
+        modifier =
+          Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(24.dp),
       ) {
         Column(
           modifier = Modifier.align(Alignment.Center).fillMaxWidth().offset(y = (-48).dp),

@@ -180,7 +180,6 @@ public final class Random implements java.io.Serializable {
     }
     return r;
   }
-  ;
 
   /**
    * Returns the next pseudorandom, uniformly distributed {@code boolean} value from this random

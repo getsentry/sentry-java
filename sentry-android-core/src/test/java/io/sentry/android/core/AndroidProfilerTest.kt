@@ -13,6 +13,7 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.util.LazyEvaluator
+import io.sentry.util.LoadClass
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
@@ -150,12 +151,12 @@ class AndroidProfilerTest {
 
     assertFailsWith<IllegalArgumentException> {
       ctor.newInstance(
-        arrayOf(null, 0, mock(), { mock<SentryExecutorService>() }, mock<AndroidLogger>())
+        arrayOf(null, 0, mock(), { mock<SentryExecutorService>() }, mock<AndroidLogger>()),
       )
     }
     assertFailsWith<IllegalArgumentException> {
       ctor.newInstance(
-        arrayOf("mock", 0, null, { mock<SentryExecutorService>() }, mock<AndroidLogger>())
+        arrayOf("mock", 0, null, { mock<SentryExecutorService>() }, mock<AndroidLogger>()),
       )
     }
     assertFailsWith<IllegalArgumentException> {

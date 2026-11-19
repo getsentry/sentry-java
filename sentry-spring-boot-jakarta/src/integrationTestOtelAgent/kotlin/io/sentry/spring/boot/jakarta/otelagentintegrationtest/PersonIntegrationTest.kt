@@ -60,21 +60,21 @@ class PersonIntegrationTest : IntegrationTest() {
     assertThat(transactionEnvelope.header.sdkVersion!!.name)
       .isEqualTo(
         if (AgentApp.autoInit) "sentry.java.opentelemetry.agent"
-        else "sentry.java.spring-boot.jakarta"
+        else "sentry.java.spring-boot.jakarta",
       )
     val transaction = transactionEnvelope.transaction()!!
     assertThat(
         transaction.hasOp(
           "http.server",
           FeatureFlag("flag.evaluation.transaction-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(
         transaction.hasSpanWithOp(
           "spanCreatedThroughOtelApi",
           FeatureFlag("flag.evaluation.my-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(transaction.hasSpanWithOp("spanCreatedThroughSentryApi")).isTrue()
@@ -140,7 +140,7 @@ class PersonIntegrationTest : IntegrationTest() {
         transaction.hasSpanWithOpAndDescription(
           "db",
           "insert into person (firstName, lastName) values (?, ?)",
-        )
+        ),
       )
       .isTrue()
   }

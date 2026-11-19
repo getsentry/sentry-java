@@ -27,7 +27,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class CellularNetworkTechnologyProviderTest {
   private class Fixture {
     val context = mock<Context>()
@@ -57,7 +57,7 @@ class CellularNetworkTechnologyProviderTest {
 
     /** Registers the provider and returns the callback the telephony manager received. */
     fun registerAndCaptureCallback(
-      provider: CellularNetworkTechnologyProvider
+      provider: CellularNetworkTechnologyProvider,
     ): TelephonyCallback.DisplayInfoListener {
       provider.register()
       val captor = argumentCaptor<TelephonyCallback>()
@@ -118,17 +118,19 @@ class CellularNetworkTechnologyProviderTest {
   @Test
   fun `networkTypeToGeneration maps fourth and fifth generation network types`() {
     assertThat(
-        CellularNetworkTechnologyProvider.networkTypeToGeneration(TelephonyManager.NETWORK_TYPE_LTE)
+        CellularNetworkTechnologyProvider.networkTypeToGeneration(
+          TelephonyManager.NETWORK_TYPE_LTE,
+        ),
       )
       .isEqualTo("4g")
     assertThat(
         CellularNetworkTechnologyProvider.networkTypeToGeneration(
-          TelephonyManager.NETWORK_TYPE_IWLAN
-        )
+          TelephonyManager.NETWORK_TYPE_IWLAN,
+        ),
       )
       .isEqualTo("4g")
     assertThat(
-        CellularNetworkTechnologyProvider.networkTypeToGeneration(TelephonyManager.NETWORK_TYPE_NR)
+        CellularNetworkTechnologyProvider.networkTypeToGeneration(TelephonyManager.NETWORK_TYPE_NR),
       )
       .isEqualTo("5g")
   }
@@ -137,8 +139,8 @@ class CellularNetworkTechnologyProviderTest {
   fun `networkTypeToGeneration returns null for unknown network types`() {
     assertThat(
         CellularNetworkTechnologyProvider.networkTypeToGeneration(
-          TelephonyManager.NETWORK_TYPE_UNKNOWN
-        )
+          TelephonyManager.NETWORK_TYPE_UNKNOWN,
+        ),
       )
       .isNull()
   }
@@ -215,7 +217,7 @@ class CellularNetworkTechnologyProviderTest {
       fixture.displayInfo(
         networkType = TelephonyManager.NETWORK_TYPE_NR,
         overrideNetworkType = TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NONE,
-      )
+      ),
     )
 
     assertThat(provider.cellularNetworkTechnology).isEqualTo("5g")
@@ -230,7 +232,7 @@ class CellularNetworkTechnologyProviderTest {
       fixture.displayInfo(
         networkType = TelephonyManager.NETWORK_TYPE_LTE,
         overrideNetworkType = TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NONE,
-      )
+      ),
     )
 
     assertThat(provider.cellularNetworkTechnology).isEqualTo("4g")
@@ -255,10 +257,10 @@ class CellularNetworkTechnologyProviderTest {
     val done = CountDownLatch(threadCount)
     repeat(threadCount) {
       Thread {
-          start.await()
-          provider.register()
-          done.countDown()
-        }
+        start.await()
+        provider.register()
+        done.countDown()
+      }
         .start()
     }
 
@@ -276,7 +278,7 @@ class CellularNetworkTechnologyProviderTest {
       fixture.displayInfo(
         networkType = TelephonyManager.NETWORK_TYPE_LTE,
         overrideNetworkType = TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NONE,
-      )
+      ),
     )
 
     provider.unregister()
@@ -294,7 +296,7 @@ class CellularNetworkTechnologyProviderTest {
       fixture.displayInfo(
         networkType = TelephonyManager.NETWORK_TYPE_NR,
         overrideNetworkType = TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NONE,
-      )
+      ),
     )
 
     provider.unregister()

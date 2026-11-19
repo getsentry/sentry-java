@@ -192,7 +192,7 @@ class SentryTimberTreeTest {
           check {
             assertEquals("tag", it.getTag("TimberTag"))
             assertEquals(sentryLevel, it.level)
-          }
+          },
         )
     }
   }
@@ -211,7 +211,7 @@ class SentryTimberTreeTest {
     sut.e("message")
     verify(fixture.scopes)
       .captureEvent(
-        check { assertNotNull(it.message) { message -> assertEquals("message", message.message) } }
+        check { assertNotNull(it.message) { message -> assertEquals("message", message.message) } },
       )
   }
 
@@ -227,7 +227,7 @@ class SentryTimberTreeTest {
             assertEquals("test count: 32", message.formatted)
             assertEquals("32", message.params!!.first())
           }
-        }
+        },
       )
   }
 
@@ -271,7 +271,7 @@ class SentryTimberTreeTest {
           assertEquals("Timber", it.category)
           assertEquals(SentryLevel.INFO, it.level)
           assertEquals("message", it.message)
-        }
+        },
       )
   }
 
@@ -285,7 +285,7 @@ class SentryTimberTreeTest {
           assertEquals("exception", it.category)
           assertEquals(SentryLevel.ERROR, it.level)
           assertEquals("test", it.message)
-        }
+        },
       )
   }
 

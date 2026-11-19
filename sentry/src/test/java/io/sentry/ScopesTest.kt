@@ -1510,7 +1510,7 @@ class ScopesTest {
           anyOrNull(),
           anyOrNull(),
           anyOrNull(),
-        )
+        ),
       )
       .thenReturn(SentryId())
 
@@ -1871,6 +1871,28 @@ class ScopesTest {
   }
 
   @Test
+  fun `when startTransaction, passes a snapshot of transaction options to span factory`() {
+    val scopes = generateScopes()
+    val spanFactory = mock<ISpanFactory>()
+    val transaction = mock<ITransaction>()
+    whenever(spanFactory.createTransaction(any(), any(), any(), anyOrNull()))
+      .thenReturn(transaction)
+    val transactionOptions =
+      TransactionOptions().apply {
+        isWaitForChildren = true
+        setSpanFactory(spanFactory)
+      }
+
+    scopes.startTransaction(TransactionContext("name", "op"), transactionOptions)
+    transactionOptions.isWaitForChildren = false
+
+    val optionsCaptor = argumentCaptor<TransactionOptions>()
+    verify(spanFactory).createTransaction(any(), eq(scopes), optionsCaptor.capture(), anyOrNull())
+    assertThat(optionsCaptor.firstValue).isNotSameInstanceAs(transactionOptions)
+    assertThat(optionsCaptor.firstValue.isWaitForChildren).isTrue()
+  }
+
+  @Test
   fun `when startTransaction with bindToScope set to false, transaction is not attached to the scope`() {
     val scopes = generateScopes()
 
@@ -2226,7 +2248,7 @@ class ScopesTest {
       scopes.continueTrace(
         "$traceId-$parentSpanId-1",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2248,7 +2270,7 @@ class ScopesTest {
       scopes.continueTrace(
         "$traceId-$parentSpanId",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2275,7 +2297,7 @@ class ScopesTest {
       scopes.continueTrace(
         "invalid",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2299,7 +2321,7 @@ class ScopesTest {
       scopes.continueTrace(
         "$traceId-$parentSpanId-1",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2324,7 +2346,7 @@ class ScopesTest {
       scopes.continueTrace(
         "invalid",
         listOf(
-          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+          "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
         ),
       )
 
@@ -2478,7 +2500,7 @@ class ScopesTest {
       .log(
         eq(SentryLevel.WARNING),
         eq(
-          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."
+          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.",
         ),
       )
   }
@@ -2532,7 +2554,7 @@ class ScopesTest {
       .log(
         eq(SentryLevel.WARNING),
         eq(
-          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."
+          "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.",
         ),
       )
   }
@@ -2856,7 +2878,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
         "log message",
       )
@@ -3601,7 +3623,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
       )
 
@@ -3780,7 +3802,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
       )
 
@@ -3959,7 +3981,7 @@ class ScopesTest {
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
             SentryAttribute.named("namedarrayattr", listOf("x", "y")),
-          )
+          ),
         ),
       )
 
@@ -4432,7 +4454,7 @@ class ScopesTest {
   private val dsnTest = "https://key@sentry.io/proj"
 
   private fun generateScopes(
-    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null
+    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
   ): IScopes {
     val options =
       SentryOptions().apply {
@@ -4446,7 +4468,7 @@ class ScopesTest {
   }
 
   private fun getEnabledScopes(
-    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null
+    optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
   ): Triple<Scopes, ISentryClient, ILogger> {
     val logger = mock<ILogger>()
 

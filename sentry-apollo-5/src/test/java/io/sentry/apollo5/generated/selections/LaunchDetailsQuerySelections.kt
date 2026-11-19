@@ -34,8 +34,8 @@ public object LaunchDetailsQuerySelections {
           listOf(
             CompiledArgument.Builder(CompiledArgumentDefinition.Builder("size").build())
               .value("LARGE")
-              .build()
-          )
+              .build(),
+          ),
         )
         .build(),
     )
@@ -90,10 +90,10 @@ public object LaunchDetailsQuerySelections {
           listOf(
             CompiledArgument.Builder(CompiledArgumentDefinition.Builder("id").build())
               .value("id")
-              .build()
-          )
+              .build(),
+          ),
         )
         .selections(launch)
-        .build()
+        .build(),
     )
 }

@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      // The first synchronous script of the page: the injected tags must already be here.
+      window.traceAtHeadStart = document.querySelector('meta[name="sentry-trace"]');
+    </script>
+  </head>
+  <body>
+    <iframe src="iframe.html"></iframe>
+    <script>
+      SentryTest.onPageTrace(window.traceAtHeadStart ? window.traceAtHeadStart.content : '');
+    </script>
+  </body>
+</html>

@@ -13,7 +13,7 @@ class SpanUtilsTest {
     assertThat(SpanUtils.ignoredSpanOriginsForOpenTelemetry(SentryOpenTelemetryMode.AGENT))
       .contains("auto.http.okhttp")
     assertThat(
-        SpanUtils.ignoredSpanOriginsForOpenTelemetry(SentryOpenTelemetryMode.AGENTLESS_SPRING)
+        SpanUtils.ignoredSpanOriginsForOpenTelemetry(SentryOpenTelemetryMode.AGENTLESS_SPRING),
       )
       .doesNotContain("auto.http.okhttp")
   }

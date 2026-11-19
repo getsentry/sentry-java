@@ -91,11 +91,11 @@ class ProfilingActivity : ComponentActivity() {
 
               Toast.makeText(context, R.string.profiling_manual_stopped, Toast.LENGTH_SHORT).show()
             }
-          }
+          },
         ) {
           Text(
             if (manualActive) stringResource(R.string.profiling_stop_manual)
-            else stringResource(R.string.profiling_start_manual)
+            else stringResource(R.string.profiling_start_manual),
           )
         }
 

@@ -89,7 +89,7 @@ class SecondActivity : AppCompatActivity() {
 
             Sentry.reportFullyDisplayed()
           }
-        }
+        },
       )
   }
 }

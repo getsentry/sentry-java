@@ -50,7 +50,7 @@ class ProfilingSampleActivity : AppCompatActivity() {
               scrollingIdlingResource.decrement()
             }
           }
-        }
+        },
       )
     }
   }

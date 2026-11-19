@@ -9,6 +9,19 @@ public final class TransactionOptions extends SpanOptions {
 
   @ApiStatus.Internal public static final long DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION = 30000;
 
+  public TransactionOptions() {}
+
+  TransactionOptions(final @NotNull TransactionOptions options) {
+    super(options);
+    customSamplingContext = options.getCustomSamplingContext();
+    isAppStartTransaction = options.isAppStartTransaction();
+    waitForChildren = options.isWaitForChildren();
+    idleTimeout = options.getIdleTimeout();
+    deadlineTimeout = options.getDeadlineTimeout();
+    transactionFinishedCallback = options.getTransactionFinishedCallback();
+    spanFactory = options.getSpanFactory();
+  }
+
   /**
    * Arbitrary data used in {@link SamplingContext} to determine if transaction is going to be
    * sampled.

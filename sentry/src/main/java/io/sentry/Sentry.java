@@ -442,62 +442,60 @@ public final class Sentry {
       final @NotNull SentryOptions options,
       final @NotNull ISentryExecutorService sentryExecutorService) {
     try {
-      sentryExecutorService.submit(
-          () -> {
-            final String cacheDirPath = options.getCacheDirPathWithoutDsn();
-            if (cacheDirPath != null) {
-              final @NotNull File cacheDir = new File(cacheDirPath);
-              final @NotNull File appStartProfilingConfigFile =
-                  new File(cacheDir, APP_START_PROFILING_CONFIG_FILE_NAME);
-              try {
-                // We always delete the config file for app start profiling
-                FileUtils.deleteRecursively(appStartProfilingConfigFile);
-                if (!options.isEnableAppStartProfiling() && !options.isStartProfilerOnAppStart()) {
-                  return;
-                }
-                // isStartProfilerOnAppStart doesn't need tracing, as it can be started/stopped
-                // manually
-                if (!options.isStartProfilerOnAppStart() && !options.isTracingEnabled()) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.INFO,
-                          "Tracing is disabled and app start profiling will not start.");
-                  return;
-                }
-                // The cache dir is no longer created during init, so create it here before writing:
-                // createNewFile() fails if the parent is missing.
-                if (!FileUtils.createDirectory(cacheDir)) {
-                  options
-                      .getLogger()
-                      .log(SentryLevel.ERROR, "Failed to create cache dir %s", cacheDirPath);
-                  return;
-                }
-                if (appStartProfilingConfigFile.createNewFile()) {
-                  // If old app start profiling is false, it means the transaction will not be
-                  // sampled, but we create the file anyway to allow continuous profiling on app
-                  // start
-                  final @NotNull TracesSamplingDecision appStartSamplingDecision =
-                      options.isEnableAppStartProfiling()
-                          ? sampleAppStartProfiling(options)
-                          : new TracesSamplingDecision(false);
-                  final @NotNull SentryAppStartProfilingOptions appStartProfilingOptions =
-                      new SentryAppStartProfilingOptions(options, appStartSamplingDecision);
-                  try (final OutputStream outputStream =
-                          new FileOutputStream(appStartProfilingConfigFile);
-                      final Writer writer =
-                          new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-                    options.getSerializer().serialize(appStartProfilingOptions, writer);
-                  }
-                }
-              } catch (Throwable e) {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.ERROR, "Unable to create app start profiling config file. ", e);
+      sentryExecutorService.submit(() -> {
+        final String cacheDirPath = options.getCacheDirPathWithoutDsn();
+        if (cacheDirPath != null) {
+          final @NotNull File cacheDir = new File(cacheDirPath);
+          final @NotNull File appStartProfilingConfigFile =
+              new File(cacheDir, APP_START_PROFILING_CONFIG_FILE_NAME);
+          try {
+            // We always delete the config file for app start profiling
+            FileUtils.deleteRecursively(appStartProfilingConfigFile);
+            if (!options.isEnableAppStartProfiling() && !options.isStartProfilerOnAppStart()) {
+              return;
+            }
+            // isStartProfilerOnAppStart doesn't need tracing, as it can be started/stopped
+            // manually
+            if (!options.isStartProfilerOnAppStart() && !options.isTracingEnabled()) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.INFO,
+                      "Tracing is disabled and app start profiling will not start.");
+              return;
+            }
+            // The cache dir is no longer created during init, so create it here before writing:
+            // createNewFile() fails if the parent is missing.
+            if (!FileUtils.createDirectory(cacheDir)) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "Failed to create cache dir %s", cacheDirPath);
+              return;
+            }
+            if (appStartProfilingConfigFile.createNewFile()) {
+              // If old app start profiling is false, it means the transaction will not be
+              // sampled, but we create the file anyway to allow continuous profiling on app
+              // start
+              final @NotNull TracesSamplingDecision appStartSamplingDecision =
+                  options.isEnableAppStartProfiling()
+                      ? sampleAppStartProfiling(options)
+                      : new TracesSamplingDecision(false);
+              final @NotNull SentryAppStartProfilingOptions appStartProfilingOptions =
+                  new SentryAppStartProfilingOptions(options, appStartSamplingDecision);
+              try (final OutputStream outputStream =
+                      new FileOutputStream(appStartProfilingConfigFile);
+                  final Writer writer =
+                      new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
+                options.getSerializer().serialize(appStartProfilingOptions, writer);
               }
             }
-          });
+          } catch (Throwable e) {
+            options
+                .getLogger()
+                .log(SentryLevel.ERROR, "Unable to create app start profiling config file. ", e);
+          }
+        }
+      });
     } catch (Throwable e) {
       options
           .getLogger()
@@ -549,36 +547,34 @@ public final class Sentry {
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                // for static things like sentry options we can immediately trigger observers
-                for (final IOptionsObserver observer : options.getOptionsObservers()) {
-                  observer.setRelease(options.getRelease());
-                  observer.setProguardUuid(options.getProguardUuid());
-                  observer.setSdkVersion(options.getSdkVersion());
-                  observer.setDist(options.getDist());
-                  observer.setEnvironment(options.getEnvironment());
-                  observer.setTags(options.getTags());
-                  observer.setReplayErrorSampleRate(
-                      options.getSessionReplay().getOnErrorSampleRate());
-                }
+          .submit(() -> {
+            // for static things like sentry options we can immediately trigger observers
+            for (final IOptionsObserver observer : options.getOptionsObservers()) {
+              observer.setRelease(options.getRelease());
+              observer.setProguardUuid(options.getProguardUuid());
+              observer.setSdkVersion(options.getSdkVersion());
+              observer.setDist(options.getDist());
+              observer.setEnvironment(options.getEnvironment());
+              observer.setTags(options.getTags());
+              observer.setReplayErrorSampleRate(options.getSessionReplay().getOnErrorSampleRate());
+            }
 
-                // since it's a new SDK init we clean up persisted scope values before serializing
-                // new ones, so they are not making it to the new events if they were e.g. disabled
-                // (e.g. replayId) or are simply irrelevant (e.g. breadcrumbs). NOTE: this happens
-                // after the integrations relying on those values are done with processing them.
-                final @Nullable PersistingScopeObserver scopeCache =
-                    options.findPersistingScopeObserver();
-                if (scopeCache != null) {
-                  scopeCache.resetCache();
-                  // the scope environment is configuration, not telemetry state, so we persist it
-                  // again after the reset to keep it available for the next app launch
-                  final @Nullable String environment = globalScope.getEnvironment();
-                  if (environment != null) {
-                    scopeCache.setEnvironment(environment);
-                  }
-                }
-              });
+            // since it's a new SDK init we clean up persisted scope values before serializing
+            // new ones, so they are not making it to the new events if they were e.g. disabled
+            // (e.g. replayId) or are simply irrelevant (e.g. breadcrumbs). NOTE: this happens
+            // after the integrations relying on those values are done with processing them.
+            final @Nullable PersistingScopeObserver scopeCache =
+                options.findPersistingScopeObserver();
+            if (scopeCache != null) {
+              scopeCache.resetCache();
+              // the scope environment is configuration, not telemetry state, so we persist it
+              // again after the reset to keep it available for the next app launch
+              final @Nullable String environment = globalScope.getEnvironment();
+              if (environment != null) {
+                scopeCache.setEnvironment(environment);
+              }
+            }
+          });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
     }
@@ -639,20 +635,19 @@ public final class Sentry {
       try {
         options
             .getExecutorService()
-            .submit(
-                () -> {
-                  final File[] oldTracesDirContent = profilingTracesDir.listFiles();
-                  if (oldTracesDirContent == null) return;
-                  // Method trace files are normally deleted at the end of traces, but if that fails
-                  // for some reason we try to clear any old files here.
-                  for (File f : oldTracesDirContent) {
-                    // We delete files 5 minutes older than class creation to account for app
-                    // start profiles, as an app start profile could have a lower creation date.
-                    if (f.lastModified() < classCreationTimestamp - TimeUnit.MINUTES.toMillis(5)) {
-                      FileUtils.deleteRecursively(f);
-                    }
-                  }
-                });
+            .submit(() -> {
+              final File[] oldTracesDirContent = profilingTracesDir.listFiles();
+              if (oldTracesDirContent == null) return;
+              // Method trace files are normally deleted at the end of traces, but if that fails
+              // for some reason we try to clear any old files here.
+              for (File f : oldTracesDirContent) {
+                // We delete files 5 minutes older than class creation to account for app
+                // start profiles, as an app start profile could have a lower creation date.
+                if (f.lastModified() < classCreationTimestamp - TimeUnit.MINUTES.toMillis(5)) {
+                  FileUtils.deleteRecursively(f);
+                }
+              }
+            });
       } catch (RejectedExecutionException e) {
         options
             .getLogger()

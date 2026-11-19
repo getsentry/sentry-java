@@ -34,7 +34,7 @@ private constructor(
   )
 
   public constructor(
-    logsEnabled: Boolean
+    logsEnabled: Boolean,
   ) : this(
     SentryLevel.ERROR,
     SentryLevel.INFO,
@@ -43,7 +43,7 @@ private constructor(
   )
 
   internal constructor(
-    logsEnabledProvider: Evaluator<Boolean>
+    logsEnabledProvider: Evaluator<Boolean>,
   ) : this(
     SentryLevel.ERROR,
     SentryLevel.INFO,

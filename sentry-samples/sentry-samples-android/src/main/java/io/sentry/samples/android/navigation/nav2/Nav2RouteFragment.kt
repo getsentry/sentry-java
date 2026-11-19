@@ -45,7 +45,7 @@ class Nav2RouteFragment : Fragment() {
             listOf(
               RouteButton(R.id.nav2_fragment_browse_products, "Browse Products") {
                 activity.navigateTo(Nav2Destination.ProductList)
-              }
+              },
             ),
         )
 
@@ -56,7 +56,7 @@ class Nav2RouteFragment : Fragment() {
             listOf(
               RouteButton(R.id.nav2_fragment_open_deep_link, "Go to deep link destination") {
                 activity.openSyntheticProductDeepLink()
-              }
+              },
             ),
         )
 
@@ -67,7 +67,7 @@ class Nav2RouteFragment : Fragment() {
             listOf(
               RouteButton(R.id.nav2_fragment_open_product_42, "Open Product 42") {
                 activity.navigateTo(
-                  Nav2Destination.ProductDetail("42", "product-list", "summer-sale")
+                  Nav2Destination.ProductDetail("42", "product-list", "summer-sale"),
                 )
               },
               RouteButton(R.id.nav2_fragment_open_product_7, "Open Product 7") {
@@ -85,7 +85,7 @@ class Nav2RouteFragment : Fragment() {
 
       else ->
         routeLayout(
-          RouteSpec(routeName = routeName, title = "Unknown Route", description = routeName)
+          RouteSpec(routeName = routeName, title = "Unknown Route", description = routeName),
         )
     }
   }
@@ -151,7 +151,7 @@ class Nav2RouteFragment : Fragment() {
         listOf(
           RouteButton(R.id.nav2_fragment_complete_order, "Complete Order") {
             activity.navigateTo(Nav2Destination.Confirmation("order-$productId"))
-          }
+          },
         ),
     )
   }
@@ -165,7 +165,7 @@ class Nav2RouteFragment : Fragment() {
         listOf(
           RouteButton(R.id.nav2_fragment_reset_backstack, "Reset Backstack") {
             activity.resetToHome()
-          }
+          },
         ),
     )
   }
@@ -191,7 +191,7 @@ class Nav2RouteFragment : Fragment() {
             setBackgroundColor(context.themeColor(android.R.attr.colorBackgroundFloating))
             info.forEach { (label, value) -> addView(infoRow(label, value)) }
             buttons.forEach { button -> addView(routeButton(button)) }
-          }
+          },
         )
       }
       trailingContent?.invoke(this)
@@ -227,7 +227,7 @@ class Nav2RouteFragment : Fragment() {
           scrollView.visibility = if (itemsVisible) View.VISIBLE else View.GONE
         }
         layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-      }
+      },
     )
     addView(scrollView)
   }
@@ -299,13 +299,13 @@ class Nav2RouteFragment : Fragment() {
           textSize = 14f
           setTypeface(null, Typeface.BOLD)
           layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
-        }
+        },
       )
       addView(
         TextView(context).apply {
           text = "SKU-$itemNumber"
           textSize = 14f
-        }
+        },
       )
     }
 

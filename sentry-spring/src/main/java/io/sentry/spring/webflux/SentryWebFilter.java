@@ -74,41 +74,38 @@ public final class SentryWebFilter implements WebFilter {
 
     return webFilterChain
         .filter(serverWebExchange)
-        .doFinally(
-            __ -> {
-              if (transaction != null) {
-                finishTransaction(serverWebExchange, transaction);
-              }
-              Sentry.setCurrentScopes(NoOpScopes.getInstance());
-            })
-        .doOnError(
-            e -> {
-              if (transaction != null) {
-                transaction.setStatus(SpanStatus.INTERNAL_ERROR);
-                transaction.setThrowable(e);
-              }
-            })
-        .doFirst(
-            () -> {
-              serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestScopes);
-              Sentry.setCurrentScopes(requestScopes);
-              final ServerHttpResponse response = serverWebExchange.getResponse();
+        .doFinally(__ -> {
+          if (transaction != null) {
+            finishTransaction(serverWebExchange, transaction);
+          }
+          Sentry.setCurrentScopes(NoOpScopes.getInstance());
+        })
+        .doOnError(e -> {
+          if (transaction != null) {
+            transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+            transaction.setThrowable(e);
+          }
+        })
+        .doFirst(() -> {
+          serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestScopes);
+          Sentry.setCurrentScopes(requestScopes);
+          final ServerHttpResponse response = serverWebExchange.getResponse();
 
-              final Hint hint = new Hint();
-              hint.set(WEBFLUX_FILTER_REQUEST, request);
-              hint.set(WEBFLUX_FILTER_RESPONSE, response);
-              final String methodName =
-                  request.getMethod() != null ? request.getMethod().name() : "unknown";
-              final @NotNull Breadcrumb breadcrumb =
-                  Breadcrumb.http(
-                      request.getURI().toString(),
-                      methodName,
-                      null,
-                      requestScopes.getOptions().getDataCollectionResolver());
-              requestScopes.addBreadcrumb(breadcrumb, hint);
-              requestScopes.configureScope(
-                  scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
-            });
+          final Hint hint = new Hint();
+          hint.set(WEBFLUX_FILTER_REQUEST, request);
+          hint.set(WEBFLUX_FILTER_RESPONSE, response);
+          final String methodName =
+              request.getMethod() != null ? request.getMethod().name() : "unknown";
+          final @NotNull Breadcrumb breadcrumb =
+              Breadcrumb.http(
+                  request.getURI().toString(),
+                  methodName,
+                  null,
+                  requestScopes.getOptions().getDataCollectionResolver());
+          requestScopes.addBreadcrumb(breadcrumb, hint);
+          requestScopes.configureScope(
+              scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
+        });
   }
 
   private boolean isIgnored(final @NotNull IScopes scopes) {
@@ -164,10 +161,9 @@ public final class SentryWebFilter implements WebFilter {
         transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, rawStatusCode);
         transaction
             .getContexts()
-            .withResponse(
-                (sentryResponse) -> {
-                  sentryResponse.setStatusCode(rawStatusCode);
-                });
+            .withResponse(sentryResponse -> {
+              sentryResponse.setStatusCode(rawStatusCode);
+            });
         if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(rawStatusCode));
         }

@@ -177,11 +177,11 @@ class SentryScheduledCheckInTest {
     assertEquals("outer-inner-run2-fa", SentryCheckInAdvice.scheduledTaskSlug("Outer.Inner.run2FA"))
     val first =
       SentryCheckInAdvice.scheduledTaskSlug(
-        "AVeryLongScheduledJobClassNameForReporting.firstMethod"
+        "AVeryLongScheduledJobClassNameForReporting.firstMethod",
       )
     val second =
       SentryCheckInAdvice.scheduledTaskSlug(
-        "AVeryLongScheduledJobClassNameForReporting.secondMethod"
+        "AVeryLongScheduledJobClassNameForReporting.secondMethod",
       )
     assertTrue(first.length <= 50)
     assertTrue(first.startsWith("a-very-long-scheduled-job-class-name-for-"))
@@ -189,7 +189,7 @@ class SentryScheduledCheckInTest {
     assertEquals(
       first,
       SentryCheckInAdvice.scheduledTaskSlug(
-        "AVeryLongScheduledJobClassNameForReporting.firstMethod"
+        "AVeryLongScheduledJobClassNameForReporting.firstMethod",
       ),
     )
   }
@@ -292,11 +292,11 @@ class SentryScheduledCheckInTest {
 
     @Bean
     open fun sentryScheduledCheckInAdvisor(
-      @Qualifier("sentryScheduledCheckInAdvice") advice: SentryCheckInAdvice
+      @Qualifier("sentryScheduledCheckInAdvice") advice: SentryCheckInAdvice,
     ): Advisor =
       DefaultPointcutAdvisor(
         SentryScheduledCheckInPointcut(
-          listOf("SentryScheduledCheckInTest.Jobs.excluded", ".*\\.ExcludedJobs\\..*", " ")
+          listOf("SentryScheduledCheckInTest.Jobs.excluded", ".*\\.ExcludedJobs\\..*", " "),
         ),
         advice,
       )

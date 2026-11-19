@@ -131,10 +131,9 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
         transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode.value());
         transaction
             .getContexts()
-            .withResponse(
-                (sentryResponse) -> {
-                  sentryResponse.setStatusCode(statusCode.value());
-                });
+            .withResponse(sentryResponse -> {
+              sentryResponse.setStatusCode(statusCode.value());
+            });
         if (transaction.getStatus() == null) {
           transaction.setStatus(SpanStatus.fromHttpStatusCode(statusCode.value()));
         }

@@ -395,7 +395,7 @@ class JsonSerializerTest {
     val jsonEnvelope = FileFromResources.invoke("envelope_session.txt")
     val envelope =
       fixture.serializer.deserializeEnvelope(
-        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8))
+        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)),
       )
     assertEnvelopeData(envelope)
   }
@@ -405,7 +405,7 @@ class JsonSerializerTest {
     val jsonEnvelope = FileFromResources.invoke("envelope_session_sdkversion.txt")
     val envelope =
       fixture.serializer.deserializeEnvelope(
-        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8))
+        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)),
       )!!
     assertNotNull(envelope.header.sdkVersion)
     val sdkInfo = envelope.header.sdkVersion!!
@@ -418,7 +418,7 @@ class JsonSerializerTest {
     assertTrue(
       sdkInfo.packageSet.any {
         it.name == "io.sentry:maven:sentry-android-core" && it.version == "4.5.6"
-      }
+      },
     )
   }
 
@@ -431,7 +431,7 @@ class JsonSerializerTest {
     // reversing it so we can assert the values
     val envelope =
       fixture.serializer.deserializeEnvelope(
-        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8))
+        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)),
       )
     assertEnvelopeData(envelope)
   }
@@ -450,7 +450,7 @@ class JsonSerializerTest {
     // reversing it so we can assert the values
     val envelope =
       fixture.serializer.deserializeEnvelope(
-        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8))
+        ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)),
       )!!
     assertNotNull(envelope.header.sdkVersion)
 
@@ -628,7 +628,7 @@ class JsonSerializerTest {
             ProfileMeasurement.UNIT_PERCENT,
             listOf(ProfileMeasurementValue(5, 10.52, measurementNow)),
           ),
-      )
+      ),
     )
     profilingTraceData.sampledProfile = "sampled profile in base 64"
 
@@ -685,7 +685,7 @@ class JsonSerializerTest {
                   "value" to 60.1,
                   "elapsed_since_start_ns" to "1",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
         ProfileMeasurement.ID_MEMORY_FOOTPRINT to
@@ -697,7 +697,7 @@ class JsonSerializerTest {
                   "value" to 100.52,
                   "elapsed_since_start_ns" to "2",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
         ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
@@ -709,7 +709,7 @@ class JsonSerializerTest {
                   "value" to 104.52,
                   "elapsed_since_start_ns" to "3",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
         ProfileMeasurement.ID_CPU_USAGE to
@@ -721,7 +721,7 @@ class JsonSerializerTest {
                   "value" to 10.52,
                   "elapsed_since_start_ns" to "5",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
       ),
@@ -999,7 +999,7 @@ class JsonSerializerTest {
             ProfileMeasurement.UNIT_PERCENT,
             listOf(ProfileMeasurementValue(5, 10.52, measurementNow)),
           ),
-      )
+      ),
     )
 
     val actual = serializeToString(profileChunk)
@@ -1030,7 +1030,7 @@ class JsonSerializerTest {
                   "value" to 60.1,
                   "elapsed_since_start_ns" to "1",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
         ProfileMeasurement.ID_MEMORY_FOOTPRINT to
@@ -1042,7 +1042,7 @@ class JsonSerializerTest {
                   "value" to 100.52,
                   "elapsed_since_start_ns" to "2",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
         ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
@@ -1054,7 +1054,7 @@ class JsonSerializerTest {
                   "value" to 104.52,
                   "elapsed_since_start_ns" to "3",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
         ProfileMeasurement.ID_CPU_USAGE to
@@ -1066,7 +1066,7 @@ class JsonSerializerTest {
                   "value" to 10.52,
                   "elapsed_since_start_ns" to "5",
                   "timestamp" to measurementNowSeconds,
-                )
+                ),
               ),
           ),
       ),
@@ -1207,7 +1207,7 @@ class JsonSerializerTest {
     val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
     assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
     assertTrue(
-      (jsonTrace["data"] as Map<*, *>)["flag.evaluation.transaction-feature-flag"] as Boolean
+      (jsonTrace["data"] as Map<*, *>)["flag.evaluation.transaction-feature-flag"] as Boolean,
     )
     assertNotNull(jsonTrace["trace_id"] as String)
     assertNotNull(jsonTrace["span_id"] as String)
@@ -1590,7 +1590,7 @@ class JsonSerializerTest {
         listOf(
           Breadcrumb(timestamp).apply { message = "test" },
           Breadcrumb(timestamp).apply { category = "navigation" },
-        )
+        ),
       )
 
     val deserializedCollection =
@@ -1714,7 +1714,7 @@ class JsonSerializerTest {
   private fun generateEmptySentryEvent(date: Date = Date()): SentryEvent = SentryEvent(date)
 
   private fun createSessionMockData(
-    sessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db"
+    sessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
   ): Session =
     Session(
       Session.State.Ok,

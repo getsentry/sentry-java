@@ -345,7 +345,7 @@ class SentryOptionsTest {
     assertTrue(
       sdkVersion.packageSet.any {
         it.name == "maven:io.sentry:sentry" && it.version == BuildConfig.VERSION_NAME
-      }
+      },
     )
   }
 
@@ -564,7 +564,7 @@ class SentryOptionsTest {
     externalOptions.shutdownTimeoutMillis = 1499L
     externalOptions.sessionFlushTimeoutMillis = 1498L
     externalOptions.bundleIds.addAll(
-      listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411 ", " faa3ab42-b1bd-4659-af8e-1682324aa744")
+      listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411 ", " faa3ab42-b1bd-4659-af8e-1682324aa744"),
     )
     externalOptions.isEnabled = false
     externalOptions.isEnablePrettySerializationOutput = false
@@ -574,6 +574,8 @@ class SentryOptionsTest {
     externalOptions.traceIgnoreStatusCodes =
       listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
+    externalOptions.ignoredErrorsForDeduplication =
+      listOf("example.FirstException", "example.SecondException")
     externalOptions.isEnableBackpressureHandling = false
     externalOptions.isEnableDatabaseTransactionTracing = true
     externalOptions.isEnableCacheTracing = true
@@ -641,6 +643,10 @@ class SentryOptionsTest {
     assertEquals(
       listOf("Some error", "Another .*"),
       options.ignoredErrors,
+    )
+    assertEquals(
+      listOf("example.FirstException", "example.SecondException"),
+      options.ignoredErrorsForDeduplication,
     )
     assertFalse(options.isEnableBackpressureHandling)
     assertTrue(options.isEnableDatabaseTransactionTracing)
@@ -853,11 +859,11 @@ class SentryOptionsTest {
         override fun getConnectionType(): String? = null
 
         override fun addConnectionStatusObserver(
-          observer: IConnectionStatusProvider.IConnectionStatusObserver
+          observer: IConnectionStatusProvider.IConnectionStatusObserver,
         ) = false
 
         override fun removeConnectionStatusObserver(
-          observer: IConnectionStatusProvider.IConnectionStatusObserver
+          observer: IConnectionStatusProvider.IConnectionStatusObserver,
         ) {
           // no-op
         }
@@ -1054,6 +1060,92 @@ class SentryOptionsTest {
   @Test
   fun `when options is initialized, InitPriority is set to MEDIUM by default`() {
     assertEquals(SentryOptions().initPriority, InitPriority.MEDIUM)
+  }
+
+  @Test
+  fun `ignored errors for deduplication contains Netty timeout exceptions by default`() {
+    assertThat(SentryOptions().ignoredErrorsForDeduplication)
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `ignored errors for deduplication can be replaced and extended`() {
+    val options = SentryOptions()
+
+    options.setIgnoredErrorsForDeduplication(listOf("example.FirstException", ""))
+    options.addIgnoredErrorForDeduplication("example.SecondException")
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly("example.FirstException", "example.SecondException")
+      .inOrder()
+    assertThat(options.ignoredErrorFiltersForDeduplication)
+      .containsExactly(
+        FilterString("example.FirstException"),
+        FilterString("example.SecondException"),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `ignored errors for deduplication getter returns a copy`() {
+    val options = SentryOptions()
+    options.setIgnoredErrorsForDeduplication(listOf("example.FirstException"))
+
+    options.ignoredErrorsForDeduplication!!.clear()
+
+    assertThat(options.ignoredErrorsForDeduplication).containsExactly("example.FirstException")
+  }
+
+  @Test
+  fun `ignored errors for deduplication getters return null when unset`() {
+    val options = SentryOptions()
+    options.setIgnoredErrorsForDeduplication(null)
+
+    assertThat(options.ignoredErrorsForDeduplication).isNull()
+    assertThat(options.ignoredErrorFiltersForDeduplication).isNull()
+  }
+
+  @Test
+  fun `merging options without ignored errors for deduplication preserves the default`() {
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `merging ignored errors for deduplication replaces the default`() {
+    val options = SentryOptions()
+    val externalOptions =
+      ExternalOptions().apply {
+        ignoredErrorsForDeduplication = listOf("example.FirstException", "example.SecondException")
+      }
+
+    options.merge(externalOptions)
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly("example.FirstException", "example.SecondException")
+      .inOrder()
+  }
+
+  @Test
+  fun `merging empty ignored errors for deduplication removes the default`() {
+    val options = SentryOptions()
+    val externalOptions = ExternalOptions().apply { ignoredErrorsForDeduplication = listOf("") }
+
+    options.merge(externalOptions)
+
+    assertThat(options.ignoredErrorsForDeduplication).isEmpty()
   }
 
   @Test

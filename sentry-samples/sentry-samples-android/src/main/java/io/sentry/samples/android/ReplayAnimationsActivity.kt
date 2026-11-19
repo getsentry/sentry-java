@@ -199,7 +199,9 @@ private fun ComposeCanvasAnimation() {
 
   Canvas(
     modifier =
-      Modifier.fillMaxWidth().height(160.dp).background(Color(0xFF101820), RoundedCornerShape(8.dp))
+      Modifier.fillMaxWidth()
+        .height(160.dp)
+        .background(Color(0xFF101820), RoundedCornerShape(8.dp)),
   ) {
     val center = Offset(size.width / 2f, size.height / 2f)
     val orbitRadius = min(size.width, size.height) * 0.32f

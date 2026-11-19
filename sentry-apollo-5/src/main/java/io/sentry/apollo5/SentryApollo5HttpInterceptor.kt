@@ -138,7 +138,7 @@ constructor(
 
     var headers = request.headers.toMutableList()
     headers.add(
-      HttpHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
+      HttpHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value),
     )
     tracingHeaders.baggageHeader?.let { baggageHeader ->
       headers =

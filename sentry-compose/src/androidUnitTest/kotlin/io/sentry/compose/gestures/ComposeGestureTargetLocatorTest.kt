@@ -218,6 +218,31 @@ class ComposeGestureTargetLocatorTest {
   }
 
   @Test
+  fun `detects scrollable via ScrollableAreaElement modifier`() {
+    val scrollableChild =
+      mockLayoutNode(
+        isPlaced = true,
+        tag = "scroll",
+        width = 50,
+        height = 50,
+        nodeModifierClassName = "androidx.compose.foundation.ScrollableAreaElement",
+      )
+    val root =
+      mockLayoutNode(
+        isPlaced = true,
+        tag = null,
+        width = 100,
+        height = 100,
+        children = listOf(scrollableChild),
+      )
+    val owner = mockOwner(root)
+
+    val result = locator.locate(owner, 5f, 5f, UiElement.Type.SCROLLABLE)
+    assertNotNull(result)
+    assertEquals("scroll", result!!.tag)
+  }
+
+  @Test
   fun `ignores clickable when looking for scrollable`() {
     val clickableChild =
       mockLayoutNode(
@@ -663,7 +688,7 @@ class ComposeGestureTargetLocatorTest {
                 config.set(SemanticsPropertyKey("TestTag") { s: String?, _: String? -> s }, tag)
                 return config
               }
-          }
+          },
         )
       return modifierInfo
     }
@@ -681,7 +706,7 @@ class ComposeGestureTargetLocatorTest {
                 }
                 return config
               }
-          }
+          },
         )
       return modifierInfo
     }
@@ -693,7 +718,7 @@ class ComposeGestureTargetLocatorTest {
             Class.forName(className)
           } catch (_: ClassNotFoundException) {
             Modifier::class.java
-          }
+          },
         ) as Modifier
       val modifierInfo = Mockito.mock(ModifierInfo::class.java)
       whenever(modifierInfo.modifier).thenReturn(modifierWithClassName)

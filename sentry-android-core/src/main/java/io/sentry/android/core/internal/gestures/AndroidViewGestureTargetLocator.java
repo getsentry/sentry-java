@@ -40,7 +40,7 @@ public final class AndroidViewGestureTargetLocator implements GestureTargetLocat
     return null;
   }
 
-  private UiElement createUiElement(final @NotNull View targetView) {
+  private @Nullable UiElement createUiElement(final @NotNull View targetView) {
     final @Nullable String resourceName = ViewUtils.getResourceIdOrNull(targetView);
     if (resourceName == null) {
       return null;

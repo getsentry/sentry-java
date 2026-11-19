@@ -109,7 +109,6 @@ class SentryClientTest {
         logs.setLoggerBatchProcessorFactory(loggerBatchProcessorFactory)
         metrics.setMetricsBatchProcessorFactory(metricsBatchProcessorFactory)
         release = "0.0.1"
-        isTraceSampling = true
       }
 
     init {
@@ -463,7 +462,7 @@ class SentryClientTest {
     scope.addEventProcessor(
       object : EventProcessor {
         override fun process(event: SentryLogEvent): SentryLogEvent? = null
-      }
+      },
     )
 
     val sut = fixture.getSut()
@@ -626,7 +625,7 @@ class SentryClientTest {
     scope.addEventProcessor(
       object : EventProcessor {
         override fun process(event: SentryMetricsEvent, hint: Hint): SentryMetricsEvent? = null
-      }
+      },
     )
 
     val sut = fixture.getSut()
@@ -1690,7 +1689,7 @@ class SentryClientTest {
           transaction.spans.removeIf { it.description != "span2" }
           return transaction
         }
-      }
+      },
     )
 
     fixture.getSut().captureTransaction(transaction, scope, null)
@@ -2350,7 +2349,7 @@ class SentryClientTest {
           assertEquals(1, images.size)
           assertEquals(DebugImage.PROGUARD, images[0].type)
           assertEquals("current-uuid", images[0].uuid)
-        }
+        },
       )
   }
 
@@ -2364,7 +2363,7 @@ class SentryClientTest {
             DebugImage().apply {
               type = DebugImage.PROGUARD
               uuid = "previous-uuid"
-            }
+            },
           )
       }
 
@@ -2380,7 +2379,7 @@ class SentryClientTest {
           assertEquals(1, images.size)
           assertEquals(DebugImage.PROGUARD, images[0].type)
           assertEquals("previous-uuid", images[0].uuid)
-        }
+        },
       )
   }
 
@@ -2631,7 +2630,7 @@ class SentryClientTest {
         }
 
         override fun registerSegmentName(segmentName: String) {}
-      }
+      },
     )
     val sut = fixture.getSut()
     val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
@@ -2648,7 +2647,7 @@ class SentryClientTest {
         override fun registerSegmentName(segmentName: String) {
           registeredSegmentName = segmentName
         }
-      }
+      },
     )
     val sut = fixture.getSut()
     val sentryTracer =
@@ -3225,7 +3224,7 @@ class SentryClientTest {
           override fun process(transaction: SentryTransaction, hint: Hint): SentryTransaction? {
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3249,7 +3248,7 @@ class SentryClientTest {
           override fun process(transaction: SentryTransaction, hint: Hint): SentryTransaction? {
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3314,7 +3313,7 @@ class SentryClientTest {
             hint.addAttachment(fixture.attachment3)
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3348,7 +3347,7 @@ class SentryClientTest {
             hint.replaceAttachments(listOf(fixture.attachment3))
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3927,7 +3926,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3944,7 +3943,7 @@ class SentryClientTest {
           terminated = isTerminating
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3952,7 +3951,7 @@ class SentryClientTest {
       SentryEvent().apply {
         exceptions =
           listOf(SentryException().apply { mechanism = Mechanism().apply { isHandled = false } })
-      }
+      },
     )
     assertTrue(terminated == true)
   }
@@ -3963,7 +3962,7 @@ class SentryClientTest {
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
         override fun captureReplay(isTerminating: Boolean?): SentryId = replayId
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -4024,7 +4023,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -4047,7 +4046,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -4088,7 +4087,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
       SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
@@ -4109,7 +4108,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
       SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
@@ -4130,7 +4129,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -4157,7 +4156,7 @@ class SentryClientTest {
         SentryEvent().apply {
           exceptions =
             listOf(
-              SentryException().apply { mechanism = Mechanism().apply { isHandled = handled } }
+              SentryException().apply { mechanism = Mechanism().apply { isHandled = handled } },
             )
         }
       }
@@ -4220,7 +4219,7 @@ class SentryClientTest {
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
         override fun captureReplay(isTerminating: Boolean?): SentryId = SentryId.EMPTY_ID
-      }
+      },
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
       SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
@@ -4246,7 +4245,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -4525,7 +4524,7 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1)
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1),
       ),
     )
 
@@ -4544,7 +4543,7 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1)
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1),
       ),
     )
 
@@ -4573,7 +4572,7 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1)
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1),
       ),
     )
     verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Feedback, 1)
@@ -4684,7 +4683,7 @@ class SentryClientTest {
 
       val bytesTooBig = ByteArray((fixture.maxAttachmentSize + 1).toInt()) { 0 }
       addAttachment(
-        Attachment(bytesTooBig, "will_get_dropped.txt", "application/octet-stream", true)
+        Attachment(bytesTooBig, "will_get_dropped.txt", "application/octet-stream", true),
       )
     }
   }
@@ -4795,7 +4794,7 @@ class SentryClientTest {
           val attachmentItemTooBig = attachmentItems.last()
           assertFailsWith<SentryEnvelopeException>(
             "Getting data from attachment should" +
-              "throw an exception, because the attachment is too big."
+              "throw an exception, because the attachment is too big.",
           ) {
             attachmentItemTooBig.data
           }
@@ -4827,7 +4826,7 @@ class SentryClientTest {
           val profilingTraceItem =
             actual.items.firstOrNull { item -> item.header.type == SentryItemType.ProfileChunk }
           assertNotNull(profilingTraceItem?.data)
-        }
+        },
       )
   }
 

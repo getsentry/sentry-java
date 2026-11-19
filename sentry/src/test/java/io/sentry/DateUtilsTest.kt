@@ -330,7 +330,7 @@ class DateUtilsTest {
     val threshold = 0.000001
     if (diff > threshold) {
       throw RuntimeException(
-        "Expected $actual to be within $threshold of $expected but was $diff off"
+        "Expected $actual to be within $threshold of $expected but was $diff off",
       )
     }
   }

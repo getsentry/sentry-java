@@ -39,7 +39,7 @@ class ExternalOptionsTest {
         "data-collection.graphql.variables=true",
         "data-collection.database-query-data=false",
         "data-collection.file-paths=false",
-      )
+      ),
     ) { options ->
       val dataCollection = options.dataCollection
 
@@ -92,7 +92,7 @@ class ExternalOptionsTest {
         "data-collection.graphql.variables=invalid",
         "data-collection.database-query-data=invalid",
         "data-collection.file-paths=invalid",
-      )
+      ),
     ) { options ->
       assertThat(options.dataCollection!!.userInfo).isFalse()
       assertThat(options.dataCollection!!.graphql.document).isFalse()
@@ -122,7 +122,7 @@ class ExternalOptionsTest {
         "proxy.port=9090",
         "proxy.user=some-user",
         "proxy.pass=some-pass",
-      )
+      ),
     ) {
       assertNotNull(it.proxy) { proxy ->
         assertEquals("proxy.example.com", proxy.host)
@@ -193,7 +193,7 @@ class ExternalOptionsTest {
       listOf(
         "in-app-includes=org.springframework,com.myapp",
         "in-app-excludes=org.jboss,com.microsoft",
-      )
+      ),
     ) {
       assertEquals(listOf("org.springframework", "com.myapp"), it.inAppIncludes)
       assertEquals(listOf("org.jboss", "com.microsoft"), it.inAppExcludes)
@@ -335,6 +335,29 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with ignored errors for deduplication using external properties`() {
+    withPropertiesFile(
+      "ignored-errors-for-deduplication=example.FirstException,example.SecondException",
+    ) { options ->
+      assertThat(options.ignoredErrorsForDeduplication)
+        .containsExactly("example.FirstException", "example.SecondException")
+        .inOrder()
+    }
+  }
+
+  @Test
+  fun `creates options with empty ignored errors for deduplication using external properties`() {
+    withPropertiesFile("ignored-errors-for-deduplication=") { options ->
+      assertThat(options.ignoredErrorsForDeduplication).containsExactly("")
+    }
+  }
+
+  @Test
+  fun `creates options with null ignored errors for deduplication if missing`() {
+    withPropertiesFile { options -> assertThat(options.ignoredErrorsForDeduplication).isNull() }
+  }
+
+  @Test
   fun `creates options with single bundle ID using external properties`() {
     withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
       assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))
@@ -344,12 +367,12 @@ class ExternalOptionsTest {
   @Test
   fun `creates options with multiple bundle IDs using external properties`() {
     withPropertiesFile(
-      "bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411,faa3ab42-b1bd-4659-af8e-1682324aa744"
+      "bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411,faa3ab42-b1bd-4659-af8e-1682324aa744",
     ) { options ->
       assertTrue(
         options.bundleIds.containsAll(
-          listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744")
-        )
+          listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744"),
+        ),
       )
     }
   }
@@ -398,7 +421,7 @@ class ExternalOptionsTest {
   fun `creates options with ignoredTransactions`() {
     withPropertiesFile("ignored-transactions=transactionName1,transactionName2") { options ->
       assertTrue(
-        options.ignoredTransactions!!.containsAll(listOf("transactionName1", "transactionName2"))
+        options.ignoredTransactions!!.containsAll(listOf("transactionName1", "transactionName2")),
       )
     }
   }
@@ -536,7 +559,7 @@ class ExternalOptionsTest {
         "cron.default-timezone=America/New_York",
         "cron.default-failure-issue-threshold=40",
         "cron.default-recovery-threshold=50",
-      )
+      ),
     ) { options ->
       assertEquals(1L, options.cron?.defaultCheckinMargin)
       assertEquals(30L, options.cron?.defaultMaxRuntime)

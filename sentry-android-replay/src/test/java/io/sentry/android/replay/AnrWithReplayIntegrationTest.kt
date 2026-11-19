@@ -110,7 +110,7 @@ class AnrWithReplayIntegrationTest {
                 (no managed stack frames)
               """
                 .trimIndent()
-                .byteInputStream()
+                .byteInputStream(),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)
@@ -180,7 +180,7 @@ class AnrWithReplayIntegrationTest {
             asserted.set(true)
             return event
           }
-        }
+        },
       )
 
       // have to do it after the cacheDir is set to options, because it adds a dsn hash after
@@ -200,7 +200,7 @@ class AnrWithReplayIntegrationTest {
                     $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                     $SEGMENT_KEY_REPLAY_TYPE=BUFFER
                     """
-            .trimIndent()
+            .trimIndent(),
         )
       }
 
@@ -216,7 +216,7 @@ class AnrWithReplayIntegrationTest {
 
     await
       .withAlias(
-        "Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout"
+        "Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout",
       )
       .untilTrue(asserted)
   }

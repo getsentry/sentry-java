@@ -150,7 +150,7 @@ internal class PixelCopyStrategy(
                     } finally {
                       finishFrame()
                     }
-                  }
+                  },
                 )
               if (submitted == null) {
                 finishFrame()
@@ -343,7 +343,7 @@ internal class PixelCopyStrategy(
           } finally {
             finishFrame()
           }
-        }
+        },
       )
     if (submitted == null) {
       recycleCaptures(captures)
@@ -385,7 +385,7 @@ internal class PixelCopyStrategy(
           } finally {
             finishFrame()
           }
-        }
+        },
       )
     if (submitted == null) {
       finishFrame()

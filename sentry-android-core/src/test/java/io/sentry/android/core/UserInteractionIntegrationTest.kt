@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Scopes
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
+import io.sentry.util.LoadClass
 import junit.framework.TestCase.assertNull
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -45,7 +46,7 @@ class UserInteractionIntegrationTest {
           loadClass.isClassAvailable(
             eq("androidx.lifecycle.Lifecycle"),
             anyOrNull<SentryAndroidOptions>(),
-          )
+          ),
         )
         .thenReturn(isLifecycleAvailable)
       whenever(scopes.options).thenReturn(options)
@@ -109,7 +110,7 @@ class UserInteractionIntegrationTest {
     sut.onActivityResumed(fixture.activity)
     assertIs<SentryWindowCallback>(fixture.activity.window.callback)
     assertIs<NoOpWindowCallback>(
-      (fixture.activity.window.callback as SentryWindowCallback).delegate
+      (fixture.activity.window.callback as SentryWindowCallback).delegate,
     )
   }
 

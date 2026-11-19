@@ -59,7 +59,7 @@ inline fun <reified T> assertEnvelopeItem(
               SentryOptions().apply {
                 isDebug = true
                 setLogger(logger)
-              }
+              },
             )
             .deserialize(it.data.inputStream().reader(), T::class.java)
         deserialized?.let { Pair(index, it) }
@@ -123,7 +123,7 @@ private inline fun <reified T : Any> check(noinline predicate: (T) -> Unit): T =
         If you are trying to verify an argument to be null, use `isNull()`.
         If you are using `check` as part of a stubbing, use `argThat` or `argForWhich` instead.
         """
-          .trimIndent()
+          .trimIndent(),
       )
     }
 

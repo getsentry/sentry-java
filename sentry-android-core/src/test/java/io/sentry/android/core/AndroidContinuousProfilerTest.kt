@@ -19,6 +19,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
+import io.sentry.util.LoadClass
 import java.io.File
 import java.util.concurrent.Future
 import kotlin.test.AfterTest
@@ -212,7 +213,7 @@ class AndroidContinuousProfilerTest {
           assertContains(it.measurements, ProfileMeasurement.ID_CPU_USAGE)
           assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_FOOTPRINT)
           assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT)
-        }
+        },
       )
   }
 
