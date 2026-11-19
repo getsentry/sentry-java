@@ -1134,22 +1134,14 @@ public final class SentryClient implements ISentryClient {
 
     final @Nullable Object httpStatusCodeValue =
         trace.getData().get(SpanDataConvention.HTTP_STATUS_CODE_KEY);
-    final int httpStatusCode;
-    if (httpStatusCodeValue instanceof Integer) {
-      httpStatusCode = (Integer) httpStatusCodeValue;
-    } else if (httpStatusCodeValue instanceof Long) {
-      final long longHttpStatusCode = (Long) httpStatusCodeValue;
-      if (longHttpStatusCode < 100 || longHttpStatusCode > 599) {
-        return null;
-      }
-      httpStatusCode = (int) longHttpStatusCode;
-    } else {
+    if (!(httpStatusCodeValue instanceof Integer || httpStatusCodeValue instanceof Long)) {
       return null;
     }
-
-    if (httpStatusCode < 100 || httpStatusCode > 599) {
+    final long longHttpStatusCode = ((Number) httpStatusCodeValue).longValue();
+    if (longHttpStatusCode < 100 || longHttpStatusCode > 599) {
       return null;
     }
+    final int httpStatusCode = (int) longHttpStatusCode;
     for (final @Nullable HttpStatusCodeRange ignoredHttpStatusCode : ignoredHttpStatusCodes) {
       if (ignoredHttpStatusCode != null && ignoredHttpStatusCode.isInRange(httpStatusCode)) {
         return httpStatusCode;
