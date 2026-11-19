@@ -175,7 +175,7 @@ public final class SentryNdkCrashService extends Service {
               context,
               intent,
               options.getLogger(),
-              options.getExecutorService(),
+              options.getTimerExecutorService(),
               nativeDatabaseDir.getPath(),
               context.getApplicationInfo().nativeLibraryDir,
               Process.myPid(),

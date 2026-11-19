@@ -85,7 +85,7 @@ class SentryNdkCrashServiceTest {
   @Test
   fun `starts before the service connects`() {
     val context = UnconnectedContext()
-    options.executorService = DeferredExecutorService()
+    options.timerExecutorService = DeferredExecutorService()
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
       val connection = SentryNdkCrashService.start(context, options)
 
@@ -100,7 +100,7 @@ class SentryNdkCrashServiceTest {
     val binder = configure(true)
     val context = UnconnectedContext()
     val executor = DeferredExecutorService()
-    options.executorService = executor
+    options.timerExecutorService = executor
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
       native.`when`<Int> { io.sentry.ndk.SentryNdk.dupCrashShmFd() }.thenReturn(42)
       native
@@ -224,7 +224,7 @@ class SentryNdkCrashServiceTest {
     val binder = configure(true)
     val context = UnconnectedContext()
     val executor = DeferredExecutorService()
-    options.executorService = executor
+    options.timerExecutorService = executor
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
       native.`when`<Int> { io.sentry.ndk.SentryNdk.dupCrashShmFd() }.thenReturn(42)
       native
