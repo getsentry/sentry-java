@@ -587,7 +587,7 @@ class SentryAndroidTest {
             loadClass.isClassAvailable(
               eq(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME),
               anyOrNull<ILogger>(),
-            )
+            ),
           )
           .thenReturn(true)
       }
