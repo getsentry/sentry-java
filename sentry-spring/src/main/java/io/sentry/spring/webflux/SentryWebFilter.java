@@ -12,6 +12,7 @@ import io.sentry.IScopes;
 import io.sentry.ITransaction;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
+import io.sentry.SentrySpanKind;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -146,7 +147,7 @@ public final class SentryWebFilter implements WebFilter {
               new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
               transactionOptions);
     }
-    transaction.setData(SpanDataConvention.SENTRY_KIND_KEY, "server");
+    transaction.setData(SpanDataConvention.SENTRY_KIND_KEY, SentrySpanKind.SERVER);
     return transaction;
   }
 
