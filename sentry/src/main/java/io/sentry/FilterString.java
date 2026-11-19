@@ -46,6 +46,6 @@ public final class FilterString {
 
   @Override
   public int hashCode() {
-    return Objects.hash(filterString);
+    return Objects.hashCode(filterString);
   }
 }

@@ -282,7 +282,7 @@ class SentryHandlerTest {
     fixture = Fixture()
 
     fixture.logger.config(
-      "this should not be a breadcrumb as the level is lower than the minimum INFO"
+      "this should not be a breadcrumb as the level is lower than the minimum INFO",
     )
     fixture.logger.info("this should be a breadcrumb")
     fixture.logger.warning("this should not be sent as the event but be a breadcrumb")
@@ -409,7 +409,7 @@ class SentryHandlerTest {
             assertTrue(
               it.packageSet.any { pkg ->
                 "maven:io.sentry:sentry-jul" == pkg.name && BuildConfig.VERSION_NAME == pkg.version
-              }
+              },
             )
             assertTrue(it.integrationSet.contains("Jul"))
           }
@@ -430,7 +430,7 @@ class SentryHandlerTest {
         checkLogs { event ->
           assertEquals(SentryLogLevel.TRACE, event.items.first().level)
           assertEquals("auto.log.jul", event.items.first().attributes?.get("sentry.origin")?.value)
-        }
+        },
       )
   }
 
@@ -502,7 +502,7 @@ class SentryHandlerTest {
           val log = logs.items.first()
           assertEquals("testing message without parameters", log.body)
           assertNull(log.attributes?.get("sentry.message.template"))
-        }
+        },
       )
   }
 
@@ -520,7 +520,7 @@ class SentryHandlerTest {
           assertEquals("testing message param", log.body)
           assertEquals("testing message {0}", log.attributes?.get("sentry.message.template")?.value)
           assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
-        }
+        },
       )
   }
 
@@ -538,7 +538,7 @@ class SentryHandlerTest {
           assertEquals("testing message param", log.body)
           assertEquals("testing message %s", log.attributes?.get("sentry.message.template")?.value)
           assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
-        }
+        },
       )
   }
 
@@ -560,7 +560,7 @@ class SentryHandlerTest {
           )
           assertEquals(1, log.attributes?.get("sentry.message.parameter.0")?.value)
           assertNull(log.attributes?.get("sentry.message.parameter.1"))
-        }
+        },
       )
   }
 
@@ -582,7 +582,7 @@ class SentryHandlerTest {
           val attributes = log.attributes!!
           assertEquals("someValue", attributes["mdc.someTag"]?.value)
           assertNull(attributes["otherTag"])
-        }
+        },
       )
   }
 }

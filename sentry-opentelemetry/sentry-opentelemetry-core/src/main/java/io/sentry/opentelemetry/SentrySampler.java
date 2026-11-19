@@ -148,13 +148,12 @@ public final class SentrySampler implements Sampler {
     final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>(attributes.size());
 
     if (attributes != null) {
-      attributes.forEach(
-          (key, value) -> {
-            if (key != null) {
-              final @NotNull String stringKey = key.getKey();
-              mapWithStringKeys.put(stringKey, value);
-            }
-          });
+      attributes.forEach((key, value) -> {
+        if (key != null) {
+          final @NotNull String stringKey = key.getKey();
+          mapWithStringKeys.put(stringKey, value);
+        }
+      });
     }
 
     return mapWithStringKeys;

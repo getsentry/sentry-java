@@ -231,16 +231,15 @@ public final class ActivityFramesTracker {
       if (AndroidThreadChecker.getInstance().isMainThread()) {
         runnable.run();
       } else {
-        handler.post(
-            () -> {
-              try {
-                runnable.run();
-              } catch (Throwable ignored) {
-                if (tag != null) {
-                  options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
-                }
-              }
-            });
+        handler.post(() -> {
+          try {
+            runnable.run();
+          } catch (Throwable ignored) {
+            if (tag != null) {
+              options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
+            }
+          }
+        });
       }
     } catch (Throwable ignored) {
       if (tag != null) {

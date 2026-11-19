@@ -38,10 +38,12 @@ class NativeBackendTest {
 
   @Test
   fun `propagates app hang tracking options`() {
-    initialize({
-      isEnableNdkAppHangTracking = true
-      ndkAppHangTimeoutIntervalMillis = 2000
-    }) {
+    initialize(
+      {
+        isEnableNdkAppHangTracking = true
+        ndkAppHangTimeoutIntervalMillis = 2000
+      },
+    ) {
       assertThat(it.isEnableAppHangTracking).isTrue()
       assertThat(it.appHangTimeoutMillis).isEqualTo(2000L)
     }

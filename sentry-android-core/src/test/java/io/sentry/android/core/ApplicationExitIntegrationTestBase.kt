@@ -403,7 +403,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
   )
 
   protected class ApplicationExitTestFixture<THint : Any>(
-    private val config: IntegrationTestConfig<THint>
+    private val config: IntegrationTestConfig<THint>,
   ) {
     lateinit var context: Context
     lateinit var shadowActivityManager: ShadowActivityManager

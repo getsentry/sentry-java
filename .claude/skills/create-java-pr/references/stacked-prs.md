@@ -26,7 +26,8 @@ git commit --allow-empty -m "collection: <topic>"
 
 Push it and open its PR against `main` right away — it is the PR the whole stack is eventually
 squash-merged through, and it carries the stack list like every other PR. Give it a plain title
-(`<type>(<scope>): <Topic>`, no `[<Topic> <N>]` bracket) and no merge method reminder.
+(`<type>(<scope>): <Topic>`, no `[<Topic> <N>]` bracket) and no merge method reminder. Create it
+with the `gh pr create` command and per-branch body file from `SKILL.md` § "Step 5: Create PR".
 
 ## Rules That Will Destroy a Stack If Broken
 
@@ -76,7 +77,7 @@ off any PR body rather than guessing from branch names, which may use different 
 No status column — GitHub already shows that. The `---` separates the stack list from the rest of
 the description.
 
-**Merge method reminder:** on stack PRs (not the collection branch PR), end the description with:
+**Merge method reminder:** on stack PRs (not the collection branch PR), end the description, above any `#skip-changelog`, with:
 
 ```markdown
 > ⚠️ **Merge this PR using a merge commit** (not squash). Only the collection branch is squash-merged into main.

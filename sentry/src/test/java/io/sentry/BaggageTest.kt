@@ -134,7 +134,7 @@ class BaggageTest {
       Faker.instance()
         .random()
         .hex(
-          MAX_BAGGAGE_STRING_LENGTH - 16 - 12 - 1
+          MAX_BAGGAGE_STRING_LENGTH - 16 - 12 - 1,
         ) // 8192 - "large-value=" - "otherValue=value" - ","
 
     val incomingHeaderValues =
@@ -327,7 +327,7 @@ class BaggageTest {
       Faker.instance()
         .random()
         .hex(
-          MAX_BAGGAGE_STRING_LENGTH - 19 - 22 - 1
+          MAX_BAGGAGE_STRING_LENGTH - 19 - 22 - 1,
         ) // 8192 - "sentry-mediumValue=" - "sentry-otherValue=kept" - ","
     val baggage =
       Baggage.fromHeader(
@@ -352,7 +352,7 @@ class BaggageTest {
       Faker.instance()
         .random()
         .hex(
-          MAX_BAGGAGE_STRING_LENGTH - 19 - 22
+          MAX_BAGGAGE_STRING_LENGTH - 19 - 22,
         ) // 8192 - "sentry-mediumValue=" - "sentry-otherValue=lost"
     val baggage =
       Baggage.fromHeader(
@@ -642,7 +642,7 @@ class BaggageTest {
         listOf(
           "sentry-trace_id=${SentryId()},sentry-public_key=b, sentry-replay_id=${SentryId()}",
           "sentry-transaction=sentryTransaction, sentry-anewkey=abc",
-        )
+        ),
       )
     val unknown = baggage.unknown
     assertEquals(1, unknown.size)

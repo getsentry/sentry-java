@@ -139,12 +139,12 @@ class ContextUtilsTest {
         mockedPackageManager.getApplicationInfo(
           any<String>(),
           any<PackageManager.ApplicationInfoFlags>(),
-        )
+        ),
       )
       .thenReturn(mockedApplicationInfo)
 
     whenever(
-        mockedPackageManager.getPackageInfo(any<String>(), any<PackageManager.PackageInfoFlags>())
+        mockedPackageManager.getPackageInfo(any<String>(), any<PackageManager.PackageInfoFlags>()),
       )
       .thenReturn(mockedPackageInfo)
 
@@ -200,7 +200,7 @@ class ContextUtilsTest {
         availMem = 128
         totalMem = 2048
         lowMemory = true
-      }
+      },
     )
     val memInfo = ContextUtils.getMemInfo(context, logger)
     assertEquals(128, memInfo!!.availMem)
@@ -257,8 +257,8 @@ class ContextUtilsTest {
           processName = "io.sentry.android.core.test"
           pid = Process.myPid()
           importance = RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING
-        }
-      )
+        },
+      ),
     )
     assertFalse(ContextUtils.isForegroundImportance())
   }
@@ -299,18 +299,18 @@ class ContextUtilsTest {
 
     assertTrue(
       ContextUtils.appIsLibraryForComposePreview(
-        getMockContext("com.example.library.test", "androidx.compose.ui.tooling.PreviewActivity")
-      )
+        getMockContext("com.example.library.test", "androidx.compose.ui.tooling.PreviewActivity"),
+      ),
     )
     assertFalse(
       ContextUtils.appIsLibraryForComposePreview(
-        getMockContext("com.example.library.test", "com.example.HomeActivity")
-      )
+        getMockContext("com.example.library.test", "com.example.HomeActivity"),
+      ),
     )
     assertFalse(
       ContextUtils.appIsLibraryForComposePreview(
-        getMockContext("com.example.library", "androidx.compose.ui.tooling.PreviewActivity")
-      )
+        getMockContext("com.example.library", "androidx.compose.ui.tooling.PreviewActivity"),
+      ),
     )
   }
 }

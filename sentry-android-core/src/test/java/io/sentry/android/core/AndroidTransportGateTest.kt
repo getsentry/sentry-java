@@ -31,14 +31,14 @@ class AndroidTransportGateTest {
   @Test
   fun `isConnected returns false if connection is not connected`() {
     assertFalse(
-      fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
+      fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED),
     )
   }
 
   @Test
   fun `isConnected returns false if no permission`() {
     assertTrue(
-      fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION)
+      fixture.getSut().isConnected(IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION),
     )
   }
 }

@@ -91,8 +91,8 @@ class UserSerializationTest {
       mapOf(
         "data" to
           mapOf(
-            123 to 456 // Invalid key type
-          )
+            123 to 456, // Invalid key type
+          ),
       )
     val actual = User.fromMap(map, SentryOptions())
     assertTrue(actual?.data?.isEmpty() ?: false)

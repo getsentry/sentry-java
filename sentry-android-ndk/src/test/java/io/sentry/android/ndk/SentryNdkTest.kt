@@ -49,7 +49,7 @@ class SentryNdkTest {
           dsn = "https://key@sentry.io/proj"
           cacheDirPath = "/cache"
           tracesSampleRate = null
-        }
+        },
     ) {
       assertNotNull(fixture.capturedOptions)
       assertEquals(0.0f, fixture.capturedOptions!!.tracesSampleRate, 0.0001f)
@@ -64,7 +64,7 @@ class SentryNdkTest {
           dsn = "https://key@sentry.io/proj"
           cacheDirPath = "/cache"
           tracesSampleRate = 0.75
-        }
+        },
     ) {
       assertNotNull(fixture.capturedOptions)
       assertEquals(0.75f, fixture.capturedOptions!!.tracesSampleRate, 0.0001f)
@@ -89,7 +89,7 @@ class SentryNdkTest {
           cacheDirPath = "/cache"
           isEnableNdkAppHangTracking = true
           ndkAppHangTimeoutIntervalMillis = 2000
-        }
+        },
     ) {
       assertNotNull(fixture.capturedOptions)
       assertTrue(fixture.capturedOptions!!.isEnableAppHangTracking)

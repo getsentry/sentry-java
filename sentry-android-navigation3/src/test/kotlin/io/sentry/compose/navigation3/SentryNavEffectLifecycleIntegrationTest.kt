@@ -1461,7 +1461,7 @@ class SentryNavEffectLifecycleIntegrationTest {
      * transaction holds the scope's transaction slot.
      */
     fun returnToHomeWhileCheckoutUiLoadIsUnfinished(
-      finishHomeTransaction: Boolean = true
+      finishHomeTransaction: Boolean = true,
     ): Pair<ActivityController<HomeActivity>, ActivityController<CheckoutActivity>> {
       installActivityLifecycleIntegration(CheckoutActivity::class.java)
       val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
@@ -1545,7 +1545,7 @@ class SentryNavEffectLifecycleIntegrationTest {
           )
           .forEach { activityClass: Class<out Activity> ->
             packageManager.addActivityIfNotPresent(
-              ComponentName(application.packageName, activityClass.name)
+              ComponentName(application.packageName, activityClass.name),
             )
           }
         return Fixture(tracesSampleRate).also { current = it }

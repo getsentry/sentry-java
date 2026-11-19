@@ -217,9 +217,9 @@ class ContainerMaskingOptionsTest {
               textViewInUnmask = this
               text = "Hello, World!"
               layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-            }
+            },
           )
-        }
+        },
       )
 
       linearLayout.addView(
@@ -231,9 +231,9 @@ class ContainerMaskingOptionsTest {
               val image = this::class.java.classLoader.getResource("Tongariro.jpg")!!
               setImageDrawable(Drawable.createFromPath(image.path))
               layoutParams = LayoutParams(50, 50).apply { setMargins(0, 16, 0, 0) }
-            }
+            },
           )
-        }
+        },
       )
 
       linearLayout.addView(
@@ -243,23 +243,23 @@ class ContainerMaskingOptionsTest {
             CustomGroup(context).apply {
               customViewInUnmask = this
               this.addView(CustomView(context).apply { secondLayerChildInUnmask = this })
-            }
+            },
           )
-        }
+        },
       )
 
       linearLayout.addView(
         CustomMask(context).apply {
           maskWithChildren = this
           this.addView(CustomGroup(context).apply { this.addView(CustomView(context)) })
-        }
+        },
       )
 
       linearLayout.addView(
         CustomUnmask(context).apply {
           unmaskWithMaskChild = this
           this.addView(CustomMask(context).apply { maskAsDirectChildOfUnmask = this })
-        }
+        },
       )
 
       setContentView(linearLayout)

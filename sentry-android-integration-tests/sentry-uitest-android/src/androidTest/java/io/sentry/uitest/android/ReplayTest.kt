@@ -37,7 +37,7 @@ class ReplayTest : BaseUiTest() {
                 ReferencePattern.InstanceFieldPattern(
                   "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
                   "context",
-                )
+                ),
               ),
               // Seems like a false-positive returned by LeakCanary when curtains is used in
               // the host application (LeakCanary uses it itself internally). We use kind of
@@ -49,7 +49,7 @@ class ReplayTest : BaseUiTest() {
                 ReferencePattern.InstanceFieldPattern(
                   "curtains.internal.RootViewsSpy",
                   "delegatingViewList",
-                )
+                ),
               ),
             ) +
             ('a'..'z').map { char ->
@@ -57,9 +57,9 @@ class ReplayTest : BaseUiTest() {
                 ReferencePattern.StaticFieldPattern(
                   "com.testfairy.modules.capture.TouchListener",
                   "$char",
-                )
+                ),
               )
-            }
+            },
       )
 
     val activityScenario = launchActivity<ComposeActivity>()

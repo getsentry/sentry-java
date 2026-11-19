@@ -151,7 +151,7 @@ class PerfettoProfilerTest {
     val result = AtomicReference<File?>(File("sentinel"))
 
     capturedCallback.accept(
-      mockResult(errorCode = ProfilingResult.ERROR_UNKNOWN, errorMessage = "unknown error")
+      mockResult(errorCode = ProfilingResult.ERROR_UNKNOWN, errorMessage = "unknown error"),
     )
     profiler.endAndCollect { result.set(it) }
 

@@ -45,7 +45,7 @@ class DsnUtilTest {
       DsnUtil.urlContainsDsnHost(
         optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"),
         "localhost:8081",
-      )
+      ),
     )
   }
 
@@ -55,7 +55,7 @@ class DsnUtilTest {
       DsnUtil.urlContainsDsnHost(
         optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"),
         "localhost:8080",
-      )
+      ),
     )
   }
 

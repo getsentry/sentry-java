@@ -121,8 +121,8 @@ class SentryFeignClientTest {
           listOf(
             "thirdPartyBaggage=someValue",
             "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
-          )
-      )
+          ),
+      ),
     )
 
     val recorderRequest =
@@ -134,8 +134,8 @@ class SentryFeignClientTest {
     assertEquals(baggageHeaderValues.size, 1)
     assertTrue(
       baggageHeaderValues[0].startsWith(
-        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
-      )
+        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
@@ -307,7 +307,7 @@ class SentryFeignClientTest {
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
             throw IllegalStateException("callback failed")
-          }
+          },
         )
       fixture.sentryTracer.spanContext.sampled = sampled
       fixture.sentryOptions.onDiscard = onDiscard
@@ -333,7 +333,7 @@ class SentryFeignClientTest {
         beforeSpan = { span, _, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
 
     assertThat(sut.getOk()).isEqualTo("success")

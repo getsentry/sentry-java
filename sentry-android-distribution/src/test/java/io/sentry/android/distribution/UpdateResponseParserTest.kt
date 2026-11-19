@@ -328,7 +328,7 @@ class UpdateResponseParserTest {
     assertTrue(
       "Error message should mention all missing required fields",
       error.message.contains(
-        "Missing required fields in API response: id, buildVersion, downloadUrl"
+        "Missing required fields in API response: id, buildVersion, downloadUrl",
       ),
     )
   }

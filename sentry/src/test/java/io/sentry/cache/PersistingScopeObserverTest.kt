@@ -235,7 +235,7 @@ class PersistingScopeObserverTest<T>(
               appStartTime = DateUtils.getCurrentDateTime()
               buildType = "debug"
               appVersion = "2021"
-            }
+            },
           )
           setBrowser(Browser().apply { name = "Chrome" })
           setDevice(
@@ -262,13 +262,13 @@ class PersistingScopeObserverTest<T>(
               batteryTemperature = 37.0f
               batteryLevel = 92.0f
               locale = "en-US"
-            }
+            },
           )
           setGpu(
             Gpu().apply {
               vendorName = "GeForce"
               memorySize = 1000
-            }
+            },
           )
           setOperatingSystem(
             OperatingSystem().apply {
@@ -276,7 +276,7 @@ class PersistingScopeObserverTest<T>(
               build = "2021.123_alpha"
               name = "Android"
               version = "12"
-            }
+            },
           )
         },
         StoreScopeValue<Contexts> { contexts, _ -> setContexts(contexts) },

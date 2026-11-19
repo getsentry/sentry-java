@@ -79,7 +79,7 @@ class AsyncHttpTransportClientReportTest {
     // given
     givenSetup(TransportResult.error(500))
     whenever(
-        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any())
+        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any()),
       )
       .thenReturn(true)
 
@@ -130,7 +130,7 @@ class AsyncHttpTransportClientReportTest {
     // given
     givenSetup(TransportResult.error(400))
     whenever(
-        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any())
+        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any()),
       )
       .thenReturn(true)
 
@@ -180,7 +180,7 @@ class AsyncHttpTransportClientReportTest {
     // given
     givenSetup(TransportResult.error(413))
     whenever(
-        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any())
+        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any()),
       )
       .thenReturn(true)
 
@@ -431,8 +431,8 @@ class AsyncHttpTransportClientReportTest {
 
     whenever(
         fixture.clientReportRecorder.attachReportToEnvelope(
-          eq(fixture.envelopeBeforeAttachingClientReport)
-        )
+          eq(fixture.envelopeBeforeAttachingClientReport),
+        ),
       )
       .thenReturn(fixture.envelopeAfterAttachingClientReport)
   }

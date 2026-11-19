@@ -58,11 +58,11 @@ If no arguments are provided, ask the user what they want to trace and which bra
 
 ## Step 2: Integrate btrace into Sample App
 
-The sample app is at `sentry-samples/sentry-samples-android/`.
+The sample app is at `sentry-android-integration-tests/sentry-samples-android/`.
 
 ### 2a: Add btrace dependency
 
-In `sentry-samples/sentry-samples-android/build.gradle.kts`, add to the `dependencies` block:
+In `sentry-android-integration-tests/sentry-samples-android/build.gradle.kts`, add to the `dependencies` block:
 
 ```kotlin
 implementation("com.bytedance.btrace:rhea-inhouse:3.0.0")
@@ -98,7 +98,7 @@ protected void attachBaseContext(Context base) {
 
 ### 2d: Add ProGuard keep rules (release builds only)
 
-Only needed when building release. In `sentry-samples/sentry-samples-android/proguard-rules.pro`, add:
+Only needed when building release. In `sentry-android-integration-tests/sentry-samples-android/proguard-rules.pro`, add:
 
 ```
 -keep class com.bytedance.rheatrace.** { *; }
@@ -112,13 +112,13 @@ The first rule prevents R8 from stripping btrace's HTTP server classes (fails wi
 Prefer **debug builds** — they provide richer tracing instrumentation (Handler, MessageQueue, Monitor:Lock slices visible) which is essential for comparing internal SDK behavior. Use the default 1kHz btrace sampling rate for debug builds.
 
 ```bash
-./gradlew :sentry-samples:sentry-samples-android:installDebug
+./gradlew -p sentry-android-integration-tests :sentry-samples-android:installDebug
 ```
 
 **Release builds** are useful when you need to measure real-world performance without StrictMode/debuggable overhead or with R8 optimizations. Require the ProGuard keep rules from step 2d. Use `-sampleInterval 333000` (333μs / 3kHz) for finer granularity since release code runs faster.
 
 ```bash
-./gradlew :sentry-samples:sentry-samples-android:installRelease
+./gradlew -p sentry-android-integration-tests :sentry-samples-android:installRelease
 ```
 
 ## Step 4: Capture Trace
@@ -170,9 +170,9 @@ When capturing a second branch:
 1. Stash the btrace integration changes:
    ```bash
    git stash push -m "btrace integration" -- \
-     sentry-samples/sentry-samples-android/build.gradle.kts \
-     sentry-samples/sentry-samples-android/src/main/java/io/sentry/samples/android/MyApplication.java \
-     sentry-samples/sentry-samples-android/proguard-rules.pro
+     sentry-android-integration-tests/sentry-samples-android/build.gradle.kts \
+     sentry-android-integration-tests/sentry-samples-android/src/main/java/io/sentry/samples/android/MyApplication.java \
+     sentry-android-integration-tests/sentry-samples-android/proguard-rules.pro
    ```
 2. Checkout the other branch
 3. Pop the stash: `git stash pop`

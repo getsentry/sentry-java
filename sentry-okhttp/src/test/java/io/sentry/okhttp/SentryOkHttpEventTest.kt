@@ -244,7 +244,7 @@ class SentryOkHttpEventTest {
     val sut = fixture.getSut()
 
     sut.setRequest(
-      Request.Builder().post("".toRequestBody()).url("https://foo.bar/updated").build()
+      Request.Builder().post("".toRequestBody()).url("https://foo.bar/updated").build(),
     )
     sut.finish()
 

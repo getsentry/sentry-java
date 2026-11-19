@@ -77,7 +77,7 @@ class SessionCaptureStrategyTest {
     val options =
       SentryOptions().apply {
         setReplayController(
-          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
+          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) },
         )
       }
     val scope = Scope(options)

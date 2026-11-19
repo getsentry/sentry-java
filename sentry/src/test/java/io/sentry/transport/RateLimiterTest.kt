@@ -506,7 +506,7 @@ class RateLimiterTest {
       SentryEnvelopeItem.fromLogs(
         fixture.serializer,
         SentryLogEvents(
-          listOf(SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLogLevel.INFO))
+          listOf(SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLogLevel.INFO)),
         ),
       )
     val envelope = SentryEnvelope(SentryEnvelopeHeader(null), arrayListOf(logEventItem))
@@ -531,7 +531,7 @@ class RateLimiterTest {
       SentryEnvelopeItem.fromLogs(
         fixture.serializer,
         SentryLogEvents(
-          listOf(SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLogLevel.INFO))
+          listOf(SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLogLevel.INFO)),
         ),
       )
     val envelope = SentryEnvelope(SentryEnvelopeHeader(null), arrayListOf(logEventItem))

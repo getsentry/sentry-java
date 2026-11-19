@@ -20,7 +20,7 @@ fun ApolloClient.Builder.sentryTracing(
       captureFailedRequests = captureFailedRequests,
       failedRequestTargets = failedRequestTargets,
       beforeSpan = beforeSpan,
-    )
+    ),
   )
   return this
 }

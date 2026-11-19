@@ -89,8 +89,8 @@ class CoordinatedBackStackObserverTest {
       .isEqualTo(
         mapOf(
           "Back Stack" to
-            listOf(mapOf("entry" to "/PageB", "entry_arguments" to mapOf("page" to "PageB")))
-        )
+            listOf(mapOf("entry" to "/PageB", "entry_arguments" to mapOf("page" to "PageB"))),
+        ),
       )
     assertThat(fixture.scope.screen).isEqualTo("/PageB")
   }
@@ -283,8 +283,8 @@ class CoordinatedBackStackObserverTest {
             listOf(
               mapOf("entry" to "/PageA", "entry_arguments" to mapOf("page" to "PageA")),
               mapOf("entry" to "/Home", "entry_arguments" to mapOf("page" to "Home")),
-            )
-        )
+            ),
+        ),
       )
   }
 
@@ -311,7 +311,7 @@ class CoordinatedBackStackObserverTest {
     assertThat(restarted.name).isEqualTo("/PageA")
     assertThat(restarted.contexts[NAVIGATION_CONTEXT_KEY])
       .isEqualTo(
-        mapOf("Back Stack" to listOf(mapOf("entry" to "/PageA"), mapOf("entry" to "/Settings")))
+        mapOf("Back Stack" to listOf(mapOf("entry" to "/PageA"), mapOf("entry" to "/Settings"))),
       )
   }
 
@@ -437,7 +437,7 @@ class CoordinatedBackStackObserverTest {
           tracesSampleRate = 1.0
           idleTimeout = null
           deadlineTimeout = 0
-        }
+        },
       )
     val coordinator = NavLeaseCoordinator()
     val startedTransactions = mutableListOf<SentryTracer>()
@@ -480,7 +480,7 @@ class CoordinatedBackStackObserverTest {
             scopes,
             NavRootInfo(otherLifecycle, activity = null),
             NoOpNavStatePublisher,
-          )
+          ),
         )
       other.onBackStackUpdate()
       otherLifecycle.currentState = Lifecycle.State.STARTED

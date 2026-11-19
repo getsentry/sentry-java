@@ -63,7 +63,7 @@ class SendCachedEnvelopeIntegrationTest {
             sender
           } else {
             null
-          }
+          },
         )
 
       return SendCachedEnvelopeIntegration(factory, LazyEvaluator { hasStartupCrashMarker })

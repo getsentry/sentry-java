@@ -102,7 +102,7 @@ class ReplayIntegrationTest {
             on { isMainThread }.thenAnswer { Looper.myLooper() == Looper.getMainLooper() }
           }
         setReplayController(
-          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
+          mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) },
         )
         executorService = mock {
           doAnswer { (it.arguments[0] as Runnable).run() }.whenever(mock).submit(any<Runnable>())
@@ -1082,7 +1082,7 @@ class ReplayIntegrationTest {
                 $SEGMENT_KEY_REPLAY_TYPE=SESSION
                 $SEGMENT_KEY_REPLAY_RECORDING={}[{"type":3,"timestamp":1720693523997,"data":{"source":2,"type":7,"id":0,"x":314.2979431152344,"y":625.44140625,"pointerType":2,"pointerId":0}},{"type":3,"timestamp":1720693524774,"data":{"source":2,"type":9,"id":0,"x":322.00390625,"y":424.4384765625,"pointerType":2,"pointerId":0}}]
                 """
-          .trimIndent()
+          .trimIndent(),
       )
     }
 

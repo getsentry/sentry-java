@@ -27,10 +27,9 @@ public final class AssetsModulesLoader extends ModulesLoader {
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                getOrLoadModules();
-              });
+          .submit(() -> {
+            getOrLoadModules();
+          });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "AssetsModulesLoader submit failed", e);
     }

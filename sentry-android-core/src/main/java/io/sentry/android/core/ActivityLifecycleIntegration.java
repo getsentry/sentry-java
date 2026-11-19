@@ -228,23 +228,21 @@ public final class ActivityLifecycleIntegration
           transactionOptions.setTrimEnd(true);
         }
         transactionOptions.setWaitForChildren(true);
-        transactionOptions.setTransactionFinishedCallback(
-            (finishingTransaction) -> {
-              @Nullable Activity unwrappedActivity = weakActivity.get();
-              if (unwrappedActivity != null) {
-                activityFramesTracker.setMetrics(
-                    unwrappedActivity, finishingTransaction.getEventId());
-              } else {
-                if (options != null) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.WARNING,
-                          "Unable to track activity frames as the Activity %s has been destroyed.",
-                          activityName);
-                }
-              }
-            });
+        transactionOptions.setTransactionFinishedCallback(finishingTransaction -> {
+          @Nullable Activity unwrappedActivity = weakActivity.get();
+          if (unwrappedActivity != null) {
+            activityFramesTracker.setMetrics(unwrappedActivity, finishingTransaction.getEventId());
+          } else {
+            if (options != null) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Unable to track activity frames as the Activity %s has been destroyed.",
+                      activityName);
+            }
+          }
+        });
 
         // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
         final @NotNull SentryDate ttidStartTime;
@@ -407,10 +405,9 @@ public final class ActivityLifecycleIntegration
         }
 
         // lets bind to the scope so other integrations can pick it up
-        scopes.configureScope(
-            scope -> {
-              applyScope(scope, transaction);
-            });
+        scopes.configureScope(scope -> {
+          applyScope(scope, transaction);
+        });
 
         activitiesWithOngoingTransactions.put(activity, transaction);
       }
@@ -478,32 +475,30 @@ public final class ActivityLifecycleIntegration
 
   @VisibleForTesting
   void applyScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
-    scope.withTransaction(
-        scopeTransaction -> {
-          // we'd not like to overwrite existent transactions bound to the Scope
-          // manually.
-          if (scopeTransaction == null) {
-            scope.setTransaction(transaction);
-          } else if (options != null) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.DEBUG,
-                    "Transaction '%s' won't be bound to the Scope since there's one already in there.",
-                    transaction.getName());
-          }
-        });
+    scope.withTransaction(scopeTransaction -> {
+      // we'd not like to overwrite existent transactions bound to the Scope
+      // manually.
+      if (scopeTransaction == null) {
+        scope.setTransaction(transaction);
+      } else if (options != null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                transaction.getName());
+      }
+    });
   }
 
   @VisibleForTesting
   @SuppressWarnings("ReferenceEquality")
   void clearScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
-    scope.withTransaction(
-        scopeTransaction -> {
-          if (scopeTransaction == transaction) {
-            scope.clearTransaction();
-          }
-        });
+    scope.withTransaction(scopeTransaction -> {
+      if (scopeTransaction == transaction) {
+        scope.clearTransaction();
+      }
+    });
   }
 
   private boolean isRunningTransactionOrTrace(final @NotNull Activity activity) {
@@ -542,10 +537,9 @@ public final class ActivityLifecycleIntegration
       if (scopes != null) {
         // make sure to remove the transaction from scope, as it may contain running children,
         // therefore `finish` method will not remove it from scope
-        scopes.configureScope(
-            scope -> {
-              clearScope(scope, transaction);
-            });
+        scopes.configureScope(scope -> {
+          clearScope(scope, transaction);
+        });
       }
     }
   }
@@ -1066,10 +1060,8 @@ public final class ActivityLifecycleIntegration
       // Persist the end time (covering every finish path: user finish, first frame, deadline) so a
       // later ui.load can tell whether it is close enough to continue this trace; without it the
       // continuation window is unbounded.
-      txnOptions.setTransactionFinishedCallback(
-          finishedTransaction ->
-              AppStartMetrics.getInstance()
-                  .setAppStartEndTime(finishedTransaction.getFinishDate()));
+      txnOptions.setTransactionFinishedCallback(finishedTransaction ->
+          AppStartMetrics.getInstance().setAppStartEndTime(finishedTransaction.getFinishDate()));
     }
 
     final @NotNull TransactionContext txnContext =

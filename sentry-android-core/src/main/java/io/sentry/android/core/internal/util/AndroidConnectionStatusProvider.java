@@ -629,15 +629,14 @@ public final class AndroidConnectionStatusProvider
   public void close() {
     closed = true;
 
-    submitSafe(
-        () -> {
-          unregisterNetworkCallback(/* clearObservers= */ true);
-          childCallbacks.clear();
-          try (final @NotNull ISentryLifecycleToken ignored = connectivityManagerLock.acquire()) {
-            connectivityManager = null;
-          }
-          AppState.getInstance().removeAppStateListener(this);
-        });
+    submitSafe(() -> {
+      unregisterNetworkCallback(/* clearObservers= */ true);
+      childCallbacks.clear();
+      try (final @NotNull ISentryLifecycleToken ignored = connectivityManagerLock.acquire()) {
+        connectivityManager = null;
+      }
+      AppState.getInstance().removeAppStateListener(this);
+    });
   }
 
   /**
@@ -646,36 +645,35 @@ public final class AndroidConnectionStatusProvider
    */
   @Override
   public void onForeground() {
-    submitSafe(
-        () -> {
-          // Check on the executor so any earlier background unregistration runs before we decide
-          // whether registration is needed. Checking before submission could leave the callback
-          // unregistered after a quick return to the foreground.
-          if (closed || networkCallback != null) {
-            return;
-          }
+    submitSafe(() -> {
+      // Check on the executor so any earlier background unregistration runs before we decide
+      // whether registration is needed. Checking before submission could leave the callback
+      // unregistered after a quick return to the foreground.
+      if (closed || networkCallback != null) {
+        return;
+      }
 
-          // proactively update cache and notify observers on foreground to ensure connectivity
-          // state is not stale
-          final @NotNull ConnectionStatus status = statusOf(refresh(currentSnapshot()));
-          if (status == ConnectionStatus.DISCONNECTED) {
-            // onLost is not called retroactively when we registerNetworkCallback (as opposed to
-            // onAvailable), so we have to do it manually for the DISCONNECTED case
-            onAvailableForwarded.set(false);
-            for (final @NotNull NetworkCallback cb : childCallbacks) {
-              //noinspection DataFlowIssue
-              cb.onLost(null);
-            }
-          }
-          for (final @NotNull IConnectionStatusObserver observer : connectionStatusObservers) {
-            observer.onConnectionStatusChanged(status);
-          }
+      // proactively update cache and notify observers on foreground to ensure connectivity
+      // state is not stale
+      final @NotNull ConnectionStatus status = statusOf(refresh(currentSnapshot()));
+      if (status == ConnectionStatus.DISCONNECTED) {
+        // onLost is not called retroactively when we registerNetworkCallback (as opposed to
+        // onAvailable), so we have to do it manually for the DISCONNECTED case
+        onAvailableForwarded.set(false);
+        for (final @NotNull NetworkCallback cb : childCallbacks) {
+          //noinspection DataFlowIssue
+          cb.onLost(null);
+        }
+      }
+      for (final @NotNull IConnectionStatusObserver observer : connectionStatusObservers) {
+        observer.onConnectionStatusChanged(status);
+      }
 
-          // this will ONLY do the necessary parts like registerNetworkCallback and onAvailable, but
-          // it won't refresh the cache and notify observers because we just did it above and the
-          // cached capabilities will be the same
-          ensureNetworkCallbackRegistered();
-        });
+      // this will ONLY do the necessary parts like registerNetworkCallback and onAvailable, but
+      // it won't refresh the cache and notify observers because we just did it above and the
+      // cached capabilities will be the same
+      ensureNetworkCallbackRegistered();
+    });
   }
 
   /**
@@ -684,16 +682,15 @@ public final class AndroidConnectionStatusProvider
    */
   @Override
   public void onBackground() {
-    submitSafe(
-        () -> {
-          // Check on the executor so any earlier registration finishes before we decide whether
-          // to unregister. Checking before submission could miss a pending registration and leave
-          // the callbacks registered in the background.
-          if (networkCallback == null) {
-            return;
-          }
-          unregisterNetworkCallback(/* clearObservers= */ false);
-        });
+    submitSafe(() -> {
+      // Check on the executor so any earlier registration finishes before we decide whether
+      // to unregister. Checking before submission could miss a pending registration and leave
+      // the callbacks registered in the background.
+      if (networkCallback == null) {
+        return;
+      }
+      unregisterNetworkCallback(/* clearObservers= */ false);
+    });
   }
 
   /**
@@ -934,7 +931,8 @@ public final class AndroidConnectionStatusProvider
       return false;
     }
     try {
-      if (handler != null) {
+      // The Handler overload is API 26+. Below that, fall back to the default callback thread.
+      if (handler != null && buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
         connectivityManager.registerDefaultNetworkCallback(networkCallback, handler);
       } else {
         connectivityManager.registerDefaultNetworkCallback(networkCallback);

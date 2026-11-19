@@ -45,7 +45,7 @@ class SentryScheduleHookTest {
         sut.apply {
           assertNotEquals(mainScopes, Sentry.getCurrentScopes())
           assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
-        }
+        },
       )
 
     callableFuture.get()

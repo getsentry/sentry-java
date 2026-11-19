@@ -53,13 +53,13 @@ class UserInteractionTests : BaseUiTest() {
           Press.FINGER,
           InputDevice.SOURCE_UNKNOWN,
           MotionEvent.BUTTON_PRIMARY,
-        )
+        ),
       )
     activity.moveToState(Lifecycle.State.DESTROYED)
     assertTrue(
       breadcrumbs
         .filter { it.category == "ui.click" && it.data["view.tag"] == "button_login" }
-        .size == 1
+        .size == 1,
     )
   }
 
@@ -77,7 +77,7 @@ class UserInteractionTests : BaseUiTest() {
         .filter {
           it.category == "ui.swipe" && it.data["view.tag"] == "list" && it.data["direction"] == "up"
         }
-        .size == 1
+        .size == 1,
     )
   }
 

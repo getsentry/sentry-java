@@ -24,7 +24,7 @@ class LoadClassTest {
           loadClass.isClassAvailable(
             "io.sentry.ThisClassDoesNotExist",
             null as io.sentry.ILogger?,
-          )
+          ),
         )
         .isTrue()
       assertThat(loadClass.isClassAvailable("io.sentry.Sentry", null as io.sentry.ILogger?))
@@ -49,7 +49,7 @@ class LoadClassTest {
     val loadClass = LoadClass()
     assertNotNull(loadClass.loadClass("io.sentry.SentryEvent", null))
     assertFalse(
-      loadClass.isClassAvailable("io.sentry.ThisClassDoesNotExist", null as io.sentry.ILogger?)
+      loadClass.isClassAvailable("io.sentry.ThisClassDoesNotExist", null as io.sentry.ILogger?),
     )
   }
 

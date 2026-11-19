@@ -40,7 +40,12 @@ android {
   }
 
   testOptions {
-    unitTests.isReturnDefaultValues = true
+    unitTests.apply {
+      isReturnDefaultValues = true
+      // AGP 9.5 can't create the Compose Preview task without it, which breaks any
+      // build that creates every task, such as an LSP's Gradle import.
+      isIncludeAndroidResources = true
+    }
   }
 
   lint {

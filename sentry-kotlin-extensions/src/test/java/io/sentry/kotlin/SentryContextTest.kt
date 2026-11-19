@@ -87,10 +87,10 @@ class SentryContextTest {
         assertEquals("c1value", getTag("c1"))
         assertNull(getTag("c2"))
         launch {
-            Sentry.setTag("c2", "c2value")
-            assertEquals("c2value", getTag("c2"))
-            assertEquals("c1value", getTag("c1"))
-          }
+          Sentry.setTag("c2", "c2value")
+          assertEquals("c2value", getTag("c2"))
+          assertEquals("c1value", getTag("c1"))
+        }
           .join()
       }
     c1.join()
@@ -182,8 +182,8 @@ class SentryContextTest {
             SentryContext(
               Sentry.getCurrentScopes().forkedScopes("test").also {
                 it.setTag("cloned", "clonedValue")
-              }
-            )
+              },
+            ),
           ) {
             Sentry.setTag("c2", "c2value")
             assertEquals("c2value", getTag("c2"))
@@ -222,8 +222,8 @@ class SentryContextTest {
               it.configureScope(ScopeType.CURRENT) { scope ->
                 scope.setTag("cloned", "clonedValue")
               }
-            }
-          )
+            },
+          ),
         ) {
           Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.setTag("c2", "c2value") }
           assertEquals("c2value", getTag("c2", ScopeType.CURRENT))
@@ -247,7 +247,7 @@ class SentryContextTest {
   fun `mergeForChild returns copy of initial context if Key not present`() {
     val initialContextElement =
       SentryContext(
-        Sentry.getCurrentScopes().forkedScopes("test").also { it.setTag("cloned", "clonedValue") }
+        Sentry.getCurrentScopes().forkedScopes("test").also { it.setTag("cloned", "clonedValue") },
       )
     val mergedContextElement = initialContextElement.mergeForChild(CoroutineName("test"))
 
@@ -259,7 +259,7 @@ class SentryContextTest {
   fun `mergeForChild returns passed context`() {
     val initialContextElement =
       SentryContext(
-        Sentry.getCurrentScopes().forkedScopes("test").also { it.setTag("cloned", "clonedValue") }
+        Sentry.getCurrentScopes().forkedScopes("test").also { it.setTag("cloned", "clonedValue") },
       )
     val mergedContextElement = SentryContext().mergeForChild(initialContextElement)
 

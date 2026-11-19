@@ -47,7 +47,7 @@ class AssetsModulesLoaderTest {
           com.squareup.okhttp3:okhttp:3.14.9
           com.squareup.okio:okio:1.17.2
           """
-            .trimIndent()
+            .trimIndent(),
       )
 
     assertEquals(
@@ -65,7 +65,7 @@ class AssetsModulesLoaderTest {
           com.squareup.okhttp3:okhttp:3.14.9
           com.squareup.okio:okio:1.17.2
           """
-            .trimIndent()
+            .trimIndent(),
       )
 
     // first, call method to get modules cached
@@ -95,7 +95,7 @@ class AssetsModulesLoaderTest {
           """
           com.squareup.okhttp3;3.14.9
           """
-            .trimIndent()
+            .trimIndent(),
       )
 
     assertTrue(sut.orLoadModules!!.isEmpty())

@@ -58,7 +58,7 @@ class SentryOkHttpUtilsTest {
           .addHeader("myResponseHeader", "myValue")
           .addHeader("Set-Cookie", "theme=dark; Path=/")
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
       return OkHttpClient.Builder().build()
     }

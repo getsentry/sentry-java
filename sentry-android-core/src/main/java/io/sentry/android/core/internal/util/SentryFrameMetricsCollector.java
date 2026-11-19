@@ -132,29 +132,26 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     // The Choreographer instance should be initialized asynchronously on the main thread to avoid
     // reflection during SDK init.
     new Handler(Looper.getMainLooper())
-        .post(
-            () -> {
-              try {
-                choreographer = Choreographer.getInstance();
-              } catch (Throwable e) {
-                logger.log(
-                    SentryLevel.ERROR,
-                    "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
-                    e);
-              }
+        .post(() -> {
+          try {
+            choreographer = Choreographer.getInstance();
+          } catch (Throwable e) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
+                e);
+          }
 
-              // Let's get the last frame timestamp from the choreographer private field
-              try {
-                choreographerLastFrameTimeField =
-                    Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
-                choreographerLastFrameTimeField.setAccessible(true);
-              } catch (NoSuchFieldException e) {
-                logger.log(
-                    SentryLevel.ERROR,
-                    "Unable to get the frame timestamp from the choreographer: ",
-                    e);
-              }
-            });
+          // Let's get the last frame timestamp from the choreographer private field
+          try {
+            choreographerLastFrameTimeField =
+                Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
+            choreographerLastFrameTimeField.setAccessible(true);
+          } catch (NoSuchFieldException e) {
+            logger.log(
+                SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
+          }
+        });
 
     frameMetricsAvailableListener =
         (window, frameMetrics, dropCountSinceLastInvocation) -> {
@@ -361,19 +358,18 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
     new Handler(Looper.getMainLooper())
-        .post(
-            () -> {
-              try {
-                // Re-check if we should still remove the listener for this window
-                // in case trackCurrentWindow was called in the meantime
-                if (trackedWindows.remove(window)) {
-                  windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
-                      window, frameMetricsAvailableListener);
-                }
-              } catch (Throwable e) {
-                logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
-              }
-            });
+        .post(() -> {
+          try {
+            // Re-check if we should still remove the listener for this window
+            // in case trackCurrentWindow was called in the meantime
+            if (trackedWindows.remove(window)) {
+              windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
+                  window, frameMetricsAvailableListener);
+            }
+          } catch (Throwable e) {
+            logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+          }
+        });
   }
 
   @SuppressWarnings("ReferenceEquality")
@@ -401,17 +397,16 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (handler != null) {
       // Ensure the addOnFrameMetricsAvailableListener is called on the main thread
       new Handler(Looper.getMainLooper())
-          .post(
-              () -> {
-                if (trackedWindows.add(window)) {
-                  try {
-                    windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
-                        window, frameMetricsAvailableListener, handler);
-                  } catch (Throwable e) {
-                    logger.log(SentryLevel.ERROR, "Failed to add frameMetricsAvailableListener", e);
-                  }
-                }
-              });
+          .post(() -> {
+            if (trackedWindows.add(window)) {
+              try {
+                windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
+                    window, frameMetricsAvailableListener, handler);
+              } catch (Throwable e) {
+                logger.log(SentryLevel.ERROR, "Failed to add frameMetricsAvailableListener", e);
+              }
+            }
+          });
     }
   }
 

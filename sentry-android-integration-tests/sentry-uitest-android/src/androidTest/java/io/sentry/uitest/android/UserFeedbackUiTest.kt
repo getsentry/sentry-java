@@ -428,7 +428,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         name = "Test User"
         username = "Test UserName"
         email = "Test User Email"
-      }
+      },
     )
     showDialogAndCheck {
       // Name and email are filled with Sentry user properties
@@ -452,7 +452,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         name = "Test User"
         username = "Test UserName"
         email = "Test User Email"
-      }
+      },
     )
     showDialogAndCheck {
       // Name and email are not filled
@@ -490,9 +490,9 @@ class UserFeedbackUiTest : BaseUiTest() {
 
     relay.assert {
       findEnvelope {
-          assertEnvelopeFeedback(it.items.toList(), AndroidLogger()).contexts.feedback!!.message ==
-            "Description filled"
-        }
+        assertEnvelopeFeedback(it.items.toList(), AndroidLogger()).contexts.feedback!!.message ==
+          "Description filled"
+      }
         .assert {
           val event: SentryEvent = it.assertItem()
           val feedback = event.contexts.feedback!!
@@ -560,15 +560,17 @@ class UserFeedbackUiTest : BaseUiTest() {
   @Test
   fun userFeedbackWidgetDefaultsOverridden() {
     initSentry()
-    showWidgetAndCheck({ widget ->
-      widget.compoundDrawablePadding = 1
-      widget.setCompoundDrawables(null, null, null, null)
-      widget.isAllCaps = true
-      widget.setBackgroundResource(R.drawable.sentry_edit_text_border)
-      widget.setTextColor(Color.RED)
-      widget.text = "My custom text"
-      widget.setPadding(0, 0, 0, 0)
-    }) { widget ->
+    showWidgetAndCheck(
+      { widget ->
+        widget.compoundDrawablePadding = 1
+        widget.setCompoundDrawables(null, null, null, null)
+        widget.isAllCaps = true
+        widget.setBackgroundResource(R.drawable.sentry_edit_text_border)
+        widget.setTextColor(Color.RED)
+        widget.text = "My custom text"
+        widget.setPadding(0, 0, 0, 0)
+      },
+    ) { widget ->
       val densityScale = context.resources.displayMetrics.density
       assertEquals(1, widget.compoundDrawablePadding)
 

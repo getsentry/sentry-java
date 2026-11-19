@@ -142,7 +142,7 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
 
       val buildConfiguration =
         sentryOptions.distribution.buildConfiguration
-          ?: throw IllegalStateException("buildConfiguration must be set in distribution options")
+          ?: error("buildConfiguration must be set in distribution options")
 
       DistributionHttpClient.UpdateCheckParams(
         appId = appId,
