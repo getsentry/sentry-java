@@ -155,9 +155,6 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       try {
         options.getOnDiscard().execute(reason, category, countToAdd);
       } catch (Throwable e) {
-        // A user callback, so we can't know what it throws. Only this notification is lost; the
-        // discard is still counted in the client report.
-        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(SentryLevel.ERROR, "The onDiscard callback threw an exception.", e);
       }
     }

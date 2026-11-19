@@ -69,9 +69,6 @@ public final class EventSizeLimitingUtils {
             return reducedEvent;
           }
         } catch (Throwable e) {
-          // A user callback, so we can't know what it throws. Its result is ignored, and the
-          // automatic reduction continues with the original event.
-          ExceptionUtils.rethrowIfFatal(e);
           options
               .getLogger()
               .log(

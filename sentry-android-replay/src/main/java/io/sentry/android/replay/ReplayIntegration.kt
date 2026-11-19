@@ -51,7 +51,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
 import io.sentry.transport.RateLimiter.IRateLimitObserver
-import io.sentry.util.ExceptionUtils
 import io.sentry.util.FileUtils
 import io.sentry.util.HintUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -488,9 +487,6 @@ public class ReplayIntegration(
             hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, copy)
             observer.onMaskedFrameCaptured(hint, frameTimeStamp, screen)
           } catch (e: Throwable) {
-            // The observer is the app's own code, so we can't know what it throws. The copy is
-            // recycled and the frame is still recorded.
-            ExceptionUtils.rethrowIfFatal(e)
             options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
             copy.recycle()
           }
@@ -514,9 +510,6 @@ public class ReplayIntegration(
             hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, bitmap)
             observer.onMaskedFrameCaptured(hint, frameTimestamp, screen)
           } catch (e: Throwable) {
-            // The observer is the app's own code, so we can't know what it throws. The bitmap is
-            // recycled and the frame is still recorded.
-            ExceptionUtils.rethrowIfFatal(e)
             options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
             bitmap.recycle()
           }

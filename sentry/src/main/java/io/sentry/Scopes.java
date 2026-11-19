@@ -196,9 +196,6 @@ public final class Scopes implements IScopes {
         callback.run(localScope);
         return localScope;
       } catch (Throwable t) {
-        // A user callback, so we can't know what it throws. The event is captured with the
-        // unchanged scope.
-        ExceptionUtils.rethrowIfFatal(t);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
@@ -448,9 +445,6 @@ public final class Scopes implements IScopes {
             try {
               ((Closeable) eventProcessor).close();
             } catch (Throwable e) {
-              // Event processors can be user-provided, so we can't know what they throw. The
-              // remaining event processors are still closed.
-              ExceptionUtils.rethrowIfFatal(e);
               getOptions()
                   .getLogger()
                   .log(
@@ -692,8 +686,6 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
-        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
-        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
 
@@ -702,8 +694,6 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
-        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
-        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
     }
@@ -715,8 +705,6 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
-        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
-        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -727,8 +715,6 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getIsolationScope());
       } catch (Throwable e) {
-        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
-        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -749,8 +735,6 @@ public final class Scopes implements IScopes {
       try {
         callback.run(combinedScope.getSpecificScope(scopeType));
       } catch (Throwable e) {
-        // A user callback, so we can't know what it throws. The rest of the callback is skipped.
-        ExceptionUtils.rethrowIfFatal(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);

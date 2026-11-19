@@ -3548,11 +3548,6 @@ public class SentryOptions implements RateLimiterConfig {
      * integration that routes logs back into Sentry. Such nested captures are silently dropped to
      * prevent infinite recursion.
      *
-     * <p>If this callback throws, the event is dropped and the exception is logged at {@link
-     * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only
-     * when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-     * OutOfMemoryError}, are rethrown.
-     *
      * @param event the event
      * @param hint the hints
      * @return the original event or the mutated event or null if event was dropped
@@ -3570,11 +3565,6 @@ public class SentryOptions implements RateLimiterConfig {
      * <p>Do not capture from within this callback — directly, or indirectly through a logging
      * integration that routes logs back into Sentry. Such nested captures are silently dropped to
      * prevent infinite recursion.
-     *
-     * <p>If this callback throws, the transaction is dropped and the exception is logged at {@link
-     * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only
-     * when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-     * OutOfMemoryError}, are rethrown.
      *
      * @param transaction the transaction
      * @param hint the hints
@@ -3597,11 +3587,6 @@ public class SentryOptions implements RateLimiterConfig {
      * integration that routes logs back into Sentry. Such nested captures are silently dropped to
      * prevent infinite recursion.
      *
-     * <p>If this callback throws, the replay event is dropped and the exception is logged at {@link
-     * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only
-     * when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-     * OutOfMemoryError}, are rethrown.
-     *
      * @param event the event
      * @param hint the hint, contains {@link ReplayRecording}, can be accessed via {@link
      *     Hint#getReplayRecording()}
@@ -3621,11 +3606,6 @@ public class SentryOptions implements RateLimiterConfig {
      * integration that routes logs back into Sentry. Such nested captures are silently dropped to
      * prevent infinite recursion.
      *
-     * <p>If this callback throws, the breadcrumb is dropped and the exception is logged at {@link
-     * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only
-     * when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-     * OutOfMemoryError}, are rethrown.
-     *
      * @param breadcrumb the breadcrumb
      * @param hint the hints, usually the source of the breadcrumb
      * @return the original breadcrumb or the mutated breadcrumb of null if breadcrumb was dropped
@@ -3641,11 +3621,6 @@ public class SentryOptions implements RateLimiterConfig {
      * Called when an oversized event is detected. This callback allows custom handling of oversized
      * events before automatic reduction steps are applied.
      *
-     * <p>If this callback throws, its result is ignored, the automatic reduction continues with the
-     * original event, and the exception is logged at {@link SentryLevel#ERROR} through {@link
-     * SentryOptions#getLogger()}, which by default prints only when {@link SentryOptions#isDebug()}
-     * is enabled. Fatal errors, such as {@link OutOfMemoryError}, are rethrown.
-     *
      * @param event the oversized event
      * @param hint the hints
      * @return the modified event (should ideally be reduced in size)
@@ -3659,11 +3634,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     /**
      * Best-effort record of data discarded before reaching Sentry
-     *
-     * <p>If this callback throws, the exception is logged at {@link SentryLevel#ERROR} through
-     * {@link SentryOptions#getLogger()}, which by default prints only when {@link
-     * SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
-     * rethrown.
      *
      * @param reason the reason data was dropped
      * @param category the type of data discarded
@@ -3680,11 +3650,6 @@ public class SentryOptions implements RateLimiterConfig {
      * Calculates the sampling value used to determine if transaction is going to be sent to Sentry
      * backend.
      *
-     * <p>If this callback throws, the transaction is not sampled and the exception is logged at
-     * {@link SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints
-     * only when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-     * OutOfMemoryError}, are rethrown.
-     *
      * @param samplingContext the sampling context
      * @return sampling value or {@code null} if decision has not been taken
      */
@@ -3698,11 +3663,6 @@ public class SentryOptions implements RateLimiterConfig {
     /**
      * Calculates the sampling value used to determine if a profile is going to be sent to Sentry
      * backend.
-     *
-     * <p>If this callback throws, no profile is recorded and the exception is logged at {@link
-     * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only
-     * when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-     * OutOfMemoryError}, are rethrown.
      *
      * @param samplingContext the sampling context
      * @return sampling value or {@code null} if decision has not been taken
@@ -4269,11 +4229,6 @@ public class SentryOptions implements RateLimiterConfig {
        * integration that routes logs back into Sentry. Such nested captures are silently dropped to
        * prevent infinite recursion.
        *
-       * <p>If this callback throws, the log is dropped and the exception is logged at {@link
-       * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only
-       * when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-       * OutOfMemoryError}, are rethrown.
-       *
        * @param event the event
        * @return the original log event or the mutated event or null if event was dropped
        */
@@ -4330,11 +4285,6 @@ public class SentryOptions implements RateLimiterConfig {
        * <p>Do not capture from within this callback — directly, or indirectly through a logging
        * integration that routes logs back into Sentry. Such nested captures are silently dropped to
        * prevent infinite recursion.
-       *
-       * <p>If this callback throws, the metric is dropped and the exception is logged at {@link
-       * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only
-       * when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link
-       * OutOfMemoryError}, are rethrown.
        *
        * @param metric the metric
        * @return the original metric, mutated metric or null if metric was dropped

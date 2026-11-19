@@ -21,7 +21,6 @@ import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.DebugMetaPropertiesApplier;
-import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
@@ -254,9 +253,6 @@ public final class Sentry {
     try {
       optionsConfiguration.configure(options);
     } catch (Throwable t) {
-      // A user callback, so we can't know what it throws. The SDK is initialized with the options
-      // the callback set before it threw.
-      ExceptionUtils.rethrowIfFatal(t);
       options
           .getLogger()
           .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
@@ -1036,12 +1032,6 @@ public final class Sentry {
    * <p>Unlike {@link Sentry#pushScope()} this also forks in global hub mode, since the previous
    * scopes are always restored once the callback returns.
    *
-   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
-   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
-   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
-   * rethrown. Before {@link #init} and after {@link #close}, the callback runs on a no-op scope and
-   * nothing it throws is caught.
-   *
    * @param callback the callback
    */
   public static void withScope(final @NotNull ScopeCallback callback) {
@@ -1055,12 +1045,6 @@ public final class Sentry {
    * <p>Unlike {@link Sentry#pushIsolationScope()} this also forks in global hub mode, since the
    * previous scopes are always restored once the callback returns.
    *
-   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
-   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
-   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
-   * rethrown. Before {@link #init} and after {@link #close}, the callback runs on a no-op scope and
-   * nothing it throws is caught.
-   *
    * @param callback the callback
    */
   public static void withIsolationScope(final @NotNull ScopeCallback callback) {
@@ -1070,11 +1054,6 @@ public final class Sentry {
   /**
    * Configures the scope through the callback.
    *
-   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
-   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
-   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
-   * rethrown. Before {@link #init} and after {@link #close}, the callback isn't run.
-   *
    * @param callback The configure scope callback.
    */
   public static void configureScope(final @NotNull ScopeCallback callback) {
@@ -1083,11 +1062,6 @@ public final class Sentry {
 
   /**
    * Configures the scope through the callback.
-   *
-   * <p>If the callback throws, the rest of it is skipped and the exception is logged at {@link
-   * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
-   * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
-   * rethrown. Before {@link #init} and after {@link #close}, the callback isn't run.
    *
    * @param callback The configure scope callback.
    */
@@ -1291,12 +1265,6 @@ public final class Sentry {
 
     /**
      * configure the options
-     *
-     * <p>If this callback throws, the SDK is initialized with the options it set before the
-     * exception, and the exception is logged at {@link SentryLevel#ERROR} through {@link
-     * SentryOptions#getLogger()}. By default that prints only when {@link SentryOptions#isDebug()}
-     * was enabled before the exception. Fatal errors, such as {@link OutOfMemoryError}, are
-     * rethrown.
      *
      * @param options the options
      */

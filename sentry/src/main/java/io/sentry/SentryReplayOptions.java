@@ -32,11 +32,6 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
      * integration that routes logs back into Sentry. Such nested captures are silently dropped to
      * prevent infinite recursion.
      *
-     * <p>If this callback throws, the replay is not captured for this error and the exception is
-     * logged at {@link SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by
-     * default prints only when {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as
-     * {@link OutOfMemoryError}, are rethrown.
-     *
      * @param event the error event that triggered the replay capture
      * @param hint the hint associated with the event
      * @return {@code true} if the error sample rate should be checked, {@code false} to skip replay
@@ -60,11 +55,6 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   public interface ReplayFrameObserver {
     /**
      * Called when a masked replay frame is captured.
-     *
-     * <p>If this method throws, the SDK recycles the bitmap and still records the frame. The
-     * exception is only reported as an error through {@link SentryOptions#getLogger()}, which by
-     * default prints only when {@link SentryOptions#isDebug()} is enabled, so enable debug to find
-     * out whether your observer fails. Errors such as {@link OutOfMemoryError} are not caught.
      *
      * @param hint contains the frame bitmap under {@link TypeCheckHint#REPLAY_FRAME_BITMAP}
      * @param frameTimestamp the timestamp (in milliseconds since epoch) when the frame was captured

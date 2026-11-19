@@ -29,7 +29,6 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
-import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LoggerPropertiesUtil;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -214,9 +213,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
       try {
         return new String(encoder.encode(loggingEvent), StandardCharsets.UTF_8);
       } catch (final Throwable t) {
-        // The encoder is the app's own, possibly misconfigured, so we can't know what it throws.
-        // The event falls back to the default formatted message.
-        ExceptionUtils.rethrowIfFatal(t);
+        // catch exceptions from possibly incorrectly configured encoder
+        // and fallback to default formatted message
         addWarn("Failed to encode logging event", t);
       }
     }
@@ -349,16 +347,6 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     this.transportFactory = transportFactory;
   }
 
-  /**
-   * Sets the encoder that formats the message sent to Sentry.
-   *
-   * <p>If the encoder throws, the logging event's formatted message is sent instead. Fatal errors
-   * such as {@link OutOfMemoryError} are rethrown. The failure is reported as a warning to
-   * logback's status manager, which you can see with {@code <configuration debug="true">} or a
-   * status listener.
-   *
-   * @param encoder the encoder
-   */
   public void setEncoder(Encoder<ILoggingEvent> encoder) {
     this.encoder = encoder;
   }

@@ -6,11 +6,6 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * An Event Processor that may mutate or drop an event. Runs for SentryEvent or SentryTransaction
- *
- * <p>If a processor throws, the event is dropped and the exception is logged at {@link
- * SentryLevel#ERROR} through {@link SentryOptions#getLogger()}, which by default prints only when
- * {@link SentryOptions#isDebug()} is enabled. Fatal errors, such as {@link OutOfMemoryError}, are
- * rethrown.
  */
 public interface EventProcessor {
 

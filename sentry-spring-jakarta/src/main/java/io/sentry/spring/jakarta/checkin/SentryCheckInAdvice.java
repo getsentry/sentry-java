@@ -11,7 +11,6 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import io.sentry.time.Stopwatch;
-import io.sentry.util.ExceptionUtils;
 import io.sentry.util.MonitorConfigUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
@@ -126,9 +125,6 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       try {
         monitorSlug = resolver.resolveStringValue(checkInAnnotation.value());
       } catch (Throwable e) {
-        // The resolver evaluates the app's placeholders and SpEL expressions, so we can't know what
-        // it throws.
-        ExceptionUtils.rethrowIfFatal(e);
         // When resolving fails, we fall back to the original string which may contain unresolved
         // expressions. Testing shows this can also happen if properties cannot be resolved (without
         // an exception being thrown). Sentry should alert the user about missed checkins in this

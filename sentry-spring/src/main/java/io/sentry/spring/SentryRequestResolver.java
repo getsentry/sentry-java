@@ -7,7 +7,6 @@ import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CookieUtils;
-import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
@@ -117,9 +116,6 @@ public class SentryRequestResolver {
         }
       }
     } catch (Throwable t) {
-      // The request and its servlet context are the container's, whose implementations differ, so
-      // we can't know what they throw. Only the default session cookie names are filtered then.
-      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()
