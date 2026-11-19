@@ -4043,6 +4043,14 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
 
+public final class io/sentry/SentrySpanKind {
+	public static final field CLIENT Ljava/lang/String;
+	public static final field CONSUMER Ljava/lang/String;
+	public static final field INTERNAL Ljava/lang/String;
+	public static final field PRODUCER Ljava/lang/String;
+	public static final field SERVER Ljava/lang/String;
+}
+
 public final class io/sentry/SentryStackTraceFactory {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun getInAppCallStack ()Ljava/util/List;
@@ -4360,6 +4368,7 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field MESSAGING_OPERATION_TYPE Ljava/lang/String;
 	public static final field MESSAGING_SYSTEM Ljava/lang/String;
 	public static final field PROFILER_ID Ljava/lang/String;
+	public static final field SENTRY_KIND_KEY Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
 }
