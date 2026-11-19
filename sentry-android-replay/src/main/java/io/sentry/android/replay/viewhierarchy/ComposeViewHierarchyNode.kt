@@ -300,11 +300,29 @@ internal object ComposeViewHierarchyNode {
           .trimIndent(),
       )
       // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
-      // as crashes instead of silently skipping the whole Compose subtree (i.e. not masking it)
+      // as crashes instead of silently masking the whole Compose view
       if (SentryReplayDebug.failFast) {
         throw e
       }
-      return false
+      // Returning false would treat the view as a plain ViewGroup, whose children don't include
+      // the composables, so they would be recorded unmasked. Some of them may need masking, so the
+      // whole view is masked instead.
+      parent.children =
+        listOf(
+          GenericViewHierarchyNode(
+            x = parent.x,
+            y = parent.y,
+            width = parent.width,
+            height = parent.height,
+            elevation = parent.elevation,
+            distance = 0,
+            parent = parent,
+            shouldMask = true,
+            isVisible = parent.isVisible,
+            visibleRect = parent.visibleRect,
+          ),
+        )
+      return true
     }
 
     return true
