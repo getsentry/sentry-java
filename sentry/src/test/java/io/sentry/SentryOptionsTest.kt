@@ -10,6 +10,7 @@ import io.sentry.util.LazyEvaluator
 import io.sentry.util.StringUtils
 import java.io.File
 import java.net.Proxy
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -570,6 +571,8 @@ class SentryOptionsTest {
     externalOptions.isSendModules = false
     externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
     externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
+    externalOptions.traceIgnoreStatusCodes =
+      listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
     externalOptions.ignoredErrorsForDeduplication =
       listOf("example.FirstException", "example.SecondException")
@@ -633,6 +636,10 @@ class SentryOptionsTest {
       listOf("transactionName1", "transaction-name-B"),
       options.ignoredTransactions,
     )
+    assertThat(options.traceIgnoreStatusCodes).hasSize(2)
+    assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!![1].isInRange(500)).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()
     assertEquals(
       listOf("Some error", "Another .*"),
       options.ignoredErrors,
@@ -1171,6 +1178,92 @@ class SentryOptionsTest {
     assertNull(options.ignoredTransactions)
     assertNull(options.ignoredCheckIns)
     assertNull(options.ignoredSpanOrigins)
+  }
+
+  @Test
+  fun `ignored server HTTP status codes for tracing use the defaults`() {
+    val ranges = SentryOptions().traceIgnoreStatusCodes!!
+
+    assertThat(ranges).isInstanceOf(CopyOnWriteArrayList::class.java)
+    assertThat(ranges).hasSize(3)
+    listOf(301, 305, 399, 401, 404).forEach {
+      assertThat(ranges.any { range -> range.isInRange(it) }).isTrue()
+    }
+    listOf(300, 302, 303, 304, 400, 405).forEach {
+      assertThat(ranges.any { range -> range.isInRange(it) }).isFalse()
+    }
+  }
+
+  @Test
+  fun `default ignored server HTTP status code lists are independent`() {
+    val first = SentryOptions().traceIgnoreStatusCodes!!
+    val second = SentryOptions().traceIgnoreStatusCodes!!
+
+    first.clear()
+
+    assertThat(second).hasSize(3)
+    assertThat(second.any { it.isInRange(301) }).isTrue()
+    assertThat(second.any { it.isInRange(404) }).isTrue()
+  }
+
+  @Test
+  fun `ignored server HTTP status code iteration uses a stable snapshot`() {
+    val ranges = SentryOptions().traceIgnoreStatusCodes!!
+    val iterator = ranges.iterator()
+
+    ranges.clear()
+
+    assertThat(iterator.asSequence().toList()).hasSize(3)
+  }
+
+  @Test
+  fun `ignored server HTTP status code setter preserves null, empty and custom ranges`() {
+    val options = SentryOptions()
+
+    options.traceIgnoreStatusCodes = null
+    assertThat(options.traceIgnoreStatusCodes).isNull()
+
+    options.traceIgnoreStatusCodes = emptyList()
+    assertThat(options.traceIgnoreStatusCodes).isEmpty()
+
+    options.traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
+    assertThat(options.traceIgnoreStatusCodes).isInstanceOf(CopyOnWriteArrayList::class.java)
+    assertThat(options.traceIgnoreStatusCodes).hasSize(2)
+    assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()
+  }
+
+  @Test
+  fun `merging empty ignored server HTTP status codes clears the default`() {
+    val externalOptions = ExternalOptions()
+    externalOptions.traceIgnoreStatusCodes = emptyList()
+    val options = SentryOptions()
+
+    options.merge(externalOptions)
+
+    assertThat(options.traceIgnoreStatusCodes).isEmpty()
+  }
+
+  @Test
+  fun `merging options when ignored server HTTP status codes are not set preserves previous value`() {
+    val options = SentryOptions()
+    options.traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(410))
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.traceIgnoreStatusCodes).hasSize(1)
+    assertThat(options.traceIgnoreStatusCodes!![0].isInRange(410)).isTrue()
+  }
+
+  @Test
+  fun `merging options when ignored server HTTP status codes are not set preserves default`() {
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.traceIgnoreStatusCodes).hasSize(3)
+    assertThat(options.traceIgnoreStatusCodes!!.any { it.isInRange(301) }).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!!.any { it.isInRange(404) }).isTrue()
   }
 
   @Test

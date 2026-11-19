@@ -51,6 +51,7 @@ public final class ExternalOptions {
 
   private @Nullable List<String> ignoredCheckIns;
   private @Nullable List<String> ignoredTransactions;
+  private @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes;
 
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
@@ -163,6 +164,7 @@ public final class ExternalOptions {
 
     options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
     options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
+    options.setTraceIgnoreStatusCodes(parseTraceIgnoreStatusCodes(propertiesProvider, logger));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
@@ -244,6 +246,30 @@ public final class ExternalOptions {
     }
 
     return options;
+  }
+
+  private static @Nullable List<HttpStatusCodeRange> parseTraceIgnoreStatusCodes(
+      final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
+    final String value = propertiesProvider.getProperty("trace-ignore-status-codes");
+    if (value == null) {
+      return null;
+    }
+    if (value.trim().isEmpty()) {
+      return new ArrayList<>();
+    }
+
+    final List<HttpStatusCodeRange> ranges = new ArrayList<>();
+    for (final String token : value.split(",", -1)) {
+      try {
+        ranges.add(HttpStatusCodeRange.valueOf(token));
+      } catch (IllegalArgumentException e) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Ignoring invalid HTTP status code range in trace-ignore-status-codes: %s",
+            token);
+      }
+    }
+    return ranges.isEmpty() ? null : ranges;
   }
 
   private static @Nullable DataCollection parseDataCollection(
@@ -632,6 +658,15 @@ public final class ExternalOptions {
 
   public @Nullable List<String> getIgnoredTransactions() {
     return ignoredTransactions;
+  }
+
+  public void setTraceIgnoreStatusCodes(
+      final @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes) {
+    this.traceIgnoreStatusCodes = traceIgnoreStatusCodes;
+  }
+
+  public @Nullable List<HttpStatusCodeRange> getTraceIgnoreStatusCodes() {
+    return traceIgnoreStatusCodes;
   }
 
   public void setEnableBackpressureHandling(final @Nullable Boolean enableBackpressureHandling) {

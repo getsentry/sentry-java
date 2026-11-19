@@ -21,6 +21,7 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.*;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1011,13 +1012,25 @@ public final class SentryClient implements ISentryClient {
               SentryLevel.DEBUG,
               "Transaction was dropped as transaction name %s is ignored",
               transaction.getTransaction());
+      recordLostTransactionAndSpans(transaction);
+      return SentryId.EMPTY_ID;
+    }
+
+    final @Nullable Integer ignoredHttpStatusCode = getIgnoredHttpStatusCode(transaction);
+    if (ignoredHttpStatusCode != null) {
       options
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(
-              DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was dropped as HTTP status code %d is ignored",
+              ignoredHttpStatusCode);
+      recordLostTransactionAndSpans(transaction);
+      if (profilingTraceData != null) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Profile);
+      }
+      deleteProfilingTraceFile(profilingTraceData);
       return SentryId.EMPTY_ID;
     }
 
@@ -1091,6 +1104,73 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private void recordLostTransactionAndSpans(final @NotNull SentryTransaction transaction) {
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(
+            DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+  }
+
+  private @Nullable Integer getIgnoredHttpStatusCode(final @NotNull SentryTransaction transaction) {
+    final @Nullable List<HttpStatusCodeRange> ignoredHttpStatusCodes =
+        options.getTraceIgnoreStatusCodes();
+    if (ignoredHttpStatusCodes == null || ignoredHttpStatusCodes.isEmpty()) {
+      return null;
+    }
+
+    final @Nullable SpanContext trace = transaction.getContexts().getTrace();
+    if (trace == null
+        || !SentrySpanKind.SERVER.equals(trace.getData().get(SpanDataConvention.SENTRY_KIND_KEY))) {
+      return null;
+    }
+
+    final @Nullable Object httpStatusCodeValue =
+        trace.getData().get(SpanDataConvention.HTTP_STATUS_CODE_KEY);
+    if (!(httpStatusCodeValue instanceof Integer || httpStatusCodeValue instanceof Long)) {
+      return null;
+    }
+    final long longHttpStatusCode = ((Number) httpStatusCodeValue).longValue();
+    if (longHttpStatusCode < 100 || longHttpStatusCode > 599) {
+      return null;
+    }
+    final int httpStatusCode = (int) longHttpStatusCode;
+    for (final @Nullable HttpStatusCodeRange ignoredHttpStatusCode : ignoredHttpStatusCodes) {
+      if (ignoredHttpStatusCode != null && ignoredHttpStatusCode.isInRange(httpStatusCode)) {
+        return httpStatusCode;
+      }
+    }
+    return null;
+  }
+
+  private void deleteProfilingTraceFile(final @Nullable ProfilingTraceData profilingTraceData) {
+    if (profilingTraceData == null) {
+      return;
+    }
+
+    final @NotNull File traceFile = profilingTraceData.getTraceFile();
+    try {
+      if (!traceFile.delete()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Failed to delete profiling trace file %s for an ignored transaction",
+                traceFile.getPath());
+      }
+    } catch (SecurityException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              e,
+              "Failed to delete profiling trace file %s for an ignored transaction",
+              traceFile.getPath());
+    }
   }
 
   @ApiStatus.Internal

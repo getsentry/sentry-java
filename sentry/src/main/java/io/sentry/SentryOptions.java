@@ -605,6 +605,13 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private @Nullable List<FilterString> ignoredTransactions = null;
 
+  private volatile @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes =
+      new CopyOnWriteArrayList<>(
+          Arrays.asList(
+              new HttpStatusCodeRange(301),
+              new HttpStatusCodeRange(305, 399),
+              new HttpStatusCodeRange(401, 404)));
+
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
@@ -3189,6 +3196,32 @@ public class SentryOptions implements RateLimiterConfig {
     }
   }
 
+  /**
+   * Returns the HTTP status codes and inclusive ranges for which incoming server transactions are
+   * not sent to Sentry. Defaults to 301, 305-399, and 401-404. An empty list disables this filter.
+   *
+   * @return the configured HTTP status code ranges, or {@code null} if explicitly set to null
+   */
+  public @Nullable List<HttpStatusCodeRange> getTraceIgnoreStatusCodes() {
+    return traceIgnoreStatusCodes;
+  }
+
+  /**
+   * Sets the HTTP status codes and inclusive ranges for which incoming server transactions are not
+   * sent to Sentry. For example, configure {@code new HttpStatusCodeRange(404)} for one status or
+   * {@code new HttpStatusCodeRange(500, 599)} for an inclusive range. External configuration
+   * accepts comma-separated codes and ranges such as {@code 404,410,500-599}. An empty list or
+   * {@code null} disables this filter.
+   *
+   * @param traceIgnoreStatusCodes the HTTP status code ranges, or {@code null} to disable the
+   *     filter
+   */
+  public void setTraceIgnoreStatusCodes(
+      final @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes) {
+    this.traceIgnoreStatusCodes =
+        traceIgnoreStatusCodes == null ? null : new CopyOnWriteArrayList<>(traceIgnoreStatusCodes);
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -3864,6 +3897,9 @@ public class SentryOptions implements RateLimiterConfig {
     if (options.getIgnoredTransactions() != null) {
       final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
       setIgnoredTransactions(ignoredTransactions);
+    }
+    if (options.getTraceIgnoreStatusCodes() != null) {
+      setTraceIgnoreStatusCodes(options.getTraceIgnoreStatusCodes());
     }
     if (options.getIgnoredErrors() != null) {
       final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());

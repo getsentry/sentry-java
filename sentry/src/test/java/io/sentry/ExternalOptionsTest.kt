@@ -14,6 +14,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class ExternalOptionsTest {
@@ -429,6 +430,75 @@ class ExternalOptionsTest {
   fun `creates options with null ignoredTransactions if missing`() {
     val logger = mock<ILogger>()
     withPropertiesFile("Another .*", logger) { options -> assertNull(options.ignoredTransactions) }
+  }
+
+  @Test
+  fun `ignored server HTTP status codes are null if missing`() {
+    withPropertiesFile { assertThat(it.traceIgnoreStatusCodes).isNull() }
+  }
+
+  @Test
+  fun `creates empty ignored server HTTP status codes from empty input`() {
+    withPropertiesFile("trace-ignore-status-codes=") {
+      assertThat(it.traceIgnoreStatusCodes).isEmpty()
+    }
+  }
+
+  @Test
+  fun `creates ignored server HTTP status codes and ranges`() {
+    withPropertiesFile("trace-ignore-status-codes=404, 410 , 500-599") { options ->
+      val ranges = options.traceIgnoreStatusCodes
+      assertThat(ranges).hasSize(3)
+      assertThat(ranges!![0].isInRange(404)).isTrue()
+      assertThat(ranges[1].isInRange(410)).isTrue()
+      assertThat(ranges[2].isInRange(500)).isTrue()
+      assertThat(ranges[2].isInRange(599)).isTrue()
+    }
+  }
+
+  @Test
+  fun `ignores invalid entries while preserving valid ignored server HTTP status codes`() {
+    val logger = mock<ILogger>()
+    withPropertiesFile(
+      "trace-ignore-status-codes=404,invalid,600,500-400",
+      logger,
+    ) { options ->
+      val ranges = options.traceIgnoreStatusCodes
+      assertThat(ranges).hasSize(1)
+      assertThat(ranges!![0].isInRange(404)).isTrue()
+    }
+    verify(logger, times(3)).log(eq(SentryLevel.WARNING), any<String>(), any<String>())
+  }
+
+  @Test
+  fun `all invalid ignored server HTTP status codes leave existing configuration unchanged`() {
+    withPropertiesFile("trace-ignore-status-codes=invalid,600,500-400") { externalOptions ->
+      assertThat(externalOptions.traceIgnoreStatusCodes).isNull()
+
+      val options =
+        SentryOptions().apply {
+          traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(410))
+        }
+      options.merge(externalOptions)
+
+      assertThat(options.traceIgnoreStatusCodes).hasSize(1)
+      assertThat(options.traceIgnoreStatusCodes!![0].isInRange(410)).isTrue()
+    }
+  }
+
+  @Test
+  fun `system property takes precedence for ignored server HTTP status codes`() {
+    System.setProperty("sentry.trace-ignore-status-codes", "410")
+    try {
+      withPropertiesFile("trace-ignore-status-codes=404") { options ->
+        val ranges = options.traceIgnoreStatusCodes
+        assertThat(ranges).hasSize(1)
+        assertThat(ranges!![0].isInRange(410)).isTrue()
+        assertThat(ranges[0].isInRange(404)).isFalse()
+      }
+    } finally {
+      System.clearProperty("sentry.trace-ignore-status-codes")
+    }
   }
 
   @Test
