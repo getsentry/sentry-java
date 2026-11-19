@@ -1130,7 +1130,7 @@ public final class SentryClient implements ISentryClient {
 
     final @Nullable SpanContext trace = transaction.getContexts().getTrace();
     if (trace == null
-        || !"server".equals(trace.getData().get(SpanDataConvention.SENTRY_KIND_KEY))) {
+        || !SentrySpanKind.SERVER.equals(trace.getData().get(SpanDataConvention.SENTRY_KIND_KEY))) {
       return null;
     }
 
