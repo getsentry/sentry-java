@@ -51,7 +51,8 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
             "Failed to load Sentry configuration since it is not readable: %s",
             filePath);
       }
-    } catch (IOException | IllegalArgumentException e) {
+    } catch (IOException | IllegalArgumentException | SecurityException e) {
+      // a SecurityManager can deny reading the file
       logger.log(
           SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
       return null;
