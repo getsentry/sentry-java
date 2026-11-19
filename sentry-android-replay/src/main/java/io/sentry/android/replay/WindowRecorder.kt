@@ -233,16 +233,7 @@ internal class WindowRecorder(
     }
 
     capturer?.config = config
-    capturer?.recorder =
-      try {
-        ScreenshotRecorder(config, options, this, screenshotRecorderCallback)
-      } catch (e: OutOfMemoryError) {
-        // The PixelCopy strategy allocates a bitmap of the whole recording, one large allocation
-        // that can fail while the rest of the heap is healthy. No frames are captured until the
-        // next configuration change.
-        options.logger.log(ERROR, "Not enough memory to record replay frames", e)
-        null
-      }
+    capturer?.recorder = ScreenshotRecorder(config, options, this, screenshotRecorderCallback)
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {

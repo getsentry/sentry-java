@@ -265,17 +265,9 @@ internal class PixelCopyStrategy(
 
       var svBitmap: Bitmap? = null
       try {
-        val bitmapToCapture: Bitmap =
-          try {
-            Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
-          } catch (e: OutOfMemoryError) {
-            // A bitmap of the whole SurfaceView is one large allocation, which can fail while the
-            // rest of the heap is healthy. This SurfaceView is left out of the frame.
-            options.logger.log(WARNING, "Not enough memory to capture the SurfaceView", e)
-            onCaptureComplete()
-            continue
-          }
-        svBitmap = bitmapToCapture
+        svBitmap =
+          Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
+        val bitmapToCapture = svBitmap
 
         surfaceView.getLocationOnScreen(svLocation)
         val capturedX = svLocation[0]

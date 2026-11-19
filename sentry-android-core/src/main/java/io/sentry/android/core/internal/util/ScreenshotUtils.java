@@ -156,15 +156,8 @@ public final class ScreenshotUtils {
     }
 
     try {
-      final Bitmap bitmap;
-      try {
-        bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
-      } catch (OutOfMemoryError e) {
-        // A bitmap of the whole window is one large allocation, which can fail while the rest of
-        // the heap is healthy. The screenshot is skipped instead of crashing the app.
-        logger.log(SentryLevel.WARNING, "Not enough memory for the screenshot bitmap.", e);
-        return null;
-      }
+      final Bitmap bitmap =
+          Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
 
       final @NotNull CountDownLatch latch = new CountDownLatch(1);
 

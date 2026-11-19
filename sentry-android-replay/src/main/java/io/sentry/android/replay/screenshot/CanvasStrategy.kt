@@ -97,24 +97,13 @@ internal class CanvasStrategy(
         screenshotLock.acquire().use {
           if (screenshot == null) {
             screenshot =
-              try {
-                Bitmap.createBitmap(
-                  config.recordingWidth,
-                  config.recordingHeight,
-                  Bitmap.Config.RGB_565,
-                )
-              } catch (e: OutOfMemoryError) {
-                // A bitmap of the whole recording is one large allocation, which can fail while the
-                // rest of the heap is healthy. This frame is skipped, and the next one tries again.
-                options.logger.log(SentryLevel.WARNING, "Not enough memory for the replay frame", e)
-                null
-              }
+              Bitmap.createBitmap(
+                config.recordingWidth,
+                config.recordingHeight,
+                Bitmap.Config.RGB_565,
+              )
           }
         }
-      }
-      if (screenshot == null) {
-        lastCaptureSuccessful.set(false)
-        return@Runnable
       }
 
       if (isClosed.get()) {
