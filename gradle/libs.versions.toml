@@ -53,6 +53,7 @@ springboot4 = "4.1.0"
 springKafka2 = "2.8.11"
 springKafka3 = "3.3.5"
 sqldelight = "2.3.2"
+tomcat9 = "9.0.108"
 vanniktechMavenPublish = "0.37.0"
 
 # Android
@@ -267,9 +268,9 @@ java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref =
 
 # tomcat libraries
 tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "8.5.100" }
-tomcat9-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "9.0.108" }
-tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
-tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
+tomcat9-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat9" }
+tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat9" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat9" }
 tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.22" }
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
 # The version comes from the Spring Boot BOM of whichever Spring line uses it.
