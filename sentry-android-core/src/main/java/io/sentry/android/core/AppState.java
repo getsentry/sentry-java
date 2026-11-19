@@ -22,7 +22,7 @@ import org.jetbrains.annotations.TestOnly;
 
 /** AppState holds the state of the App, e.g. whether the app is in background/foreground, etc. */
 @ApiStatus.Internal
-public final class AppState implements Closeable {
+public final class AppState implements Closeable, AppStateProvider {
   private static @NotNull AppState instance = new AppState();
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile @Nullable LifecycleObserver lifecycleObserver;
@@ -61,6 +61,7 @@ public final class AppState implements Closeable {
     this.inBackground = inBackground;
   }
 
+  @Override
   public void addAppStateListener(final @NotNull AppStateListener listener) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       ensureLifecycleObserver(NoOpLogger.getInstance());
@@ -71,6 +72,7 @@ public final class AppState implements Closeable {
     }
   }
 
+  @Override
   public void removeAppStateListener(final @NotNull AppStateListener listener) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (lifecycleObserver != null) {

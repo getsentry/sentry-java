@@ -4,12 +4,15 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.CompositePerformanceCollector
 import io.sentry.DefaultCompositePerformanceCollector
 import io.sentry.IConnectionStatusProvider
 import io.sentry.IContinuousProfiler
+import io.sentry.IDebugManager
 import io.sentry.ILogger
 import io.sentry.ISocketTagger
 import io.sentry.ITransaction
@@ -21,6 +24,11 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.hang.HangDataCollector
+import io.sentry.android.core.hang.HangRecorder
+import io.sentry.android.core.hang.HangSignal
+import io.sentry.android.core.hang.ThreadHangSignal
+import io.sentry.android.core.hang.ThreadSampleCollector
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
@@ -38,6 +46,8 @@ import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.getProperty
+import io.sentry.time.JavaMonotonicTicker
 import io.sentry.transport.ITransportGate
 import io.sentry.util.thread.IThreadChecker
 import java.io.File
@@ -680,6 +690,88 @@ class AndroidOptionsInitializerTest {
       fixture.sentryOptions.integrations.indexOfFirst { it is AppLifecycleIntegration }
     val anrIndex = fixture.sentryOptions.integrations.indexOfFirst { it is AnrIntegration }
     assertTrue { appLifecycleIndex < anrIndex }
+  }
+
+  @Test
+  fun `HangRecorder is created and stored in the options`() {
+    fixture.initSut()
+
+    val recorder = fixture.sentryOptions.hangRecorder
+    assertThat(recorder).isNotNull()
+    assertThat(recorder!!.getProperty<Any>("appStateProvider"))
+      .isSameInstanceAs(AppState.getInstance())
+    assertThat(recorder.getProperty<Any>("ticker"))
+      .isSameInstanceAs(JavaMonotonicTicker.getInstance())
+    assertThat(recorder.getProperty<Any>("epochClock"))
+      .isSameInstanceAs(fixture.sentryOptions.epochClock)
+    assertThat(recorder.getProperty<Long>("pollingIntervalMs"))
+      .isEqualTo(HangRecorder.DEFAULT_POLLING_INTERVAL_MS)
+    assertThat(recorder.getProperty<Long>("maxRecordingTimeMs"))
+      .isEqualTo(HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS)
+    assertThat(recorder.getProperty<Any>("executorFactory"))
+      .isSameInstanceAs(HangRecorder.DEFAULT_EXECUTOR_FACTORY)
+  }
+
+  @Test
+  fun `HangRecorder signal is a ThreadHangSignal with the AndroidDebugManager`() {
+    fixture.initSut()
+
+    val signal =
+      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangSignal>>("signals").single()
+    assertThat(signal).isInstanceOf(ThreadHangSignal::class.java)
+    assertThat(signal.getProperty<Any>("debugManager"))
+      .isSameInstanceAs(fixture.sentryOptions.debugManager)
+    assertThat(fixture.sentryOptions.debugManager).isInstanceOf(AndroidDebugManager::class.java)
+    assertThat(signal.getProperty<Any>("ticker"))
+      .isSameInstanceAs(JavaMonotonicTicker.getInstance())
+    assertThat(signal.getProperty<Long>("suspiciousThresholdMs"))
+      .isEqualTo(HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
+  }
+
+  @Test
+  fun `HangRecorder signal uses a debug manager that is already set`() {
+    val debugManager = IDebugManager { false }
+    fixture.sentryOptions.debugManager = debugManager
+
+    fixture.initSut()
+
+    val signal =
+      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangSignal>>("signals").single()
+    assertThat(signal.getProperty<Any>("debugManager")).isSameInstanceAs(debugManager)
+  }
+
+  @Test
+  fun `HangRecorder collector samples the main thread`() {
+    fixture.initSut()
+
+    val collector =
+      fixture.sentryOptions.hangRecorder!!
+        .getProperty<List<HangDataCollector>>("collectors")
+        .single()
+    assertThat(collector).isInstanceOf(ThreadSampleCollector::class.java)
+    assertThat(collector.getProperty<Any>("epochClock"))
+      .isSameInstanceAs(fixture.sentryOptions.epochClock)
+    assertThat(collector.getProperty<Any>("ticker"))
+      .isSameInstanceAs(JavaMonotonicTicker.getInstance())
+    assertThat(collector.getProperty<Thread>("thread"))
+      .isSameInstanceAs(Looper.getMainLooper().thread)
+  }
+
+  @Test
+  fun `HangRecorder that is already set is kept`() {
+    val existing = mock<HangRecorder>()
+    fixture.sentryOptions.hangRecorder = existing
+
+    fixture.initSut()
+
+    assertThat(fixture.sentryOptions.hangRecorder).isSameInstanceAs(existing)
+  }
+
+  @Test
+  fun `HangRecorder is not created when cacheDirPath is null`() {
+    fixture.initSut(configureOptions = { cacheDirPath = null })
+
+    assertThat(fixture.sentryOptions.hangRecorder).isNull()
   }
 
   @Test
