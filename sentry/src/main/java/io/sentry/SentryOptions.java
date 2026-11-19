@@ -602,7 +602,7 @@ public class SentryOptions implements RateLimiterConfig {
   private volatile @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes =
       new CopyOnWriteArrayList<>(
           Arrays.asList(
-              new HttpStatusCodeRange(301, 303),
+              new HttpStatusCodeRange(301),
               new HttpStatusCodeRange(305, 399),
               new HttpStatusCodeRange(401, 404)));
 
@@ -3157,8 +3157,7 @@ public class SentryOptions implements RateLimiterConfig {
 
   /**
    * Returns the HTTP status codes and inclusive ranges for which incoming server transactions are
-   * not sent to Sentry. Defaults to 301-303, 305-399, and 401-404. An empty list disables this
-   * filter.
+   * not sent to Sentry. Defaults to 301, 305-399, and 401-404. An empty list disables this filter.
    *
    * @return the configured HTTP status code ranges, or {@code null} if explicitly set to null
    */
