@@ -8,6 +8,7 @@ import io.sentry.CustomSamplingContext;
 import io.sentry.IScopes;
 import io.sentry.ITransaction;
 import io.sentry.ScopesAdapter;
+import io.sentry.SentrySpanKind;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -259,7 +260,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
               new TransactionContext(name, TransactionNameSource.URL, "http.server"),
               transactionOptions);
     }
-    transaction.setData(SpanDataConvention.SENTRY_KIND_KEY, "server");
+    transaction.setData(SpanDataConvention.SENTRY_KIND_KEY, SentrySpanKind.SERVER);
     return transaction;
   }
 }

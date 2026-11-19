@@ -28,6 +28,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryInstantDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
+import io.sentry.SentrySpanKind;
 import io.sentry.SpanContext;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
@@ -565,7 +566,7 @@ public final class SentrySpanExporter implements SpanExporter {
   private void setSentrySpanKind(
       final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
     if (SpanKind.SERVER.equals(otelSpan.getKind())) {
-      sentrySpan.setData(SpanDataConvention.SENTRY_KIND_KEY, "server");
+      sentrySpan.setData(SpanDataConvention.SENTRY_KIND_KEY, SentrySpanKind.SERVER);
     }
   }
 
