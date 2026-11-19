@@ -94,7 +94,8 @@
   already have propagated a sampled trace to downstream services, which can still report their
   segments. Local child spans are discarded with the ignored transaction. Continuous profile
   chunks are reported independently. External OTLP export does not pass through `SentryClient` and
-  is not filtered by this option ([#6567](https://github.com/getsentry/sentry-java/pull/6567))
+  is not filtered by this option ([#6566](https://github.com/getsentry/sentry-java/pull/6566),
+  [#6567](https://github.com/getsentry/sentry-java/pull/6567))
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
 - Remove the deprecated `Instrumenter` enum, option, span context property, and `startChild` overloads ([#6252](https://github.com/getsentry/sentry-java/pull/6252))
 - Remove deprecated OpenTelemetry integration classes and the legacy `SentrySpanStorage` ([#6243](https://github.com/getsentry/sentry-java/pull/6243))
@@ -109,43 +110,6 @@
 - Screenshots attached to errors and user feedback now mask all text and images by default. Turn it off with `options.screenshot.setMaskAllText(false)` and `setMaskAllImages(false)`, or the `io.sentry.screenshot.mask-all-text` and `io.sentry.screenshot.mask-all-images` manifest options. Masking needs `sentry-android-replay`, so apps that depend on `sentry-android-core` alone get no screenshot until they add it or turn masking off ([#6437](https://github.com/getsentry/sentry-java/pull/6437))
 
 ### Features
-
-- Drop incoming server transactions whose root HTTP response status matches
-  `traceIgnoreStatusCodes`. The option defaults to `301-303`, `305-399`, and `401-404`. Replace
-  the default with individual statuses such as `404`, inclusive ranges such as `400-499` or
-  `500-599`, or a combination of statuses and ranges
-  ([#6566](https://github.com/getsentry/sentry-java/pull/6566)).
-
-  Java:
-
-  ```java
-  import io.sentry.HttpStatusCodeRange;
-  import java.util.Arrays;
-
-  options.setTraceIgnoreStatusCodes(
-      Arrays.asList(new HttpStatusCodeRange(404), new HttpStatusCodeRange(500, 599)));
-  ```
-
-  `sentry.properties`:
-
-  ```properties
-  trace-ignore-status-codes=404,500-599
-  ```
-
-  Spring Boot `application.properties`:
-
-  ```properties
-  sentry.trace-ignore-status-codes=404,500-599
-  ```
-
-  Spring Boot `application.yml`:
-
-  ```yaml
-  sentry:
-    trace-ignore-status-codes:
-      - "404"
-      - "500-599"
-  ```
 
 - Add policy-controlled URL query parameters and fragments to Ktor HTTP client spans ([#6433](https://github.com/getsentry/sentry-java/pull/6433))
 - Session Replay: Add `Sentry.replay().pauseTouchTracking()` and `resumeTouchTracking()` to stop recording touches on sensitive screens, such as a custom PIN pad, while the screen recording continues. Touch tracking stays paused until `resumeTouchTracking()` is called, also for new replays and after `resume()` ([#6546](https://github.com/getsentry/sentry-java/pull/6546))
