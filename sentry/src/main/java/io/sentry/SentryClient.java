@@ -1015,13 +1015,7 @@ public final class SentryClient implements ISentryClient {
               SentryLevel.DEBUG,
               "Transaction was dropped as transaction name %s is ignored",
               transaction.getTransaction());
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(
-              DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+      recordLostTransactionAndSpans(transaction);
       return SentryId.EMPTY_ID;
     }
 
@@ -1033,13 +1027,7 @@ public final class SentryClient implements ISentryClient {
               SentryLevel.DEBUG,
               "Transaction was dropped as HTTP status code %d is ignored",
               ignoredHttpStatusCode);
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(
-              DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+      recordLostTransactionAndSpans(transaction);
       if (profilingTraceData != null) {
         options
             .getClientReportRecorder()
@@ -1119,6 +1107,16 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private void recordLostTransactionAndSpans(final @NotNull SentryTransaction transaction) {
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(
+            DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
   }
 
   private @Nullable Integer getIgnoredHttpStatusCode(final @NotNull SentryTransaction transaction) {
