@@ -10,6 +10,7 @@ import io.sentry.util.LazyEvaluator
 import io.sentry.util.StringUtils
 import java.io.File
 import java.net.Proxy
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -1091,6 +1092,7 @@ class SentryOptionsTest {
   fun `ignored server HTTP status codes for tracing use the spec defaults`() {
     val ranges = SentryOptions().traceIgnoreStatusCodes!!
 
+    assertThat(ranges).isInstanceOf(CopyOnWriteArrayList::class.java)
     assertThat(ranges).hasSize(3)
     listOf(301, 303, 305, 399, 401, 404).forEach {
       assertThat(ranges.any { range -> range.isInRange(it) }).isTrue()
@@ -1113,6 +1115,16 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `ignored server HTTP status code iteration uses a stable snapshot`() {
+    val ranges = SentryOptions().traceIgnoreStatusCodes!!
+    val iterator = ranges.iterator()
+
+    ranges.clear()
+
+    assertThat(iterator.asSequence().toList()).hasSize(3)
+  }
+
+  @Test
   fun `ignored server HTTP status code setter preserves null, empty and custom ranges`() {
     val options = SentryOptions()
 
@@ -1123,6 +1135,7 @@ class SentryOptionsTest {
     assertThat(options.traceIgnoreStatusCodes).isEmpty()
 
     options.traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
+    assertThat(options.traceIgnoreStatusCodes).isInstanceOf(CopyOnWriteArrayList::class.java)
     assertThat(options.traceIgnoreStatusCodes).hasSize(2)
     assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
     assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()

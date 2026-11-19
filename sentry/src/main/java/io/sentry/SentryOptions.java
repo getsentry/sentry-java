@@ -599,8 +599,8 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private @Nullable List<FilterString> ignoredTransactions = null;
 
-  private @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes =
-      new ArrayList<>(
+  private volatile @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes =
+      new CopyOnWriteArrayList<>(
           Arrays.asList(
               new HttpStatusCodeRange(301, 303),
               new HttpStatusCodeRange(305, 399),
@@ -3179,7 +3179,7 @@ public class SentryOptions implements RateLimiterConfig {
   public void setTraceIgnoreStatusCodes(
       final @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes) {
     this.traceIgnoreStatusCodes =
-        traceIgnoreStatusCodes == null ? null : new ArrayList<>(traceIgnoreStatusCodes);
+        traceIgnoreStatusCodes == null ? null : new CopyOnWriteArrayList<>(traceIgnoreStatusCodes);
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
