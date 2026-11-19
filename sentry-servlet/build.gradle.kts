@@ -41,57 +41,50 @@ dependencies {
   testImplementation(libs.springboot.starter.web)
 }
 
-testing {
-  suites {
-    register<JvmTestSuite>("integrationTest") {
-      useJUnit()
-      dependencies {
-        implementation(project())
-        implementation(projects.sentryTestSupport)
-        implementation(libs.google.truth)
-        implementation(libs.kotlin.test.junit)
-        implementation(libs.tomcat85.embed.core)
-      }
-      targets.all {
-        testTask.configure {
-          description = "Runs the servlet integration test on Tomcat 8.5 and Servlet 3.1"
-          systemProperty("io.sentry.test.tomcat-version-prefix", "8.5.")
-          systemProperty("io.sentry.test.servlet-major-version", "3")
-          systemProperty("io.sentry.test.servlet-minor-version", "1")
-        }
-      }
+val integrationTest =
+  testing.suites.register<JvmTestSuite>("integrationTest") {
+    useJUnit()
+    dependencies {
+      implementation(project())
+      implementation(projects.sentryTestSupport)
+      implementation(libs.google.truth)
+      implementation(libs.kotlin.test.junit)
+      compileOnly(libs.tomcat85.embed.core)
+      runtimeOnly(libs.tomcat85.embed.core)
     }
-
-    register<JvmTestSuite>("integrationTestTomcat9") {
-      useJUnit()
-      dependencies {
-        implementation(project())
-        implementation(projects.sentryTestSupport)
-        implementation(libs.google.truth)
-        implementation(libs.kotlin.test.junit)
-        implementation(libs.tomcat9.embed.core)
-      }
-      sources {
-        java.setSrcDirs(sourceSets["integrationTest"].allJava.srcDirs)
-        resources.setSrcDirs(sourceSets["integrationTest"].resources.srcDirs)
-      }
-      targets.all {
-        testTask.configure {
-          description = "Runs the servlet integration test on Tomcat 9 and Servlet 4"
-          systemProperty("io.sentry.test.tomcat-version-prefix", "9.0.")
-          systemProperty("io.sentry.test.servlet-major-version", "4")
-          systemProperty("io.sentry.test.servlet-minor-version", "0")
-        }
+    targets.named("integrationTest") {
+      testTask.configure {
+        description = "Runs the servlet integration test on Tomcat 8.5 and Servlet 3.1"
+        systemProperty("io.sentry.test.tomcat-version-prefix", "8.5.")
+        systemProperty("io.sentry.test.servlet-major-version", "3")
+        systemProperty("io.sentry.test.servlet-minor-version", "1")
       }
     }
   }
+
+val integrationTestSourceSet = sourceSets["integrationTest"]
+val integrationTestTomcat9RuntimeClasspath =
+  configurations.resolvable("integrationTestTomcat9RuntimeClasspath") {
+    extendsFrom(configurations[integrationTestSourceSet.implementationConfigurationName])
+    attributes.addAllLater(
+      configurations[integrationTestSourceSet.runtimeClasspathConfigurationName].attributes,
+    )
+  }
+
+dependencies {
+  add(integrationTestTomcat9RuntimeClasspath.name, libs.tomcat9.embed.core)
 }
 
-tasks.check {
-  dependsOn(
-    testing.suites.named("integrationTest"),
-    testing.suites.named("integrationTestTomcat9"),
-  )
+integrationTest {
+  targets.register("integrationTestTomcat9") {
+    testTask.configure {
+      description = "Runs the servlet integration test on Tomcat 9 and Servlet 4"
+      classpath = integrationTestSourceSet.output + integrationTestTomcat9RuntimeClasspath.get()
+      systemProperty("io.sentry.test.tomcat-version-prefix", "9.0.")
+      systemProperty("io.sentry.test.servlet-major-version", "4")
+      systemProperty("io.sentry.test.servlet-minor-version", "0")
+    }
+  }
 }
 
 tasks.withType<JavaCompile>().configureEach {
