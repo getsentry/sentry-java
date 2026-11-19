@@ -415,6 +415,19 @@ fun ErrorsScreen() {
       }
     }
     item {
+      SentryTraced("non_fatal_anr") {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("non_fatal_anr")
+            Thread.sleep(2000)
+          },
+          modifier = Modifier,
+        ) {
+          Text("Non-fatal ANR (2 s)", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
       SentryTraced("native_anr") {
         OutlinedButton(
           onClick = {
