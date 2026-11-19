@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
 import io.sentry.IContinuousProfiler
 import io.sentry.ITransaction
@@ -567,6 +568,32 @@ class AppStartMetricsTest {
     appStartMetrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
     assertEquals(AppStartMetrics.AppStartType.WARM, appStartMetrics.appStartType)
     assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
+  }
+
+  @Test
+  fun `a warm relaunch within 1 minute of process start is timed from the new activity`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())
+    metrics.applicationOnCreateTimeSpan.setStartedAt(SystemClock.uptimeMillis())
+    metrics.applicationOnCreateTimeSpan.setStoppedAt(SystemClock.uptimeMillis() + 100)
+    metrics.contentProviderOnCreateTimeSpans.add(TimeSpan().apply { setStartedAt(1) })
+
+    val coldActivity = mock<Activity>()
+    metrics.onActivityCreated(coldActivity, null)
+    metrics.appStartTimeSpan.setStoppedAt(SystemClock.uptimeMillis() + 800)
+    metrics.onAppStartSpansSent()
+    metrics.onActivityDestroyed(coldActivity)
+
+    val relaunchUptimeMs = SystemClock.uptimeMillis() + TimeUnit.SECONDS.toMillis(25)
+    SystemClock.setCurrentTimeMillis(relaunchUptimeMs)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertThat(metrics.appStartType).isEqualTo(AppStartMetrics.AppStartType.WARM)
+    assertThat(metrics.appStartTimeSpan.startUptimeMs).isEqualTo(relaunchUptimeMs)
+    assertThat(metrics.appStartTimeSpan.hasStopped()).isFalse()
+    assertThat(metrics.applicationOnCreateTimeSpan.hasStarted()).isFalse()
+    assertThat(metrics.contentProviderOnCreateTimeSpans).isEmpty()
+    assertThat(metrics.shouldSendStartMeasurements(false)).isTrue()
   }
 
   @Test
