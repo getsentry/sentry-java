@@ -371,7 +371,7 @@ class SentryAutoConfigurationTest {
               "sentry.trace-ignore-status-codes[0]" to 404,
               "sentry.trace-ignore-status-codes[1]" to "500-599",
             ),
-          )
+          ),
         )
       }
       .run {
