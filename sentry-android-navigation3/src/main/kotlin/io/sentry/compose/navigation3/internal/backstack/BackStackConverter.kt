@@ -1,9 +1,12 @@
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.internal.backstack
 
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
-import io.sentry.compose.navigation3.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
-import io.sentry.compose.navigation3.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.BackStackEntryMapper
+import io.sentry.compose.navigation3.ForwardingBackStackEntryMapper
+import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
+import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.util.ExceptionUtils
 import java.util.IdentityHashMap
 

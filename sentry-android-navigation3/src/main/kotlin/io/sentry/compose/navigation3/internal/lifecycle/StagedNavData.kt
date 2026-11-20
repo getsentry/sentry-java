@@ -1,4 +1,4 @@
-package io.sentry.compose.navigation3.lifecycle
+package io.sentry.compose.navigation3.internal.lifecycle
 
 import io.sentry.IScope
 import io.sentry.PropagationContext
