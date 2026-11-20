@@ -75,7 +75,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
    * rather than by leaving and returning to the app.
    */
   private boolean isSessionOnScopeStale() {
-    // No session, or one that never recorded a start, leaves nothing to resume.
+    // No session, or one without a monotonic start, leaves nothing to resume.
     final @NotNull AtomicBoolean stale = new AtomicBoolean(true);
     scopes.configureScope(scope -> {
       final @Nullable Session session = scope.getSession();
