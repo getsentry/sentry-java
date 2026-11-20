@@ -9,22 +9,22 @@
 
 ### Features
 
-- Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
-- Nav3: Add `BackStackEntryMapper.SerialNameAndProperties`, which is like `SerialName` except that it also records the properties of each back stack entry as arguments ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+- Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
+- Nav3: Add `BackStackEntryMapper.SerialNameAndProperties`, which is like `SerialName` except that it also records the properties of each back stack entry as arguments ([#6706](https://github.com/getsentry/sentry-java/pull/6706))
 
 ### Behavioral Changes
 
-- Nav3: If a back stack entry's arguments contain a map with two keys that are recorded as the same string (e.g., `1` and `"1"`), Sentry now drops that entry's arguments and records `dropped_by_sentry: duplicate_key`, instead of keeping only one of the values ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+- Nav3: If a back stack entry's arguments contain a map with two keys that are recorded as the same string (e.g., `1` and `"1"`), Sentry now drops that entry's arguments and records `dropped_by_sentry: duplicate_key`, instead of keeping only one of the values ([#6701](https://github.com/getsentry/sentry-java/pull/6701))
 
 ### Fixes
 
-- Nav3: `NaN` and infinite numbers in back stack entry arguments are now sent as the strings `"NaN"`, `"Infinity"`, and `"-Infinity"`, instead of causing the event they're attached to be dropped ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+- Nav3: `NaN` and infinite numbers in back stack entry arguments are now sent as the strings `"NaN"`, `"Infinity"`, and `"-Infinity"`, instead of causing the event they're attached to be dropped ([#6700](https://github.com/getsentry/sentry-java/pull/6700))
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 
 ### Dependencies
 
-- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
 
 ## 8.65.0
 
