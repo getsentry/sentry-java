@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   id("com.android.library")
@@ -34,7 +33,6 @@ android {
 
 kotlin {
   compilerOptions.jvmTarget = JVM_11
-  compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
   explicitApi()
 }
 
