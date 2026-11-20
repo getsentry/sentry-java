@@ -184,7 +184,9 @@ public final class ScreenshotUtils {
           final boolean completed = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
           success = completed && copyResultCode.get() == PixelCopy.SUCCESS;
         } catch (Throwable e) {
-          // ignored
+          // PixelCopy reads the window's surface through the system compositor, so we can't know
+          // what it throws. No screenshot is attached.
+          ExceptionUtils.rethrowIfFatal(e);
           logger.log(SentryLevel.ERROR, "Taking screenshot using PixelCopy failed.", e);
         } finally {
           thread.quit();
@@ -207,6 +209,9 @@ public final class ScreenshotUtils {
             try {
               view.draw(canvas);
             } catch (Throwable e) {
+              // draw() runs the app's own views, so we can't know what it throws. No screenshot is
+              // attached.
+              ExceptionUtils.rethrowIfFatal(e);
               logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
             } finally {
               latch.countDown();
@@ -220,6 +225,9 @@ public final class ScreenshotUtils {
       }
       return bitmap;
     } catch (Throwable e) {
+      // On the main thread, draw() runs the app's own views, so we can't know what it throws. No
+      // screenshot is attached.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Taking screenshot failed.", e);
     }
     return null;
