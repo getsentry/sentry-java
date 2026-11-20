@@ -23,7 +23,7 @@ class HttpUtilsTest {
   }
 
   @Test
-  fun `filterQueryParams() - deny list matches sensitive names and configured terms regardless of case`() {
+  fun `query parameter deny list matches sensitive names and configured terms regardless of case`() {
     assertThat(
         HttpUtils.filterQueryParams(
           "name=value&ACCESS_TOKEN=secret&customerId=123",
@@ -45,7 +45,7 @@ class HttpUtilsTest {
   }
 
   @Test
-  fun `filterQueryParams() - allow list matches mixed-case terms but still filters sensitive names`() {
+  fun `query parameter allow list matches mixed-case terms but still filters sensitive names`() {
     assertThat(
         HttpUtils.filterQueryParams(
           "name=value&AcCeSs_ToKeN=secret&customerId=123",
@@ -115,7 +115,7 @@ class HttpUtilsTest {
   }
 
   @Test
-  fun `filterHeaders() - deny list matches sensitive names and configured terms regardless of case`() {
+  fun `header deny list matches sensitive names and configured terms regardless of case`() {
     val filtered =
       HttpUtils.filterHeaders(
         mapOf(
@@ -164,7 +164,7 @@ class HttpUtilsTest {
   }
 
   @Test
-  fun `filterHeaders() - allow list matches mixed-case terms but still filters sensitive names`() {
+  fun `header allow list matches mixed-case terms but still filters sensitive names`() {
     val filtered =
       HttpUtils.filterHeaders(
         mapOf(
@@ -187,12 +187,12 @@ class HttpUtilsTest {
   }
 
   @Test
-  fun `containsSensitiveDataKey() - rejects an empty key`() {
+  fun `sensitive data key check rejects an empty key`() {
     assertThat(HttpUtils.containsSensitiveDataKey("")).isFalse()
   }
 
   @Test
-  fun `containsSensitiveDataKey() - matches independently of the default locale`() {
+  fun `sensitive data key check matches independently of the default locale`() {
     val originalLocale = Locale.getDefault()
     try {
       Locale.setDefault(Locale("tr", "TR"))
@@ -205,24 +205,24 @@ class HttpUtilsTest {
   }
 
   @Test
-  fun `containsTerm() - matches substrings regardless of key and term case`() {
+  fun `configured term check matches substrings regardless of key and term case`() {
     assertThat(HttpUtils.containsTerm("X-CUSTOMER-ID", listOf("CuStOmEr"))).isTrue()
     assertThat(HttpUtils.containsTerm("X-CUSTOMER-ID", listOf("account"))).isFalse()
   }
 
   @Test
-  fun `containsTerm() - ignores null and empty terms`() {
+  fun `configured term check ignores null and empty terms`() {
     assertThat(HttpUtils.containsTerm("customerId", listOf(null, "", "CuStOmEr"))).isTrue()
     assertThat(HttpUtils.containsTerm("customerId", listOf(null, ""))).isFalse()
   }
 
   @Test
-  fun `containsTerm() - matches no keys when no terms are configured`() {
+  fun `configured term check matches no keys when no terms are configured`() {
     assertThat(HttpUtils.containsTerm("customerId", emptyList())).isFalse()
   }
 
   @Test
-  fun `containsTerm() - matches independently of the default locale`() {
+  fun `configured term check matches independently of the default locale`() {
     val originalLocale = Locale.getDefault()
     try {
       Locale.setDefault(Locale("tr", "TR"))
