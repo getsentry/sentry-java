@@ -279,6 +279,15 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
   }
 
+  /**
+   * Ends the previous session for an abnormal exit that is reported without an event, the same way
+   * that storing an event with this hint does.
+   */
+  @ApiStatus.Internal
+  public void endPreviousSessionAbnormally(final @NotNull AbnormalExit abnormalExit) {
+    tryEndPreviousSession(HintUtils.createWithTypeCheckHint(abnormalExit));
+  }
+
   private void writeCrashMarkerFile() {
     final File crashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
     try (final OutputStream outputStream = new FileOutputStream(crashMarkerFile)) {

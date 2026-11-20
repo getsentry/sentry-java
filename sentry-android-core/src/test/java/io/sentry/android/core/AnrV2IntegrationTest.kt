@@ -3,12 +3,19 @@ package io.sentry.android.core
 import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Hint
 import io.sentry.SentryEvent
+import io.sentry.SentryUUID
+import io.sentry.Session
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
+import io.sentry.android.core.anr.NonFatalAnrMarker
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.cache.EnvelopeCache
 import io.sentry.util.HintUtils
 import java.io.File
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -42,87 +49,99 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
           timestamp = { it.timestamp() },
         ),
       addExitInfo = { reason, timestamp, importance, addTrace, addBadTrace ->
-        val builder = ApplicationExitInfoBuilder.newBuilder()
-        reason?.let { builder.setReason(it) }
-        timestamp?.let { builder.setTimestamp(it) }
-        importance?.let { builder.setImportance(it) }
-        val exitInfo =
-          spy(builder.build()) {
-            if (!addTrace) {
-              return@spy
-            }
-            if (addBadTrace) {
-              whenever(mock.traceInputStream)
-                .thenReturn(
-                  """
-                  Subject: Input dispatching timed out (7985007 com.example.app/com.example.app.ui.MainActivity (server) is not responding. Waited 5000ms for FocusEvent(hasFocus=false))
-                  Here are no Binder-related exception messages available.
-                  Pid(12233) have D state thread(tid:12236 name:Signal Catcher)
-
-
-                  RssHwmKb: 823716
-                  RssKb: 548348
-                  RssAnonKb: 382156
-                  RssShmemKb: 13304
-                  VmSwapKb: 82484
-
-
-                  --- CriticalEventLog ---
-                  capacity: 20
-                  timestamp_ms: 1731507490032
-                  window_ms: 300000
-
-                  ----- dumping pid: 12233 at 313446151
-                  libdebuggerd_client: unexpected registration response: 0
-
-                  ----- Waiting Channels: pid 12233 at 2024-11-13 19:48:09.980104540+0530 -----
-                  Cmd line: com.example.app:mainProcess
-                  """
-                    .trimIndent()
-                    .byteInputStream(),
-                )
-            } else {
-              whenever(mock.traceInputStream)
-                .thenReturn(
-                  """
-                  "main" prio=5 tid=1 Blocked
-                    | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
-                    | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
-                    | state=S schedstat=( 324804784 183300334 997 ) utm=23 stm=8 core=3 HZ=100
-                    | stack=0x7ff93a9000-0x7ff93ab000 stackSize=8188KB
-                    | held mutexes=
-                    at io.sentry.samples.android.MainActivity${'$'}2.run(MainActivity.java:177)
-                    - waiting to lock <0x0d3a2f0a> (a java.lang.Object) held by thread 5
-                    at android.os.Handler.handleCallback(Handler.java:942)
-                    at android.os.Handler.dispatchMessage(Handler.java:99)
-                    at android.os.Looper.loopOnce(Looper.java:201)
-                    at android.os.Looper.loop(Looper.java:288)
-                    at android.app.ActivityThread.main(ActivityThread.java:7872)
-                    at java.lang.reflect.Method.invoke(Native method)
-                    at com.android.internal.os.RuntimeInit${'$'}MethodAndArgsCaller.run(RuntimeInit.java:548)
-                    at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
-
-                  "perfetto_hprof_listener" prio=10 tid=7 Native (still starting up)
-                    | group="" sCount=1 ucsCount=0 flags=1 obj=0x0 self=0xb400007cabc5ab20
-                    | sysTid=28959 nice=-20 cgrp=top-app sched=0/0 handle=0x7b2021bcb0
-                    | state=S schedstat=( 72750 1679167 1 ) utm=0 stm=0 core=3 HZ=100
-                    | stack=0x7b20124000-0x7b20126000 stackSize=991KB
-                    | held mutexes=
-                    native: #00 pc 00000000000a20f4  /apex/com.android.runtime/lib64/bionic/libc.so (read+4) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
-                    native: #01 pc 000000000001d840  /apex/com.android.art/lib64/libperfetto_hprof.so (void* std::__1::__thread_proxy<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct> >, ArtPlugin_Initialize::${'$'}_34> >(void*)+260) (BuildId: 525cc92a7dc49130157aeb74f6870364)
-                    native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
-                    native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
-                    (no managed stack frames)
-                  """
-                    .trimIndent()
-                    .byteInputStream(),
-                )
-            }
-          }
-        shadowActivityManager.addApplicationExitInfo(exitInfo)
+        addAnrExitInfo(reason, timestamp, importance, null, addTrace, addBadTrace)
       },
       flushLogPrefix = "Timed out waiting to flush %s event to disk.",
     )
+
+  private fun ApplicationExitTestFixture<AnrV2Hint>.addAnrExitInfo(
+    reason: Int? = ApplicationExitInfo.REASON_ANR,
+    timestamp: Long? = null,
+    importance: Int? = null,
+    pid: Int? = null,
+    addTrace: Boolean = true,
+    addBadTrace: Boolean = false,
+  ) {
+    val builder = ApplicationExitInfoBuilder.newBuilder()
+    reason?.let { builder.setReason(it) }
+    timestamp?.let { builder.setTimestamp(it) }
+    importance?.let { builder.setImportance(it) }
+    pid?.let { builder.setPid(it) }
+    val exitInfo =
+      spy(builder.build()) {
+        if (!addTrace) {
+          return@spy
+        }
+        if (addBadTrace) {
+          whenever(mock.traceInputStream)
+            .thenReturn(
+              """
+              Subject: Input dispatching timed out (7985007 com.example.app/com.example.app.ui.MainActivity (server) is not responding. Waited 5000ms for FocusEvent(hasFocus=false))
+              Here are no Binder-related exception messages available.
+              Pid(12233) have D state thread(tid:12236 name:Signal Catcher)
+
+
+              RssHwmKb: 823716
+              RssKb: 548348
+              RssAnonKb: 382156
+              RssShmemKb: 13304
+              VmSwapKb: 82484
+
+
+              --- CriticalEventLog ---
+              capacity: 20
+              timestamp_ms: 1731507490032
+              window_ms: 300000
+
+              ----- dumping pid: 12233 at 313446151
+              libdebuggerd_client: unexpected registration response: 0
+
+              ----- Waiting Channels: pid 12233 at 2024-11-13 19:48:09.980104540+0530 -----
+              Cmd line: com.example.app:mainProcess
+              """
+                .trimIndent()
+                .byteInputStream(),
+            )
+        } else {
+          whenever(mock.traceInputStream)
+            .thenReturn(
+              """
+              "main" prio=5 tid=1 Blocked
+                | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
+                | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+                | state=S schedstat=( 324804784 183300334 997 ) utm=23 stm=8 core=3 HZ=100
+                | stack=0x7ff93a9000-0x7ff93ab000 stackSize=8188KB
+                | held mutexes=
+                at io.sentry.samples.android.MainActivity${'$'}2.run(MainActivity.java:177)
+                - waiting to lock <0x0d3a2f0a> (a java.lang.Object) held by thread 5
+                at android.os.Handler.handleCallback(Handler.java:942)
+                at android.os.Handler.dispatchMessage(Handler.java:99)
+                at android.os.Looper.loopOnce(Looper.java:201)
+                at android.os.Looper.loop(Looper.java:288)
+                at android.app.ActivityThread.main(ActivityThread.java:7872)
+                at java.lang.reflect.Method.invoke(Native method)
+                at com.android.internal.os.RuntimeInit${'$'}MethodAndArgsCaller.run(RuntimeInit.java:548)
+                at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
+
+              "perfetto_hprof_listener" prio=10 tid=7 Native (still starting up)
+                | group="" sCount=1 ucsCount=0 flags=1 obj=0x0 self=0xb400007cabc5ab20
+                | sysTid=28959 nice=-20 cgrp=top-app sched=0/0 handle=0x7b2021bcb0
+                | state=S schedstat=( 72750 1679167 1 ) utm=0 stm=0 core=3 HZ=100
+                | stack=0x7b20124000-0x7b20126000 stackSize=991KB
+                | held mutexes=
+                native: #00 pc 00000000000a20f4  /apex/com.android.runtime/lib64/bionic/libc.so (read+4) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+                native: #01 pc 000000000001d840  /apex/com.android.art/lib64/libperfetto_hprof.so (void* std::__1::__thread_proxy<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct> >, ArtPlugin_Initialize::${'$'}_34> >(void*)+260) (BuildId: 525cc92a7dc49130157aeb74f6870364)
+                native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+                native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+                (no managed stack frames)
+              """
+                .trimIndent()
+                .byteInputStream(),
+            )
+        }
+      }
+    shadowActivityManager.addApplicationExitInfo(exitInfo)
+  }
 
   override fun assertEnrichedEvent(event: SentryEvent) {
     val mainThread = event.threads!!.first()
@@ -245,5 +264,121 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
     integration.register(fixture.scopes, fixture.options)
 
     verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `matching marker suppresses fatal event and ends session abnormal`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    val previousSessionFile = writePreviousSession(startedAt = newTimestamp - 60_000)
+    NonFatalAnrMarker.write(fixture.options, PID, newTimestamp - 8_000, newTimestamp - 3_000)
+    fixture.addAnrExitInfo(
+      timestamp = newTimestamp,
+      importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+      pid = PID,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
+    val session =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(session.status).isEqualTo(Session.State.Abnormal)
+    assertThat(session.abnormalMechanism).isEqualTo("anr_foreground")
+    assertThat(session.timestamp!!.time).isEqualTo(newTimestamp)
+    assertThat(fixture.lastReportedFile.readText()).isEqualTo(newTimestamp.toString())
+  }
+
+  @Test
+  fun `marker with other pid does not suppress`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    NonFatalAnrMarker.write(fixture.options, PID + 1, newTimestamp - 8_000, newTimestamp - 3_000)
+    fixture.addAnrExitInfo(timestamp = newTimestamp, pid = PID)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `marker outside time threshold does not suppress`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    NonFatalAnrMarker.write(fixture.options, PID, newTimestamp - 38_001, newTimestamp - 30_001)
+    fixture.addAnrExitInfo(timestamp = newTimestamp, pid = PID)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `marker is deleted after the check`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    NonFatalAnrMarker.write(fixture.options, PID + 1, newTimestamp - 8_000, newTimestamp - 3_000)
+    fixture.addAnrExitInfo(timestamp = newTimestamp, pid = PID)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    assertThat(NonFatalAnrMarker.read(fixture.options)).isNull()
+  }
+
+  @Test
+  fun `marker is deleted when there is no ANR exit to check`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    NonFatalAnrMarker.write(fixture.options, PID, newTimestamp - 8_000, newTimestamp - 3_000)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    assertThat(NonFatalAnrMarker.read(fixture.options)).isNull()
+  }
+
+  @Test
+  fun `historical ANRs are not affected`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    val historicalTimestamp = newTimestamp - TimeUnit.DAYS.toMillis(1)
+    NonFatalAnrMarker.write(
+      fixture.options,
+      PID,
+      historicalTimestamp - 8_000,
+      historicalTimestamp - 3_000,
+    )
+    fixture.addAnrExitInfo(timestamp = historicalTimestamp, pid = PID)
+    fixture.addAnrExitInfo(timestamp = newTimestamp, pid = PID + 1)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(argThat { timestamp.time == historicalTimestamp }, anyOrNull<Hint>())
+    verify(fixture.scopes)
+      .captureEvent(argThat { timestamp.time == newTimestamp }, anyOrNull<Hint>())
+  }
+
+  private fun writePreviousSession(startedAt: Long): File {
+    val file = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val session =
+      Session(
+        Session.State.Ok,
+        Date(startedAt),
+        Date(startedAt),
+        0,
+        "did",
+        SentryUUID.generateSentryId(),
+        true,
+        null,
+        null,
+        null,
+        null,
+        "env",
+        "rel",
+        null,
+      )
+    file.bufferedWriter().use { fixture.options.serializer.serialize(session, it) }
+    return file
+  }
+
+  private companion object {
+    const val PID = 1234
   }
 }
