@@ -7,6 +7,10 @@
 
 ## 8.65.1
 
+### Dependencies
+
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+
 ### Fixes
 
 - Prevent Logback, Log4j2, and JUL log arguments containing percent format sequences from being formatted a second time, which could corrupt messages or exhaust memory ([#6737](https://github.com/getsentry/sentry-java/pull/6737))
