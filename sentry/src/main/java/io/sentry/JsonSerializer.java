@@ -3,6 +3,9 @@ package io.sentry;
 import io.sentry.clientreport.ClientReport;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
+import io.sentry.protocol.AnrFlameGraph;
+import io.sentry.protocol.AnrFlameGraphNode;
+import io.sentry.protocol.AnrFlameGraphTree;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Browser;
 import io.sentry.protocol.Contexts;
@@ -147,6 +150,9 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
     deserializersByClass.put(ViewHierarchyNode.class, new ViewHierarchyNode.Deserializer());
     deserializersByClass.put(ViewHierarchy.class, new ViewHierarchy.Deserializer());
+    deserializersByClass.put(AnrFlameGraph.class, new AnrFlameGraph.Deserializer());
+    deserializersByClass.put(AnrFlameGraphNode.class, new AnrFlameGraphNode.Deserializer());
+    deserializersByClass.put(AnrFlameGraphTree.class, new AnrFlameGraphTree.Deserializer());
   }
 
   // Deserialize
