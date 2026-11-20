@@ -27,9 +27,24 @@ class KotlinxCompatibilityProbeTest {
 
   @Test
   fun `encoderIncompatibility() - returns null for a compatible kotlinx serialization version`() {
+    // A compatible version encodes the probe fixture to its expected output, so the probe's output
+    // verification matches and it reports no incompatibility.
     val error = KotlinxCompatibilityProbe.encoderIncompatibility()
 
     assertThat(error).isNull()
+  }
+
+  @Test
+  fun `EncoderProducedUnexpectedOutput is a RuntimeException with a message that leaks no route data`() {
+    val error = EncoderProducedUnexpectedOutput()
+
+    assertThat(error).isInstanceOf(RuntimeException::class.java)
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "The kotlinx.serialization properties encoder produced unexpected output for a known " +
+          "fixture.",
+      )
   }
 
   // Probe types

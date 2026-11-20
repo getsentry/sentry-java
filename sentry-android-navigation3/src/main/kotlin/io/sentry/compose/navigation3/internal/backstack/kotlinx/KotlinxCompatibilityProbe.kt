@@ -45,14 +45,15 @@ internal interface KotlinxCompatibilityProbe {
   fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError?
 
   /**
-   * Encodes [ProbeClass] using the same path as [KotlinxBackStackEntryMapper] and checks that it
-   * links and runs.
+   * Encodes [ProbeClass] using the same path as [KotlinxBackStackEntryMapper], checks that it links
+   * and runs, and verifies its output matches the known fixture.
    *
-   * Returns the error that makes the properties encoder unusable, or `null` if encoding succeeds.
-   * Unlike [nameLookupLinkageError], any failure is conclusive: an incompatible
+   * Returns the error that makes the properties encoder unusable, or `null` if encoding succeeds
+   * and matches. Unlike [nameLookupLinkageError], any failure is conclusive: an incompatible
    * kotlinx.serialization version can fail the encoder without a [LinkageError] (for instance, an
-   * API-incompatible encoder can throw a [NullPointerException] under R8), and the caller disables
-   * property encoding on any failure here rather than risk recording wrong arguments.
+   * API-incompatible encoder can throw a [NullPointerException] under R8) or mis-encode without
+   * throwing at all, and the caller disables property encoding on any failure here rather than risk
+   * recording wrong arguments.
    */
   fun encoderIncompatibility(): Throwable?
 
@@ -87,18 +88,25 @@ internal interface KotlinxCompatibilityProbe {
 
     override fun encoderIncompatibility(): Throwable? =
       try {
+        val writer = TreeArgumentWriter(ArgumentBudget())
         @Suppress("UNCHECKED_CAST")
         KotlinxPropertiesEncoder.encode(
           ProbeClass.serializer() as KSerializer<Any>,
           ProbeClass(),
-          TreeArgumentWriter(ArgumentBudget()),
+          writer,
         )
-        null
+        // An incompatible kotlinx.serialization version can link and run yet mis-encode properties
+        // under R8 without throwing. Verifying the fixture's output disables such a silently
+        // corrupting encoder instead of letting wrong arguments reach Sentry.
+        if (writer.argumentsOrThrow() == EXPECTED_PROBE_ENCODING) {
+          null
+        } else {
+          EncoderProducedUnexpectedOutput()
+        }
       } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
-        // Broad because an incompatible kotlinx.serialization version can fail the encoder in any
-        // way, not only with a LinkageError. Any failure disables property encoding and keeps
-        // names,
-        // as recording wrong arguments would be worse than recording none.
+        // Broad because an incompatible kotlinx.serialization version can fail the encoder in many
+        // ways, not only with a LinkageError. Any failure disables property encoding but keeps
+        // names, as recording wrong arguments would be worse than recording none.
         ExceptionUtils.rethrowIfFatal(t)
         t
       }
@@ -148,5 +156,23 @@ internal interface KotlinxCompatibilityProbe {
      * back stack entries. This lookup reads the object's singleton instance.
      */
     @Serializable internal object ProbeObject
+
+    /**
+     * [ProbeClass]'s expected encoding. A kotlinx.serialization version that encodes it to anything
+     * else mis-encodes properties and must not be used. None of the keys are on the sensitive
+     * denylist, so none are filtered.
+     */
+    private val EXPECTED_PROBE_ENCODING: Map<String, Any?> =
+      mapOf("name" to "probe", "values" to listOf(1), "counts" to mapOf("count" to 1))
   }
 }
+
+/**
+ * Signals that the properties encoder ran but produced output that didn't match the SDK's own
+ * `ProbeClass` fixture, so the app's kotlinx.serialization version mis-encodes properties. Carries
+ * only a fixed message, never route data: the fixture is the SDK's own.
+ */
+internal class EncoderProducedUnexpectedOutput :
+  RuntimeException(
+    "The kotlinx.serialization properties encoder produced unexpected output for a known fixture.",
+  )

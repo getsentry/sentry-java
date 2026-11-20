@@ -266,6 +266,34 @@ class KotlinxBackStackEntryMapperProbeTest {
     assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
   }
 
+  @Test
+  fun `keeps the name and records only the encoding failure when the encoder produces unexpected output`() {
+    val probe = FakeCompatibilityProbe(encoderError = EncoderProducedUnexpectedOutput())
+    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
+    val mapper = fixture.mapper
+
+    val mapped = mapper.map(Detail("1"))
+
+    assertThat(mapped)
+      .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
+  }
+
+  @Test
+  fun `logs a warning with the mismatch error and compatibility advice when the encoder produces unexpected output`() {
+    val error = EncoderProducedUnexpectedOutput()
+    val probe = FakeCompatibilityProbe(encoderError = error)
+    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
+
+    val message = argumentCaptor<String>()
+    verify(fixture.logger, times(1)).log(eq(SentryLevel.WARNING), message.capture(), eq(error))
+    assertThat(message.firstValue)
+      .startsWith(
+        "Nav3 SerialNameAndProperties is incompatible with this app's kotlinx.serialization " +
+          "version.",
+      )
+    assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
+  }
+
   private companion object {
     const val NAME_LOOKUP_CAPABILITY = "name lookups"
 
