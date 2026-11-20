@@ -141,6 +141,11 @@ public final class io/sentry/android/core/AndroidProfiler$ProfileStartData {
 	public fun <init> (JJLjava/util/Date;)V
 }
 
+public final class io/sentry/android/core/AndroidRuntimeStatsSource : io/sentry/android/core/hang/RuntimeStatsSource {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun read ()Lio/sentry/android/core/hang/RuntimeStatsSnapshot;
+}
+
 public final class io/sentry/android/core/AndroidSocketTagger : io/sentry/ISocketTagger {
 	public static fun getInstance ()Lio/sentry/android/core/AndroidSocketTagger;
 	public fun tagSockets ()V
@@ -861,6 +866,7 @@ public final class io/sentry/android/core/hang/HangInterval {
 
 public final class io/sentry/android/core/hang/HangRecord {
 	public fun getDurationMs ()J
+	public fun getRuntimeStats ()Ljava/util/Map;
 	public fun getSamples ()Ljava/util/List;
 	public fun getStartTimestampMs ()J
 	public fun hasEndedAtMaxRecordingTime ()Z
@@ -870,6 +876,7 @@ public final class io/sentry/android/core/hang/HangRecord$Builder {
 	public fun <init> (JJ)V
 	public fun build ()Lio/sentry/android/core/hang/HangRecord;
 	public fun setEndedAtMaxRecordingTime (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
+	public fun setRuntimeStats (Ljava/util/Map;)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setSamples (Ljava/util/List;)Lio/sentry/android/core/hang/HangRecord$Builder;
 }
 
@@ -925,6 +932,47 @@ public abstract interface class io/sentry/android/core/hang/Metronome {
 
 public abstract interface class io/sentry/android/core/hang/Metronome$TickListener {
 	public abstract fun onMetronomeTick (J)V
+}
+
+public final class io/sentry/android/core/hang/RuntimeStatsCollector : io/sentry/android/core/hang/HangDataCollector {
+	public static final field KEY_BLOCKING_GC_COUNT Ljava/lang/String;
+	public static final field KEY_BLOCKING_GC_COUNT_DELTA Ljava/lang/String;
+	public static final field KEY_BLOCKING_GC_TIME_MS Ljava/lang/String;
+	public static final field KEY_BLOCKING_GC_TIME_MS_DELTA Ljava/lang/String;
+	public static final field KEY_FREE_MEMORY Ljava/lang/String;
+	public static final field KEY_FREE_MEMORY_UNTIL_OOME Ljava/lang/String;
+	public static final field KEY_GC_COUNT Ljava/lang/String;
+	public static final field KEY_GC_COUNT_DELTA Ljava/lang/String;
+	public static final field KEY_GC_TIME_MS Ljava/lang/String;
+	public static final field KEY_GC_TIME_MS_DELTA Ljava/lang/String;
+	public static final field KEY_GC_WAITING_TIME_MS Ljava/lang/String;
+	public static final field KEY_MAX_MEMORY Ljava/lang/String;
+	public static final field KEY_PRE_OOME_GC_COUNT Ljava/lang/String;
+	public static final field KEY_TOTAL_MEMORY Ljava/lang/String;
+	public fun <init> (Lio/sentry/android/core/hang/RuntimeStatsSource;)V
+	public fun close ()V
+	public fun onRecordingCanceled ()V
+	public fun onRecordingStarted (Lio/sentry/android/core/hang/HangInterval;)V
+	public fun onRecordingStopped (Lio/sentry/android/core/hang/HangInterval;Lio/sentry/android/core/hang/HangRecord$Builder;)V
+	public fun onSample (Lio/sentry/android/core/hang/HangInterval;)V
+}
+
+public final class io/sentry/android/core/hang/RuntimeStatsSnapshot {
+	public field blockingGcCount Ljava/lang/Long;
+	public field blockingGcTimeMs Ljava/lang/Double;
+	public field freeMemory Ljava/lang/Long;
+	public field freeMemoryUntilOome Ljava/lang/Long;
+	public field gcCount Ljava/lang/Long;
+	public field gcTimeMs Ljava/lang/Double;
+	public field gcWaitingTimeMs Ljava/lang/Double;
+	public field maxMemory Ljava/lang/Long;
+	public field preOomeGcCount Ljava/lang/Long;
+	public field totalMemory Ljava/lang/Long;
+	public fun <init> ()V
+}
+
+public abstract interface class io/sentry/android/core/hang/RuntimeStatsSource {
+	public abstract fun read ()Lio/sentry/android/core/hang/RuntimeStatsSnapshot;
 }
 
 public final class io/sentry/android/core/hang/ThreadHangSignal : io/sentry/android/core/hang/HangSignal, io/sentry/android/core/hang/Metronome$TickListener {

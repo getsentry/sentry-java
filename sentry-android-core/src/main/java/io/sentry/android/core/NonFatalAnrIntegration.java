@@ -22,7 +22,9 @@ import io.sentry.android.core.anr.NonFatalAnrMarker;
 import io.sentry.android.core.hang.HangRecord;
 import io.sentry.android.core.hang.HangRecorder;
 import io.sentry.android.core.hang.HangRecorderListener;
+import io.sentry.android.core.hang.RuntimeStatsCollector;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
+import io.sentry.protocol.ArtContext;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryThread;
@@ -183,6 +185,14 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       final @NotNull Map<String, Object> context = new HashMap<>();
       context.put("duration_ms", record.getDurationMs());
       context.put("sample_count", samples.size());
+      final @Nullable Map<String, Object> runtimeStats = record.getRuntimeStats();
+      if (runtimeStats != null) {
+        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_GC_COUNT_DELTA);
+        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_GC_TIME_MS_DELTA);
+        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT_DELTA);
+        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS_DELTA);
+        event.getContexts().setArt(toArtContext(runtimeStats));
+      }
       event.getContexts().put("non_fatal_anr", context);
 
       if (event.getFingerprints() == null) {
@@ -194,6 +204,40 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
         }
       }
       return event;
+    }
+
+    private static void putDelta(
+        final @NotNull Map<String, Object> context,
+        final @NotNull Map<String, Object> runtimeStats,
+        final @NotNull String key) {
+      final @Nullable Object value = runtimeStats.get(key);
+      if (value != null) {
+        context.put(key, value);
+      }
+    }
+
+    private static @NotNull ArtContext toArtContext(final @NotNull Map<String, Object> stats) {
+      final @NotNull ArtContext art = new ArtContext();
+      art.setGcTotalCount(asLong(stats.get(RuntimeStatsCollector.KEY_GC_COUNT)));
+      art.setGcTotalTime(asDouble(stats.get(RuntimeStatsCollector.KEY_GC_TIME_MS)));
+      art.setGcBlockingCount(asLong(stats.get(RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT)));
+      art.setGcBlockingTime(asDouble(stats.get(RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS)));
+      art.setGcPreOomeCount(asLong(stats.get(RuntimeStatsCollector.KEY_PRE_OOME_GC_COUNT)));
+      art.setGcWaitingTime(asDouble(stats.get(RuntimeStatsCollector.KEY_GC_WAITING_TIME_MS)));
+      art.setFreeMemory(asLong(stats.get(RuntimeStatsCollector.KEY_FREE_MEMORY)));
+      art.setFreeMemoryUntilOome(
+          asLong(stats.get(RuntimeStatsCollector.KEY_FREE_MEMORY_UNTIL_OOME)));
+      art.setTotalMemory(asLong(stats.get(RuntimeStatsCollector.KEY_TOTAL_MEMORY)));
+      art.setMaxMemory(asLong(stats.get(RuntimeStatsCollector.KEY_MAX_MEMORY)));
+      return art;
+    }
+
+    private static @Nullable Long asLong(final @Nullable Object value) {
+      return value instanceof Number ? ((Number) value).longValue() : null;
+    }
+
+    private static @Nullable Double asDouble(final @Nullable Object value) {
+      return value instanceof Number ? ((Number) value).doubleValue() : null;
     }
 
     private static @NotNull SentryThread mainThread(

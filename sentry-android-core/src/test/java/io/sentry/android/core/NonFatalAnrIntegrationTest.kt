@@ -14,6 +14,7 @@ import io.sentry.android.core.anr.NonFatalAnrMarker
 import io.sentry.android.core.hang.HangRecord
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangRecorderListener
+import io.sentry.android.core.hang.RuntimeStatsCollector
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.hints.AbnormalExit
 import io.sentry.protocol.SentryId
@@ -74,7 +75,9 @@ class NonFatalAnrIntegrationTest {
         AnrStackTrace(1_100, systemStack, Thread.State.RUNNABLE),
         AnrStackTrace(1_200, systemStack, Thread.State.BLOCKED),
       ),
-  ) = HangRecord.Builder(durationMs, 1_000).setSamples(samples).build()
+    runtimeStats: Map<String, Any>? = null,
+  ) =
+    HangRecord.Builder(durationMs, 1_000).setSamples(samples).setRuntimeStats(runtimeStats).build()
 
   private fun subscribed(): HangRecorderListener {
     val integration = NonFatalAnrIntegration()
@@ -382,6 +385,69 @@ class NonFatalAnrIntegrationTest {
     val context = event.contexts["non_fatal_anr"] as Map<*, *>
     assertThat(context["duration_ms"]).isEqualTo(1_000L)
     assertThat(context["sample_count"]).isEqualTo(2)
+  }
+
+  private val runtimeStats =
+    mapOf<String, Any>(
+      RuntimeStatsCollector.KEY_GC_COUNT to 14L,
+      RuntimeStatsCollector.KEY_GC_TIME_MS to 130.5,
+      RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT to 3L,
+      RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS to 45.0,
+      RuntimeStatsCollector.KEY_PRE_OOME_GC_COUNT to 1L,
+      RuntimeStatsCollector.KEY_GC_WAITING_TIME_MS to 2.5,
+      RuntimeStatsCollector.KEY_FREE_MEMORY to 10L,
+      RuntimeStatsCollector.KEY_FREE_MEMORY_UNTIL_OOME to 60L,
+      RuntimeStatsCollector.KEY_TOTAL_MEMORY to 50L,
+      RuntimeStatsCollector.KEY_MAX_MEMORY to 100L,
+      RuntimeStatsCollector.KEY_GC_COUNT_DELTA to 4L,
+      RuntimeStatsCollector.KEY_GC_TIME_MS_DELTA to 30.5,
+      RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT_DELTA to 1L,
+      RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS_DELTA to 25.0,
+    )
+
+  @Test
+  fun `runtime stats fill the art context`() {
+    val listener = subscribed()
+
+    listener.onHangRecorded(record(runtimeStats = runtimeStats))
+
+    val art = capturedEvent().first.contexts.art!!
+    assertThat(art.gcTotalCount).isEqualTo(14L)
+    assertThat(art.gcTotalTime).isEqualTo(130.5)
+    assertThat(art.gcBlockingCount).isEqualTo(3L)
+    assertThat(art.gcBlockingTime).isEqualTo(45.0)
+    assertThat(art.gcPreOomeCount).isEqualTo(1L)
+    assertThat(art.gcWaitingTime).isEqualTo(2.5)
+    assertThat(art.freeMemory).isEqualTo(10L)
+    assertThat(art.freeMemoryUntilGc).isNull()
+    assertThat(art.freeMemoryUntilOome).isEqualTo(60L)
+    assertThat(art.totalMemory).isEqualTo(50L)
+    assertThat(art.maxMemory).isEqualTo(100L)
+  }
+
+  @Test
+  fun `runtime stats add the gc deltas to the context`() {
+    val listener = subscribed()
+
+    listener.onHangRecorded(record(runtimeStats = runtimeStats))
+
+    val context = capturedEvent().first.contexts["non_fatal_anr"] as Map<*, *>
+    assertThat(context["gc_count_delta"]).isEqualTo(4L)
+    assertThat(context["gc_time_ms_delta"]).isEqualTo(30.5)
+    assertThat(context["blocking_gc_count_delta"]).isEqualTo(1L)
+    assertThat(context["blocking_gc_time_ms_delta"]).isEqualTo(25.0)
+  }
+
+  @Test
+  fun `no runtime stats sets no art context and no deltas`() {
+    val listener = subscribed()
+
+    listener.onHangRecorded(record())
+
+    val event = capturedEvent().first
+    assertThat(event.contexts.art).isNull()
+    val context = event.contexts["non_fatal_anr"] as Map<*, *>
+    assertThat(context.keys).containsExactly("duration_ms", "sample_count")
   }
 
   @Test

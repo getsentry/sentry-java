@@ -27,6 +27,7 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.hang.HangDataCollector
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangSignal
+import io.sentry.android.core.hang.RuntimeStatsCollector
 import io.sentry.android.core.hang.ThreadHangSignal
 import io.sentry.android.core.hang.ThreadSampleCollector
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
@@ -87,6 +88,7 @@ class AndroidOptionsInitializerTest {
       configureOptions: SentryAndroidOptions.() -> Unit = {},
       configureContext: Context.() -> Unit = {},
       assets: AssetManager? = null,
+      buildInfoProvider: BuildInfoProvider = BuildInfoProvider(AndroidLogger()),
     ) {
       sentryOptions.executorService = ImmediateExecutorService()
       mockContext =
@@ -128,6 +130,7 @@ class AndroidOptionsInitializerTest {
       AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
         sentryOptions,
         if (useRealContext) context else mockContext,
+        buildInfoProvider,
         loadClass,
         activityFramesTracker,
         false,
@@ -712,6 +715,48 @@ class AndroidOptionsInitializerTest {
       .isSameInstanceAs(HangRecorder.DEFAULT_EXECUTOR_FACTORY)
   }
 
+  @Config(sdk = [Build.VERSION_CODES.N])
+  @Test
+  fun `runtime stats source is created on API 23 and above`() {
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
+
+    assertThat(AndroidOptionsInitializer.createRuntimeStatsSource(buildInfo, mock()))
+      .isInstanceOf(AndroidRuntimeStatsSource::class.java)
+  }
+
+  @Config(sdk = [Build.VERSION_CODES.N])
+  @Test
+  fun `HangRecorder collects runtime stats on API 23 and above`() {
+    fixture.initSut()
+
+    val collectors =
+      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangDataCollector>>("collectors")
+    assertThat(collectors.map { it.javaClass })
+      .containsExactly(ThreadSampleCollector::class.java, RuntimeStatsCollector::class.java)
+      .inOrder()
+  }
+
+  @Test
+  fun `HangRecorder collects no runtime stats below API 23`() {
+    val buildInfo = spy(BuildInfoProvider(AndroidLogger()))
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
+
+    fixture.initSut(buildInfoProvider = buildInfo)
+
+    val collectors =
+      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangDataCollector>>("collectors")
+    assertThat(collectors.map { it.javaClass }).containsExactly(ThreadSampleCollector::class.java)
+  }
+
+  @Test
+  fun `runtime stats source is not created below API 23`() {
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
+
+    assertThat(AndroidOptionsInitializer.createRuntimeStatsSource(buildInfo, mock())).isNull()
+  }
+
   @Test
   fun `HangRecorder signal is a ThreadHangSignal with the AndroidDebugManager`() {
     fixture.initSut()
@@ -747,7 +792,7 @@ class AndroidOptionsInitializerTest {
     val collector =
       fixture.sentryOptions.hangRecorder!!
         .getProperty<List<HangDataCollector>>("collectors")
-        .single()
+        .first()
     assertThat(collector).isInstanceOf(ThreadSampleCollector::class.java)
     assertThat(collector.getProperty<Any>("epochClock"))
       .isSameInstanceAs(fixture.sentryOptions.epochClock)
