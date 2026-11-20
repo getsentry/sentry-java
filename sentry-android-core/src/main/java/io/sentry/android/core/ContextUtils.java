@@ -535,16 +535,12 @@ public final class ContextUtils {
     app.setPermissions(permissions);
 
     if (deviceInfoUtil != null) {
-      try {
-        final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.getSplitApksInfo();
-        if (splitApksInfo != null) {
-          app.setSplitApks(splitApksInfo.isSplitApks());
-          if (splitApksInfo.getSplitNames() != null) {
-            app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
-          }
+      final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.getSplitApksInfo();
+      if (splitApksInfo != null) {
+        app.setSplitApks(splitApksInfo.isSplitApks());
+        if (splitApksInfo.getSplitNames() != null) {
+          app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
         }
-      } catch (Throwable e) {
-        // Split APK info is optional, the app context is still complete without it.
       }
     }
   }

@@ -59,12 +59,8 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       return;
     }
 
-    try {
-      for (final SentryEnvelopeItem item : envelope.getItems()) {
-        recordLostEnvelopeItem(reason, item);
-      }
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope.");
+    for (final SentryEnvelopeItem item : envelope.getItems()) {
+      recordLostEnvelopeItem(reason, item);
     }
   }
 
@@ -141,12 +137,8 @@ public final class ClientReportRecorder implements IClientReportRecorder {
   @Override
   public void recordLostEvent(
       @NotNull DiscardReason reason, @NotNull DataCategory category, long count) {
-    try {
-      recordLostEventInternal(reason.getReason(), category.getCategory(), count);
-      executeOnDiscard(reason, category, count);
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost event.");
-    }
+    recordLostEventInternal(reason.getReason(), category.getCategory(), count);
+    executeOnDiscard(reason, category, count);
   }
 
   private void executeOnDiscard(
