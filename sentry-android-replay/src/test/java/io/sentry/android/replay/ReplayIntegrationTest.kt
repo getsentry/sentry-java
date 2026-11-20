@@ -1505,10 +1505,7 @@ class ReplayIntegrationTest {
           BufferCaptureStrategy(
             fixture.options,
             fixture.scopes,
-            // make time jump so session strategy will immediately cut a segment on next frame
-            ICurrentDateProvider {
-              System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
-            },
+            CurrentDateProvider.getInstance(),
             fixture.options.monotonicTicker,
             // run tasks synchronously in tests
             mock {
