@@ -20,7 +20,15 @@ plugins {
 
 // Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
 // Creating extra build types to run tests against the latest stable, and latest preview version.
-val composeUiTestVersions = mapOf("composeUi112" to "1.12.1", "composeUi113" to "1.13.0-rc01")
+// These are heavy Robolectric runs, so they stay out of `check` and only exist when the
+// composeUiTestMatrix property is set. CI runs them in their own job:
+// ./gradlew :sentry-android-replay:testComposeUiMatrix -PcomposeUiTestMatrix
+val composeUiTestVersions =
+  if (providers.gradleProperty("composeUiTestMatrix").isPresent) {
+    mapOf("composeUi112" to "1.12.1", "composeUi113" to "1.13.0-rc01")
+  } else {
+    emptyMap()
+  }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -125,6 +133,16 @@ composeUiTestVersions.forEach { (buildType, version) ->
         if (requested.group == "androidx.compose.ui") useVersion(version)
       }
     }
+}
+
+if (composeUiTestVersions.isNotEmpty()) {
+  tasks.register("testComposeUiMatrix") {
+    group = "verification"
+    description = "Runs the unit tests against each Compose UI version in composeUiTestVersions."
+    dependsOn(
+      composeUiTestVersions.keys.map { "test${it.replaceFirstChar(Char::uppercase)}UnitTest" },
+    )
+  }
 }
 
 tasks.withType<Detekt>().configureEach {
