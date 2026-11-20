@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- Send outbox attachments together with their event or transaction so parent filtering also drops its attachments. Grouped attachments now respect the configured per-attachment `maxAttachmentSize` limit. ([#6513](https://github.com/getsentry/sentry-java/pull/6513))
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 
