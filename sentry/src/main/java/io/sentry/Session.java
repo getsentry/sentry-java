@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.User;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.StringUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -74,6 +75,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
   /** Whether an unhandled error occurred that did not terminate the process */
   private boolean hasNonTerminatingUnhandledError;
+
+  /** Time since the session started, on a monotonic clock. In memory only, never serialized */
+  private @Nullable Stopwatch sinceStarted;
 
   /** The session lock, ops should be atomic */
   private final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
@@ -195,6 +199,16 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
   public @Nullable String getAbnormalMechanism() {
     return abnormalMechanism;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable Stopwatch getSinceStarted() {
+    return sinceStarted;
+  }
+
+  @ApiStatus.Internal
+  public void setSinceStarted(final @Nullable Stopwatch sinceStarted) {
+    this.sinceStarted = sinceStarted;
   }
 
   /**
@@ -389,6 +403,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
             release,
             abnormalMechanism);
     session.hasNonTerminatingUnhandledError = hasNonTerminatingUnhandledError;
+    session.sinceStarted = sinceStarted;
     return session;
   }
 

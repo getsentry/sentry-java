@@ -10,6 +10,7 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.EventProcessorUtils;
@@ -1086,6 +1087,7 @@ public final class Scope implements IScope {
                 user,
                 sessionEnvironment != null ? sessionEnvironment : options.getEnvironment(),
                 options.getRelease());
+        session.setSinceStarted(Stopwatch.started(options.getMonotonicTicker()));
 
         final Session previousClone = previousSession != null ? previousSession.clone() : null;
         pair = new SessionPair(session.clone(), previousClone);

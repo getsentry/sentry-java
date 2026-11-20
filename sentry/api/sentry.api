@@ -4184,6 +4184,7 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSequence ()Ljava/lang/Long;
 	public fun getSessionId ()Ljava/lang/String;
+	public fun getSinceStarted ()Lio/sentry/time/Stopwatch;
 	public fun getStarted ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/Session$State;
 	public fun getTimestamp ()Ljava/util/Date;
@@ -4194,6 +4195,7 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun recordNonTerminatingUnhandledError ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
+	public fun setSinceStarted (Lio/sentry/time/Stopwatch;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;ZLjava/lang/String;)Z

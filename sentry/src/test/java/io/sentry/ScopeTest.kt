@@ -512,6 +512,17 @@ class ScopeTest {
   }
 
   @Test
+  fun `Scope starts a new session with a monotonic start`() {
+    val options = SentryOptions().apply { release = "rel" }
+    val scope = Scope(options)
+
+    val sessionPair = scope.startSession()
+
+    assertNotNull(sessionPair) { assertThat(it.current.sinceStarted).isNotNull() }
+    assertThat(scope.session?.sinceStarted).isNotNull()
+  }
+
+  @Test
   fun `Scope ends a session and returns it if theres one`() {
     val options = SentryOptions().apply { release = "0.0.1" }
 

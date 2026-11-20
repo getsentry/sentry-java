@@ -57,8 +57,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
                 this.options.getSessionTrackingIntervalMillis(),
                 this.options.isEnableAutoSessionTracking(),
                 this.options.isEnableAppLifecycleBreadcrumbs(),
-                this.options.getMonotonicTicker(),
-                this.options.getEpochClock());
+                this.options.getMonotonicTicker());
 
         AppState.getInstance().addAppStateListener(watcher);
       }

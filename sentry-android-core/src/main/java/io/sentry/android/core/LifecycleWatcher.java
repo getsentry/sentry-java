@@ -6,10 +6,9 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
 import io.sentry.time.Deadline;
-import io.sentry.time.EpochClock;
 import io.sentry.time.MonotonicTicker;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
-import java.util.Date;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,21 +35,18 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   private final boolean enableAppLifecycleBreadcrumbs;
 
   private final @NotNull MonotonicTicker ticker;
-  private final @NotNull EpochClock epochClock;
 
   LifecycleWatcher(
       final @NotNull IScopes scopes,
       final long sessionIntervalMillis,
       final boolean enableSessionTracking,
       final boolean enableAppLifecycleBreadcrumbs,
-      final @NotNull MonotonicTicker ticker,
-      final @NotNull EpochClock epochClock) {
+      final @NotNull MonotonicTicker ticker) {
     this.sessionIntervalMillis = sessionIntervalMillis;
     this.enableSessionTracking = enableSessionTracking;
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
     this.scopes = scopes;
     this.ticker = ticker;
-    this.epochClock = epochClock;
   }
 
   @Override
@@ -76,24 +72,16 @@ final class LifecycleWatcher implements AppState.AppStateListener {
    * Whether the session on the scope is too old to resume, so foregrounding should start a new one.
    *
    * <p>Used when no background window is pending, which means the session was started by SDK init
-   * rather than by leaving and returning to the app. Nothing captured a tick back then, and the
-   * only record of when the session started is {@link Session#getStarted()} — a wall-clock instant,
-   * because it is sent to Sentry. So this check stays on the wall clock, clock steps included.
-   *
-   * <p>TODO [MAJOR]: let a session remember the tick it started on, so this can use a {@link
-   * Deadline} too. That tick must not be serialized.
+   * rather than by leaving and returning to the app.
    */
-  // Session#getStarted() is a Date, see above.
-  @SuppressWarnings("JavaUtilDate")
   private boolean isSessionOnScopeStale() {
-    final long nowMillis = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
     // No session, or one that never recorded a start, leaves nothing to resume.
     final @NotNull AtomicBoolean stale = new AtomicBoolean(true);
     scopes.configureScope(scope -> {
       final @Nullable Session session = scope.getSession();
-      final @Nullable Date started = session == null ? null : session.getStarted();
-      if (started != null) {
-        stale.set(started.getTime() + sessionIntervalMillis <= nowMillis);
+      final @Nullable Stopwatch sinceStarted = session == null ? null : session.getSinceStarted();
+      if (sinceStarted != null) {
+        stale.set(sinceStarted.elapsed(TimeUnit.MILLISECONDS) >= sessionIntervalMillis);
       }
     });
     return stale.get();
