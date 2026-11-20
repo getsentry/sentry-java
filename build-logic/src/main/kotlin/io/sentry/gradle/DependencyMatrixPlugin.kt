@@ -9,14 +9,12 @@ import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.testing.Test
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 /**
- * Runs a module's unit tests on each version of a dependency listed in a checked-in JSON file, for
- * Android library and JVM modules.
+ * Runs an Android library module's unit tests on each version of a dependency listed in a
+ * checked-in JSON file.
  *
  * The module's main code compiles against the version catalog's version, and the tests for each
  * version in the file run with that version, which is how users run our published artifacts on a
@@ -42,7 +40,6 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
     val entries =
       JsonSlurper().parseText(project.providers.fileContents(file).asText.get()) as List<*>
     check(entries.isNotEmpty()) { "gradle/$versionsFile lists no versions" }
-    val android = project.plugins.hasPlugin("com.android.library")
     entries.forEach { entry ->
       val version = if (entry is Map<*, *>) entry["version"] as String else entry as String
       val pin = (entry as? Map<*, *>)?.get("pin") as Map<*, *>?
@@ -50,7 +47,7 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
         groups.associateWith { version } +
           pin.orEmpty().entries.associate { (group, pinned) -> group as String to pinned as String }
       val variant = "$name${suffix(version)}"
-      val test = if (android) androidUnitTest(variant, forced) else jvmTest(variant, forced)
+      val test = androidUnitTest(variant, forced)
       project.tasks.register("${name}Test${suffix(version)}") {
         description = "Runs the unit tests with ${groups.joinToString()} at $version."
         group = LifecycleBasePlugin.VERIFICATION_GROUP
@@ -97,33 +94,6 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
       }
     }
     return unitTest
-  }
-
-  /**
-   * A test task of [name] that reuses the compiled tests on a runtime classpath with the [forced]
-   * versions, like [SpringBootMatrixPlugin] does.
-   */
-  private fun jvmTest(name: String, forced: Map<String, String>): TaskProvider<Test> {
-    val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
-    val test = sourceSets.getByName("test")
-    val configurations = project.configurations
-    val runtimeClasspath =
-      configurations.resolvable("${name}TestRuntimeClasspath") {
-        force(forced)
-        extendsFrom(
-          configurations.getByName(test.implementationConfigurationName),
-          configurations.getByName(test.runtimeOnlyConfigurationName),
-        )
-        attributes.addAllLater(
-          configurations.getByName(test.runtimeClasspathConfigurationName).attributes
-        )
-      }
-    val taskName = "test${name.replaceFirstChar(Char::uppercase)}"
-    return project.tasks.register(taskName, Test::class.java) {
-      testClassesDirs = test.output.classesDirs
-      classpath = test.output + sourceSets.getByName("main").output + runtimeClasspath.get()
-      useJUnit()
-    }
   }
 
   private fun Configuration.force(versions: Map<String, String>) {
