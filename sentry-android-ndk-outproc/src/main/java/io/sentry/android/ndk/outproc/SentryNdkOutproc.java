@@ -170,8 +170,11 @@ public final class SentryNdkOutproc {
     serviceContext = null;
     serviceConnection = null;
     if (context != null && connection != null) {
-      context.unbindService(connection);
-      connection.close();
+      try {
+        context.unbindService(connection);
+      } finally {
+        connection.close();
+      }
     }
   }
 }
