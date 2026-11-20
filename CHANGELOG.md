@@ -101,6 +101,7 @@
 - Remove the deprecated `Instrumenter` enum, option, span context property, and `startChild` overloads ([#6252](https://github.com/getsentry/sentry-java/pull/6252))
 - Remove deprecated OpenTelemetry integration classes and the legacy `SentrySpanStorage` ([#6243](https://github.com/getsentry/sentry-java/pull/6243))
 - Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended. This affects session counts ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
+- Decide whether the session started by SDK init is stale on a monotonic clock instead of the wall clock, so that a device time change between `Sentry.init` and the first foreground no longer starts an extra session or keeps a stale one. This affects session counts ([#6688](https://github.com/getsentry/sentry-java/pull/6688))
 - `SentryUserFeedbackForm` now extends `android.app.Dialog` instead of `android.app.AlertDialog` ([#6338](https://github.com/getsentry/sentry-java/pull/6338))
   - The form never used `AlertDialog` features. Code that calls `AlertDialog`-only methods on it, such as `setButton` or `setMessage`, no longer compiles.
 - Raise the minimum supported Android API level (`minSdk`) of all Android modules from 21 to 24. Apps with a lower `minSdk` must raise it or stay on 8.x ([#6518](https://github.com/getsentry/sentry-java/pull/6518))
