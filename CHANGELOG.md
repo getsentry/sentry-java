@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Features
+
+- Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
+
 ### Fixes
 
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
