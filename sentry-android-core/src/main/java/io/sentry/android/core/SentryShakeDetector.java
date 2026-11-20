@@ -76,7 +76,10 @@ public final class SentryShakeDetector implements SensorEventListener {
       return;
     }
     if (sensorManager == null) {
-      sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+      // An Activity's SensorManager holds on to that Activity, and the cached manager outlives it.
+      sensorManager =
+          (SensorManager)
+              ContextUtils.getApplicationContext(context).getSystemService(Context.SENSOR_SERVICE);
     }
     if (sensorManager != null && accelerometer == null) {
       accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false);

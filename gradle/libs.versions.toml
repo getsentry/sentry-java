@@ -6,7 +6,7 @@ androidxNavigation = "2.9.8"
 androidxNavigation3 = "1.1.5"
 androidxTestCore = "1.7.0"
 androidxCompose = "1.9.5"
-asyncProfiler = "4.4"
+asyncProfiler = "4.6"
 camerax = "1.4.0"
 composeCompiler = "1.5.14"
 coroutines = "1.11.0"
@@ -14,7 +14,7 @@ dgs = "4.9.2"
 detekt = "1.23.8"
 dokka = "2.0.0"
 espresso = "3.7.0"
-feign = "13.17"
+feign = "13.18"
 gummyBears = "0.16.0"
 java8Signature = "1.0"
 jackson = "2.18.3"
@@ -52,7 +52,9 @@ springboot3 = "3.5.0"
 springboot4 = "4.1.0"
 springKafka2 = "2.8.11"
 springKafka3 = "3.3.5"
-sqldelight = "2.3.2"
+sqldelight = "2.4.1"
+tomcat9 = "9.0.108"
+tomcat11 = "11.0.27"
 vanniktechMavenPublish = "0.37.0"
 
 # Android
@@ -72,7 +74,7 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
-errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
+errorprone = { id = "net.ltgt.errorprone", version = "5.2.0" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.67.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
@@ -141,7 +143,7 @@ caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.7.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
-errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.50.0" }
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.52.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
 feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" }
 graphql-java17 = { module = "com.graphql-java:graphql-java", version = "17.3" }
@@ -266,10 +268,12 @@ gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", versio
 java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref = "java8Signature" }
 
 # tomcat libraries
-tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
-tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
-tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.27" }
-tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
+tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "8.5.100" }
+tomcat9-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat9" }
+tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat9" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat9" }
+tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat11" }
+tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat11" }
 # The version comes from the Spring Boot BOM of whichever Spring line uses it.
 tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core" }
 
@@ -308,7 +312,7 @@ okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.
 # 5 needs okio 3.
 okhttp-mockwebserver4 = { module = "com.squareup.okhttp3:mockwebserver", version = "4.9.2" }
 okhttp-tls = { module = "com.squareup.okhttp3:okhttp-tls", version.ref = "okhttp" }
-okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
+okio = { module = "com.squareup.okio:okio", version = "3.18.2" }
 rhino = { module = "org.mozilla:rhino", version = "1.8.0" }
 # Upgrading Robolectric can change the android-all jars it needs, see SentryRobolectricPlugin.
 roboelectric = { module = "org.robolectric:robolectric", version = "4.15" }

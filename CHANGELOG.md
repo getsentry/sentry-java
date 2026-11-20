@@ -7,6 +7,13 @@
 
 ## Unreleased
 
+### Fixes
+
+- Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
+- Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
+
+## 8.65.0
+
 ### Features
 
 - Session Replay: Add `Sentry.replay().pauseTouchTracking()` and `resumeTouchTracking()` to stop recording touches on sensitive screens, such as a custom PIN pad, while the screen recording continues. Touch tracking stays paused until `resumeTouchTracking()` is called, also for new replays and after `resume()` ([#6546](https://github.com/getsentry/sentry-java/pull/6546))
@@ -26,6 +33,7 @@
 - Session Replay: Send Ktor client network request start and end times in milliseconds, so the requests line up with the replay ([#6619](https://github.com/getsentry/sentry-java/pull/6619))
 - Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
+- Android: Mark transactions and spans that finish after their deadline as `deadline_exceeded`, so `ui.load` transactions with TTID, TTFD or app start values that are hours long after a device sleep no longer report `ok` ([#6599](https://github.com/getsentry/sentry-java/pull/6599))
 - Android: Register network callbacks on API 24–25 when `AndroidConnectionStatusProvider` is created with a custom `Handler`, instead of failing because the `Handler` overload needs API 26 ([#6634](https://github.com/getsentry/sentry-java/pull/6634))
 
 ### Dependencies
