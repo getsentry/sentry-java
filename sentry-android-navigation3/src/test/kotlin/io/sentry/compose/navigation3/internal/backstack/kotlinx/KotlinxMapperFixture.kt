@@ -84,8 +84,11 @@ internal class ShapeThrowingDetailSerializer(
  */
 internal class FakeCompatibilityProbe(
   private val nameLookupError: LinkageError? = null,
+  private val encodingError: LinkageError? = null,
   private val nameLookupInconclusive: Inconclusive? = null,
+  private val encodingInconclusiveError: Throwable? = null,
 ) : KotlinxCompatibilityProbe {
+  var encodingChecks = 0
 
   override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? {
     nameLookupError?.let {
@@ -93,6 +96,12 @@ internal class FakeCompatibilityProbe(
     }
     nameLookupInconclusive?.let { onInconclusive(it.error) }
     return null
+  }
+
+  override fun encodingLinkageError(onInconclusive: (Throwable) -> Unit): LinkageError? {
+    encodingChecks++
+    encodingInconclusiveError?.let(onInconclusive)
+    return encodingError
   }
 
   /** Why the name check is inconclusive: [error], or `null` if a probe serializer wasn't found. */
@@ -109,6 +118,7 @@ internal class FakeCompatibilityProbe(
  */
 internal class KotlinxMapperFixture
 private constructor(
+  includeProperties: Boolean,
   useDefaultLookUp: Boolean,
   val probe: KotlinxCompatibilityProbe,
 ) {
@@ -129,9 +139,10 @@ private constructor(
 
   val mapper =
     if (useDefaultLookUp) {
-      KotlinxBackStackEntryMapper(logger = { logger }, probe = probe)
+      KotlinxBackStackEntryMapper(includeProperties, logger = { logger }, probe = probe)
     } else {
       KotlinxBackStackEntryMapper(
+        includeProperties,
         lookUpSerializer = {
           lookedUpTypes += it
           lookUp(it)
@@ -143,9 +154,10 @@ private constructor(
 
   companion object {
     fun create(
+      includeProperties: Boolean = false,
       useDefaultLookUp: Boolean = false,
       probe: KotlinxCompatibilityProbe = FakeCompatibilityProbe(),
-    ) = KotlinxMapperFixture(useDefaultLookUp, probe)
+    ) = KotlinxMapperFixture(includeProperties, useDefaultLookUp, probe)
   }
 }
 

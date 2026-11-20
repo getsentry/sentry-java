@@ -7,6 +7,11 @@ This package is meant to encapsulate knowledge about the possibility of multiple
 raises. Addressing those concerns is complicated. Confining them here makes them easier to reason about and easier to swap for alternative
 logic should we someday need to.
 
+## Dependencies
+
+This package may ***not*** depend on any other `io.sentry.compose.navigation3` package, Compose, or
+`androidx.navigation3`. It may use Android framework and AndroidX Lifecycle APIs directly.
+
 ## Limitations
 
 Support for multiple `SentryNavEffect`s is restricted to the scenarios documented in the

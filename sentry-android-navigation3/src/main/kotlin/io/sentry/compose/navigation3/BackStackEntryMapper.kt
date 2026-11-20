@@ -54,13 +54,17 @@ public class SentryBackStackEntry(
 /**
  * Maps a back stack entry to a displayable name and optional diagnostic arguments.
  *
- * If you use kotlinx.serialization, see [SerialName] for convenient, out-of-the-box mappers.
- * Otherwise, provide your own implementation. (Note: Custom implementations can always fall back to
- * `SerialName` for any entries that don't have to be special-cased.)
+ * If you use kotlinx.serialization, see [SerialName] and [SerialNameAndProperties] for convenient,
+ * out-of-the-box mappers. Otherwise, provide your own implementation. (Note: Custom implementations
+ * can always fall back to `SerialName` or `SerialNameAndProperties` for any entries that don't have
+ * to be special-cased.)
  *
  * **Privacy / PII**
  *
- * Custom mappers are responsible for filtering their own arguments.
+ * Built-in mappers that capture entry properties apply limited sensitive-data filtering before
+ * recording arguments; see [SerialNameAndProperties] for the filtering rules. Custom mappers are
+ * responsible for filtering their own arguments; Sentry does not apply its built-in sensitive-data
+ * filtering to arguments they supply themselves.
  *
  * Only return names and arguments that are known to be safe or have been pre-scrubbed. All
  * arguments remain subject to size and structural limits.
@@ -144,6 +148,8 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * would return `"ProductDetail"` as the destination's name, but would ***not*** return the
      * destination's properties (`userId` and `productId`).
      *
+     * To return both entry names and properties, see [SerialNameAndProperties].
+     *
      * **Name == SerialDescriptor.serialName**
      *
      * This mapper names each back stack entry after the entry's
@@ -177,8 +183,8 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * Entries share a Sentry name whenever their serializers share a serial name. In particular:
      *
-     * - All constants of an enum are named after the enum. A `@SerialName` on a constant does not
-     *   change the destination name.
+     * - All constants of an enum are named after the enum. A `@SerialName` on a constant only
+     *   changes how [SerialNameAndProperties] records the constant as an argument.
      *
      * - Classes that use the same custom serializer (`@Serializable(with = ...)`) are named after
      *   that serializer's descriptor, which ignores a `@SerialName` on the class.
@@ -189,5 +195,72 @@ public fun interface BackStackEntryMapper<in T : Any> {
     @get:ApiStatus.Experimental
     public val SerialName: BackStackEntryMapper<Any>
       get() = BuiltInBackStackEntryMappers.serialName
+
+    /**
+     * Like [SerialName], but also returns the properties of each back stack entry as Sentry
+     * arguments.
+     *
+     * For instance, given:
+     * ```
+     * @Serializable
+     * @SerialName("ProductDetail")
+     * data class ProductDetail(
+     *   val userId: String,
+     *   val productId: String
+     * ) : NavKey
+     * ```
+     *
+     * when navigating to `ProductDetail(userId = "123abc", productId = "zyx987")`, this mapper
+     * would return `"ProductDetail"` as the destination's name, along with the following arguments:
+     * ```json
+     * {
+     *   "userId": "123abc",
+     *   "productId": "zyx987"
+     * }
+     * ```
+     *
+     * Returns `null` for any entries that can't be named (see [SerialName]). Sentry displays these
+     * entries as `"/unknown"` with no arguments.
+     *
+     * The argument limits described in [BackStackEntryMapper] apply.
+     *
+     * **Privacy / PII**
+     *
+     * This mapper returns arguments for every property of each back stack entry passed to it, which
+     * may include private data or PII. Almost all properties are sent as-is (see below for limited
+     * exceptions in the case of sensitive secrets). Neither `sendDefaultPii` nor the
+     * `dataCollection` options change what this mapper returns.
+     *
+     * Modify your use of this mapper if any entry in your back stack contains info you don't want
+     * sent to Sentry. For instance, i) use this mapper for all entries but filter out any
+     * properties you want to omit, or ii) use a custom [BackStackEntryMapper] that special-cases
+     * entries with sensitive info or PII and falls back to this mapper (or [SerialName]) for
+     * entries without it. See
+     * [Choosing Which Arguments to Send](https://docs.sentry.io/platforms/android/integrations/navigation/#choosing-which-arguments-to-send)
+     * for examples.
+     *
+     * **Limited filtering for sensitive secrets**
+     *
+     * Values are replaced with `"[Filtered]"` when their property's targeted name (i.e., their
+     * `@SerialName` if they have one, or else the property's name) contains a term from
+     * [Sentry's sensitive denylist](https://develop.sentry.dev/sdk/foundations/client/data-collection/#sensitive-denylist)
+     * (ignoring case). This filters secrets like `authToken`, but leaves PII like `userEmail`
+     * unchanged.
+     *
+     * Matching follows the same rule Sentry SDKs use for HTTP headers, cookies, and query
+     * parameters, meaning it may filter harmless properties like `insideCart` (`sid`) or `keyword`
+     * (`key`).
+     *
+     * **Encoding and encoding failures**
+     *
+     * Properties are encoded on the first argument read, including by `equals` or `hashCode`.
+     *
+     * Failures preserve the entry's name and replace its arguments with a drop reason, e.g.,
+     * `{"dropped_by_sentry": "encoding_failed"}`. Encoding errors are logged once per entry type
+     * when `debug` is enabled.
+     */
+    @get:ApiStatus.Experimental
+    public val SerialNameAndProperties: BackStackEntryMapper<Any>
+      get() = BuiltInBackStackEntryMappers.serialNameAndProperties
   }
 }
