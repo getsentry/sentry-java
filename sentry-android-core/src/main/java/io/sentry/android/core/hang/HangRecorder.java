@@ -44,6 +44,7 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
 
   public static final long DEFAULT_POLLING_INTERVAL_MS = 66;
   public static final long DEFAULT_MAX_RECORDING_TIME_MS = 8_000;
+  public static final long DEFAULT_SUSPICIOUS_THRESHOLD_MS = 300;
 
   /**
    * Creates the executor of the recorder thread. It must run one task at a time on one thread, in
