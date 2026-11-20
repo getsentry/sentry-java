@@ -107,11 +107,12 @@ public class SentryBackStackEntry(
  *
  * **Arguments fall back to `toString()` or nothing**
  *
- * All non-supported argument types are stringified via `toString()`.
+ * All non-supported argument types are stringified via `toString()`, as are map keys.
  *
  * No arguments will be recorded for a back stack entry if [map] throws or returns `null`, or if its
- * arguments are cyclic, too deeply nested, or too large. If the SDK drops an entry's arguments, it
- * adds a `dropped_by_sentry` field and corresponding reason in the Sentry UI.
+ * arguments are cyclic, too deeply nested, too large, or contain map keys that stringify to the
+ * same string. If the SDK drops an entry's arguments, it adds a `dropped_by_sentry` field and
+ * corresponding reason (e.g., `duplicate_key`) in the Sentry UI.
  *
  * **Using kotlinx.serialization**
  *
