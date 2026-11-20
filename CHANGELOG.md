@@ -127,6 +127,8 @@
 
 ### Improvements
 
+- Preserve both ends of deep stack traces when truncating them ([#6623](https://github.com/getsentry/sentry-java/pull/6623))
+  - Stack traces up to 250 frames remain complete. Longer traces retain the 50 oldest and 200 newest frames instead of only the 100 newest frames
 - Promote check-in APIs from experimental to stable ([#6422](https://github.com/getsentry/sentry-java/pull/6422))
 - Promote the backpressure handling option from experimental to stable ([#6423](https://github.com/getsentry/sentry-java/pull/6423))
 - Promote structured logs APIs from experimental to stable ([#6424](https://github.com/getsentry/sentry-java/pull/6424))
