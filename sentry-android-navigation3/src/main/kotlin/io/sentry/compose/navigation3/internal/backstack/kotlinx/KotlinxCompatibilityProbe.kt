@@ -84,23 +84,38 @@ internal interface KotlinxCompatibilityProbe {
       return error
     }
 
-    override fun encoderIncompatibility(): Throwable? =
+    override fun encoderIncompatibility(): Throwable? = encoderFailureOf {
+      val writer = TreeArgumentWriter(ArgumentBudget())
+      @Suppress("UNCHECKED_CAST")
+      KotlinxPropertiesEncoder.encode(
+        ProbeClass.serializer() as KSerializer<Any>,
+        ProbeClass(),
+        writer,
+      )
+      // An incompatible kotlinx.serialization version can link and run yet mis-encode properties
+      // under R8 without throwing. Verifying the fixture's output disables such a silently
+      // corrupting encoder instead of letting wrong arguments reach Sentry.
+      if (writer.argumentsOrThrow() == EXPECTED_PROBE_ENCODING) {
+        null
+      } else {
+        EncoderProducedUnexpectedOutput()
+      }
+    }
+
+    /**
+     * Runs [check], returning the failure it reports or throws, or `null` if it reports none.
+     * Rethrows fatal errors other than [LinkageError].
+     *
+     * A [LinkageError] is returned rather than rethrown so that an encoder that can't link only
+     * disables property encoding. Rethrown, it would escape the mapper's constructor, and
+     * `BuiltInBackStackEntryMappers` would fall back to a mapper that records no names either.
+     */
+    internal inline fun encoderFailureOf(check: () -> Throwable?): Throwable? =
       try {
-        val writer = TreeArgumentWriter(ArgumentBudget())
-        @Suppress("UNCHECKED_CAST")
-        KotlinxPropertiesEncoder.encode(
-          ProbeClass.serializer() as KSerializer<Any>,
-          ProbeClass(),
-          writer,
-        )
-        // An incompatible kotlinx.serialization version can link and run yet mis-encode properties
-        // under R8 without throwing. Verifying the fixture's output disables such a silently
-        // corrupting encoder instead of letting wrong arguments reach Sentry.
-        if (writer.argumentsOrThrow() == EXPECTED_PROBE_ENCODING) {
-          null
-        } else {
-          EncoderProducedUnexpectedOutput()
-        }
+        check()
+      } catch (e: LinkageError) {
+        // Caught before rethrowIfFatal, which rethrows LinkageErrors.
+        e
       } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
         // Broad because an incompatible kotlinx.serialization version can fail the encoder in many
         // ways, not only with a LinkageError. Any failure disables property encoding but keeps

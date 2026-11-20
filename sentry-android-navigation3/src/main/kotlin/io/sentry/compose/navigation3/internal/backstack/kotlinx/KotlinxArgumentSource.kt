@@ -31,7 +31,7 @@ import kotlinx.serialization.KSerializer
  * instead, as those limits can depend on what fraction of the [ArgumentBudget] the update's other
  * entries spent.
  */
-internal class KotlinxArguments(
+internal class KotlinxArgumentSource(
   private val backStackEntry: Any,
   private val serializer: KSerializer<Any>,
   private val onFailure: (Throwable) -> Unit,
@@ -139,7 +139,7 @@ internal class KotlinxArguments(
  * The arguments of a back stack entry whose properties can't be encoded because the app's
  * kotlinx.serialization version doesn't support the properties encoder.
  *
- * Handles encoding failures like [KotlinxArguments]: map reads return `{"dropped_by_sentry":
+ * Handles encoding failures like [KotlinxArgumentSource]: map reads return `{"dropped_by_sentry":
  * "encoding_failed"}`, and writes drop the entry's arguments with
  * [ArgumentDropReason.ENCODING_FAILED].
  */

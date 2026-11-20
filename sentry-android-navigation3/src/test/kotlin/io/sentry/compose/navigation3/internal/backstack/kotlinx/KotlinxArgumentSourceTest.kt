@@ -24,7 +24,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.junit.Test
 
-class KotlinxArgumentsTest {
+class KotlinxArgumentSourceTest {
 
   @Serializable data class Values(val values: List<Int>)
 
@@ -116,23 +116,23 @@ class KotlinxArgumentsTest {
 
   @Test
   fun `reads as the entry's encoded properties`() {
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    assertThat(arguments.entries.associate { it.key to it.value }).isEqualTo(mapOf("id" to "1"))
+    assertThat(source.entries.associate { it.key to it.value }).isEqualTo(mapOf("id" to "1"))
   }
 
   @Test
   fun `doesn't encode the entry until its arguments are read`() {
-    argumentsOf(detailSerializer, Detail("1"))
+    argumentSourceOf(detailSerializer, Detail("1"))
 
     assertThat(detailSerializer.serialized).isEmpty()
   }
 
   @Test
   fun `encodes the entry when its arguments are first read through hashCode()`() {
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    val hashCode = arguments.hashCode()
+    val hashCode = source.hashCode()
 
     assertThat(hashCode).isEqualTo(mapOf("id" to "1").hashCode())
     assertThat(detailSerializer.serialized).containsExactly(Detail("1"))
@@ -140,39 +140,39 @@ class KotlinxArgumentsTest {
 
   @Test
   fun `encodes the entry once across repeated reads`() {
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    arguments.entries
-    arguments.size
-    arguments["id"]
-    arguments.containsKey("id")
-    arguments.equals(mapOf("id" to "1"))
+    source.entries
+    source.size
+    source["id"]
+    source.containsKey("id")
+    source.equals(mapOf("id" to "1"))
 
     assertThat(detailSerializer.serialized).containsExactly(Detail("1"))
   }
 
   @Test
   fun `equals a plain map with the same entries`() {
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    assertThat(arguments).isEqualTo(mapOf("id" to "1"))
-    assertThat(mapOf("id" to "1")).isEqualTo(arguments)
-    assertThat(arguments.hashCode()).isEqualTo(mapOf("id" to "1").hashCode())
+    assertThat(source).isEqualTo(mapOf("id" to "1"))
+    assertThat(mapOf("id" to "1")).isEqualTo(source)
+    assertThat(source.hashCode()).isEqualTo(mapOf("id" to "1").hashCode())
   }
 
   @Test
   fun `doesn't equal a plain map with other entries`() {
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    assertThat(arguments).isNotEqualTo(mapOf("id" to "2"))
-    assertThat(mapOf("id" to "2")).isNotEqualTo(arguments)
+    assertThat(source).isNotEqualTo(mapOf("id" to "2"))
+    assertThat(mapOf("id" to "2")).isNotEqualTo(source)
   }
 
   @Test
   fun `reads each instance's arguments with a budget of its own`() {
     // Each entry has 151 values, so two entries wouldn't fit in one budget.
-    val first = argumentsOf(Values.serializer(), Values(List(150) { it }))
-    val second = argumentsOf(Values.serializer(), Values(List(150) { it }))
+    val first = argumentSourceOf(Values.serializer(), Values(List(150) { it }))
+    val second = argumentSourceOf(Values.serializer(), Values(List(150) { it }))
 
     assertThat(first).isEqualTo(mapOf("values" to List(150) { it }))
     assertThat(second).isEqualTo(mapOf("values" to List(150) { it }))
@@ -194,14 +194,14 @@ class KotlinxArgumentsTest {
         if (otherThreadGotLock) appLock.unlock()
       }
     }
-    val arguments = argumentsOf(serializer, Detail("1"))
+    val source = argumentSourceOf(serializer, Detail("1"))
     appLock.lock()
-    val otherRead = readOnAnotherThread(arguments)
+    val otherRead = readOnAnotherThread(source)
     assertThat(encodingStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
 
     val read =
       try {
-        arguments.toMap()
+        source.toMap()
       } finally {
         appLock.unlock()
       }
@@ -222,16 +222,16 @@ class KotlinxArgumentsTest {
         otherThreadSawFirstRead = firstReadDone.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)
       }
     }
-    val arguments = argumentsOf(serializer, Detail("1"))
-    val otherRead = readOnAnotherThread(arguments)
+    val source = argumentSourceOf(serializer, Detail("1"))
+    val otherRead = readOnAnotherThread(source)
     assertThat(encodingStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
 
-    val read = arguments.toMap()
+    val read = source.toMap()
     firstReadDone.countDown()
 
     assertThat(read).isEqualTo(mapOf("id" to "encoding-2"))
     assertThat(otherRead.await()).isEqualTo(read)
-    assertThat(arguments.toMap()).isEqualTo(read)
+    assertThat(source.toMap()).isEqualTo(read)
     assertThat(otherThreadSawFirstRead).isTrue()
   }
 
@@ -239,16 +239,16 @@ class KotlinxArgumentsTest {
 
   @Test
   fun `reads as only the broken limit when the entry breaks an argument limit`() {
-    val arguments = argumentsOf(detailSerializer, Detail(overLimitId))
+    val source = argumentSourceOf(detailSerializer, Detail(overLimitId))
 
-    assertThat(arguments).isEqualTo(droppedBy(ArgumentDropReason.CHARACTER_LIMIT))
+    assertThat(source).isEqualTo(droppedBy(ArgumentDropReason.CHARACTER_LIMIT))
   }
 
   @Test
   fun `reports the broken limit to onFailure when read`() {
-    val arguments = argumentsOf(detailSerializer, Detail(overLimitId))
+    val source = argumentSourceOf(detailSerializer, Detail(overLimitId))
 
-    arguments.size
+    source.size
 
     assertThat(failures).hasSize(1)
     assertThat((failures.single() as DropArguments).reason)
@@ -259,9 +259,9 @@ class KotlinxArgumentsTest {
   fun `reads as only the encoding failure and reports a serializer's exception once across reads`() {
     val error = IllegalStateException("boom")
     detailSerializer.error = error
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    val reads = List(3) { arguments.toMap() }
+    val reads = List(3) { source.toMap() }
 
     assertThat(reads).containsExactly(encodingFailed, encodingFailed, encodingFailed)
     assertThat(failures).containsExactly(error)
@@ -271,9 +271,9 @@ class KotlinxArgumentsTest {
   fun `reads as only the encoding failure and reports a serializer's LinkageError once across reads`() {
     val error = NoClassDefFoundError("missing")
     detailSerializer.error = error
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    val reads = List(3) { arguments.toMap() }
+    val reads = List(3) { source.toMap() }
 
     assertThat(reads).containsExactly(encodingFailed, encodingFailed, encodingFailed)
     assertThat(failures).containsExactly(error)
@@ -282,9 +282,9 @@ class KotlinxArgumentsTest {
   @Test
   fun `reads as only the broken limit and reports it when a serializer replaced it with its own exception`() {
     val serializer = WrappingSerializer(Detail.serializer()) { SerializationException("replaced") }
-    val arguments = argumentsOf(serializer, Detail(overLimitId))
+    val source = argumentSourceOf(serializer, Detail(overLimitId))
 
-    val read = arguments.toMap()
+    val read = source.toMap()
 
     assertThat(read).isEqualTo(droppedBy(ArgumentDropReason.CHARACTER_LIMIT))
     assertThat(failures).hasSize(1)
@@ -295,9 +295,9 @@ class KotlinxArgumentsTest {
   @Test
   fun `reads as only the nesting limit and reports it when a serializer replaced it with its own exception`() {
     val serializer = WrappingSerializer(LinkSerializer) { SerializationException("replaced") }
-    val arguments = argumentsOf(serializer, tooDeeplyLinked)
+    val source = argumentSourceOf(serializer, tooDeeplyLinked)
 
-    val read = arguments.toMap()
+    val read = source.toMap()
 
     assertThat(read).isEqualTo(droppedBy(ArgumentDropReason.INVALID_STRUCTURE))
     assertThat(failures).hasSize(1)
@@ -308,10 +308,10 @@ class KotlinxArgumentsTest {
   @Test
   fun `reads as only the sink's limit and reports it when the encoder's nesting limit follows it`() {
     val serializer = NestsAfterCaughtLimitSerializer(overLimitId)
-    val arguments =
-      argumentsOf(serializer, linked(length = KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING))
+    val source =
+      argumentSourceOf(serializer, linked(length = KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING))
 
-    val read = arguments.toMap()
+    val read = source.toMap()
 
     assertThat(read).isEqualTo(droppedBy(ArgumentDropReason.CHARACTER_LIMIT))
     assertThat(failures).hasSize(1)
@@ -323,9 +323,9 @@ class KotlinxArgumentsTest {
   fun `propagates fatal errors when read, without reporting them`() {
     val error = OutOfMemoryError()
     detailSerializer.error = error
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    val thrown = assertFailsWith<OutOfMemoryError> { arguments.size }
+    val thrown = assertFailsWith<OutOfMemoryError> { source.size }
 
     assertThat(thrown).isSameInstanceAs(error)
     assertThat(failures).isEmpty()
@@ -337,17 +337,17 @@ class KotlinxArgumentsTest {
   fun `writeTo() - writes the entry's properties to the sink`() {
     val sink = TreeArgumentWriter(ArgumentBudget())
 
-    argumentsOf(detailSerializer, Detail("1")).writeTo(sink)
+    argumentSourceOf(detailSerializer, Detail("1")).writeTo(sink)
 
     assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "1"))
   }
 
   @Test
   fun `writeTo() - encodes the entry each time it's written`() {
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
 
-    arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
-    arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
+    source.writeTo(TreeArgumentWriter(ArgumentBudget()))
+    source.writeTo(TreeArgumentWriter(ArgumentBudget()))
 
     assertThat(detailSerializer.serialized).containsExactly(Detail("1"), Detail("1"))
   }
@@ -356,8 +356,9 @@ class KotlinxArgumentsTest {
   fun `writeTo() - spends the sink's budget`() {
     // Each entry has 151 values, so two entries don't fit in one budget.
     val budget = ArgumentBudget()
-    argumentsOf(Values.serializer(), Values(List(150) { it })).writeTo(TreeArgumentWriter(budget))
-    val second = argumentsOf(Values.serializer(), Values(List(150) { it }))
+    argumentSourceOf(Values.serializer(), Values(List(150) { it }))
+      .writeTo(TreeArgumentWriter(budget))
+    val second = argumentSourceOf(Values.serializer(), Values(List(150) { it }))
 
     val thrown = assertFailsWith<DropArguments> { second.writeTo(TreeArgumentWriter(budget)) }
 
@@ -370,7 +371,7 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(detailSerializer, Detail("1")).writeTo(sink)
+        argumentSourceOf(detailSerializer, Detail("1")).writeTo(sink)
       }
 
     assertThat(thrown).isSameInstanceAs(assertFailsWith<DropArguments> { sink.argumentsOrThrow() })
@@ -385,7 +386,8 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(detailSerializer, Detail("1")).writeTo(TreeArgumentWriter(ArgumentBudget()))
+        argumentSourceOf(detailSerializer, Detail("1"))
+          .writeTo(TreeArgumentWriter(ArgumentBudget()))
       }
 
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.ENCODING_FAILED)
@@ -400,7 +402,8 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(detailSerializer, Detail("1")).writeTo(TreeArgumentWriter(ArgumentBudget()))
+        argumentSourceOf(detailSerializer, Detail("1"))
+          .writeTo(TreeArgumentWriter(ArgumentBudget()))
       }
 
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.ENCODING_FAILED)
@@ -415,7 +418,8 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<OutOfMemoryError> {
-        argumentsOf(detailSerializer, Detail("1")).writeTo(TreeArgumentWriter(ArgumentBudget()))
+        argumentSourceOf(detailSerializer, Detail("1"))
+          .writeTo(TreeArgumentWriter(ArgumentBudget()))
       }
 
     assertThat(thrown).isSameInstanceAs(error)
@@ -430,7 +434,7 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(serializer, Detail("1")).writeTo(sink)
+        argumentSourceOf(serializer, Detail("1")).writeTo(sink)
       }
 
     assertThat(thrown).isSameInstanceAs(sink.failure)
@@ -445,7 +449,7 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(serializer, Detail(overLimitId)).writeTo(sink)
+        argumentSourceOf(serializer, Detail(overLimitId)).writeTo(sink)
       }
 
     assertThat(thrown).isSameInstanceAs(sink.failure)
@@ -460,7 +464,7 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(serializer, Detail(overLimitId)).writeTo(sink)
+        argumentSourceOf(serializer, Detail(overLimitId)).writeTo(sink)
       }
 
     assertThat(thrown).isSameInstanceAs(sink.failure)
@@ -475,7 +479,7 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(serializer, tooDeeplyLinked).writeTo(sink)
+        argumentSourceOf(serializer, tooDeeplyLinked).writeTo(sink)
       }
 
     assertThat(thrown).isSameInstanceAs(sink.failure)
@@ -490,7 +494,7 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(serializer, tooDeeplyLinked).writeTo(sink)
+        argumentSourceOf(serializer, tooDeeplyLinked).writeTo(sink)
       }
 
     assertThat(thrown).isSameInstanceAs(sink.failure)
@@ -505,7 +509,10 @@ class KotlinxArgumentsTest {
 
     val thrown =
       assertFailsWith<DropArguments> {
-        argumentsOf(serializer, linked(length = KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING))
+        argumentSourceOf(
+            serializer,
+            linked(length = KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING),
+          )
           .writeTo(sink)
       }
 
@@ -519,23 +526,23 @@ class KotlinxArgumentsTest {
   @Test
   fun `writeTo() - writes the copy read as a map rather than the entry's current properties`() {
     val entry = MutableDetail("1")
-    val arguments = argumentsOf(mutableDetailSerializer, entry)
-    arguments.size
+    val source = argumentSourceOf(mutableDetailSerializer, entry)
+    source.size
     entry.id = "2"
     val sink = TreeArgumentWriter(ArgumentBudget())
 
-    arguments.writeTo(sink)
+    source.writeTo(sink)
 
     assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "1"))
   }
 
   @Test
   fun `writeTo() - doesn't encode the entry again after its arguments are read`() {
-    val arguments = argumentsOf(mutableDetailSerializer, MutableDetail("1"))
-    arguments.size
+    val source = argumentSourceOf(mutableDetailSerializer, MutableDetail("1"))
+    source.size
 
-    arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
-    arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
+    source.writeTo(TreeArgumentWriter(ArgumentBudget()))
+    source.writeTo(TreeArgumentWriter(ArgumentBudget()))
 
     assertThat(mutableDetailSerializer.serialized).hasSize(1)
   }
@@ -543,11 +550,11 @@ class KotlinxArgumentsTest {
   @Test
   fun `writeTo() - encodes the entry's current properties when its arguments weren't read`() {
     val entry = MutableDetail("1")
-    val arguments = argumentsOf(mutableDetailSerializer, entry)
+    val source = argumentSourceOf(mutableDetailSerializer, entry)
     entry.id = "2"
     val sink = TreeArgumentWriter(ArgumentBudget())
 
-    arguments.writeTo(sink)
+    source.writeTo(sink)
 
     assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "2"))
   }
@@ -555,11 +562,11 @@ class KotlinxArgumentsTest {
   @Test
   fun `reads a copy encoded separately from what writeTo() wrote`() {
     val entry = MutableDetail("1")
-    val arguments = argumentsOf(mutableDetailSerializer, entry)
-    arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
+    val source = argumentSourceOf(mutableDetailSerializer, entry)
+    source.writeTo(TreeArgumentWriter(ArgumentBudget()))
     entry.id = "2"
 
-    val read = arguments.toMap()
+    val read = source.toMap()
 
     assertThat(read).isEqualTo(mapOf("id" to "2"))
     assertThat(mutableDetailSerializer.serialized).hasSize(2)
@@ -568,11 +575,11 @@ class KotlinxArgumentsTest {
   @Test
   fun `writeTo() - spends the sink's value budget when writing the copy read`() {
     // The entry has 151 values, which fit in its own budget but not in the 100 the sink has left.
-    val arguments = argumentsOf(Values.serializer(), Values(List(150) { it }))
-    arguments.size
+    val source = argumentSourceOf(Values.serializer(), Values(List(150) { it }))
+    source.size
     val sink = TreeArgumentWriter(budgetWithValuesRemaining(100))
 
-    val thrown = assertFailsWith<DropArguments> { arguments.writeTo(sink) }
+    val thrown = assertFailsWith<DropArguments> { source.writeTo(sink) }
 
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
     assertThat(thrown.warning).isEqualTo(DropArguments.MAX_COUNT_WARNING)
@@ -581,11 +588,11 @@ class KotlinxArgumentsTest {
 
   @Test
   fun `writeTo() - spends the sink's character budget when writing the copy read`() {
-    val arguments = argumentsOf(detailSerializer, Detail("123"))
-    arguments.size
+    val source = argumentSourceOf(detailSerializer, Detail("123"))
+    source.size
     val sink = TreeArgumentWriter(budgetWithCharactersRemaining(4))
 
-    val thrown = assertFailsWith<DropArguments> { arguments.writeTo(sink) }
+    val thrown = assertFailsWith<DropArguments> { source.writeTo(sink) }
 
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
     assertThat(thrown.warning).isEqualTo(DropArguments.MAX_CHARACTER_WARNING)
@@ -594,11 +601,11 @@ class KotlinxArgumentsTest {
 
   @Test
   fun `writeTo() - encodes again and drops the arguments for the sink's limit when the copy read broke a limit`() {
-    val arguments = argumentsOf(detailSerializer, Detail(overLimitId))
-    arguments.size
+    val source = argumentSourceOf(detailSerializer, Detail(overLimitId))
+    source.size
     val sink = TreeArgumentWriter(ArgumentBudget())
 
-    val thrown = assertFailsWith<DropArguments> { arguments.writeTo(sink) }
+    val thrown = assertFailsWith<DropArguments> { source.writeTo(sink) }
 
     assertThat(thrown).isSameInstanceAs(sink.failure)
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
@@ -612,12 +619,12 @@ class KotlinxArgumentsTest {
   fun `writeTo() - encodes the entry again and reports a serializer's exception again when the copy read failed`() {
     val error = IllegalStateException("boom")
     detailSerializer.error = error
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
-    arguments.size
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
+    source.size
 
     val thrown =
       assertFailsWith<DropArguments> {
-        arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
+        source.writeTo(TreeArgumentWriter(ArgumentBudget()))
       }
 
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.ENCODING_FAILED)
@@ -632,11 +639,11 @@ class KotlinxArgumentsTest {
     // The entry's 151 values fit in the copy's own budget, so the copy failed only once its
     // serializer threw. Encoding again overflows the 100 values the sink has left first.
     val serializer = ThrowsAfterEncodingSerializer(Values.serializer())
-    val arguments = argumentsOf(serializer, Values(List(150) { it }))
-    arguments.size
+    val source = argumentSourceOf(serializer, Values(List(150) { it }))
+    source.size
     val sink = TreeArgumentWriter(budgetWithValuesRemaining(100))
 
-    val thrown = assertFailsWith<DropArguments> { arguments.writeTo(sink) }
+    val thrown = assertFailsWith<DropArguments> { source.writeTo(sink) }
 
     assertThat(thrown).isSameInstanceAs(sink.failure)
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
@@ -647,11 +654,11 @@ class KotlinxArgumentsTest {
   fun `writeTo() - writes the entry's properties when encoding again succeeds after the copy read failed`() {
     detailSerializer.error = IllegalStateException("boom")
     detailSerializer.failsFor = { detailSerializer.serialized.size == 1 }
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
-    arguments.size
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
+    source.size
     val sink = TreeArgumentWriter(ArgumentBudget())
 
-    arguments.writeTo(sink)
+    source.writeTo(sink)
 
     assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "1"))
   }
@@ -660,25 +667,25 @@ class KotlinxArgumentsTest {
   fun `reads as only the drop reason of the copy read after writeTo() encodes the entry again`() {
     detailSerializer.error = IllegalStateException("boom")
     detailSerializer.failsFor = { detailSerializer.serialized.size == 1 }
-    val arguments = argumentsOf(detailSerializer, Detail("1"))
-    arguments.size
-    arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
+    source.size
+    source.writeTo(TreeArgumentWriter(ArgumentBudget()))
 
-    val read = arguments.toMap()
+    val read = source.toMap()
 
     assertThat(read).isEqualTo(encodingFailed)
   }
 
   /**
-   * Reads [arguments] as a map on a new thread. The returned read's [OtherThreadRead.await] fails
+   * Reads [source] as a map on a new thread. The returned read's [OtherThreadRead.await] fails
    * rather than hangs if the thread doesn't finish in time.
    */
-  private fun readOnAnotherThread(arguments: Map<String, Any?>): OtherThreadRead {
+  private fun readOnAnotherThread(source: Map<String, Any?>): OtherThreadRead {
     val read = OtherThreadRead()
     read.thread =
       thread(name = "other-reader") {
         try {
-          read.result = arguments.toMap()
+          read.result = source.toMap()
         } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
           read.error = t
         }
@@ -701,8 +708,11 @@ class KotlinxArgumentsTest {
   }
 
   @Suppress("UNCHECKED_CAST")
-  private fun <T : Any> argumentsOf(serializer: KSerializer<T>, entry: T): KotlinxArguments =
-    KotlinxArguments(entry, serializer as KSerializer<Any>) { failures += it }
+  private fun <T : Any> argumentSourceOf(
+    serializer: KSerializer<T>,
+    entry: T,
+  ): KotlinxArgumentSource =
+    KotlinxArgumentSource(entry, serializer as KSerializer<Any>) { failures += it }
 
   private companion object {
     /** Bounds every wait, so that a deadlock fails the test rather than hanging it. */

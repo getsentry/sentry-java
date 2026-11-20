@@ -253,7 +253,7 @@ internal class KotlinxBackStackEntryMapper(
       return KotlinxUnencodableArguments
     }
     @Suppress("UNCHECKED_CAST")
-    return KotlinxArguments(backStackEntry, cached.serializer as KSerializer<Any>) { error ->
+    return KotlinxArgumentSource(backStackEntry, cached.serializer as KSerializer<Any>) { error ->
       diagnostics.propertyFailure(type, error)
     }
   }

@@ -34,10 +34,10 @@ import java.util.IdentityHashMap
  * ```text
  *                     ArgumentSource
  *        Custom mapper              Built-in mappers
- *   ┌────────────────────┐        ┌──────────────────┐
- *   │ HostArgumentSource │        │ KotlinxArguments │
- *   │  (plain host map)  │        │ (drives encoder) │
- *   └────────┬───────────┘        └────────┬─────────┘
+ *   ┌────────────────────┐        ┌───────────────────────┐
+ *   │ HostArgumentSource │        │ KotlinxArgumentSource │
+ *   │  (plain host map)  │        │   (drives encoder)    │
+ *   └────────┬───────────┘        └────────┬──────────────┘
  *            │                             │ via
  *            │        KotlinxPropertiesEncoder + SensitiveKeyFilter
  *            │                             │

@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeClass
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeObject
+import kotlin.test.assertFailsWith
 import org.junit.Test
 
 /**
@@ -32,6 +33,57 @@ class KotlinxCompatibilityProbeTest {
     val error = KotlinxCompatibilityProbe.encoderIncompatibility()
 
     assertThat(error).isNull()
+  }
+
+  // encoderFailureOf()
+
+  @Test
+  fun `encoderFailureOf() - returns null when the check reports no failure`() {
+    val failure = KotlinxCompatibilityProbe.encoderFailureOf { null }
+
+    assertThat(failure).isNull()
+  }
+
+  @Test
+  fun `encoderFailureOf() - returns the failure the check reports without throwing`() {
+    val error = EncoderProducedUnexpectedOutput()
+
+    val failure = KotlinxCompatibilityProbe.encoderFailureOf { error }
+
+    assertThat(failure).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `encoderFailureOf() - returns a LinkageError the check throws instead of rethrowing it`() {
+    // Rethrown, the error would escape the mapper's constructor and disable name recording too.
+    val errors = listOf(NoSuchMethodError(), NoClassDefFoundError(), VerifyError())
+
+    val failures = errors.map { error ->
+      KotlinxCompatibilityProbe.encoderFailureOf { throw error }
+    }
+
+    assertThat(failures).containsExactlyElementsIn(errors).inOrder()
+  }
+
+  @Test
+  fun `encoderFailureOf() - returns a non-fatal exception the check throws`() {
+    val error = NullPointerException()
+
+    val failure = KotlinxCompatibilityProbe.encoderFailureOf { throw error }
+
+    assertThat(failure).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `encoderFailureOf() - rethrows a fatal error the check throws that isn't a LinkageError`() {
+    val error = OutOfMemoryError()
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> {
+        KotlinxCompatibilityProbe.encoderFailureOf { throw error }
+      }
+
+    assertThat(thrown).isSameInstanceAs(error)
   }
 
   @Test
