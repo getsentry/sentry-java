@@ -33,9 +33,7 @@ import org.jetbrains.annotations.ApiStatus
  *    // destination are attributed to the appropriate nav transaction.
  *    SentryNavEffect(
  *      backStack = navBackStack,
- *      backStackEntryMapper = { entry ->
- *        SentryBackStackEntry(entry.toName(), entry.extractArguments())
- *      },
+ *      backStackEntryMapper = BackStackEntryMapper.SerialName,
  *      options = SentryNavOptions(),
  *    )
  *
@@ -80,7 +78,10 @@ import org.jetbrains.annotations.ApiStatus
  * [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups)
  * for a detailed list of supported vs unsupported configurations.
  *
- * @param backStack The navigation backstack to observe.
+ * @param backStack The navigation backstack to observe: your list of back stack keys (e.g., the one
+ *   you pass to `NavDisplay`'s `backStack`). Don't pass `NavEntry`s, such as those returned by
+ *   `rememberDecoratedNavEntries` for `NavDisplay`'s `entries` overload. They aren't your keys, so
+ *   [BackStackEntryMapper.SerialName] can't name them and records every screen as "/unknown".
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments
  *   for display in Sentry. See the [BackStackEntryMapper] KDoc for best practices.
  * @param options The kinds of navigation info this effect should record.

@@ -1,5 +1,6 @@
 package io.sentry.compose.navigation3
 
+import io.sentry.compose.navigation3.internal.backstack.BuiltInBackStackEntryMappers
 import org.jetbrains.annotations.ApiStatus
 
 /** Info about a given back stack entry, suitable for display in Sentry. */
@@ -53,12 +54,16 @@ public class SentryBackStackEntry(
 /**
  * Maps a back stack entry to a displayable name and optional diagnostic arguments.
  *
- * To be implemented by the host app.
+ * If you use kotlinx.serialization, see [SerialName] for convenient, out-of-the-box mappers.
+ * Otherwise, provide your own implementation. (Note: Custom implementations can always fall back to
+ * `SerialName` for any entries that don't have to be special-cased.)
  *
  * **Privacy / PII**
  *
- * Values returned from [map] are ***not*** scrubbed by the Sentry SDK before being sent to Sentry.
- * Only return names and arguments that are known to be safe or have been pre-scrubbed.
+ * Custom mappers are responsible for filtering their own arguments.
+ *
+ * Only return names and arguments that are known to be safe or have been pre-scrubbed. All
+ * arguments remain subject to size and structural limits.
  *
  * **Performance**
  *
@@ -113,41 +118,87 @@ public class SentryBackStackEntry(
  * arguments are cyclic, too deeply nested, or too large, or contain a map with two keys that are
  * stringified the same way (e.g., `1` and `"1"`). If the SDK drops an entry's arguments, it adds a
  * `dropped_by_sentry` field and corresponding reason (e.g., `duplicate_key`) in the Sentry UI.
- *
- * **Using kotlinx.serialization**
- *
- * If your back stack contains `@Serializable` entry types, consider giving each entry an explicit
- * `@SerialName` and using its `descriptor.serialName`. For performance reasons, don't serialize
- * back stack keys in their entirety as `arguments` if they might be large, deeply nested, or
- * contain PII or other sensitive information.
- *
- * For instance:
- * ```kotlin
- * @Serializable
- * @SerialName("Home")
- * data class Home(val userName: String) : NavKey
- *
- * @Serializable
- * @SerialName("ProductDetail")
- * data class ProductDetail(val userName: String, val productId: String) : NavKey
- *
- * ...
- *
- * val backStackItemMapper = BackStackEntryMapper<NavKey> { entry ->
- *   when (entry) {
- *     is Home -> SentryBackStackEntry(Home.serializer().descriptor.serialName)
- *     is ProductDetail -> SentryBackStackEntry(
- *       name = ProductDetail.serializer().descriptor.serialName,
- *       // Select a subset of diagnostic arguments when serialization is unsafe
- *       // or non-performant.
- *       arguments = mapOf("product_id" to entry.productId)
- *     )
- *     ...
- *   }
- * }
- * ```
  */
 @ApiStatus.Experimental
-public fun interface BackStackEntryMapper<T : Any> {
+public fun interface BackStackEntryMapper<in T : Any> {
+
   public fun map(backStackEntry: T): SentryBackStackEntry?
+
+  public companion object {
+
+    /**
+     * A convenience [BackStackEntryMapper] for apps that use kotlinx.serialization and only need to
+     * track the serial name of each of their back stack entries (and not each entry's properties).
+     *
+     * For instance, given:
+     * ```
+     * @Serializable
+     * @SerialName("ProductDetail")
+     * data class ProductDetail(
+     *   val userId: String,
+     *   val productId: String
+     * ) : NavKey
+     * ```
+     *
+     * when navigating to `ProductDetail(userId = "123abc", productId = "zyx987")`, this mapper
+     * would return `"ProductDetail"` as the destination's name, but would ***not*** return the
+     * destination's properties (`userId` and `productId`).
+     *
+     * **Name == SerialDescriptor.serialName**
+     *
+     * This mapper names each back stack entry after the entry's
+     * [`SerialDescriptor.serialName`][kotlinx.serialization.descriptors.SerialDescriptor.serialName],
+     * i.e.:
+     *
+     * - the entry's `@SerialName` if it has one; or else
+     * - the entry's fully qualified class name (e.g., "com.example.Home").
+     *
+     * **Unknown names**
+     *
+     * This mapper returns `null` for an entry, which Sentry displays as `"/unknown"`, if:
+     *
+     * - the entry class isn't annotated with `@Serializable` itself, even if kotlinx.serialization
+     *   can serialize it without the annotation (e.g., `String`, `List`, an unannotated enum, or a
+     *   class marked with a custom `@MetaSerializable` annotation);
+     *
+     * - the entry class is generic (e.g., `SettingsScreen<T>`), as its serializer needs type
+     *   arguments that can't be recovered from the entry at runtime; or
+     *
+     * - looking up the entry's serializer fails, e.g., because a custom serializer throws, R8
+     *   removed what the lookup needs, or the app's kotlinx.serialization version is incompatible
+     *   with this SDK. In particular, if the app is minified by R8 and uses a kotlinx.serialization
+     *   version below 1.10.0, an entry class with a named companion object (e.g., `companion object
+     *   Factory`) may be named in unminified debug builds but not in minified release builds,
+     *   depending on the kotlinx.serialization version and R8 mode. To fix this, upgrade
+     *   kotlinx.serialization to 1.10.0 or later, or add the keep rules from Troubleshooting
+     *   (linked below).
+     *
+     * The first entry of each class that can't be named logs a warning explaining why, visible when
+     * the SDK's `debug` option is enabled. For fixes, see
+     * [Troubleshooting](https://docs.sentry.io/platforms/android/integrations/navigation/#troubleshooting-kotlinxserialization-mappers)
+     * in the Sentry Android Navigation docs.
+     *
+     * **Sharing names**
+     *
+     * Entries share a Sentry name whenever their serializers share a serial name. In particular:
+     *
+     * - All constants of an enum are named after the enum. A `@SerialName` on a constant does not
+     *   change the destination name.
+     *
+     * - Classes that use the same custom serializer (`@Serializable(with = ...)`) are named after
+     *   that serializer's descriptor, which ignores a `@SerialName` on the class.
+     *
+     * To tell such entries apart, define a custom [BackStackEntryMapper], e.g., one that names enum
+     * constants after [Enum.name].
+     *
+     * **One-time setup**
+     *
+     * Reading this mapper (e.g., to pass it to [SentryNavEffect]) does no work. Its first [map]
+     * call does a one-time setup, which checks the app's kotlinx.serialization version, so that
+     * call takes longer than later ones. [SentryNavEffect] makes that call when it first records
+     * the back stack, after composition.
+     */
+    public val SerialName: BackStackEntryMapper<Any>
+      get() = BuiltInBackStackEntryMappers.serialName
+  }
 }

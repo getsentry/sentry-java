@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Features
+
+- Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
+
 ### Fixes
 
 - Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
@@ -17,6 +21,7 @@
 
 ### Dependencies
 
+- Nav3: `sentry-android-navigation3` now depends on `kotlinx-serialization-core` 1.7.3 or later, the version every Nav3 release already depends on, so it never raises a Nav3 app's version ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
 - Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
 
 ## 8.65.1

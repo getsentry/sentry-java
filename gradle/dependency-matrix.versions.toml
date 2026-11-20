@@ -1,0 +1,24 @@
+# Dependency test matrices, registered as the `matrixLibs` catalog: compile against the oldest
+# supported version and test against newer releases too.
+#
+# Kept apart from libs.versions.toml so that each matrix's tests can run on PRs that change its
+# versions, without also running on every unrelated dependency bump.
+#
+# Each matrix <name> has a <name>-floor version key: the oldest version we support, which we
+# compile and test against. Only changed by hand, in a reviewed change. No library entry references
+# it, so Dependabot never bumps it. Builds apply it explicitly (e.g., `version { strictly(...) }`)
+# instead.
+#
+# Never give a floor key a library entry with `version.ref`, and never protect it with a Dependabot
+# `ignore` rule: ignore rules match a dependency's group and name, so they would also stop
+# Dependabot from bumping other versions of the same module.
+
+[versions]
+# The oldest kotlinx.serialization version sentry-android-navigation3 supports, which it compiles and
+# tests against. Before changing it, read the rules under "Version floor" in
+# sentry-android-navigation3/src/main/kotlin/io/sentry/compose/navigation3/internal/backstack/kotlinx/README.md.
+kotlinxSerialization-floor = "1.7.3"
+
+[libraries]
+# Applied with the floor version by the builds that use it.
+kotlinxSerialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core" }
