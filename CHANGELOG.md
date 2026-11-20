@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Dependencies
+
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
+
 ### Fixes
 
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
