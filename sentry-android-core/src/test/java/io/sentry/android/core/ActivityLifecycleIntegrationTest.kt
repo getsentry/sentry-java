@@ -555,7 +555,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extendAppStart is a no-op when standalone tracing is disabled`() {
-    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = false
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -627,7 +630,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `HeadlessAppStartListener is not registered when standalone flag is off`() {
-    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = false
+    }
     sut.register(fixture.scopes, fixture.options)
     prepareHeadlessAppStart()
 
@@ -1004,6 +1010,7 @@ class ActivityLifecycleIntegrationTest {
   fun `When Activity is destroyed, sets appStartSpan status to cancelled and finish it`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
+    fixture.options.isEnableStandaloneAppStartTracing = false
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -1220,6 +1227,7 @@ class ActivityLifecycleIntegrationTest {
   fun `When firstActivityCreated is false, start transaction with given appStartTime`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
+    fixture.options.isEnableStandaloneAppStartTracing = false
     sut.register(fixture.scopes, fixture.options)
     sut.setFirstActivityCreated(false)
 
@@ -1244,7 +1252,10 @@ class ActivityLifecycleIntegrationTest {
   @Test
   fun `When firstActivityCreated is false and app start sampling decision is set, start transaction with isAppStart true`() {
     AppStartMetrics.getInstance().appStartSamplingDecision = mock()
-    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = false
+    }
     sut.register(fixture.scopes, fixture.options)
     sut.setFirstActivityCreated(false)
 
@@ -1267,7 +1278,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `When firstActivityCreated is false and app start sampling decision is not set, start transaction with isAppStart false`() {
-    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = false
+    }
     sut.register(fixture.scopes, fixture.options)
     sut.setFirstActivityCreated(false)
 
@@ -1641,7 +1655,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `standalone flag off launcher activity emits single ui load with nested app start cold child`() {
-    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = false
+    }
     sut.register(fixture.scopes, fixture.options)
     setAppStartTime()
 
@@ -2402,6 +2419,7 @@ class ActivityLifecycleIntegrationTest {
   fun `Creates activity lifecycle spans on API lower than 29`() {
     val sut = fixture.getSut(apiVersion = Build.VERSION_CODES.P)
     fixture.options.tracesSampleRate = 1.0
+    fixture.options.isEnableStandaloneAppStartTracing = false
     val appStartDate = SentryNanotimeDate(1, 0)
     val startDate = SentryNanotimeDate(2, 0)
     val appStartMetrics = AppStartMetrics.getInstance()

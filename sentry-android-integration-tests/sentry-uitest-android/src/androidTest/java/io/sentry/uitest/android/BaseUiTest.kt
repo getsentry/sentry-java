@@ -114,6 +114,9 @@ abstract class BaseUiTest {
       // actually be sent.
       // To avoid any interference between tests we can just disable them by default.
       it.isEnableAutoSessionTracking = false
+      // Whichever test launches the first activity of the process would otherwise also get a
+      // standalone app start transaction, which these tests don't expect.
+      it.isEnableStandaloneAppStartTracing = false
       optionsConfiguration?.invoke(it)
     }
   }
