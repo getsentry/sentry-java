@@ -14,6 +14,52 @@ import java.util.IdentityHashMap
  * implementations are expected to materialize the provided info into a tree of Sentry arguments,
  * where the tree has a bounded size and height.
  *
+ * **The argument conversion subsystem**
+ *
+ * With Nav3, host apps manage their own nav back stack, which they implement as a list of
+ * arbitrarily typed entries. In order to be displayed in Sentry, each of those entries has to be
+ * mapped to a Sentry name (e.g., ProductDetailScreen) and zero or more arguments (e.g., productId).
+ * There are two ways for host apps to provide us with those mappings:
+ *
+ * 1. via a custom `BackStackEntryMapper`; or
+ *
+ * 2. via one of our own built-in mappers (viz., `BackStackEntryMapper.SerialName` or
+ *    `BackStackEntryMapper.SerialNameAndProperties`).
+ *
+ * `ArgumentSink` and `ArgumentSource` create the seam that lets us support variable processing on
+ * the source side (the host app's logic vs built-in logic) but uniform processing on the sink side
+ * (argument pruning, protecting against constraint violation, and tree materialization).
+ *
+ * Here are the moving parts:
+ * ```text
+ *                     ArgumentSource
+ *        Custom mapper              Built-in mappers
+ *   ┌────────────────────┐        ┌──────────────────┐
+ *   │ HostArgumentSource │        │ KotlinxArguments │
+ *   │  (plain host map)  │        │ (drives encoder) │
+ *   └────────┬───────────┘        └────────┬─────────┘
+ *            │                             │ via
+ *            │        KotlinxPropertiesEncoder + SensitiveKeyFilter
+ *            │                             │
+ *            └──────────────┬──────────────┘
+ *                           ▼
+ *           ┌───────────────────────────────┐
+ *           │         ArgumentSink          │
+ *           └───────────────────────────────┘
+ *                           ▲  sole impl
+ *           ┌───────────────┴───────────────┐
+ *           │      TreeArgumentWriter       │
+ *           │                               │           ┌────────────────┐
+ *           │   Enforce + materialize:      │ spends ──▶│ ArgumentBudget │
+ *           │   • builds the argument tree  │           └────────────────┘
+ *           │   • prevents constraint       │           ┌────────────────┐
+ *           │      violation (e.g., cycles) │ throws ──▶│ DropArguments  │
+ *           └───────────────────────────────┘           └────────────────┘
+ *
+ *   Note: BackStackConverter.ArgumentSanitizer owns the ArgumentBudget and
+ *   selects the ArgumentSource based on what the host app provides.
+ * ```
+ *
  * Receives one back stack entry's arguments as a [source][ArgumentSource] produces them, enforcing
  * the argument limits as it goes.
  *

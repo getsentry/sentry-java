@@ -2,8 +2,11 @@
 
 package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
+import io.sentry.compose.navigation3.internal.backstack.ArgumentBudget
+import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
 import io.sentry.util.ExceptionUtils
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
 /**
@@ -38,6 +41,16 @@ internal interface KotlinxCompatibilityProbe {
    */
   fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError?
 
+  /**
+   * Encodes [ProbeClass] using the same path as [KotlinxBackStackEntryMapper].
+   *
+   * Returns a [LinkageError] if the encoder can't link against the host app's kotlinx.serialization
+   * version, or `null` if encoding succeeds or the check is inconclusive.
+   *
+   * Calls [onInconclusive] for each inconclusive result, passing the cause.
+   */
+  fun encodingLinkageError(onInconclusive: (Throwable) -> Unit): LinkageError?
+
   /** Probes the app's kotlinx.serialization version using [ProbeClass] and [ProbeObject]. */
   companion object : KotlinxCompatibilityProbe {
 
@@ -66,6 +79,16 @@ internal interface KotlinxCompatibilityProbe {
       }
       return error
     }
+
+    override fun encodingLinkageError(onInconclusive: (Throwable) -> Unit): LinkageError? =
+      probe(onInconclusive) {
+        @Suppress("UNCHECKED_CAST")
+        KotlinxPropertiesEncoder.encode(
+          ProbeClass.serializer() as KSerializer<Any>,
+          ProbeClass(),
+          TreeArgumentWriter(ArgumentBudget()),
+        )
+      }
 
     /**
      * Runs [check], returning any [LinkageError] and rethrowing fatal errors. Returns `null` if the

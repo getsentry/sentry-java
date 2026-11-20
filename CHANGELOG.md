@@ -10,6 +10,7 @@
 ### Features
 
 - Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
+- Nav3: Add `BackStackEntryMapper.SerialNameAndProperties`, which is like `SerialName` except that it also records the properties of each back stack entry as arguments ([#6706](https://github.com/getsentry/sentry-java/pull/6706))
 
 ### Dependencies
 
