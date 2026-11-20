@@ -107,7 +107,7 @@ dependencies {
 // .github/workflows/compose-ui-matrix.yml runs each version's task. The oldest entry pins material3
 // to a version that runs on that Compose UI, because the catalog's material3 needs a newer one.
 dependencyMatrix {
-  matrix(
+  androidUnitTests(
     name = "composeUi",
     groups =
       listOf(

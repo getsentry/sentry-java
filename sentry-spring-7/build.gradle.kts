@@ -5,7 +5,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  id("io.sentry.spring-boot-matrix")
+  id("io.sentry.dependency-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -149,7 +149,12 @@ testing {
 }
 
 // The suites on each Spring Boot 4 version the CI matrix tests.
-springBootMatrix {
-  versions(line = 4)
-  test("integrationTest")
+dependencyMatrix {
+  jvmTestSuites(
+    name = "springBoot",
+    groups = listOf("org.springframework.boot"),
+    versionsFile = "spring-boot-4-versions.json",
+  ) {
+    test("integrationTest")
+  }
 }

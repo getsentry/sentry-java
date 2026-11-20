@@ -77,12 +77,10 @@ class OtelAgentTestsPlugin : Plugin<Project> {
 }
 
 /** Registers both OpenTelemetry agent test tasks on each Spring Boot version of the matrix. */
-fun SpringBootMatrixExtension.otelAgentTests() {
-  test(SUITE) { version ->
-    runAgentFixture(autoInit = true, runtimeClasspath(AGENT_FIXTURE, version))
-  }
-  test(SUITE, name = WITHOUT_AUTO_INIT) { version ->
-    runAgentFixture(autoInit = false, runtimeClasspath(AGENT_FIXTURE, version))
+fun JvmTestSuitesMatrix.otelAgentTests() {
+  test(SUITE) { runAgentFixture(autoInit = true, runtimeClasspath(AGENT_FIXTURE)) }
+  test(SUITE, testName = WITHOUT_AUTO_INIT) {
+    runAgentFixture(autoInit = false, runtimeClasspath(AGENT_FIXTURE))
   }
 }
 
