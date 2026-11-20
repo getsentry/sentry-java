@@ -3,8 +3,10 @@ package io.sentry.compose.navigation3.internal.backstack
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
-import io.sentry.compose.navigation3.ForwardingBackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.util.ExceptionUtils
@@ -144,7 +146,7 @@ internal class BackStackConverter<T : Any>(
   ) {
 
     private val activeContainers = IdentityHashMap<Any, Unit>()
-    private var remainingValues = MAX_ARGUMENT_COUNT
+    private var remainingValues = MAX_ARGUMENT_VALUES
     private var remainingCharacters = MAX_ARGUMENT_CHARACTERS
     private var dropReason: ArgumentDropReason? = null
 
@@ -288,44 +290,6 @@ internal class BackStackConverter<T : Any>(
     }
 
     private companion object {
-
-      /**
-       * Max nesting depth allowed while sanitizing a single argument value for a given back stack
-       * entry.
-       *
-       * For instance, `mapOf("id" to 123)` has a depth of 1; `mapOf("items" to listOf("apple",
-       * "banana"))` has a depth of 2.
-       *
-       * If exceeded, all arguments for that back stack entry are dropped.
-       */
-      private const val MAX_ARGUMENT_DEPTH = 10
-
-      /**
-       * Max number of argument values visited while sanitizing all entries in a given back stack
-       * update.
-       *
-       * For instance, `mapOf("id" to 123)` consumes 1 value; `mapOf("profile" to mapOf("id" to 123,
-       * "name" to "Ada"))` consumes 3 values.
-       *
-       * If exceeded, the entry that overflows loses its arguments, as do older entries; newer
-       * entries are preserved.
-       *
-       * For instance, suppose we have the following back stack:
-       *
-       * - /Checkout -> Top of the stack and processed first
-       * - /ProductDetail -> Processed second and overflows the `MAX_ARGUMENT_VALUES` budget
-       * - /Home
-       *
-       * Then /ProductDetail and /Home will have no arguments, but /Checkout will.
-       */
-      private const val MAX_ARGUMENT_COUNT = 200
-
-      /**
-       * Max number of characters visited while sanitizing all entries in a given back stack update.
-       *
-       * Caps payload size in the presence of large individual arguments.
-       */
-      private const val MAX_ARGUMENT_CHARACTERS = 4_096
 
       private const val MAX_CHARACTER_WARNING =
         "Nav3 arguments exceeded the maximum total character count for one backstack update. Skipping " +
