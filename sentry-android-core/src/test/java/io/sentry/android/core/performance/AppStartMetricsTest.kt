@@ -597,6 +597,27 @@ class AppStartMetricsTest {
   }
 
   @Test
+  @Config(sdk = [Build.VERSION_CODES.Q])
+  fun `on API 29+ a warm start is timed from onActivityPreCreated`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())
+    val coldActivity = mock<Activity>()
+    metrics.onActivityPreCreated(coldActivity, null)
+    metrics.onActivityCreated(coldActivity, null)
+    metrics.onActivityDestroyed(coldActivity)
+
+    val warmActivity = mock<Activity>()
+    val preCreatedUptimeMs = SystemClock.uptimeMillis() + TimeUnit.SECONDS.toMillis(25)
+    SystemClock.setCurrentTimeMillis(preCreatedUptimeMs)
+    metrics.onActivityPreCreated(warmActivity, null)
+    SystemClock.setCurrentTimeMillis(preCreatedUptimeMs + 100)
+    metrics.onActivityCreated(warmActivity, null)
+
+    assertThat(metrics.appStartType).isEqualTo(AppStartMetrics.AppStartType.WARM)
+    assertThat(metrics.appStartTimeSpan.startUptimeMs).isEqualTo(preCreatedUptimeMs)
+  }
+
+  @Test
   fun `provider sets both appstart and sdk init start + end times`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())

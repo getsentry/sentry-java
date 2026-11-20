@@ -367,7 +367,9 @@ class AppStartMetricsTestApi35 {
     // User opens the app 20s later (under the 1-minute warm threshold).
     val activityCreatedUptimeMs = 20_000L
     SystemClock.setCurrentTimeMillis(activityCreatedUptimeMs)
-    metrics.onActivityCreated(mock<Activity>(), null)
+    val activity = mock<Activity>()
+    metrics.onActivityPreCreated(activity, null)
+    metrics.onActivityCreated(activity, null)
 
     // Re-classified as a warm start re-anchored at activity creation.
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
