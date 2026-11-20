@@ -104,6 +104,12 @@ class SqlQueryAnalyzerPathologicalTest(
         // `[` must not scan past the next one (option 06 step 6).
         Input("128 KiB of opening brackets, closed") { "SELECT " + "[".repeat(128 * KIB) + "]" },
         Input("128 KiB of opening brackets, unterminated") { "SELECT " + "[".repeat(128 * KIB) },
+        // Where `#`, `//` or `--x` is no comment, or `q'` no literal, the lexer must not scan to
+        // the end of the line or the input at each one (option 06 step 8).
+        Input("128 KiB of hash signs on one line") { "SELECT 1 " + "#".repeat(128 * KIB) },
+        Input("128 KiB of double slashes on one line") { "SELECT 1 " + "//".repeat(64 * KIB) },
+        Input("128 KiB of --a on one line") { "SELECT 1 " + "--a".repeat(128 * KIB / 3) },
+        Input("128 KiB of q'[ on one line") { "SELECT 1 " + "q'[".repeat(128 * KIB / 3) },
         // OTel Java SqlQueryAnalyzerTest#longInStatementDoesntCauseStackOverflow
         Input("10001-item IN list") {
           "select col from table where col in (" + "?,".repeat(10_000) + "?)"

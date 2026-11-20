@@ -335,6 +335,20 @@
       "note": ""
     },
     {
+      "id": "literal.number.word_suffix.postgresql",
+      "requirements": ["R2"],
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE a = 123_456_789 AND b = 0o1234567 AND c = 0x_DEAD_BEEF AND d = 9_876.5e1_2",
+      "expected": {
+        "text": "SELECT * FROM t WHERE a = ? AND b = ? AND c = ? AND d = ??",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["123_456_789", "0o1234567", "0x_DEAD_BEEF", "9_876.5e1_2"],
+      "source": "sentry",
+      "note": "PostgreSQL 16 reads digit separators and 0o/0x prefixes, SQLite 3.46 digit separators. Word characters directly after a number join its ?, so a decimal with separators on both sides of the point gives ?? (option 06 step 8, review 01 P1c)."
+    },
+    {
       "id": "literal.national.sqlserver",
       "requirements": ["R2"],
       "dialect": "sqlserver",
@@ -517,6 +531,62 @@
       "note": "taggedDollarQuotes is NO: H2 reads only untagged $$ quotes, so $t$ is a parameter marker and both literals are redacted. Reading $t$ as a tagged quote would close it inside 'p $t$' and expose the last literal."
     },
     {
+      "id": "literal.dollar_tag.inside_identifier.postgresql",
+      "requirements": ["R2", "R8"],
+      "dialect": "postgresql",
+      "input": "SELECT a$x$ FROM t WHERE p = 'foo$x$Zq9xK7si'",
+      "expected": {
+        "text": "SELECT a$x$ FROM t WHERE p = ?",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7si"],
+      "source": "sentry",
+      "note": "PostgreSQL: $ continues an unquoted name, and a dollar quote directly after a name is part of the name. Read as a dollar quote, $x$ closes inside the literal and the canary becomes SQL text (option 06 step 8, review 01 P1a)."
+    },
+    {
+      "id": "literal.dollar.inside_identifier.h2",
+      "requirements": ["R4", "R8"],
+      "dialect": "h2",
+      "input": "SELECT a$$ FROM t WHERE p = 'x$$Zq9xK7sj'",
+      "expected": {
+        "text": "SELECT a?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sj"],
+      "source": "sentry",
+      "note": "dollarQuotedStrings is YES and whether H2 continues a name with $ was not checked: a name part with two $ stops at the first one. Read as a dollar quote, $$ closes inside the literal and the canary becomes SQL text."
+    },
+    {
+      "id": "literal.dollar_tag.inside_identifier.conservative",
+      "requirements": ["R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a$x$Zq9xK7sk$x$ FROM t",
+      "expected": {
+        "text": "SELECT a?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sk"],
+      "source": "sentry",
+      "note": "taggedDollarQuotes is UNKNOWN: a name part with two $ stops at the first one. Read as one name, the dollar-quoted canary stays in the text."
+    },
+    {
+      "id": "shape.dollar_in_identifier.oracle",
+      "requirements": ["R6", "R8"],
+      "dialect": "oracle",
+      "input": "SELECT sid FROM V$SESSION WHERE username = 'Zq9xK7sl'",
+      "expected": {
+        "text": "SELECT sid FROM V$SESSION WHERE username = ?",
+        "summary": "SELECT V$SESSION",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7sl"],
+      "source": "sentry",
+      "note": "Oracle has no dollar quotes, so a $ inside a name is part of it."
+    },
+    {
       "id": "literal.q_quote.oracle",
       "requirements": ["R2", "R8"],
       "dialect": "oracle",
@@ -613,6 +683,62 @@
       "secrets": ["Zq9xK7qb"],
       "source": "sentry",
       "note": "alternativeQuoting is UNKNOWN (D13): stop at q'. Plan 04 finding 1 (D20)."
+    },
+    {
+      "id": "literal.q_quote.other_closer_inside.oracle",
+      "requirements": ["R2", "R8"],
+      "dialect": "oracle",
+      "input": "SELECT q'[a)'Zq9xK7ss]' FROM t",
+      "expected": {
+        "text": "SELECT ? FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7ss"],
+      "source": "sentry",
+      "note": "Only the closing character of the opening delimiter, followed by a quote, ends q'...'. Ended at )', the canary becomes SQL text (option 06 step 8)."
+    },
+    {
+      "id": "literal.q_quote.after_number.oracle",
+      "requirements": ["R2", "R8"],
+      "dialect": "oracle",
+      "input": "SELECT 1q'[it's Zq9xK7st]' FROM dual",
+      "expected": {
+        "text": "SELECT ?? FROM dual",
+        "summary": "SELECT dual",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7st"],
+      "source": "sentry",
+      "note": "A number ends before q'...', as Oracle ends a number at a letter. Read as part of the number, q is lost and the canary becomes SQL text between plain quotes (option 06 step 8)."
+    },
+    {
+      "id": "literal.q_quote.after_dot.oracle",
+      "requirements": ["R2", "R8"],
+      "dialect": "oracle",
+      "input": "SELECT x.q'!it's Zq9xK7sq!' FROM t",
+      "expected": {
+        "text": "SELECT x.? FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7sq"],
+      "source": "sentry",
+      "note": "q'...' directly after . is a literal, not the last part of a dotted name. Read as x.q and plain quotes, the canary becomes SQL text. Not valid SQL; whether Oracle accepts it was not checked (option 06 step 8)."
+    },
+    {
+      "id": "literal.q_quote.after_dot.conservative",
+      "requirements": ["R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT x.nq'[a'Zq9xK7sr]' FROM t",
+      "expected": {
+        "text": "SELECT x.?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sr"],
+      "source": "sentry",
+      "note": "alternativeQuoting is UNKNOWN: nq' directly after . stops like nq' anywhere else."
     },
     {
       "id": "literal.keyword_before_quote",
@@ -838,6 +964,19 @@
       "note": ""
     },
     {
+      "id": "comment.hash.empty_lines.mysql",
+      "requirements": ["R3", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT a #\nFROM t #",
+      "expected": {
+        "text": "SELECT a FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "source": "sentry",
+      "note": "A # comment with nothing after it, at a line end and at the end of input. The line end is whitespace, and the scan completes (option 06 step 8)."
+    },
+    {
       "id": "comment.hash.postgresql",
       "requirements": ["R8"],
       "dialect": "postgresql",
@@ -935,30 +1074,30 @@
     },
     {
       "id": "comment.dash_dash.mysql",
-      "requirements": ["R8"],
+      "requirements": ["R4", "R8"],
       "dialect": "mysql",
       "input": "SELECT 1--1 FROM t",
       "expected": {
-        "text": "SELECT ?-? FROM t",
-        "summary": "SELECT t",
-        "status": "COMPLETE"
+        "text": "SELECT ??",
+        "summary": "SELECT",
+        "status": "STOPPED"
       },
       "source": "sentry",
-      "note": "dashDashCommentNeedsWhitespace is YES: 1--1 is 1 - -1."
+      "note": "dashDashCommentNeedsWhitespace is YES: 1--1 is 1 - -1. The analyzer stops at --1 instead of reading on: reading on scanned the line again at each -- (option 06 step 8)."
     },
     {
       "id": "comment.dash_dash.before_comment.mysql",
-      "requirements": ["R3", "R8"],
+      "requirements": ["R3", "R4", "R8"],
       "dialect": "mysql",
       "input": "SELECT a--/* Zq9xK7sf */b FROM t",
       "expected": {
-        "text": "SELECT a--b FROM t",
-        "summary": "SELECT t",
-        "status": "COMPLETE"
+        "text": "SELECT a?",
+        "summary": "SELECT",
+        "status": "STOPPED"
       },
       "secrets": ["Zq9xK7sf"],
       "source": "sentry",
-      "note": "dashDashCommentNeedsWhitespace is YES: -- before a comment is two minus signs. The removed comment leaves no space after them, which would turn them into a comment opener when the text is analyzed again (D28)."
+      "note": "dashDashCommentNeedsWhitespace is YES: -- before a comment is two minus signs, and the analyzer stops there (option 06 step 8). Before, the removed comment left no space after them, which would have turned them into a comment opener when the text was analyzed again (D28)."
     },
     {
       "id": "comment.dash_dash.postgresql",
@@ -2697,6 +2836,62 @@
       "secrets": ["Zq9xK7sh"],
       "source": "sentry",
       "note": "A bracketed name cannot contain [ here, although T-SQL allows it: the analyzer stops at the first [. This keeps bracket scanning linear where [ is punctuation (option 06 step 6)."
+    },
+    {
+      "id": "dialect.brackets.escaped_close.sqlserver",
+      "requirements": ["R4", "R8"],
+      "dialect": "sqlserver",
+      "input": "SELECT [a]]'x] FROM t WHERE p = 'Zq9xK7sm'",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sm"],
+      "source": "sentry",
+      "note": "T-SQL reads ]] inside [...] as one ], so [a]]'x] is one name. Ended at the first ], 'x] FROM t WHERE p = ' becomes a literal and the canary SQL text. The analyzer stops at the [ (option 06 step 8, review 01 P1b)."
+    },
+    {
+      "id": "dialect.brackets.escaped_close_dotted.sqlserver",
+      "requirements": ["R4", "R8"],
+      "dialect": "sqlserver",
+      "input": "SELECT [dbo].[a]]'x] FROM t WHERE p = 'Zq9xK7sn'",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sn"],
+      "source": "sentry",
+      "note": "The same for a bracketed part of a dotted name."
+    },
+    {
+      "id": "dialect.brackets.escaped_close.sqlite",
+      "requirements": ["R4", "R8"],
+      "dialect": "sqlite",
+      "input": "SELECT [a]]'Zq9xK7so' FROM [t]",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7so"],
+      "source": "sentry",
+      "note": "SQLite has no ]] escape: [a] ends at the first ] and 'Zq9xK7so' is a literal. Read the T-SQL way, [a]]'Zq9xK7so' FROM [t] is one name and the canary stays in the text. So ]] stops rather than being read as an escape."
+    },
+    {
+      "id": "dialect.brackets.escaped_close.conservative",
+      "requirements": ["R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [a]]'x] FROM t WHERE p = 'Zq9xK7sp'",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7sp"],
+      "source": "sentry",
+      "note": "bracketIdentifiers is UNKNOWN: a ] directly after a bracketed part may continue it (T-SQL), so stop at [."
     },
     {
       "id": "dialect.brackets.sqlite",
@@ -11098,7 +11293,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["alice]]smith"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[5]",
@@ -11167,7 +11362,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["aaaaaaaaaa]]"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[1]",
@@ -11181,7 +11376,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["]]]]]]]]]]]]"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[2]",
@@ -11195,7 +11390,7 @@
       "expected": {
         "text": "CREATE USER ?",
         "summary": "CREATE USER",
-        "status": "COMPLETE"
+        "status": "STOPPED"
       },
       "secrets": ["]]]]]]]]]]]]"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[3]",
