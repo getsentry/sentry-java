@@ -36,7 +36,10 @@ import io.sentry.android.core.anr.AnrProfileRotationHelper;
 import io.sentry.android.core.anr.AnrProfilingIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.hang.HandlerThreadPoster;
+import io.sentry.android.core.hang.HangDataCollector;
 import io.sentry.android.core.hang.HangRecorder;
+import io.sentry.android.core.hang.RuntimeStatsCollector;
+import io.sentry.android.core.hang.RuntimeStatsSource;
 import io.sentry.android.core.hang.ThreadHangSignal;
 import io.sentry.android.core.hang.ThreadPoster;
 import io.sentry.android.core.hang.ThreadSampleCollector;
@@ -275,7 +278,7 @@ final class AndroidOptionsInitializer {
       debugManager = new AndroidDebugManager();
       options.setDebugManager(debugManager);
     }
-    setupHangRecorder(options, debugManager);
+    setupHangRecorder(options, debugManager, buildInfoProvider);
     if (options.getSocketTagger() instanceof NoOpSocketTagger) {
       options.setSocketTagger(AndroidSocketTagger.getInstance());
     }
@@ -536,7 +539,9 @@ final class AndroidOptionsInitializer {
   }
 
   private static void setupHangRecorder(
-      final @NotNull SentryAndroidOptions options, final @NotNull IDebugManager debugManager) {
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull IDebugManager debugManager,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     if (options.getCacheDirPath() == null || options.getHangRecorder() != null) {
       return;
     }
@@ -545,6 +550,13 @@ final class AndroidOptionsInitializer {
     // options.getMonotonicTicker() counts device sleep, which would read as a hang.
     final @NotNull MonotonicTicker ticker = JavaMonotonicTicker.getInstance();
     final @NotNull EpochClock epochClock = options.getEpochClock();
+    final @NotNull List<HangDataCollector> collectors = new ArrayList<>();
+    collectors.add(new ThreadSampleCollector(options, epochClock, ticker, mainLooper.getThread()));
+    final @Nullable RuntimeStatsSource runtimeStatsSource =
+        createRuntimeStatsSource(buildInfoProvider, options.getLogger());
+    if (runtimeStatsSource != null) {
+      collectors.add(new RuntimeStatsCollector(runtimeStatsSource));
+    }
     final @NotNull HangRecorder recorder =
         new HangRecorder(
             options,
@@ -562,9 +574,15 @@ final class AndroidOptionsInitializer {
                         debugManager,
                         mainThreadPoster,
                         HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS)),
-            Collections.singletonList(
-                new ThreadSampleCollector(options, epochClock, ticker, mainLooper.getThread())));
+            collectors);
     options.setHangRecorder(recorder);
+  }
+
+  static @Nullable RuntimeStatsSource createRuntimeStatsSource(
+      final @NotNull BuildInfoProvider buildInfoProvider, final @NotNull ILogger logger) {
+    return buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M
+        ? new AndroidRuntimeStatsSource(logger)
+        : null;
   }
 
   /**

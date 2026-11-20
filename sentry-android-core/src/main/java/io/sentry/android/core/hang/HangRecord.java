@@ -3,8 +3,10 @@ package io.sentry.android.core.hang;
 import io.sentry.android.core.anr.AnrStackTrace;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** The collected data of one hang interval that ended with a record. */
 @ApiStatus.Internal
@@ -13,12 +15,14 @@ public final class HangRecord {
   private final long durationMs;
   private final long startTimestampMs;
   private final @NotNull List<AnrStackTrace> samples;
+  private final @Nullable Map<String, Object> runtimeStats;
   private final boolean endedAtMaxRecordingTime;
 
   private HangRecord(final @NotNull Builder builder) {
     this.durationMs = builder.durationMs;
     this.startTimestampMs = builder.startTimestampMs;
     this.samples = builder.samples;
+    this.runtimeStats = builder.runtimeStats;
     this.endedAtMaxRecordingTime = builder.endedAtMaxRecordingTime;
   }
 
@@ -35,6 +39,11 @@ public final class HangRecord {
     return samples;
   }
 
+  /** Null if no collector recorded runtime stats for this interval. */
+  public @Nullable Map<String, Object> getRuntimeStats() {
+    return runtimeStats;
+  }
+
   /**
    * Whether the interval was cut at the maximum recording time. The watched thread is then still
    * blocked when the record is given to the listeners.
@@ -47,6 +56,7 @@ public final class HangRecord {
     private final long durationMs;
     private final long startTimestampMs;
     private @NotNull List<AnrStackTrace> samples = Collections.emptyList();
+    private @Nullable Map<String, Object> runtimeStats;
     private boolean endedAtMaxRecordingTime;
 
     public Builder(final long durationMs, final long startTimestampMs) {
@@ -56,6 +66,11 @@ public final class HangRecord {
 
     public @NotNull Builder setSamples(final @NotNull List<AnrStackTrace> samples) {
       this.samples = samples;
+      return this;
+    }
+
+    public @NotNull Builder setRuntimeStats(final @Nullable Map<String, Object> runtimeStats) {
+      this.runtimeStats = runtimeStats;
       return this;
     }
 

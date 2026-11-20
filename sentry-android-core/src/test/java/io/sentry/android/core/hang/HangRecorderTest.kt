@@ -63,7 +63,10 @@ class HangRecorderTest {
     createRecorder()
   }
 
-  private fun createRecorder(signalCount: Int = 1) {
+  private fun createRecorder(
+    signalCount: Int = 1,
+    collectors: List<HangDataCollector> = listOf(collector),
+  ) {
     recorder =
       HangRecorder(
         options,
@@ -78,7 +81,7 @@ class HangRecorderTest {
           repeat(signalCount) { signals.add(FakeSignal(metronome)) }
           signals
         },
-        listOf(collector),
+        collectors,
       )
     signal = signals.first()
   }
@@ -168,6 +171,32 @@ class HangRecorderTest {
     assertThat(record.durationMs).isEqualTo(idleSinceMs - suspiciousSinceMs)
     assertThat(record.startTimestampMs).isEqualTo(timestampAtOpenMs - 300)
     assertThat(record.samples).isSameInstanceAs(samples)
+  }
+
+  @Test
+  fun `record carries the runtime stats of a runtime stats collector`() {
+    var gcCount = 10L
+    val source = RuntimeStatsSource {
+      RuntimeStatsSnapshot().also {
+        it.gcCount = gcCount
+        it.totalMemory = 50
+      }
+    }
+    createRecorder(collectors = listOf(RuntimeStatsCollector(source)))
+    startInForeground()
+    openIntervalInTick(300)
+    gcCount = 13
+
+    signal.report(HangSignal.State.IDLE, 0)
+    sdkExecutor.runAll()
+
+    assertThat(records.single().runtimeStats)
+      .containsAtLeast(
+        RuntimeStatsCollector.KEY_TOTAL_MEMORY,
+        50L,
+        RuntimeStatsCollector.KEY_GC_COUNT_DELTA,
+        3L,
+      )
   }
 
   @Test
