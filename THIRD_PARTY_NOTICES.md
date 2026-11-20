@@ -455,7 +455,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of the ANR-WatchDog library for Application Not Responding (ANR) detection on Android. The code resides in `io.sentry.android.core.ANRWatchDog`.
+The Sentry Java SDK includes an adapted version of the ANR-WatchDog library for Application Not Responding (ANR) detection on Android. The code resides in `io.sentry.android.core.ANRWatchDog` and `io.sentry.android.core.ApplicationNotResponding` (adapted from `ANRError`).
 
 ```
 MIT License
