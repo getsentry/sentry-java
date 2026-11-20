@@ -14,6 +14,7 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.SentryException
+import io.sentry.util.HintUtils
 import io.sentry.util.thread.IThreadChecker
 import java.io.Writer
 import kotlin.test.BeforeTest
@@ -146,6 +147,32 @@ class ViewHierarchyEventProcessorTest {
   fun `when an event errored, the view hierarchy should be attached if the feature is enabled`() {
     val (event, hint) =
       fixture.process(true, SentryEvent().apply { exceptions = listOf(SentryException()) })
+
+    assertNotNull(event)
+    assertNotNull(hint.viewHierarchy)
+  }
+
+  @Test
+  fun `non-fatal ANR with the main thread blocked gets no view hierarchy`() {
+    val (event, hint) =
+      fixture.process(
+        true,
+        SentryEvent().apply { exceptions = listOf(SentryException()) },
+        HintUtils.createWithTypeCheckHint(NonFatalAnrHint(true, null)),
+      )
+
+    assertNotNull(event)
+    assertNull(hint.viewHierarchy)
+  }
+
+  @Test
+  fun `non-fatal ANR without the main thread blocked gets a view hierarchy`() {
+    val (event, hint) =
+      fixture.process(
+        true,
+        SentryEvent().apply { exceptions = listOf(SentryException()) },
+        HintUtils.createWithTypeCheckHint(NonFatalAnrHint(false, null)),
+      )
 
     assertNotNull(event)
     assertNotNull(hint.viewHierarchy)

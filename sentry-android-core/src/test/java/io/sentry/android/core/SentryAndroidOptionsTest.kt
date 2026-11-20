@@ -242,6 +242,29 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
+  fun `non fatal anr defaults`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertNull(sentryOptions.nonFatalAnrSampleRate)
+    assertEquals(700L, sentryOptions.nonFatalAnrThresholdMs)
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun `non fatal anr rejects invalid sample rate`() {
+    SentryAndroidOptions().nonFatalAnrSampleRate = -0.1
+  }
+
+  @Test
+  fun `non fatal anr ignores a negative threshold`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.nonFatalAnrThresholdMs = 1_500
+
+    sentryOptions.nonFatalAnrThresholdMs = -1
+
+    assertEquals(1_500L, sentryOptions.nonFatalAnrThresholdMs)
+  }
+
+  @Test
   fun `app hang tracking is disabled by default with a 5s timeout`() {
     val sentryOptions = SentryAndroidOptions()
     assertFalse(sentryOptions.isEnableNdkAppHangTracking)
