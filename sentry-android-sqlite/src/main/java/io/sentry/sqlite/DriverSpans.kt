@@ -10,6 +10,7 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
+import io.sentry.util.sql.SqlSpanData
 
 private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
 
@@ -38,7 +39,10 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
       // ...otherwise fall back to millisecond precision + allocate.
       ?: scopes.options.dateProvider.now().nanoTimestamp()
 
-  /** Records a `db.sql.query` span. */
+  /**
+   * Records a `db.sql.query` span with the sanitized [sql]. Does nothing, and doesn't analyze
+   * [sql], if there is no active parent span.
+   */
   fun record(
     sql: String,
     startTimestampNanos: Long,
@@ -46,25 +50,39 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
     status: SpanStatus,
     throwable: Throwable? = null,
   ) {
-    val parent = scopes.span ?: return
+    val parent = scopes.span
+    if (parent == null || parent.isNoOp) {
+      return
+    }
     val startTimestamp = SentryLongDate(startTimestampNanos)
     val endTimestamp = SentryLongDate(startTimestampNanos + durationNanos)
+    val queryData =
+      SqlSpanData.analyze(sql, dbMetadata.system, MAX_QUERY_TEXT_LENGTH, scopes.options.logger)
 
-    parent.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY).apply {
-      spanContext.origin = SQLITE_TRACE_ORIGIN
-      throwable?.let { this.throwable = it }
+    parent
+      .startChild("db.sql.query", queryData.description, startTimestamp, Instrumenter.SENTRY)
+      .apply {
+        spanContext.origin = SQLITE_TRACE_ORIGIN
+        queryData.applyTo(this)
+        throwable?.let { this.throwable = it }
 
-      val isMainThread = scopes.options.threadChecker.isMainThread
-      setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
+        val isMainThread = scopes.options.threadChecker.isMainThread
+        setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
 
-      if (isMainThread) {
-        setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
+        if (isMainThread) {
+          setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
+        }
+
+        dbMetadata.name?.let {
+          setData(SpanDataConvention.DB_NAME_KEY, it)
+          setData(SpanDataConvention.DB_NAMESPACE_KEY, it)
+        }
+        setData(SpanDataConvention.DB_SYSTEM_KEY, dbMetadata.system)
+        SqlSpanData.toDbSystemName(dbMetadata.system)?.let {
+          setData(SpanDataConvention.DB_SYSTEM_NAME_KEY, it)
+        }
+        finish(status, endTimestamp)
       }
-
-      dbMetadata.name?.let { setData(SpanDataConvention.DB_NAME_KEY, it) }
-      setData(SpanDataConvention.DB_SYSTEM_KEY, dbMetadata.system)
-      finish(status, endTimestamp)
-    }
   }
 
   companion object {

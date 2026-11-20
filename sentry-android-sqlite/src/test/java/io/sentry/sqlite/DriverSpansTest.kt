@@ -1,5 +1,7 @@
 package io.sentry.sqlite
 
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.SentryDateProvider
@@ -130,6 +132,67 @@ class DriverSpansTest {
   }
 
   @Test
+  fun `record method keeps literals and comments out of every span field`() {
+    // input to (description and db.query.text, db.query.summary)
+    val cases =
+      listOf(
+        Triple("SELECT a FROM t WHERE p = 'canary'", "SELECT a FROM t WHERE p = ?", "SELECT t"),
+        Triple("SELECT a /* canary */ FROM t", "SELECT a FROM t", "SELECT t"),
+        Triple("SELECT a FROM t -- canary\nWHERE b = 1", "SELECT a FROM t WHERE b = ?", "SELECT t"),
+        // STOPPED: unterminated literal
+        Triple("UPDATE t SET p = 'canary", "UPDATE t SET p = ?", "UPDATE t"),
+      )
+    val sut = fixture.getSut(fileName = "tracks.db")
+
+    cases.forEach { (sql, _, _) -> sut.record(sql, sut.startTimestamp(), 1_000_000, SpanStatus.OK) }
+
+    assertThat(fixture.sentryTracer.children).hasSize(cases.size)
+    cases.zip(fixture.sentryTracer.children).forEach { (case, span) ->
+      val (sql, text, summary) = case
+      assertWithMessage(sql).that(span.description).isEqualTo(text)
+      assertWithMessage(sql).that(span.data[SpanDataConvention.DB_QUERY_TEXT_KEY]).isEqualTo(text)
+      assertWithMessage(sql)
+        .that(span.data[SpanDataConvention.DB_QUERY_SUMMARY_KEY])
+        .isEqualTo(summary)
+      assertNoCanary(span)
+    }
+  }
+
+  @Test
+  fun `record method reports the truncated sanitized text for a query over the limit`() {
+    val sql =
+      "SELECT a FROM orders WHERE note = 'canary' OR " +
+        (0 until 1000).joinToString(" OR ") { "c$it IS NULL" }
+    val sut = fixture.getSut(fileName = "tracks.db")
+
+    sut.record(sql, sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).startsWith("SELECT a FROM orders WHERE note = ? OR c0 IS NULL OR ")
+    assertThat(span.description).hasLength(8192)
+    assertThat(span.data[SpanDataConvention.DB_QUERY_TEXT_KEY]).isEqualTo(span.description)
+    assertThat(span.data[SpanDataConvention.DB_QUERY_SUMMARY_KEY]).isEqualTo("SELECT orders")
+    assertNoCanary(span)
+  }
+
+  @Test
+  fun `record method sanitizes queries on an in-memory database with SQLite rules`() {
+    // SQLite has no backslash escapes; with unknown rules the analyzer stops after 'x\'
+    val sut = fixture.getSut(fileName = ":memory:")
+
+    sut.record(
+      "SELECT a FROM t WHERE b = 'x\\' AND c = 'canary'",
+      sut.startTimestamp(),
+      1_000_000,
+      SpanStatus.OK,
+    )
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isEqualTo("SELECT a FROM t WHERE b = ? AND c = ?")
+    assertNoCanary(span)
+  }
+
+  @Test
   fun `record method sets finishDate equal to startDate + durationNanos`() {
     val sut = fixture.getSut()
     val start = sut.startTimestamp()
@@ -163,10 +226,12 @@ class DriverSpansTest {
     val span = fixture.sentryTracer.children.first()
     assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
     assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_NAME_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAMESPACE_KEY])
   }
 
   @Test
-  fun `record method sets db system only when fileName is the in-memory sentinel`() {
+  fun `record method sets db system but no db name when fileName is the in-memory sentinel`() {
     val sut = fixture.getSut(fileName = ":memory:")
     val start = sut.startTimestamp()
     sut.record("SELECT 1", start, 1_000_000, SpanStatus.OK)
@@ -174,6 +239,8 @@ class DriverSpansTest {
     val span = fixture.sentryTracer.children.first()
     assertEquals("in-memory", span.data[SpanDataConvention.DB_SYSTEM_KEY])
     assertNull(span.data[SpanDataConvention.DB_NAME_KEY])
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_NAME_KEY])
+    assertNull(span.data[SpanDataConvention.DB_NAMESPACE_KEY])
   }
 
   @Test

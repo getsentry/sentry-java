@@ -2,12 +2,15 @@ package io.sentry.android.sqlite
 
 import android.database.CrossProcessCursor
 import android.database.CursorWrapper
+import com.google.common.truth.Truth.assertThat
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.sqlite.assertNoCanary
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -71,6 +74,19 @@ class SentryCrossProcessCursorTest {
     sut.count
     val span = fixture.sentryTracer.children.firstOrNull()
     assertSqlSpanCreated(sql, span)
+  }
+
+  @Test
+  fun `getCount sanitizes the deferred query`() {
+    val sut = fixture.getSut("SELECT a FROM t WHERE p = 'canary'")
+
+    sut.count
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isEqualTo("SELECT a FROM t WHERE p = ?")
+    assertThat(span.data[SpanDataConvention.DB_QUERY_TEXT_KEY])
+      .isEqualTo("SELECT a FROM t WHERE p = ?")
+    assertNoCanary(span)
   }
 
   @Test

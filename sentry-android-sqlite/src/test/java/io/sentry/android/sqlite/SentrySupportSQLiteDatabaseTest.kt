@@ -98,7 +98,7 @@ class SentrySupportSQLiteDatabaseTest {
 
   @Test
   fun `execPerConnectionSQL creates a span if a span is running`() {
-    val sql = "execPerConnectionSQL"
+    val sql = "PRAGMA foreign_keys"
     val sut = fixture.getSut()
     assertEquals(0, fixture.sentryTracer.children.size)
     sut.execPerConnectionSQL(sql, emptyArray())
@@ -115,7 +115,7 @@ class SentrySupportSQLiteDatabaseTest {
 
   @Test
   fun `query creates a span if a span is running`() {
-    val sql = "query"
+    val sql = "SELECT a FROM t"
     val sut = fixture.getSut()
     assertEquals(0, fixture.sentryTracer.children.size)
     sut.query(sql)
@@ -132,7 +132,7 @@ class SentrySupportSQLiteDatabaseTest {
 
   @Test
   fun `query with bindArgs creates a span if a span is running`() {
-    val sql = "query"
+    val sql = "SELECT a FROM t"
     val sut = fixture.getSut()
     assertEquals(0, fixture.sentryTracer.children.size)
     sut.query(sql, emptyArray())
@@ -149,7 +149,7 @@ class SentrySupportSQLiteDatabaseTest {
 
   @Test
   fun `query with SupportSQLiteQuery creates a span if a span is running`() {
-    val sql = "query"
+    val sql = "SELECT a FROM t"
     val sut = fixture.getSut()
     val query = mock<SupportSQLiteQuery>()
     whenever(query.sql).thenReturn(sql)
@@ -170,7 +170,7 @@ class SentrySupportSQLiteDatabaseTest {
 
   @Test
   fun `query with SupportSQLiteQuery and CancellationSignal creates a span if a span is running`() {
-    val sql = "query"
+    val sql = "SELECT a FROM t"
     val sut = fixture.getSut()
     val query = mock<SupportSQLiteQuery>()
     whenever(query.sql).thenReturn(sql)
@@ -191,7 +191,7 @@ class SentrySupportSQLiteDatabaseTest {
 
   @Test
   fun `execSQL creates a span if a span is running`() {
-    val sql = "execSQL"
+    val sql = "CREATE TABLE t (a INTEGER)"
     val sut = fixture.getSut()
     assertEquals(0, fixture.sentryTracer.children.size)
     sut.execSQL(sql)
@@ -208,7 +208,7 @@ class SentrySupportSQLiteDatabaseTest {
 
   @Test
   fun `execSQL with bindArgs creates a span if a span is running`() {
-    val sql = "execSQL"
+    val sql = "CREATE TABLE t (a INTEGER)"
     val sut = fixture.getSut()
     assertEquals(0, fixture.sentryTracer.children.size)
     sut.execSQL(sql, emptyArray())

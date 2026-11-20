@@ -2,6 +2,8 @@ package io.sentry.android.sqlite
 
 import android.database.CrossProcessCursor
 import android.database.SQLException
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.IScopes
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
@@ -9,6 +11,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.sqlite.assertNoCanary
 import io.sentry.util.thread.IThreadChecker
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -56,14 +59,70 @@ class OpenHelperSpansTest {
   @Test
   fun `performSql creates a span if a span is running`() {
     val sut = fixture.getSut()
-    sut.performSql("sql") {}
+    sut.performSql("SELECT a FROM t") {}
     val span = fixture.sentryTracer.children.firstOrNull()
     assertNotNull(span)
     assertEquals("db.sql.query", span.operation)
     assertEquals("auto.db.sqlite", span.spanContext.origin)
-    assertEquals("sql", span.description)
+    assertEquals("SELECT a FROM t", span.description)
     assertEquals(SpanStatus.OK, span.status)
     assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `performSql keeps literals and comments out of every span field`() {
+    // input to (description and db.query.text, db.query.summary)
+    val cases =
+      listOf(
+        Triple("SELECT a FROM t WHERE p = 'canary'", "SELECT a FROM t WHERE p = ?", "SELECT t"),
+        Triple("SELECT a /* canary */ FROM t", "SELECT a FROM t", "SELECT t"),
+        Triple("SELECT a FROM t -- canary\nWHERE b = 1", "SELECT a FROM t WHERE b = ?", "SELECT t"),
+        // STOPPED: unterminated literal
+        Triple("UPDATE t SET p = 'canary", "UPDATE t SET p = ?", "UPDATE t"),
+      )
+    val sut = fixture.getSut(databaseName = "tracks.db")
+
+    cases.forEach { (sql, _, _) -> sut.performSql(sql) {} }
+
+    assertThat(fixture.sentryTracer.children).hasSize(cases.size)
+    cases.zip(fixture.sentryTracer.children).forEach { (case, span) ->
+      val (sql, text, summary) = case
+      assertWithMessage(sql).that(span.description).isEqualTo(text)
+      assertWithMessage(sql).that(span.data[SpanDataConvention.DB_QUERY_TEXT_KEY]).isEqualTo(text)
+      assertWithMessage(sql)
+        .that(span.data[SpanDataConvention.DB_QUERY_SUMMARY_KEY])
+        .isEqualTo(summary)
+      assertNoCanary(span)
+    }
+  }
+
+  @Test
+  fun `performSql reports the truncated sanitized text for a query over the limit`() {
+    val sql =
+      "SELECT a FROM orders WHERE note = 'canary' OR " +
+        (0 until 1000).joinToString(" OR ") { "c$it IS NULL" }
+    val sut = fixture.getSut(databaseName = "tracks.db")
+
+    sut.performSql(sql) {}
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).startsWith("SELECT a FROM orders WHERE note = ? OR c0 IS NULL OR ")
+    assertThat(span.description).hasLength(8192)
+    assertThat(span.data[SpanDataConvention.DB_QUERY_TEXT_KEY]).isEqualTo(span.description)
+    assertThat(span.data[SpanDataConvention.DB_QUERY_SUMMARY_KEY]).isEqualTo("SELECT orders")
+    assertNoCanary(span)
+  }
+
+  @Test
+  fun `performSql sanitizes queries on an in-memory database with SQLite rules`() {
+    // SQLite has no backslash escapes; with unknown rules the analyzer stops after 'x\'
+    val sut = fixture.getSut(databaseName = null)
+
+    sut.performSql("SELECT a FROM t WHERE b = 'x\\' AND c = 'canary'") {}
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isEqualTo("SELECT a FROM t WHERE b = ? AND c = ?")
+    assertNoCanary(span)
   }
 
   @Test
@@ -74,16 +133,19 @@ class OpenHelperSpansTest {
   }
 
   @Test
-  fun `performSql creates a span with error status if the operation throws`() {
+  fun `performSql creates a span with sanitized query and error status if the operation throws`() {
     val sut = fixture.getSut()
     val e = SQLException()
     try {
-      sut.performSql("error sql") { throw e }
+      sut.performSql("DELETE FROM t WHERE p = 'canary'") { throw e }
     } catch (_: Throwable) {}
     val span = fixture.sentryTracer.children.firstOrNull()
     assertNotNull(span)
     assertEquals("db.sql.query", span.operation)
-    assertEquals("error sql", span.description)
+    assertEquals("DELETE FROM t WHERE p = ?", span.description)
+    assertEquals("DELETE FROM t WHERE p = ?", span.data[SpanDataConvention.DB_QUERY_TEXT_KEY])
+    assertEquals("DELETE t", span.data[SpanDataConvention.DB_QUERY_SUMMARY_KEY])
+    assertNoCanary(span)
     assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
     assertEquals(e, span.throwable)
     assertTrue(span.isFinished)
@@ -128,6 +190,8 @@ class OpenHelperSpansTest {
 
     assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "sqlite")
     assertEquals(span.data[SpanDataConvention.DB_NAME_KEY], "tracks.db")
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_NAME_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAMESPACE_KEY])
   }
 
   @Test
@@ -138,6 +202,8 @@ class OpenHelperSpansTest {
     val span = fixture.sentryTracer.children.first()
 
     assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "in-memory")
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_NAME_KEY])
+    assertNull(span.data[SpanDataConvention.DB_NAMESPACE_KEY])
   }
 
   @Test
