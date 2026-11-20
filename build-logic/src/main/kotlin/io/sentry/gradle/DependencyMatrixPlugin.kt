@@ -61,6 +61,9 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
    * A build type of [name] based on the test build type, whose unit tests run on their own runtime
    * classpath. Android needs a variant per version, because AGP builds the R class and resources
    * the unit tests run with from the variant's dependencies.
+   *
+   * Revisit this once the modules can use AGP test suites: a test suite per version could replace
+   * the extra build types.
    */
   private fun androidUnitTest(name: String): String {
     val android = project.extensions.getByType(LibraryExtension::class.java)
@@ -76,8 +79,8 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
     }
     val unitTest = "test${name.replaceFirstChar(Char::uppercase)}UnitTest"
     // Keeps them out of `test` and `check`, which run the test build type's unit tests only, like
-    // without a matrix. AGP adds the dependency when it creates the variant's tasks, after the
-    // build script runs.
+    // without a matrix. AGP creates `test` and makes it depend on every variant's unit tests after
+    // the build script runs, so the dependency can only be removed in afterEvaluate.
     project.afterEvaluate {
       project.tasks.named("test") {
         setDependsOn(dependsOn.filterNot { it is TaskProvider<*> && it.name == unitTest })
