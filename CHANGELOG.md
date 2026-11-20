@@ -36,6 +36,10 @@
 - Android: Mark transactions and spans that finish after their deadline as `deadline_exceeded`, so `ui.load` transactions with TTID, TTFD or app start values that are hours long after a device sleep no longer report `ok` ([#6599](https://github.com/getsentry/sentry-java/pull/6599))
 - Android: Register network callbacks on API 24–25 when `AndroidConnectionStatusProvider` is created with a custom `Handler`, instead of failing because the `Handler` overload needs API 26 ([#6634](https://github.com/getsentry/sentry-java/pull/6634))
 
+### Internal
+
+- Add a `WebView.loadUrl` adapter for automatic WebView trace propagation in the Sentry Android Gradle Plugin ([#6592](https://github.com/getsentry/sentry-java/pull/6592))
+
 ### Dependencies
 
 - Bump OpenTelemetry ([#6602](https://github.com/getsentry/sentry-java/pull/6602))
