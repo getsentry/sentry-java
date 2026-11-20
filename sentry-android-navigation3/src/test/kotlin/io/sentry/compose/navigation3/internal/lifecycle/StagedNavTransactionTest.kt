@@ -1,4 +1,4 @@
-package io.sentry.compose.navigation3.lifecycle
+package io.sentry.compose.navigation3.internal.lifecycle
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger

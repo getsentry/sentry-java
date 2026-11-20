@@ -9,9 +9,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
 import io.sentry.SentryOptions
-import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
-import io.sentry.compose.navigation3.lifecycle.NavRootInfo
-import io.sentry.compose.navigation3.lifecycle.findActivity
+import io.sentry.compose.navigation3.internal.backstack.CoordinatedBackStackObserver
+import io.sentry.compose.navigation3.internal.backstack.defaultNavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
+import io.sentry.compose.navigation3.internal.lifecycle.findActivity
 import org.jetbrains.annotations.ApiStatus
 
 /**

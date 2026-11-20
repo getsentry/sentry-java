@@ -3,6 +3,8 @@ package io.sentry.compose.navigation3
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
+import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
+import io.sentry.compose.navigation3.internal.backstack.BackStackConverter
 import org.junit.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
