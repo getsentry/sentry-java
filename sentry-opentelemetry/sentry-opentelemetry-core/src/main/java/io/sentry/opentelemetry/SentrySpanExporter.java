@@ -362,8 +362,7 @@ public final class SentrySpanExporter implements SpanExporter {
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
 
-    maybeTransferOtelAttribute(
-        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+    transferMessagingSystem(span, sentryTransaction);
     maybeTransferOtelAttribute(
         span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME);
     maybeTransferOtelAttribute(
@@ -380,6 +379,27 @@ public final class SentrySpanExporter implements SpanExporter {
         scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
+  }
+
+  /**
+   * OpenTelemetry deprecated {@code messaging.system} in favor of {@code messaging.system.name},
+   * but Sentry only supports {@code messaging.system}. Instrumentation may set either, so the value
+   * is transferred to {@code messaging.system}, preferring {@code messaging.system} if both are
+   * set.
+   */
+  @SuppressWarnings("deprecation")
+  private static void transferMessagingSystem(
+      final @NotNull SpanData span, final @NotNull ISpan sentrySpan) {
+    final @NotNull Attributes attributes = span.getAttributes();
+    final @Nullable String deprecatedMessagingSystem =
+        attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+    final @Nullable String messagingSystem =
+        deprecatedMessagingSystem != null
+            ? deprecatedMessagingSystem
+            : attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME);
+    if (messagingSystem != null) {
+      sentrySpan.setData(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), messagingSystem);
+    }
   }
 
   private List<SpanNode> findCompletedRootNodes(final @NotNull List<SpanNode> grouped) {

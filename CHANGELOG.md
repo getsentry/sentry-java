@@ -12,6 +12,16 @@
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 
+### Dependencies
+
+- Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
+  - `opentelemetry` to `1.68.0` (was `1.67.0`)
+  - `opentelemetry-alpha` to `1.68.0-alpha` (was `1.67.0-alpha`)
+  - `opentelemetry-instrumentation` to `2.34.0` (was `2.33.1`)
+  - `opentelemetry-instrumentation-alpha` to `2.34.0-alpha` (was `2.33.1-alpha`)
+  - `opentelemetry-semconv` to `1.45.0` (was `1.44.0`)
+  - `opentelemetry-semconv-alpha` to `1.45.0-alpha` (was `1.44.0-alpha`)
+
 ## 8.65.0
 
 ### Features
