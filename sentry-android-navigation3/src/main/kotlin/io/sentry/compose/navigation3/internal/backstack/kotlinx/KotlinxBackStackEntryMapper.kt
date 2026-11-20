@@ -5,17 +5,35 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
+import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
+import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING
 import io.sentry.util.ExceptionUtils
 import java.lang.reflect.InvocationTargetException
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.StructureKind
 
-/** Implementation of [BackStackEntryMapper.SerialName]. */
+/**
+ * Implementation of [BackStackEntryMapper.SerialName] and
+ * [BackStackEntryMapper.SerialNameAndProperties].
+ */
 internal class KotlinxBackStackEntryMapper(
+  /**
+   * True if this mapper should return each back stack entry's properties as arguments; false if
+   * they should be omitted.
+   */
+  private val includeProperties: Boolean,
   /**
    * Returns the serializer of a back stack entry's `@Serializable` class, or `null` if there's none
    * (e.g. for a generic class). Only called for classes marked `@Serializable`.
@@ -33,7 +51,7 @@ internal class KotlinxBackStackEntryMapper(
   private val serializableAnnotation: Class<Serializable> = Serializable::class.java
 
   // Serializer lookups use reflection and mapping runs on every navigation, so we cache each
-  // class's name. Cache size is bounded by the number of back stack entry types.
+  // class's serializer and name. Cache size is bounded by the number of back stack entry types.
   private val types = ConcurrentHashMap<Class<*>, CachedType>()
 
   private val diagnostics = KotlinxMapperDiagnostics(logger)
@@ -49,6 +67,19 @@ internal class KotlinxBackStackEntryMapper(
       ?.let { throw it }
   }
 
+  /**
+   * `true` if the app's kotlinx.serialization version doesn't support the properties encoder, in
+   * which case no arguments are produced for any entries. Instead, entries with properties record
+   * [ArgumentDropReason.ENCODING_FAILED] without being encoded. Names are unaffected.
+   */
+  private val isEncodingIncompatible: Boolean =
+    includeProperties &&
+      run {
+        val error = probe.encoderIncompatibility() ?: return@run false
+        diagnostics.incompatibleEncoder(error)
+        true
+      }
+
   override fun map(backStackEntry: Any): SentryBackStackEntry? {
     // An enum constant with a body is an instance of an anonymous subclass, which isn't
     // @Serializable itself, so we look up the enum class instead.
@@ -56,7 +87,9 @@ internal class KotlinxBackStackEntryMapper(
     val cached = cachedType(type)
     val name = cached.name ?: return null
 
-    return SentryBackStackEntry(name)
+    val arguments = if (includeProperties) argumentsOf(type, cached, backStackEntry) else null
+
+    return SentryBackStackEntry(name, arguments)
   }
 
   private fun cachedType(type: Class<*>): CachedType =
@@ -84,10 +117,15 @@ internal class KotlinxBackStackEntryMapper(
     val serializer = lookup.serializer
     var error = lookup.error
 
+    var hasProperties = false
     val name =
       try {
         serializer?.descriptor?.let { descriptor ->
-          descriptor.serialName
+          // SerialName only needs the name. Read it before inspecting the shape so it isn't lost if
+          // shape lookup fails.
+          val serialName = descriptor.serialName
+          hasProperties = includeProperties && hasProperties(descriptor)
+          serialName
         }
       } catch (e: LinkageError) {
         // Treat descriptor linkage errors as type-specific, including incompatibilities caused by a
@@ -105,7 +143,7 @@ internal class KotlinxBackStackEntryMapper(
     if (name == null) {
       diagnostics.unresolved(type, error)
     }
-    return if (name == null) UNRESOLVED else CachedType(name)
+    return if (name == null) UNRESOLVED else CachedType(serializer, name, hasProperties)
   }
 
   /**
@@ -179,9 +217,55 @@ internal class KotlinxBackStackEntryMapper(
       SerializerLookup(serializer = null, error = t)
     }
 
-  /** A type's serial name, or `null` if the lookup failed. */
+  /**
+   * Whether entries described by [descriptor] may have properties. A class or object without
+   * properties records no arguments, so its entries skip encoding.
+   */
+  @OptIn(ExperimentalSerializationApi::class)
+  private fun hasProperties(descriptor: SerialDescriptor): Boolean =
+    try {
+      descriptor.elementsCount > 0 ||
+        (descriptor.kind != StructureKind.CLASS && descriptor.kind != StructureKind.OBJECT)
+    } catch (_: LinkageError) {
+      // As for the name, a LinkageError from the type's own descriptor only fails this type.
+      true
+    } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
+      // Broad because a custom serializer's descriptor is host app code, which may throw anything.
+      // The entry keeps its name, and encoding, which reads the same descriptor, records why its
+      // arguments are dropped.
+      ExceptionUtils.rethrowIfFatal(t)
+      true
+    }
+
+  /**
+   * Returns lazily encoded arguments derived from [backStackEntry]'s properties, or `null` if its
+   * [type] has no properties.
+   */
+  private fun argumentsOf(
+    type: Class<*>,
+    cached: CachedType,
+    backStackEntry: Any,
+  ): Map<String, Any?>? {
+    if (!cached.hasProperties) {
+      return null
+    }
+    if (isEncodingIncompatible) {
+      return KotlinxUnencodableArguments
+    }
+    @Suppress("UNCHECKED_CAST")
+    return KotlinxArguments(backStackEntry, cached.serializer as KSerializer<Any>) { error ->
+      diagnostics.propertyFailure(type, error)
+    }
+  }
+
+  /**
+   * A type's serializer and name, or `null`s if the lookup failed, and whether the type has
+   * properties to encode. A resolved name implies a serializer.
+   */
   private class CachedType(
+    val serializer: KSerializer<*>?,
     val name: String?,
+    val hasProperties: Boolean = false,
   )
 
   /** A type's serializer, or the error that made looking it up fail, if any. */
@@ -189,17 +273,26 @@ internal class KotlinxBackStackEntryMapper(
 
   private companion object {
     private const val NAME_LOOKUP_CAPABILITY = "name lookups"
-    private val UNRESOLVED = CachedType(name = null)
+    private val UNRESOLVED = CachedType(serializer = null, name = null)
   }
 }
 
 /**
- * The warnings [KotlinxBackStackEntryMapper] logs when it can't name a back stack entry.
+ * The warnings [KotlinxBackStackEntryMapper] logs when it can't name a back stack entry or encode
+ * its properties.
  *
  * Only decides what's logged, and how often. Whether a type is looked up or encoded again is up to
  * the mapper.
  */
 internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
+
+  /**
+   * The kinds of property encoding failure already logged for each type. Failing types are still
+   * encoded again, as whether encoding fails can depend on the value, so this only keeps each
+   * warning from being logged more than once per type.
+   */
+  private val loggedPropertyFailures =
+    Collections.newSetFromMap(ConcurrentHashMap<Pair<Class<*>, PropertyFailure>, Boolean>())
 
   /** Logs that entries of [type] can't be named because the type isn't `@Serializable`. */
   fun notSerializable(type: Class<*>) {
@@ -234,6 +327,20 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
   }
 
   /**
+   * Logs [error] indicating that the app's kotlinx.serialization version is incompatible with the
+   * properties encoder. Entries are recorded by name without arguments.
+   */
+  fun incompatibleEncoder(error: Throwable) {
+    logger()
+      .log(
+        WARNING,
+        "Nav3 SerialNameAndProperties is incompatible with this app's kotlinx.serialization " +
+          "version. Recording names without arguments. $INCOMPATIBLE_KOTLINX_ADVICE",
+        error,
+      )
+  }
+
+  /**
    * Logs why [type] can't be named. [error] is what reading its annotations, serializer, or
    * descriptor threw, or `null` if the serializer lookup found none without throwing.
    */
@@ -262,6 +369,95 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         type.name,
         reason,
       )
+  }
+
+  /**
+   * Logs why encoding the properties of an entry of [type] failed. Logged once per type and kind of
+   * failure, as whether encoding fails can depend on the entry's values (e.g., whether a contextual
+   * property is null, or which subtype a sealed property has).
+   *
+   * Serializer exceptions can contain route data in their messages or causes, so for those we log
+   * only the entry type and the failure category. A [LinkageError] is attached: it names the
+   * classes and members that couldn't be linked or initialized, not route data, as linking and
+   * class initialization don't see the entry being encoded.
+   */
+  fun propertyFailure(type: Class<*>, error: Throwable) {
+    when (error) {
+      is DropArguments ->
+        logOncePerType(type, PropertyFailure.OVER_LIMITS) {
+          log(
+            WARNING,
+            "Nav3 dropped arguments for type %s (%s). Limits are $MAX_ARGUMENT_DEPTH levels, " +
+              "$MAX_ARGUMENT_VALUES values, $MAX_ARGUMENT_CHARACTERS characters, and " +
+              "$MAX_SERIALIZER_NESTING nested serializer calls. Map keys must stringify to " +
+              "distinct strings. Use a custom BackStackEntryMapper to select fewer properties or " +
+              "flatten nested values.",
+            type.name,
+            error.reason.serializedValue,
+          )
+        }
+      is SerializationException ->
+        logOncePerType(type, PropertyFailure.UNENCODABLE) {
+          log(
+            WARNING,
+            "Nav3 couldn't encode properties for type %s. Recording names without arguments. " +
+              "Contextual and open polymorphic properties and structured map keys aren't " +
+              "supported. Use a custom BackStackEntryMapper to select supported properties or " +
+              "extract arguments directly.",
+            type.name,
+          )
+        }
+      is LinkageError ->
+        logOncePerType(type, PropertyFailure.UNLOADABLE) {
+          log(
+            WARNING,
+            error,
+            "Nav3 couldn't encode properties for type %s because a required class couldn't be " +
+              "linked, initialized, or found. Recording names without arguments. See the " +
+              "attached error. If all types fail, kotlinx.serialization may be incompatible. " +
+              INCOMPATIBLE_KOTLINX_ADVICE,
+            type.name,
+          )
+        }
+      else ->
+        logOncePerType(type, PropertyFailure.THROWING) {
+          log(
+            WARNING,
+            "Nav3 couldn't encode properties for type %s because a serializer threw. Recording " +
+              "names without arguments.",
+            type.name,
+          )
+        }
+    }
+  }
+
+  /** Runs [log] on the logger unless a [failure] of this kind was already logged for [type]. */
+  private inline fun logOncePerType(
+    type: Class<*>,
+    failure: PropertyFailure,
+    log: ILogger.() -> Unit,
+  ) {
+    if (loggedPropertyFailures.add(type to failure)) {
+      logger().log()
+    }
+  }
+
+  /** Why encoding an entry's properties failed, which determines the warning we log. */
+  private enum class PropertyFailure {
+    /** Encoding threw a [SerializationException], e.g., for a contextual property. */
+    UNENCODABLE,
+
+    /**
+     * The entry broke an argument limit, e.g., by having too many values, or has a map with two
+     * keys recorded as the same string.
+     */
+    OVER_LIMITS,
+
+    /** A serializer threw something other than a [SerializationException] or [LinkageError]. */
+    THROWING,
+
+    /** A class a serializer needs couldn't be linked, initialized, or found. */
+    UNLOADABLE,
   }
 
   companion object {
