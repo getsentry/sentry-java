@@ -4601,8 +4601,13 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field CALL_STACK_KEY Ljava/lang/String;
 	public static final field CONTRIBUTES_TTFD Ljava/lang/String;
 	public static final field CONTRIBUTES_TTID Ljava/lang/String;
+	public static final field DB_NAMESPACE_KEY Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
+	public static final field DB_QUERY_SUMMARY_KEY Ljava/lang/String;
+	public static final field DB_QUERY_TEXT_KEY Ljava/lang/String;
+	public static final field DB_STORED_PROCEDURE_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
+	public static final field DB_SYSTEM_NAME_KEY Ljava/lang/String;
 	public static final field FRAMES_DELAY Ljava/lang/String;
 	public static final field FRAMES_FROZEN Ljava/lang/String;
 	public static final field FRAMES_SLOW Ljava/lang/String;
@@ -8350,6 +8355,13 @@ public final class io/sentry/util/sql/SqlQuery$Status : java/lang/Enum {
 
 public final class io/sentry/util/sql/SqlQueryAnalyzer {
 	public static fun analyze (Ljava/lang/String;Lio/sentry/util/sql/SqlDialect;I)Lio/sentry/util/sql/SqlQuery;
+}
+
+public final class io/sentry/util/sql/SqlSpanData {
+	public static fun analyze (Ljava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/sql/SqlSpanData;
+	public fun applyTo (Lio/sentry/ISpan;)V
+	public fun getDescription ()Ljava/lang/String;
+	public static fun toDbSystemName (Ljava/lang/String;)Ljava/lang/String;
 }
 
 public final class io/sentry/util/sql/otel/OtelSqlSanitizer {
