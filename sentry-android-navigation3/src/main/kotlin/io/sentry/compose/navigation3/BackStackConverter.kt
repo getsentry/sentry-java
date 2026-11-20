@@ -179,6 +179,12 @@ internal class BackStackConverter<T : Any>(
         for ((key, childValue) in value) {
           val keyString = key.toString()
           consumeCharacters(keyString.length)
+          if (sanitized.containsKey(keyString)) {
+            throw DropSubtree(
+              "Nav3 map keys stringify to the same string. Dropping this entry's arguments.",
+              ArgumentDropReason.DUPLICATE_KEY,
+            )
+          }
           sanitized[keyString] = sanitizeValue(childValue, depth + 1)
         }
         return sanitized
@@ -457,6 +463,7 @@ internal enum class ArgumentDropReason(
 ) {
 
   CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
+  DUPLICATE_KEY("duplicate_key"),
   INVALID_STRUCTURE("invalid_structure"),
   MAPPING_FAILED("mapping_failed"),
   MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),
