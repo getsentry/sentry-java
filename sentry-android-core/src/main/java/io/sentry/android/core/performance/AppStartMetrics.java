@@ -665,9 +665,24 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   @Override
+  public void onActivityPreCreated(
+      @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    // ActivityLifecycleIntegration starts the activity.load span here, so a warm app start must not
+    // start any later than that.
+    onActivityCreating(savedInstanceState);
+  }
+
+  @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    final long activityCreatedUptimeMillis = SystemClock.uptimeMillis();
     CurrentActivityHolder.getInstance().setActivity(activity);
+    // onActivityPreCreated is only dispatched on API 29+
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+      onActivityCreating(savedInstanceState);
+    }
+  }
+
+  private void onActivityCreating(final @Nullable Bundle savedInstanceState) {
+    final long activityCreatedUptimeMillis = SystemClock.uptimeMillis();
 
     // the first activity determines the app start type
     if (activeActivitiesCounter.incrementAndGet() == 1 && !firstDrawDone.get()) {
