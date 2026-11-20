@@ -53,6 +53,8 @@ springboot4 = "4.1.0"
 springKafka2 = "2.8.11"
 springKafka3 = "3.3.5"
 sqldelight = "2.4.1"
+tomcat9 = "9.0.108"
+tomcat11 = "11.0.27"
 vanniktechMavenPublish = "0.37.0"
 
 # Android
@@ -266,10 +268,12 @@ gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", versio
 java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref = "java8Signature" }
 
 # tomcat libraries
-tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
-tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
-tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.27" }
-tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
+tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "8.5.100" }
+tomcat9-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat9" }
+tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat9" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat9" }
+tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat11" }
+tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat11" }
 # The version comes from the Spring Boot BOM of whichever Spring line uses it.
 tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core" }
 
