@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -31,6 +32,11 @@ public final class TracesSampler {
       try {
         profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
       } catch (Throwable t) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated like
+        // any other exception. The transaction is not profiled.
+        if (!(t instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(t);
+        }
         profilesSamplerFailed = true;
         options
             .getLogger()
@@ -47,6 +53,11 @@ public final class TracesSampler {
       try {
         samplerResult = options.getTracesSampler().sample(samplingContext);
       } catch (Throwable t) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated like
+        // any other exception. As the spec asks, the transaction is dropped.
+        if (!(t instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(t);
+        }
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'TracesSamplerCallback' callback.", t);

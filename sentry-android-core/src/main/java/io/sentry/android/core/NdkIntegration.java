@@ -88,7 +88,9 @@ public final class NdkIntegration implements Integration, Closeable {
         this.options
             .getLogger()
             .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.init method.", e);
-      } catch (Throwable e) {
+      } catch (ReflectiveOperationException e) {
+        // InvocationTargetException wraps whatever SentryNdk.init threw, such as an
+        // UnsatisfiedLinkError when the native library failed to load
         disableNdkIntegration(this.options);
         this.options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
       }
@@ -120,7 +122,7 @@ public final class NdkIntegration implements Integration, Closeable {
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.close method.", e);
-      } catch (Throwable e) {
+      } catch (ReflectiveOperationException e) {
         options.getLogger().log(SentryLevel.ERROR, "Failed to close SentryNdk.", e);
       } finally {
         disableNdkIntegration(this.options);
