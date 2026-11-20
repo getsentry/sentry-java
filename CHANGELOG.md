@@ -14,7 +14,7 @@
 
 ### Dependencies
 
-- Bump OpenTelemetry ([#PRNUM](https://github.com/getsentry/sentry-java/pull/PRNUM))
+- Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
   - `opentelemetry` to `1.68.0` (was `1.67.0`)
   - `opentelemetry-alpha` to `1.68.0-alpha` (was `1.67.0-alpha`)
   - `opentelemetry-instrumentation` to `2.34.0` (was `2.33.1`)
