@@ -32,14 +32,20 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
    * as `["1.12.1", "1.13.0-rc01"]`. Each task runs the module's unit tests with every dependency in
    * [groups] at that version. An entry can also be an object such as `{"version": "1.8.3", "pin":
    * {"androidx.compose.material3": "1.3.2"}}`, which also forces each group in `pin` to its
-   * version, for test dependencies whose current version needs a newer [groups] version. A CI
-   * workflow reads the same file and runs each version in its own job.
+   * version, for test dependencies whose current version needs a newer [groups] version.
+   * `<name>Test` runs every version.
    */
   fun matrix(name: String, groups: List<String>, versionsFile: String) {
     val file = project.layout.settingsDirectory.file("gradle/$versionsFile")
     val entries =
       JsonSlurper().parseText(project.providers.fileContents(file).asText.get()) as List<*>
     check(entries.isNotEmpty()) { "gradle/$versionsFile lists no versions" }
+    val all =
+      project.tasks.register("${name}Test") {
+        description = "Runs the unit tests with every version in gradle/$versionsFile."
+        group = LifecycleBasePlugin.VERIFICATION_GROUP
+      }
+    var previous: String? = null
     entries.forEach { entry ->
       val version = if (entry is Map<*, *>) entry["version"] as String else entry as String
       val pin = (entry as? Map<*, *>)?.get("pin") as Map<*, *>?
@@ -48,11 +54,19 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
           pin.orEmpty().entries.associate { (group, pinned) -> group as String to pinned as String }
       val variant = "$name${suffix(version)}"
       val test = androidUnitTest(variant, forced)
-      project.tasks.register("${name}Test${suffix(version)}") {
-        description = "Runs the unit tests with ${groups.joinToString()} at $version."
-        group = LifecycleBasePlugin.VERIFICATION_GROUP
-        dependsOn(test)
+      // One version at a time: each starts its own Robolectric test JVM, and the configuration
+      // cache would run them all at once, which ran out of memory with 16 GB.
+      previous?.let { before ->
+        project.tasks.named { it == test }.configureEach { mustRunAfter(before) }
       }
+      previous = test
+      val versionTest =
+        project.tasks.register("${name}Test${suffix(version)}") {
+          description = "Runs the unit tests with ${groups.joinToString()} at $version."
+          group = LifecycleBasePlugin.VERIFICATION_GROUP
+          dependsOn(test)
+        }
+      all.configure { dependsOn(versionTest) }
     }
   }
 
