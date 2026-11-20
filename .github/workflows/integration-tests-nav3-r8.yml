@@ -1,0 +1,131 @@
+name: Nav3 BackStackEntryMapper R8 Check
+
+# Verifies behavior of BackStackEntryMapper.SerialName and SerialNameAndProperties
+# from sentry-android-navigation3 in R8-minified builds on an emulator (full and compat mode,
+# with the compile floor + latest versions of kotlinx.serialization). See
+# sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "sentry-android-navigation3/**"
+      - "sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/**"
+      - "sentry-android-integration-tests/*.gradle.kts"
+      - "scripts/test-nav3-backstack-entry-mapper-r8.sh"
+      - "scripts/update-nav3-kotlinx-serialization.sh"
+      - "gradle/libs.versions.toml"
+      - "gradle/nav3.versions.toml"
+      - ".github/workflows/integration-tests-nav3-r8.yml"
+  # Omit PRs that only change gradle/libs.versions.toml so we don't trigger R8 tests on unrelated
+  # dependency bumps. (Those changes are checked once they reach main.) The kotlinx.serialization
+  # floor lives in gradle/nav3.versions.toml so that PRs changing it are still checked.
+  pull_request:
+    paths:
+      - "sentry-android-navigation3/**"
+      - "sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/**"
+      - "sentry-android-integration-tests/*.gradle.kts"
+      - "scripts/test-nav3-backstack-entry-mapper-r8.sh"
+      - "scripts/update-nav3-kotlinx-serialization.sh"
+      - "gradle/nav3.versions.toml"
+      - ".github/workflows/integration-tests-nav3-r8.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APK_DIR: "nav3-r8-check-apks"
+  APK_ARTIFACT_NAME: "nav3-r8-check-apks"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # Apps may ship a newer kotlinx.serialization than sentry-android-navigation3 compiles
+      # against, and the properties encoder relies on its experimental AbstractEncoder.
+      - name: Run unit tests against the latest kotlinx.serialization
+        run: |
+          tag="$(./scripts/update-nav3-kotlinx-serialization.sh get-version)"
+          version="${tag#v}"
+          ./gradlew :sentry-android-navigation3:testReleaseUnitTest -Pnav3TestKotlinxVersion="$version"
+
+      - name: Build APKs
+        run: ./scripts/test-nav3-backstack-entry-mapper-r8.sh build "${{ env.APK_DIR }}"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ env.APK_ARTIFACT_NAME }}
+          path: ${{ env.APK_DIR }}
+          retention-days: 1
+
+  run:
+    name: Run on API Level ${{ matrix.api-level }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Tests against API 37.0 on every run. Also tests against API 23 (Nav3's minSdkVersion) when changes reach main.
+        # The latter lets us catch issues present on the oldest Nav3 app runtime without slowing down PRs.
+        api-level: ${{ fromJSON(github.event_name == 'push' && '[23, "37.0"]' || '["37.0"]') }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: ${{ env.APK_ARTIFACT_NAME }}
+          path: ${{ env.APK_DIR }}
+
+      # The runner ships an outdated avdmanager that writes target=android-0 into the
+      # AVD config for minor-versioned packages (android-37.x), so the emulator clamps
+      # to API 3 and boots misconfigured. Update cmdline-tools so avdmanager parses it.
+      # See https://github.com/ReactiveCircus/android-emulator-runner/issues/482
+      - name: Update SDK cmdline-tools
+        if: matrix.api-level == '37.0'
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "cmdline-tools;latest" > /dev/null
+          # sdkmanager won't overwrite the preinstalled dir, so it installs to latest-2.
+          if [ -d "$SDK/cmdline-tools/latest-2" ]; then
+            rm -rf "$SDK/cmdline-tools/latest"
+            mv "$SDK/cmdline-tools/latest-2" "$SDK/cmdline-tools/latest"
+          fi
+
+      - name: Run check
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          # API 37 has no plain google_apis image.
+          target: ${{ matrix.api-level == 23 && 'google_apis' || 'google_apis_ps16k' }}
+          # Use canary for API 37, matching the critical UI tests.
+          channel: ${{ matrix.api-level == 23 && 'stable' || 'canary' }}
+          arch: x86_64
+          disable-animations: true
+          disable-spellchecker: true
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          script: ./scripts/test-nav3-backstack-entry-mapper-r8.sh run "${{ env.APK_DIR }}"
