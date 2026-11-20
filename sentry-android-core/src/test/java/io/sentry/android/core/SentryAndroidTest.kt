@@ -603,7 +603,10 @@ class SentryAndroidTest {
     ShadowApplication.setProcessName("${context.packageName}.sentry_ndk_crash")
     var configured = false
 
-    fixture.initSut { configured = true }
+    fixture.initSut {
+      it.dsn = "https://key@sentry.io/123"
+      configured = true
+    }
 
     assertTrue(configured)
   }
