@@ -1,6 +1,6 @@
 package io.sentry.gradle
 
-import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.variant.HasHostTests
 import com.android.build.api.variant.HasHostTestsBuilder
 import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
@@ -35,8 +35,7 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
    * [groups] at that version. An entry can also be an object such as `{"version": "1.8.3", "pin":
    * {"androidx.compose.material3": "1.3.2"}}`, which also forces each group in `pin` to its
    * version, for test dependencies whose current version needs a newer [groups] version. A CI
-   * workflow reads the same file and runs each version in its own job. In an Android module, call
-   * it after `android {}`.
+   * workflow reads the same file and runs each version in its own job.
    */
   fun matrix(name: String, groups: List<String>, versionsFile: String) {
     val file = project.layout.settingsDirectory.file("gradle/$versionsFile")
@@ -51,10 +50,7 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
         groups.associateWith { version } +
           pin.orEmpty().entries.associate { (group, pinned) -> group as String to pinned as String }
       val variant = "$name${suffix(version)}"
-      val test = if (android) androidUnitTest(variant) else jvmTest(variant)
-      project.configurations
-        .matching { it.name in testClasspathNames(variant, android) }
-        .configureEach { force(forced) }
+      val test = if (android) androidUnitTest(variant, forced) else jvmTest(variant, forced)
       project.tasks.register("${name}Test${suffix(version)}") {
         description = "Runs the unit tests with ${groups.joinToString()} at $version."
         group = LifecycleBasePlugin.VERIFICATION_GROUP
@@ -64,24 +60,32 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
   }
 
   /**
-   * A build type of [name] based on the test build type, whose unit tests compile and run on their
-   * own classpaths. Android needs a variant per version, because AGP builds the R class and
-   * resources the unit tests run with from the variant's dependencies.
+   * A build type of [name] based on the test build type, whose unit tests compile and run with the
+   * [forced] versions. Android needs a variant per version, because AGP builds the R class and
+   * resources the unit tests run with from the variant's dependencies. The tests also compile
+   * against the [forced] versions: Kotlin compiler plugins such as the Compose compiler emit calls
+   * into the library's runtime that older versions don't have.
    *
    * Revisit this once the modules can use AGP test suites: a test suite per version could replace
    * the extra build types.
    */
-  private fun androidUnitTest(name: String): String {
-    val android = project.extensions.getByType(LibraryExtension::class.java)
-    val base = android.testBuildType
-    android.buildTypes.create(name) {
-      initWith(android.buildTypes.getByName(base))
-      matchingFallbacks += base
-    }
+  private fun androidUnitTest(name: String, forced: Map<String, String>): String {
     val components = project.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
+    components.finalizeDsl { android ->
+      val base = android.testBuildType
+      android.buildTypes.create(name) {
+        initWith(android.buildTypes.getByName(base))
+        matchingFallbacks += base
+      }
+    }
     // AGP only generates unit tests for the test build type.
     components.beforeVariants(components.selector().withBuildType(name)) {
       (it as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
+    }
+    components.onVariants(components.selector().withBuildType(name)) {
+      val unitTest = (it as HasHostTests).hostTests.getValue(HostTestBuilder.UNIT_TEST_TYPE)
+      unitTest.compileConfiguration.force(forced)
+      unitTest.runtimeConfiguration.force(forced)
     }
     val unitTest = "test${name.replaceFirstChar(Char::uppercase)}UnitTest"
     // Keeps them out of `test` and `check`, which run the test build type's unit tests only, like
@@ -96,15 +100,16 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
   }
 
   /**
-   * A test task of [name] that reuses the compiled tests on its own runtime classpath, like
-   * [SpringBootMatrixPlugin] does.
+   * A test task of [name] that reuses the compiled tests on a runtime classpath with the [forced]
+   * versions, like [SpringBootMatrixPlugin] does.
    */
-  private fun jvmTest(name: String): TaskProvider<Test> {
+  private fun jvmTest(name: String, forced: Map<String, String>): TaskProvider<Test> {
     val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
     val test = sourceSets.getByName("test")
     val configurations = project.configurations
     val runtimeClasspath =
-      configurations.resolvable(runtimeClasspathName(name, android = false)) {
+      configurations.resolvable("${name}TestRuntimeClasspath") {
+        force(forced)
         extendsFrom(
           configurations.getByName(test.implementationConfigurationName),
           configurations.getByName(test.runtimeOnlyConfigurationName),
@@ -120,17 +125,6 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
       useJUnit()
     }
   }
-
-  private fun runtimeClasspathName(name: String, android: Boolean) =
-    if (android) "${name}UnitTestRuntimeClasspath" else "${name}TestRuntimeClasspath"
-
-  /**
-   * On Android the tests also compile against the matrix versions: Kotlin compiler plugins such as
-   * the Compose compiler emit calls into the library's runtime that older versions don't have.
-   */
-  private fun testClasspathNames(name: String, android: Boolean) =
-    if (android) setOf(runtimeClasspathName(name, android), "${name}UnitTestCompileClasspath")
-    else setOf(runtimeClasspathName(name, android))
 
   private fun Configuration.force(versions: Map<String, String>) {
     resolutionStrategy.eachDependency { versions[requested.group]?.let { useVersion(it) } }
