@@ -17,6 +17,18 @@ get-version)
     # compares upstream changelogs.
     perl -ne 'print "v$1\n" if ( m/^defaultLatestKotlinx="([0-9.]+)"/ )' "$SCRIPT_FILEPATH"
     ;;
+get-repo)
+    echo "https://github.com/Kotlin/kotlinx.serialization.git"
+    ;;
+set-version)
+    # kotlinx.serialization tags are prefixed with "v" (e.g. v1.13.0).
+    version=${2#v}
+
+    echo "Setting defaultLatestKotlinx to '$version'"
+
+    PATTERN='^(defaultLatestKotlinx=")[0-9.]+(")'
+    perl -pi -e "s/$PATTERN/\${1}$version\${2}/" "$SCRIPT_FILEPATH"
+    ;;
 *)
     echo "Unknown argument $1"
     exit 1
