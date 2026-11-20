@@ -1,0 +1,326 @@
+package io.sentry.compose.navigation3.internal.backstack.kotlinx
+
+import com.google.common.truth.Truth.assertThat
+import io.sentry.compose.navigation3.internal.backstack.ArgumentBudget
+import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
+import io.sentry.compose.navigation3.internal.backstack.DropArguments
+import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
+import io.sentry.compose.navigation3.internal.backstack.budgetWithValuesRemaining
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.SensitiveKeyFilter
+import io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE
+import kotlin.test.assertFailsWith
+import org.junit.Test
+
+class SensitiveKeyFilterTest {
+
+  private val sink = TreeArgumentWriter(ArgumentBudget())
+  private val filter = SensitiveKeyFilter(sink)
+
+  // Keys, values, maps, and lists under non-sensitive keys
+
+  @Test
+  fun `passes keys, scalars, maps, and lists under non-sensitive keys to the sink`() {
+    filter.key("query")
+    filter.scalar("shoes")
+    filter.key("filters")
+    filter.beginMap()
+    filter.key("brands")
+    filter.beginList()
+    filter.scalar("a")
+    filter.end()
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments)
+      .isEqualTo(mapOf("query" to "shoes", "filters" to mapOf("brands" to listOf("a"))))
+  }
+
+  // Scalars
+
+  @Test
+  fun `scalar() - writes the substitute in place of a scalar under a sensitive key`() {
+    filter.key("password")
+    filter.scalar("hunter2")
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("password" to SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `scalar() - writes a scalar under a non-sensitive key that follows a sensitive key`() {
+    filter.key("password")
+    filter.scalar("hunter2")
+    filter.key("page")
+    filter.scalar(2)
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("password" to SENSITIVE_DATA_SUBSTITUTE, "page" to 2))
+  }
+
+  @Test
+  fun `scalar() - writes list elements under a non-sensitive key, even if they look like sensitive keys`() {
+    filter.key("tags")
+    filter.beginList()
+    filter.scalar("password")
+    filter.scalar("token")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("tags" to listOf("password", "token")))
+  }
+
+  @Test
+  fun `scalar() - writes the substitute under the sensitive keys of maps in a list`() {
+    filter.key("rows")
+    filter.beginList()
+    filter.beginMap()
+    filter.key("jwt")
+    filter.scalar("t-1")
+    filter.key("note")
+    filter.scalar("visible")
+    filter.end()
+    filter.scalar("plain")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments)
+      .isEqualTo(
+        mapOf(
+          "rows" to listOf(mapOf("jwt" to SENSITIVE_DATA_SUBSTITUTE, "note" to "visible"), "plain"),
+        ),
+      )
+  }
+
+  // Computed scalars
+
+  @Test
+  fun `computedScalar() - writes the computed value under a non-sensitive key`() {
+    filter.key("query")
+    filter.computedScalar { "shoes" }
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("query" to "shoes"))
+  }
+
+  @Test
+  fun `computedScalar() - writes the substitute under a sensitive key without computing the value`() {
+    var computed = false
+
+    filter.key("password")
+    filter.computedScalar {
+      computed = true
+      "hunter2"
+    }
+
+    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("password" to SENSITIVE_DATA_SUBSTITUTE))
+    assertThat(computed).isFalse()
+  }
+
+  @Test
+  fun `computedScalar() - writes nothing and doesn't compute the value in a map under a sensitive key`() {
+    var computed = false
+
+    filter.key("credentials")
+    filter.beginMap()
+    filter.key("user")
+    filter.computedScalar {
+      computed = true
+      "alice"
+    }
+    filter.end()
+
+    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE))
+    assertThat(computed).isFalse()
+  }
+
+  @Test
+  fun `computedScalar() - resets sensitivity for the next value after writing a filtered value`() {
+    filter.key("rows")
+    filter.beginList()
+    filter.beginMap()
+    filter.key("jwt")
+    filter.computedScalar { "t-1" }
+    filter.end()
+    filter.computedScalar { "plain" }
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments)
+      .isEqualTo(mapOf("rows" to listOf(mapOf("jwt" to SENSITIVE_DATA_SUBSTITUTE), "plain")))
+  }
+
+  @Test
+  fun `computedScalar() - throws the sink's broken limit without computing the value`() {
+    val limitedSink = TreeArgumentWriter(budgetWithValuesRemaining(0))
+    val limitedFilter = SensitiveKeyFilter(limitedSink)
+    var computed = false
+    limitedFilter.key("query")
+
+    val thrown =
+      assertFailsWith<DropArguments> {
+        limitedFilter.computedScalar {
+          computed = true
+          "shoes"
+        }
+      }
+
+    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
+    assertThat(computed).isFalse()
+  }
+
+  // Maps
+
+  @Test
+  fun `beginMap() - writes the substitute in place of a map under a sensitive key`() {
+    filter.key("credentials")
+    filter.beginMap()
+    filter.key("user")
+    filter.scalar("alice")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `beginMap() - discards the nested maps, lists, and keys of a map under a sensitive key`() {
+    filter.key("credentials")
+    filter.beginMap()
+    filter.key("history")
+    filter.beginList()
+    filter.beginMap()
+    filter.key("user")
+    filter.scalar("alice")
+    filter.end()
+    filter.end()
+    filter.key("note")
+    filter.scalar("visible?")
+    filter.end()
+    filter.key("page")
+    filter.scalar(2)
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE, "page" to 2))
+  }
+
+  @Test
+  fun `beginMap() - passes the map's identity to the sink`() {
+    val map = Any()
+    filter.key("filters")
+    filter.beginMap(map)
+    filter.key("nested")
+
+    val drop = assertFailsWith<DropArguments> { filter.beginMap(map) }
+
+    assertThat(drop.reason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
+  }
+
+  // Lists
+
+  @Test
+  fun `beginList() - writes the substitute in place of a list under a sensitive key`() {
+    filter.key("refreshTokens")
+    filter.beginList()
+    filter.scalar("t-1")
+    filter.scalar("t-2")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("refreshTokens" to SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `beginList() - passes the list's identity to the sink`() {
+    val list = Any()
+    filter.key("rows")
+    filter.beginList(list)
+
+    val drop = assertFailsWith<DropArguments> { filter.beginList(list) }
+
+    assertThat(drop.reason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
+  }
+
+  // Ends of maps and lists
+
+  @Test
+  fun `end() - resumes writing the containing map after a discarded map ends`() {
+    filter.key("filters")
+    filter.beginMap()
+    filter.key("token")
+    filter.beginMap()
+    filter.key("value")
+    filter.scalar("t-1")
+    filter.end()
+    filter.key("color")
+    filter.scalar("red")
+    filter.end()
+    filter.key("page")
+    filter.scalar(2)
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments)
+      .isEqualTo(
+        mapOf(
+          "filters" to mapOf("token" to SENSITIVE_DATA_SUBSTITUTE, "color" to "red"),
+          "page" to 2,
+        ),
+      )
+  }
+
+  @Test
+  fun `end() - writes a map under a non-sensitive key that follows a discarded map`() {
+    filter.key("password")
+    filter.beginMap()
+    filter.end()
+    filter.key("filters")
+    filter.beginMap()
+    filter.key("color")
+    filter.scalar("red")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments)
+      .isEqualTo(
+        mapOf("password" to SENSITIVE_DATA_SUBSTITUTE, "filters" to mapOf("color" to "red")),
+      )
+  }
+
+  // Rejected limits
+
+  @Test
+  fun `reject() - rejects the limit on the sink`() {
+    val drop =
+      assertFailsWith<DropArguments> {
+        filter.reject(ArgumentDropReason.INVALID_STRUCTURE, DropArguments.STRUCTURE_WARNING)
+      }
+
+    assertThat(drop.reason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
+    assertThat(sink.failure).isSameInstanceAs(drop)
+  }
+
+  @Test
+  fun `reject() - rejects the limit on the sink within a map under a sensitive key`() {
+    // The filter discards writes under a sensitive key, but not limits a source rejects.
+    filter.key("credentials")
+    filter.beginMap()
+
+    val drop =
+      assertFailsWith<DropArguments> {
+        filter.reject(ArgumentDropReason.INVALID_STRUCTURE, DropArguments.STRUCTURE_WARNING)
+      }
+
+    assertThat(sink.failure).isSameInstanceAs(drop)
+  }
+}
