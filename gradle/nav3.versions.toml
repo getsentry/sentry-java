@@ -1,0 +1,15 @@
+# Versions for sentry-android-navigation3's kotlinx.serialization compatibility checks, registered as
+# the `nav3Libs` catalog.
+#
+# Kept apart from libs.versions.toml so that the Nav3 R8 check workflow can run on PRs that change
+# them without also running on every unrelated dependency bump.
+
+[versions]
+# The oldest kotlinx.serialization version sentry-android-navigation3 supports, which it compiles and
+# tests against. Nav3 builds apply it explicitly rather than via version.ref to prevent Dependabot
+# from modifying it. When updating, also update MIN_KOTLINX_SERIALIZATION_VERSION in
+# KotlinxMapperDiagnostics (KotlinxBackStackEntryMapper.kt); a unit test fails if the two don't match.
+kotlinxSerializationFloor = "1.7.3"
+
+[libraries]
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core" }
