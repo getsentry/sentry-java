@@ -15,6 +15,17 @@ class HttpUtilsTest {
   fun `query parameter deny list filters built-in sensitive and configured terms`() {
     assertThat(
         HttpUtils.filterQueryParams(
+          "name=value&access_token=secret&customerId=123",
+          KeyValueCollectionBehavior.denyList("customer"),
+        ),
+      )
+      .isEqualTo("name=value&access_token=[Filtered]&customerId=[Filtered]")
+  }
+
+  @Test
+  fun `filterQueryParams() - deny list matches sensitive names and configured terms regardless of case`() {
+    assertThat(
+        HttpUtils.filterQueryParams(
           "name=value&ACCESS_TOKEN=secret&customerId=123",
           KeyValueCollectionBehavior.denyList("CuStOmEr"),
         ),
@@ -27,10 +38,21 @@ class HttpUtilsTest {
     assertThat(
         HttpUtils.filterQueryParams(
           "name=value&access_token=secret&customerId=123",
-          KeyValueCollectionBehavior.allowList("NaMe", "AcCeSs_ToKeN"),
+          KeyValueCollectionBehavior.allowList("name", "access_token"),
         ),
       )
       .isEqualTo("name=value&access_token=[Filtered]&customerId=[Filtered]")
+  }
+
+  @Test
+  fun `filterQueryParams() - allow list matches mixed-case terms but still filters sensitive names`() {
+    assertThat(
+        HttpUtils.filterQueryParams(
+          "name=value&AcCeSs_ToKeN=secret&customerId=123",
+          KeyValueCollectionBehavior.allowList("NaMe", "AcCeSs_ToKeN"),
+        ),
+      )
+      .isEqualTo("name=value&AcCeSs_ToKeN=[Filtered]&customerId=[Filtered]")
   }
 
   @Test
@@ -72,6 +94,32 @@ class HttpUtilsTest {
       HttpUtils.filterHeaders(
         mapOf(
           "content-type" to "application/json",
+          "authorization" to "Bearer token",
+          "x-customer" to "customer value",
+          "Cookie" to "name=value",
+        ),
+        KeyValueCollectionBehavior.denyList("customer"),
+      )
+
+    assertThat(filtered)
+      .containsExactly(
+        "content-type",
+        "application/json",
+        "authorization",
+        "[Filtered]",
+        "x-customer",
+        "[Filtered]",
+        "Cookie",
+        "[Filtered]",
+      )
+  }
+
+  @Test
+  fun `filterHeaders() - deny list matches sensitive names and configured terms regardless of case`() {
+    val filtered =
+      HttpUtils.filterHeaders(
+        mapOf(
+          "content-type" to "application/json",
           "AUTHORIZATION" to "Bearer token",
           "x-customer" to "customer value",
           "Cookie" to "name=value",
@@ -94,6 +142,29 @@ class HttpUtilsTest {
 
   @Test
   fun `header allow list only retains allowed non-sensitive values`() {
+    val filtered =
+      HttpUtils.filterHeaders(
+        mapOf(
+          "content-type" to "application/json",
+          "authorization" to "Bearer token",
+          "x-customer" to "customer value",
+        ),
+        KeyValueCollectionBehavior.allowList("content", "authorization"),
+      )
+
+    assertThat(filtered)
+      .containsExactly(
+        "content-type",
+        "application/json",
+        "authorization",
+        "[Filtered]",
+        "x-customer",
+        "[Filtered]",
+      )
+  }
+
+  @Test
+  fun `filterHeaders() - allow list matches mixed-case terms but still filters sensitive names`() {
     val filtered =
       HttpUtils.filterHeaders(
         mapOf(
