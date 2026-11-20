@@ -2,7 +2,6 @@ package io.sentry.ktorClient
 
 import io.ktor.client.request.HttpRequest
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsBytes
 import io.ktor.http.Headers
 import io.ktor.http.contentLength
 import io.ktor.util.toMap
@@ -22,7 +21,7 @@ import io.sentry.util.UrlUtils
 import java.util.concurrent.TimeUnit
 
 internal object SentryKtorClientUtils {
-  internal suspend fun captureClientError(
+  internal fun captureClientError(
     scopes: IScopes,
     request: HttpRequest,
     response: HttpResponse,
@@ -50,9 +49,8 @@ internal object SentryKtorClientUtils {
         cookies = CookieUtils.filterSetCookie(response.headers["Set-Cookie"], scopes.options)
         headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.status.value
-        try {
-          bodySize = response.bodyAsBytes().size.toLong()
-        } catch (_: Throwable) {}
+        // Content-Length rather than reading the body, which would copy all of it into memory
+        bodySize = response.contentLength()
       }
 
     event.request = sentryRequest

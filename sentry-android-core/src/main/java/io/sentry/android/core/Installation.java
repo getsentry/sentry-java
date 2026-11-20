@@ -21,6 +21,9 @@ final class Installation {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  // The id is a UUID, so a valid file is far below this
+  private static final int MAX_INSTALLATION_FILE_SIZE = 1024;
+
   static final @NotNull AutoClosableReentrantLock staticLock = new AutoClosableReentrantLock();
 
   private Installation() {}
@@ -43,7 +46,10 @@ final class Installation {
             return deviceId;
           }
           deviceId = readInstallationFile(installation);
-        } catch (Throwable e) {
+          if (deviceId == null) {
+            deviceId = writeInstallationFile(installation);
+          }
+        } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }
@@ -51,12 +57,22 @@ final class Installation {
     }
   }
 
+  /**
+   * Returns null when the file is larger than an id can be, or can't be read, so the caller treats
+   * it as corrupt. The size check keeps an oversized file from being read into memory.
+   */
   @TestOnly
-  static @NotNull String readInstallationFile(final @NotNull File installation) throws IOException {
+  static @Nullable String readInstallationFile(final @NotNull File installation) {
     try (final RandomAccessFile f = new RandomAccessFile(installation, "r")) {
-      final byte[] bytes = new byte[(int) f.length()];
+      final long length = f.length();
+      if (length > MAX_INSTALLATION_FILE_SIZE) {
+        return null;
+      }
+      final byte[] bytes = new byte[(int) length];
       f.readFully(bytes);
       return new String(bytes, UTF_8);
+    } catch (IOException e) {
+      return null;
     }
   }
 
