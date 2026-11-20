@@ -9,11 +9,14 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultCompositePerformanceCollector;
 import io.sentry.DefaultVersionDetector;
 import io.sentry.IContinuousProfiler;
+import io.sentry.IDebugManager;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
@@ -32,6 +35,11 @@ import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.android.core.anr.AnrProfileRotationHelper;
 import io.sentry.android.core.anr.AnrProfilingIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.hang.HandlerThreadPoster;
+import io.sentry.android.core.hang.HangRecorder;
+import io.sentry.android.core.hang.ThreadHangSignal;
+import io.sentry.android.core.hang.ThreadPoster;
+import io.sentry.android.core.hang.ThreadSampleCollector;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
@@ -53,6 +61,9 @@ import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.EpochClock;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
@@ -61,6 +72,7 @@ import io.sentry.util.Objects;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -258,9 +270,12 @@ final class AndroidOptionsInitializer {
     if (options.getThreadChecker() instanceof NoOpThreadChecker) {
       options.setThreadChecker(AndroidThreadChecker.getInstance());
     }
-    if (options.getDebugManager() == null) {
-      options.setDebugManager(new AndroidDebugManager());
+    @Nullable IDebugManager debugManager = options.getDebugManager();
+    if (debugManager == null) {
+      debugManager = new AndroidDebugManager();
+      options.setDebugManager(debugManager);
     }
+    setupHangRecorder(options, debugManager);
     if (options.getSocketTagger() instanceof NoOpSocketTagger) {
       options.setSocketTagger(AndroidSocketTagger.getInstance());
     }
@@ -514,6 +529,38 @@ final class AndroidOptionsInitializer {
     options
         .getFeedbackOptions()
         .setFormHandler(new SentryAndroidOptions.AndroidUserFeedbackFormHandler());
+  }
+
+  private static void setupHangRecorder(
+      final @NotNull SentryAndroidOptions options, final @NotNull IDebugManager debugManager) {
+    if (options.getCacheDirPath() == null || options.getHangRecorder() != null) {
+      return;
+    }
+    final @NotNull Looper mainLooper = Looper.getMainLooper();
+    final @NotNull ThreadPoster mainThreadPoster = new HandlerThreadPoster(new Handler(mainLooper));
+    // options.getMonotonicTicker() counts device sleep, which would read as a hang.
+    final @NotNull MonotonicTicker ticker = JavaMonotonicTicker.getInstance();
+    final @NotNull EpochClock epochClock = options.getEpochClock();
+    final @NotNull HangRecorder recorder =
+        new HangRecorder(
+            options,
+            AppState.getInstance(),
+            ticker,
+            epochClock,
+            HangRecorder.DEFAULT_POLLING_INTERVAL_MS,
+            HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS,
+            HangRecorder.DEFAULT_EXECUTOR_FACTORY,
+            metronome ->
+                Collections.singletonList(
+                    new ThreadHangSignal(
+                        metronome,
+                        ticker,
+                        debugManager,
+                        mainThreadPoster,
+                        HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS)),
+            Collections.singletonList(
+                new ThreadSampleCollector(options, epochClock, ticker, mainLooper.getThread())));
+    options.setHangRecorder(recorder);
   }
 
   /**

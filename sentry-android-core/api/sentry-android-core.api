@@ -213,7 +213,7 @@ public final class io/sentry/android/core/AppStartExtension$ExtendedAppStart {
 	public fun <init> (Lio/sentry/ITransaction;Lio/sentry/ISpan;)V
 }
 
-public final class io/sentry/android/core/AppState : java/io/Closeable {
+public final class io/sentry/android/core/AppState : io/sentry/android/core/AppStateProvider, java/io/Closeable {
 	public fun addAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/android/core/AppState;
@@ -437,6 +437,7 @@ public final class io/sentry/android/core/SentryAndroidDateProvider : io/sentry/
 
 public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/SentryOptions {
 	public fun <init> ()V
+	public fun close ()V
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrProfilingSampleRate ()Ljava/lang/Double;
 	public fun getAnrTimeoutIntervalMillis ()J
@@ -444,6 +445,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
+	public fun getHangRecorder ()Lio/sentry/android/core/hang/HangRecorder;
 	public fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkAppHangTimeoutIntervalMillis ()J
@@ -514,6 +516,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
+	public fun setHangRecorder (Lio/sentry/android/core/hang/HangRecorder;)V
 	public fun setMemoryLimiterEnabled (Z)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
@@ -809,6 +812,12 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static fun markTombstoneReported (Lio/sentry/SentryOptions;J)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
+}
+
+public final class io/sentry/android/core/hang/HandlerThreadPoster : io/sentry/android/core/hang/ThreadPoster {
+	public fun <init> (Landroid/os/Handler;)V
+	public fun post (Ljava/lang/Runnable;)V
+	public fun remove (Ljava/lang/Runnable;)V
 }
 
 public abstract interface class io/sentry/android/core/hang/HangDataCollector : java/io/Closeable {

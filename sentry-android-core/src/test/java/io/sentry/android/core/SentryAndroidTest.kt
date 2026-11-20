@@ -11,6 +11,7 @@ import android.os.Looper
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
@@ -31,6 +32,7 @@ import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.anr.AnrProfilingIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.replay.ReplayIntegration
@@ -198,6 +200,32 @@ class SentryAndroidTest {
     fixture.initSut(logger = mock())
 
     assertTrue(Sentry.isEnabled())
+  }
+
+  @Test
+  fun `close closes the hang recorder`() {
+    val recorder = mock<HangRecorder>()
+    fixture.initSut { it.hangRecorder = recorder }
+
+    Sentry.close()
+
+    verify(recorder).close()
+  }
+
+  @Test
+  fun `re-init closes the previous hang recorder and creates a new one`() {
+    val previous = mock<HangRecorder>()
+    fixture.initSut { it.hangRecorder = previous }
+    var options: SentryAndroidOptions? = null
+
+    fixture.initSut {
+      it.cacheDirPath = tmpDir.newFolder().absolutePath
+      options = it
+    }
+
+    verify(previous).close()
+    assertThat(options!!.hangRecorder).isNotNull()
+    assertThat(options!!.hangRecorder).isNotSameInstanceAs(previous)
   }
 
   @Test

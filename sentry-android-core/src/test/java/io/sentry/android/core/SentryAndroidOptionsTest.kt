@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
+import io.sentry.android.core.hang.HangRecorder
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,6 +11,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 class SentryAndroidOptionsTest {
   @Test
@@ -265,6 +267,22 @@ class SentryAndroidOptionsTest {
     hosts.add("other.com")
 
     assertEquals(listOf("example.com"), sentryOptions.webViewTracing.allowedHosts)
+  }
+
+  @Test
+  fun `close closes the hang recorder`() {
+    val sentryOptions = SentryAndroidOptions()
+    val recorder = mock<HangRecorder>()
+    sentryOptions.hangRecorder = recorder
+
+    sentryOptions.close()
+
+    verify(recorder).close()
+  }
+
+  @Test
+  fun `close without a hang recorder does not throw`() {
+    SentryAndroidOptions().close()
   }
 
   private class CustomDebugImagesLoader : IDebugImagesLoader {

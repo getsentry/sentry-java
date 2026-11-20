@@ -6,7 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Coordinates file rotation between AnrProfilingIntegration and AnrV2Integration to prevent
+ * Coordinates file rotation between ThreadSampleCollector and AnrV2Integration to prevent
  * concurrent access to the same QueueFile.
  */
 @ApiStatus.Internal
