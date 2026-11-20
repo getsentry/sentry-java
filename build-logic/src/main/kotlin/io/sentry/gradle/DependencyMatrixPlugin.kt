@@ -18,9 +18,9 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin
  * Runs a module's unit tests on each version of a dependency listed in a checked-in JSON file, for
  * Android library and JVM modules.
  *
- * The module compiles against the version catalog's version, and the tests for each version in the
- * file run with that version on their runtime classpath, which is how users run our published
- * artifacts on a newer or older version of the dependency.
+ * The module's main code compiles against the version catalog's version, and the tests for each
+ * version in the file run with that version, which is how users run our published artifacts on a
+ * newer or older version of the dependency.
  */
 class DependencyMatrixPlugin : Plugin<Project> {
   override fun apply(project: Project) {
@@ -32,35 +32,41 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
   /**
    * Registers `<name>Test<version>` for each version in `gradle/<versionsFile>`, a JSON list such
    * as `["1.12.1", "1.13.0-rc01"]`. Each task runs the module's unit tests with every dependency in
-   * [group] at that version. A CI workflow reads the same file and runs each version in its own
-   * job. In an Android module, call it after `android {}`.
+   * [groups] at that version. An entry can also be an object such as `{"version": "1.8.3", "pin":
+   * {"androidx.compose.material3": "1.3.2"}}`, which also forces each group in `pin` to its
+   * version, for test dependencies whose current version needs a newer [groups] version. A CI
+   * workflow reads the same file and runs each version in its own job. In an Android module, call
+   * it after `android {}`.
    */
-  fun matrix(name: String, group: String, versionsFile: String) {
+  fun matrix(name: String, groups: List<String>, versionsFile: String) {
     val file = project.layout.settingsDirectory.file("gradle/$versionsFile")
-    val versions =
-      (JsonSlurper().parseText(project.providers.fileContents(file).asText.get()) as List<*>).map {
-        it as String
-      }
-    check(versions.isNotEmpty()) { "gradle/$versionsFile lists no versions" }
+    val entries =
+      JsonSlurper().parseText(project.providers.fileContents(file).asText.get()) as List<*>
+    check(entries.isNotEmpty()) { "gradle/$versionsFile lists no versions" }
     val android = project.plugins.hasPlugin("com.android.library")
-    versions.forEach { version ->
+    entries.forEach { entry ->
+      val version = if (entry is Map<*, *>) entry["version"] as String else entry as String
+      val pin = (entry as? Map<*, *>)?.get("pin") as Map<*, *>?
+      val forced =
+        groups.associateWith { version } +
+          pin.orEmpty().entries.associate { (group, pinned) -> group as String to pinned as String }
       val variant = "$name${suffix(version)}"
       val test = if (android) androidUnitTest(variant) else jvmTest(variant)
       project.configurations
-        .matching { it.name == runtimeClasspathName(variant, android) }
-        .configureEach { forceGroup(group, version) }
+        .matching { it.name in testClasspathNames(variant, android) }
+        .configureEach { force(forced) }
       project.tasks.register("${name}Test${suffix(version)}") {
-        description = "Runs the unit tests with $group at $version."
-        this.group = LifecycleBasePlugin.VERIFICATION_GROUP
+        description = "Runs the unit tests with ${groups.joinToString()} at $version."
+        group = LifecycleBasePlugin.VERIFICATION_GROUP
         dependsOn(test)
       }
     }
   }
 
   /**
-   * A build type of [name] based on the test build type, whose unit tests run on their own runtime
-   * classpath. Android needs a variant per version, because AGP builds the R class and resources
-   * the unit tests run with from the variant's dependencies.
+   * A build type of [name] based on the test build type, whose unit tests compile and run on their
+   * own classpaths. Android needs a variant per version, because AGP builds the R class and
+   * resources the unit tests run with from the variant's dependencies.
    *
    * Revisit this once the modules can use AGP test suites: a test suite per version could replace
    * the extra build types.
@@ -118,8 +124,16 @@ abstract class DependencyMatrixExtension @Inject constructor(private val project
   private fun runtimeClasspathName(name: String, android: Boolean) =
     if (android) "${name}UnitTestRuntimeClasspath" else "${name}TestRuntimeClasspath"
 
-  private fun Configuration.forceGroup(group: String, version: String) {
-    resolutionStrategy.eachDependency { if (requested.group == group) useVersion(version) }
+  /**
+   * On Android the tests also compile against the matrix versions: Kotlin compiler plugins such as
+   * the Compose compiler emit calls into the library's runtime that older versions don't have.
+   */
+  private fun testClasspathNames(name: String, android: Boolean) =
+    if (android) setOf(runtimeClasspathName(name, android), "${name}UnitTestCompileClasspath")
+    else setOf(runtimeClasspathName(name, android))
+
+  private fun Configuration.force(versions: Map<String, String>) {
+    resolutionStrategy.eachDependency { versions[requested.group]?.let { useVersion(it) } }
   }
 
   private fun suffix(version: String) = version.replace('.', '_').replace('-', '_')

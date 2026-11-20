@@ -25,7 +25,7 @@ jobs:
 
       - name: Read Compose UI versions
         id: versions
-        run: echo "versions=$(jq -c . gradle/compose-ui-versions.json)" >> "$GITHUB_OUTPUT"
+        run: echo "versions=$(jq -c 'map(.version? // .)' gradle/compose-ui-versions.json)" >> "$GITHUB_OUTPUT"
 
   compose-ui-matrix:
     needs: versions
