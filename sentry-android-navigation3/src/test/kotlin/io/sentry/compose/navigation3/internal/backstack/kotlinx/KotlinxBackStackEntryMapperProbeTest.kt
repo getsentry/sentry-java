@@ -5,8 +5,8 @@ import io.sentry.ILogger
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
-import io.sentry.compose.navigation3.internal.backstack.BuiltInBackStackEntryMappers.INCOMPATIBLE_KOTLINX_ADVICE
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.FakeCompatibilityProbe.Inconclusive
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.mockito.kotlin.any

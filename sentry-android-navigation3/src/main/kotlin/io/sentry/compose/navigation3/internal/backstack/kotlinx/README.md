@@ -14,7 +14,8 @@ be linked.
 
 Creating a mapper also runs `KotlinxCompatibilityProbe`, which names and encodes SDK-owned `@Serializable` types. Those run no app code,
 so a `LinkageError` from them shows that the app's version is incompatible. If naming fails, creating the mapper fails. If encoding fails,
-`SerialNameAndProperties` keeps entry names but drops their arguments with `encoding_failed`. A `LinkageError` thrown while mapping an entry then fails only that entry's type.
+`SerialNameAndProperties` keeps entry names but drops their arguments with `encoding_failed`. A `LinkageError` thrown while mapping an entry
+then fails only that entry's type.
 
 To keep our isolation policy intact:
 
@@ -29,6 +30,12 @@ In addition, the `.kotlinx` subpackage may ***not*** depend on Android framework
 `sentry-android-navigation3` doesn't ship any R8 rules for kotlinx.serialization. Serial names survive R8 minification because Kotlin's
 serialization compiler plugin fixes them at compile time. `KotlinxBackStackEntryMapper`'s fallback for private `@Serializable` objects
 relies on members preserved by kotlinx.serialization's own consumer rules.
+
+`KotlinxBackStackEntryMapper` only names classes whose `@Serializable` annotation is present at runtime. kotlinx.serialization's consumer
+rules (from our 1.7.3 floor on) keep that annotation: `kotlinx-serialization-common.pro` keeps `RuntimeVisibleAnnotations`, and
+`kotlinx-serialization-r8.pro` keeps every `@Serializable` class (allowing shrinking and obfuscation) so that R8 full mode doesn't strip
+the annotation. kotlinx.serialization relies on the annotation itself, e.g., to pick sealed-class serializers, so an app that disables those
+rules breaks kotlinx.serialization as well as our mappers.
 
 We also don't ship rules for `@Serializable` classes with named companion objects. kotlinx.serialization's rules only cover those from
 1.10.0 on. A generic rule set that fixes older versions exists, but we don't apply it because it would keep `InnerClasses` and

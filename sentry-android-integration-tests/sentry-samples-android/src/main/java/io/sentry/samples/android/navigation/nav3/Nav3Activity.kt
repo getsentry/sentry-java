@@ -233,15 +233,25 @@ private fun Nav3SampleApp(
     }
   val performanceExtractorMode = performanceState.extractorMode
   val performanceArgumentMode = performanceState.argumentMode
+  val performanceMapperMode = performanceState.mapperMode
   val backStackEntryMapper: BackStackEntryMapper<Nav3Route> =
     remember(
       isPerformanceScenario,
       performanceExtractorMode,
       performanceArgumentMode,
+      performanceMapperMode,
       integrationMode.includeArguments,
     ) {
       if (!isPerformanceScenario) {
         BackStackEntryMapper.SerialNameAndProperties
+      } else if (performanceMapperMode == Nav3PerformanceMapperMode.SERIAL_NAME_AND_PROPERTIES) {
+        // The built-in mapper itself, so SentryNavEffect.onBackStackChanged measures its real
+        // property encoding. Names only when the integration mode records no arguments.
+        if (integrationMode.includeArguments) {
+          BackStackEntryMapper.SerialNameAndProperties
+        } else {
+          BackStackEntryMapper.SerialName
+        }
       } else {
         // A custom mapper, so the performance scenario can time name and argument extraction
         // separately and substitute synthetic arguments.

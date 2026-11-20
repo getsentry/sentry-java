@@ -3,9 +3,13 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.internal.backstack.ArgumentBudget
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
-import io.sentry.compose.navigation3.internal.backstack.BuiltInBackStackEntryMappers.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.ArgumentSource
+import io.sentry.compose.navigation3.internal.backstack.DropArguments
+import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -185,12 +189,10 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `logs an unsupported-properties warning with the error once per type whose properties can't be encoded`() {
-    val detailError = SerializationException("detail unencodable")
-    val searchError = SerializationException("search unencodable")
+  fun `logs an unsupported-properties warning once per type whose properties can't be encoded`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    fixture.detailSerializer.error = detailError
-    fixture.searchSerializer.error = searchError
+    fixture.detailSerializer.error = SerializationException("detail unencodable")
+    fixture.searchSerializer.error = SerializationException("search unencodable")
     val mapper = fixture.mapper
 
     repeat(3) {
@@ -201,14 +203,12 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     verify(fixture.logger, times(1))
       .log(
         eq(SentryLevel.WARNING),
-        eq(detailError),
         argThat<String> { contains(UNSUPPORTED_PROPERTIES) },
         eq(Detail::class.java.name),
       )
     verify(fixture.logger, times(1))
       .log(
         eq(SentryLevel.WARNING),
-        eq(searchError),
         argThat<String> { contains(UNSUPPORTED_PROPERTIES) },
         eq(Search::class.java.name),
       )
@@ -278,11 +278,10 @@ class KotlinxBackStackEntryMapperPropertiesTest {
 
   @Test
   fun `logs the over-limits warning separately from the unencodable warning for the same type`() {
-    val error = SerializationException("unencodable")
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     val mapper = fixture.mapper
     mapper.mapAndReadArguments(Detail(overLimitId))
-    fixture.detailSerializer.error = error
+    fixture.detailSerializer.error = SerializationException("unencodable")
 
     mapper.mapAndReadArguments(Detail("2"))
 
@@ -294,7 +293,11 @@ class KotlinxBackStackEntryMapperPropertiesTest {
         eq(ArgumentDropReason.CHARACTER_LIMIT.serializedValue),
       )
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(Detail::class.java.name))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNSUPPORTED_PROPERTIES) },
+        eq(Detail::class.java.name),
+      )
   }
 
   @Test
@@ -336,7 +339,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `logs a warning with the error once per type whose property encoding throws a LinkageError`() {
+  fun `logs a warning once per type whose property encoding throws a LinkageError`() {
     val error = AbstractMethodError()
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.detailSerializer.error = error
@@ -357,29 +360,45 @@ class KotlinxBackStackEntryMapperPropertiesTest {
       .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(Detail::class.java.name))
     verify(fixture.logger, times(1))
       .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(Search::class.java.name))
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   @Test
   fun `logs only the compatibility advice warning when a type's property encoding throws a LinkageError`() {
-    val error = AbstractMethodError()
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.detailSerializer.error = AbstractMethodError()
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail("1"))
+
+    // A single warning, rather than the compatibility advice and the unencodable warning.
+    val message = argumentCaptor<String>()
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        any<Throwable>(),
+        message.capture(),
+        eq(Detail::class.java.name),
+      )
+    assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `attaches the LinkageError to the warning for a type whose property encoding throws it`() {
+    // Unlike serializer exceptions, a LinkageError names the classes and members that couldn't be
+    // linked or initialized, not route data.
+    val error = NoClassDefFoundError("kotlinx/serialization/internal/Missing")
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.detailSerializer.error = error
     val mapper = fixture.mapper
 
     mapper.mapAndReadArguments(Detail("1"))
 
-    // A single warning, rather than the compatibility advice and the unencodable warning.
     val logged = argumentCaptor<Throwable>()
-    val message = argumentCaptor<String>()
-    verify(fixture.logger, times(1))
-      .log(
-        eq(SentryLevel.WARNING),
-        logged.capture(),
-        message.capture(),
-        eq(Detail::class.java.name),
-      )
+    verify(fixture.logger)
+      .log(eq(SentryLevel.WARNING), logged.capture(), any<String>(), eq(Detail::class.java.name))
     assertThat(logged.firstValue).isSameInstanceAs(error)
-    assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
   }
 
   // Property encoding that throws other exceptions
@@ -410,12 +429,10 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `logs a serializer-threw warning with the error once per type whose property encoding throws an exception`() {
-    val detailError = IllegalArgumentException("invalid id")
-    val searchError = IllegalArgumentException("invalid query")
+  fun `logs a serializer-threw warning once per type whose property encoding throws an exception`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    fixture.detailSerializer.error = detailError
-    fixture.searchSerializer.error = searchError
+    fixture.detailSerializer.error = IllegalArgumentException("invalid id")
+    fixture.searchSerializer.error = IllegalArgumentException("invalid query")
     val mapper = fixture.mapper
 
     repeat(3) {
@@ -426,35 +443,82 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     verify(fixture.logger, times(1))
       .log(
         eq(SentryLevel.WARNING),
-        eq(detailError),
         argThat<String> { contains(SERIALIZER_THREW) },
         eq(Detail::class.java.name),
       )
     verify(fixture.logger, times(1))
       .log(
         eq(SentryLevel.WARNING),
-        eq(searchError),
         argThat<String> { contains(SERIALIZER_THREW) },
         eq(Search::class.java.name),
       )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `logs a serializer-threw warning once for an entry whose arguments are read and then written`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.detailSerializer.error = IllegalArgumentException("invalid id")
+    val arguments = fixture.mapper.map(Detail("1"))?.arguments!!
+    arguments.size
+
+    assertFailsWith<DropArguments> {
+      (arguments as ArgumentSource).writeTo(TreeArgumentWriter(ArgumentBudget()))
+    }
+
+    assertThat(fixture.detailSerializer.serialized).containsExactly(Detail("1"), Detail("1"))
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(SERIALIZER_THREW) },
+        eq(Detail::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `keeps route data from serializer exception messages and causes out of warnings`() {
+    val detail = Detail("private-route-id")
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.detailSerializer.error =
+      IllegalArgumentException("Invalid ID ${detail.id}", IllegalStateException(detail.id))
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(detail)
+
+    val message = argumentCaptor<String>()
+    verify(fixture.logger)
+      .log(eq(SentryLevel.WARNING), message.capture(), eq(Detail::class.java.name))
+    assertThat(message.firstValue).contains(SERIALIZER_THREW)
+    assertThat(message.firstValue).doesNotContain(detail.id)
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   @Test
   fun `logs the serializer-threw warning separately from the LinkageError warning for the same type`() {
-    val exception = IllegalArgumentException("invalid id")
-    val linkageError = AbstractMethodError()
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     val mapper = fixture.mapper
-    fixture.detailSerializer.error = exception
+    fixture.detailSerializer.error = IllegalArgumentException("invalid id")
     repeat(2) { mapper.mapAndReadArguments(Detail("thrown-$it")) }
+    val linkageError = AbstractMethodError()
     fixture.detailSerializer.error = linkageError
 
     repeat(2) { mapper.mapAndReadArguments(Detail("unlinkable-$it")) }
 
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), eq(exception), any<String>(), eq(Detail::class.java.name))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(SERIALIZER_THREW) },
+        eq(Detail::class.java.name),
+      )
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), eq(linkageError), any<String>(), eq(Detail::class.java.name))
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(linkageError),
+        argThat<String> { contains(INCOMPATIBLE_KOTLINX_ADVICE) },
+        eq(Detail::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   @Test
@@ -513,7 +577,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `logs a warning with the error once for a type whose descriptor's kind throws`() {
+  fun `logs a warning once for a type whose descriptor's kind throws`() {
     val error = IllegalStateException("no kind")
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.lookUp = { ShapeThrowingDetailSerializer(kindError = error) }
@@ -522,7 +586,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     repeat(3) { mapper.mapAndReadArguments(Detail("$it")) }
 
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(Detail::class.java.name))
+      .log(eq(SentryLevel.WARNING), any<String>(), eq(Detail::class.java.name))
   }
 
   @Test

@@ -15,7 +15,11 @@ import kotlinx.serialization.KSerializer
  * The [ArgumentSource] for our built-in `BackStackEntryMapper`s.
  *
  * It keeps a reference to the [backStackEntry] whose properties it reads, as well as the
- * [serializer] needed to encode them. Encoding is performed on demand and cached in order to:
+ * [serializer] needed to encode them, for as long as the map itself is reachable. (The SDK doesn't
+ * retain these maps past a back stack update, but a host app that keeps a mapper's result also
+ * keeps its entry.)
+ *
+ * Encoding is performed on demand and cached in order to:
  *
  * - guarantee a single, consistent snapshot for all consumers; and
  * - avoid doing work for arguments that will be dropped or never read.
@@ -43,16 +47,20 @@ internal class KotlinxArguments(
     get() = copy.value.arguments.entries
 
   /**
-   * Writes the entry's arguments to [sink], encoding its properties if needed. If available, uses
-   * the previously cached copy instead of re-encoding [sink].
+   * Writes the entry's arguments to [sink], encoding its properties if needed. Uses the previously
+   * cached copy instead if it was encoded successfully.
    *
    * Throws [DropArguments] if the arguments can't be written, either with the reason for the
    * constraint they violated, or with [ArgumentDropReason.ENCODING_FAILED] if encoding failed.
    */
   override fun writeTo(sink: ArgumentSink) {
-    if (copy.isInitialized()) {
-      copy.value.writeTo(sink)
+    val cached = if (copy.isInitialized()) copy.value else null
+    if (cached != null && !cached.isDropped) {
+      cached.writeTo(sink)
     } else {
+      // A failed copy used a separate budget. Encode again so values written before the failure
+      // consume the update's shared budget; rethrowing the cached failure would leave extra room
+      // for older entries' arguments.
       encode(sink)
     }
   }
@@ -90,13 +98,13 @@ internal class KotlinxArguments(
 
     return try {
       encode(sink)
-      EncodedCopy(sink.argumentsOrThrow(), failure = null)
+      EncodedCopy(sink.argumentsOrThrow(), isDropped = false)
     } catch (e: DropArguments) {
       // encode already reported an encoding failure.
       if (e.reason != ArgumentDropReason.ENCODING_FAILED) {
         onFailure(e)
       }
-      EncodedCopy(mapOf(ARGUMENT_DROP_REASON_KEY to e.reason.serializedValue), failure = e)
+      EncodedCopy(mapOf(ARGUMENT_DROP_REASON_KEY to e.reason.serializedValue), isDropped = true)
     }
   }
 
@@ -112,17 +120,15 @@ internal class KotlinxArguments(
      */
     val arguments: Map<String, Any?>,
     /**
-     * The exception that dropped the back stack entry's arguments, whether because of an encoding
-     * failure or a violated argument constraint. `null` if encoding succeeded.
-     *
-     * When set, [writeTo] re-throws this failure so that the owner of the [ArgumentBudget] can drop
-     * the entry's arguments for the same reason.
+     * Whether the back stack entry's arguments were dropped, because of an encoding failure or a
+     * violated argument constraint.
      */
-    val failure: DropArguments?,
+    val isDropped: Boolean,
   ) : ArgumentSource {
 
+    /** Writes the encoded arguments to [sink]. Only for a copy that wasn't [dropped][isDropped]. */
     override fun writeTo(sink: ArgumentSink) {
-      failure?.let { throw it }
+      check(!isDropped) { "A dropped copy is encoded again instead of written." }
       // The copy holds only plain maps, lists, and values the sink supports.
       HostArgumentSource(arguments, onUnsupportedValue = {}).writeTo(sink)
     }

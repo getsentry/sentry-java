@@ -6,10 +6,10 @@ import io.sentry.ILogger
 import io.sentry.ScopesAdapter
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
-import io.sentry.compose.navigation3.BuildConfig
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxBackStackEntryMapper
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -49,12 +49,6 @@ internal object BuiltInBackStackEntryMappers {
       }
     }
 
-  const val INCOMPATIBLE_KOTLINX_ADVICE: String =
-    "Requires kotlinx.serialization ${BuildConfig.MIN_KOTLINX_SERIALIZATION_VERSION} or later. " +
-      "Upgrade kotlinx.serialization or the Sentry SDK. If both are current, report this at " +
-      "https://github.com/getsentry/sentry-java/issues/new/choose. Use a custom " +
-      "BackStackEntryMapper as a workaround."
-
   private val logger: () -> ILogger = { ScopesAdapter.getInstance().options.logger }
 
   /**
@@ -80,6 +74,8 @@ internal object BuiltInBackStackEntryMappers {
       logger()
         .log(
           WARNING,
+          // The compiler inlines INCOMPATIBLE_KOTLINX_ADVICE, and it's use here doesn't access any
+          // kotlinx.serialization code.
           "Nav3 built-in mapper creation failed. Using $UNKNOWN_ENTRY_NAME for all entries. See " +
             "the attached error. $INCOMPATIBLE_KOTLINX_ADVICE",
           e,

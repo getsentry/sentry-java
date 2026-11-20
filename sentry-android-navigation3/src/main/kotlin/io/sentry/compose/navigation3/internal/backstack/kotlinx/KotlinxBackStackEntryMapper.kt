@@ -9,9 +9,9 @@ import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
-import io.sentry.compose.navigation3.internal.backstack.BuiltInBackStackEntryMappers.INCOMPATIBLE_KOTLINX_ADVICE
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING
 import io.sentry.util.ExceptionUtils
 import java.lang.reflect.InvocationTargetException
@@ -74,9 +74,14 @@ internal class KotlinxBackStackEntryMapper(
    */
   private val isEncodingIncompatible: Boolean =
     includeProperties &&
-      probe
-        .encodingLinkageError { error -> diagnostics.inconclusiveProbe(ENCODING_CAPABILITY, error) }
-        ?.also { diagnostics.incompatibleEncoder(it) } != null
+      run {
+        val error =
+          probe.encodingLinkageError { error ->
+            diagnostics.inconclusiveProbe(ENCODING_CAPABILITY, error)
+          } ?: return@run false
+        diagnostics.incompatibleEncoder(error)
+        true
+      }
 
   override fun map(backStackEntry: Any): SentryBackStackEntry? {
     // An enum constant with a body is an instance of an anonymous subclass, which isn't
@@ -103,12 +108,9 @@ internal class KotlinxBackStackEntryMapper(
    */
   @OptIn(ExperimentalSerializationApi::class)
   private fun lookUp(type: Class<*>): CachedType {
-    // kotlinx.serialization also provides serializers for built-in types (e.g. String, Int) and
-    // enums that aren't @Serializable. Their serial names would be misleading ("kotlin.String") or
-    // derived from an obfuscated class name, so we only name types the app marked @Serializable.
-    // Checked before the lookup, which would otherwise return those serializers.
-    if (!type.isAnnotationPresent(serializableAnnotation)) {
-      diagnostics.notSerializable(type)
+    // Checked before the lookup, which would otherwise return serializers for types that aren't
+    // @Serializable.
+    if (!isMarkedSerializable(type)) {
       return UNRESOLVED
     }
 
@@ -146,6 +148,35 @@ internal class KotlinxBackStackEntryMapper(
     }
     return if (name == null) UNRESOLVED else CachedType(serializer, name, hasProperties)
   }
+
+  /**
+   * Whether [type] is annotated with `@Serializable`. Logs why it can't be named if the annotation
+   * is absent or can't be read.
+   *
+   * We only name types the host app marks as `@Serializable`. kotlinx.serialization provides
+   * serializers for built-in types (e.g. String, Int) and enums, but their serial names would be
+   * misleading ("kotlin.String") or derived from an obfuscated class name.
+   */
+  private fun isMarkedSerializable(type: Class<*>): Boolean =
+    try {
+      type.isAnnotationPresent(serializableAnnotation).also { isMarked ->
+        if (!isMarked) {
+          diagnostics.notSerializable(type)
+        }
+      }
+    } catch (e: LinkageError) {
+      // As for the serializer lookup, a LinkageError from reading this type's annotations only
+      // fails this type.
+      diagnostics.unresolved(type, e)
+      false
+    } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
+      // Catch broadly because annotation parsing has undocumented failure modes. Cache failures as
+      // unresolved so the type records UNKNOWN_ENTRY_NAME and logs once, rather than throwing from
+      // map() and retrying on every navigation.
+      ExceptionUtils.rethrowIfFatal(t)
+      diagnostics.unresolved(type, t)
+      false
+    }
 
   /**
    * Looks up [type]'s serializer, returning the error that made it fail, if any, instead of
@@ -314,13 +345,13 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
   }
 
   /**
-   * Logs why the `@Serializable` [type] can't be named. [error] is what its serializer lookup
-   * threw, or `null` if the lookup didn't throw.
+   * Logs why [type] can't be named. [error] is what reading its annotations, serializer, or
+   * descriptor threw, or `null` if the serializer lookup found none without throwing.
    */
   fun unresolved(type: Class<*>, error: Throwable?) {
     val reason =
       if (error != null) {
-        "serializer lookup or descriptor access failed"
+        "reading its annotations, serializer, or descriptor failed"
       } else {
         "no serializer was found (the type may be generic or require R8 keep rules)"
       }
@@ -348,6 +379,11 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
    * Logs why encoding the properties of an entry of [type] failed. Logged once per type and kind of
    * failure, as whether encoding fails can depend on the entry's values (e.g., whether a contextual
    * property is null, or which subtype a sealed property has).
+   *
+   * Serializer exceptions can contain route data in their messages or causes, so for those we log
+   * only the entry type and the failure category. A [LinkageError] is attached: it names the
+   * classes and members that couldn't be linked or initialized, not route data, as linking and
+   * class initialization don't see the entry being encoded.
    */
   fun propertyFailure(type: Class<*>, error: Throwable) {
     when (error) {
@@ -368,11 +404,10 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         logOncePerType(type, PropertyFailure.UNENCODABLE) {
           log(
             WARNING,
-            error,
             "Nav3 couldn't encode properties for type %s. Recording names without arguments. " +
               "Contextual and open polymorphic properties and structured map keys aren't " +
-              "supported. See the attached error. Use a custom BackStackEntryMapper to select " +
-              "supported properties or extract arguments directly.",
+              "supported. Use a custom BackStackEntryMapper to select supported properties or " +
+              "extract arguments directly.",
             type.name,
           )
         }
@@ -381,9 +416,10 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
           log(
             WARNING,
             error,
-            "Nav3 couldn't encode properties for type %s because a required class couldn't be linked, " +
-              "initialized, or found. Recording names without arguments. If all types fail, kotlinx.serialization " +
-              "may be incompatible. $INCOMPATIBLE_KOTLINX_ADVICE",
+            "Nav3 couldn't encode properties for type %s because a required class couldn't be " +
+              "linked, initialized, or found. Recording names without arguments. See the " +
+              "attached error. If all types fail, kotlinx.serialization may be incompatible. " +
+              INCOMPATIBLE_KOTLINX_ADVICE,
             type.name,
           )
         }
@@ -391,9 +427,8 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         logOncePerType(type, PropertyFailure.THROWING) {
           log(
             WARNING,
-            error,
             "Nav3 couldn't encode properties for type %s because a serializer threw. Recording " +
-              "names without arguments. See the attached error.",
+              "names without arguments.",
             type.name,
           )
         }
@@ -427,5 +462,21 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
 
     /** A class a serializer needs couldn't be linked, initialized, or found. */
     UNLOADABLE,
+  }
+
+  companion object {
+
+    /**
+     * The oldest kotlinx.serialization version [KotlinxBackStackEntryMapper] supports.
+     *
+     * Must match `kotlinxSerializationFloor` in `gradle/nav3.versions.toml`.
+     */
+    const val MIN_KOTLINX_SERIALIZATION_VERSION: String = "1.7.3"
+
+    const val INCOMPATIBLE_KOTLINX_ADVICE: String =
+      "Requires kotlinx.serialization $MIN_KOTLINX_SERIALIZATION_VERSION or later. " +
+        "Upgrade kotlinx.serialization or the Sentry SDK. If both are current, report this at " +
+        "https://github.com/getsentry/sentry-java/issues/new/choose. Use a custom " +
+        "BackStackEntryMapper as a workaround."
   }
 }

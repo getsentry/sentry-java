@@ -6,8 +6,9 @@ import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
-import io.sentry.compose.navigation3.internal.backstack.BuiltInBackStackEntryMappers.INCOMPATIBLE_KOTLINX_ADVICE
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxBackStackEntryMapper
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.MIN_KOTLINX_SERIALIZATION_VERSION
 import io.sentry.test.initForTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -161,6 +162,19 @@ class BuiltInBackStackEntryMappersTest {
 
     assertThat(race.otherThreadMapper).isSameInstanceAs(race.thisThreadMapper)
     assertThat(race.laterMapper).isSameInstanceAs(race.thisThreadMapper)
+  }
+
+  // MIN_KOTLINX_SERIALIZATION_VERSION
+
+  @Test
+  fun `MIN_KOTLINX_SERIALIZATION_VERSION matches kotlinxSerializationFloor in nav3 versions catalog`() {
+    val floor =
+      checkNotNull(System.getProperty(KOTLINX_SERIALIZATION_FLOOR_PROPERTY)) {
+        "System property $KOTLINX_SERIALIZATION_FLOOR_PROPERTY is missing. Run this test through " +
+          "Gradle, which sets it from kotlinxSerializationFloor in gradle/nav3.versions.toml."
+      }
+
+    assertThat(MIN_KOTLINX_SERIALIZATION_VERSION).isEqualTo(floor)
   }
 
   // create()
@@ -390,5 +404,8 @@ class BuiltInBackStackEntryMappersTest {
     const val TIMEOUT_SECONDS = 5L
 
     const val CREATION_FAILED = "Nav3 built-in mapper creation failed."
+
+    /** Set by the module's Gradle build from `kotlinxSerializationFloor`. */
+    const val KOTLINX_SERIALIZATION_FLOOR_PROPERTY = "nav3.kotlinxSerializationFloor"
   }
 }

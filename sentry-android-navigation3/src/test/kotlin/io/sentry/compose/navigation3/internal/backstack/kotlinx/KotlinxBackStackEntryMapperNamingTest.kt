@@ -3,7 +3,7 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.SentryBackStackEntry
-import io.sentry.compose.navigation3.internal.backstack.BuiltInBackStackEntryMappers.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import java.lang.reflect.InvocationTargetException
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -791,6 +791,6 @@ class KotlinxBackStackEntryMapperNamingTest {
     const val SERIALIZER_NOT_FOUND =
       "no serializer was found (the type may be generic or require R8 keep rules)"
 
-    const val LOOK_UP_ERROR = "serializer lookup or descriptor access failed"
+    const val LOOK_UP_ERROR = "reading its annotations, serializer, or descriptor failed"
   }
 }

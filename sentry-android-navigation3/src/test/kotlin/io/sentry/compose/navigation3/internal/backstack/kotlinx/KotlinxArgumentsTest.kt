@@ -88,6 +88,17 @@ class KotlinxArgumentsTest {
     override fun deserialize(decoder: Decoder): Detail = throw UnsupportedOperationException()
   }
 
+  /** Delegates to [delegate], then throws [error], as a serializer that fails late might. */
+  private class ThrowsAfterEncodingSerializer<T>(private val delegate: KSerializer<T>) :
+    KSerializer<T> by delegate {
+    val error = IllegalStateException("thrown after encoding")
+
+    override fun serialize(encoder: Encoder, value: T) {
+      delegate.serialize(encoder, value)
+      throw error
+    }
+  }
+
   private val failures = mutableListOf<Throwable>()
 
   private val detailSerializer = RecordingSerializer(Detail.serializer())
@@ -582,23 +593,23 @@ class KotlinxArgumentsTest {
   }
 
   @Test
-  fun `writeTo() - drops the arguments for the limit the copy read broke, reported only by the read`() {
+  fun `writeTo() - encodes again and drops the arguments for the sink's limit when the copy read broke a limit`() {
     val arguments = argumentsOf(detailSerializer, Detail(overLimitId))
     arguments.size
+    val sink = TreeArgumentWriter(ArgumentBudget())
 
-    val thrown =
-      assertFailsWith<DropArguments> {
-        arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
-      }
+    val thrown = assertFailsWith<DropArguments> { arguments.writeTo(sink) }
 
+    assertThat(thrown).isSameInstanceAs(sink.failure)
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
     assertThat(thrown.warning).isEqualTo(DropArguments.MAX_CHARACTER_WARNING)
+    assertThat(detailSerializer.serialized).hasSize(2)
+    // Only the read reports the limit; the sink's owner reports the one writeTo() broke.
     assertThat(failures).hasSize(1)
-    assertThat(detailSerializer.serialized).hasSize(1)
   }
 
   @Test
-  fun `writeTo() - drops the arguments as an encoding failure without re-encoding when the read copy failed`() {
+  fun `writeTo() - encodes the entry again and reports a serializer's exception again when the copy read failed`() {
     val error = IllegalStateException("boom")
     detailSerializer.error = error
     val arguments = argumentsOf(detailSerializer, Detail("1"))
@@ -611,8 +622,51 @@ class KotlinxArgumentsTest {
 
     assertThat(thrown.reason).isEqualTo(ArgumentDropReason.ENCODING_FAILED)
     assertThat(thrown.warning).isNull()
-    assertThat(failures).containsExactly(error)
-    assertThat(detailSerializer.serialized).hasSize(1)
+    assertThat(detailSerializer.serialized).hasSize(2)
+    // The mapper's onFailure logs once per type, so reporting each encoding adds no warnings.
+    assertThat(failures).containsExactly(error, error)
+  }
+
+  @Test
+  fun `writeTo() - drops the arguments for the sink's limit that encoding again breaks when the copy read failed`() {
+    // The entry's 151 values fit in the copy's own budget, so the copy failed only once its
+    // serializer threw. Encoding again overflows the 100 values the sink has left first.
+    val serializer = ThrowsAfterEncodingSerializer(Values.serializer())
+    val arguments = argumentsOf(serializer, Values(List(150) { it }))
+    arguments.size
+    val sink = TreeArgumentWriter(budgetWithValuesRemaining(100))
+
+    val thrown = assertFailsWith<DropArguments> { arguments.writeTo(sink) }
+
+    assertThat(thrown).isSameInstanceAs(sink.failure)
+    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
+    assertThat(failures).containsExactly(serializer.error)
+  }
+
+  @Test
+  fun `writeTo() - writes the entry's properties when encoding again succeeds after the copy read failed`() {
+    detailSerializer.error = IllegalStateException("boom")
+    detailSerializer.failsFor = { detailSerializer.serialized.size == 1 }
+    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    arguments.size
+    val sink = TreeArgumentWriter(ArgumentBudget())
+
+    arguments.writeTo(sink)
+
+    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "1"))
+  }
+
+  @Test
+  fun `reads as only the drop reason of the copy read after writeTo() encodes the entry again`() {
+    detailSerializer.error = IllegalStateException("boom")
+    detailSerializer.failsFor = { detailSerializer.serialized.size == 1 }
+    val arguments = argumentsOf(detailSerializer, Detail("1"))
+    arguments.size
+    arguments.writeTo(TreeArgumentWriter(ArgumentBudget()))
+
+    val read = arguments.toMap()
+
+    assertThat(read).isEqualTo(encodingFailed)
   }
 
   /**

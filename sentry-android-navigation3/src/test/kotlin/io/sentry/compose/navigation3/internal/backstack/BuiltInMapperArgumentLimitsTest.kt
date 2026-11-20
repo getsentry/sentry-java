@@ -9,6 +9,8 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -49,7 +51,35 @@ class BuiltInMapperArgumentLimitsTest {
     override fun deserialize(decoder: Decoder): ReportRoute = throw UnsupportedOperationException()
   }
 
+  @Serializable(with = DraftSerializer::class) private class DraftRoute(val lineIds: List<Int>)
+
+  /**
+   * Encodes a [DraftRoute] as a class with its line ids, then throws, as a host app serializer that
+   * fails after writing part of an entry's properties might.
+   */
+  private object DraftSerializer : KSerializer<DraftRoute> {
+    override val descriptor: SerialDescriptor =
+      buildClassSerialDescriptor("Draft") { element<List<Int>>("lineIds") }
+
+    override fun serialize(encoder: Encoder, value: DraftRoute) {
+      encoder.encodeStructure(descriptor) {
+        encodeSerializableElement(descriptor, 0, ListSerializer(Int.serializer()), value.lineIds)
+      }
+      throw SerializationException("Couldn't encode the draft")
+    }
+
+    override fun deserialize(decoder: Decoder): DraftRoute = throw UnsupportedOperationException()
+  }
+
+  @Serializable @SerialName("Catalog") private data class CatalogRoute(val itemIds: List<Int>)
+
   @Serializable @SerialName("Cart") private data class CartRoute(val cartId: String)
+
+  /** Wraps the built-in mapper and reads each entry's arguments before returning them unchanged. */
+  private val argumentReadingMapper =
+    BackStackEntryMapper<Any> { entry ->
+      BackStackEntryMapper.SerialNameAndProperties.map(entry)?.also { it.arguments?.size }
+    }
 
   private val logger = mock<ILogger>()
 
@@ -79,4 +109,33 @@ class BuiltInMapperArgumentLimitsTest {
       )
       .inOrder()
   }
+
+  @Test
+  fun `a serializer throwing after overflowing the value budget drops older entries' arguments even if read first`() {
+    // The catalog spends 151 of the MAX_ARGUMENT_VALUES = 200 values per update: its list and 150
+    // items. The draft's list and 59 items are 60 more, which fit in a budget of their own but
+    // overflow what the catalog left, before the draft's serializer throws.
+    val catalog = CatalogRoute(itemIds = List(150) { it })
+    val draft = DraftRoute(lineIds = List(59) { it })
+    val backStack = listOf(catalog, draft, CartRoute(cartId = "c-1"))
+
+    val written = convert(backStack, BackStackEntryMapper.SerialNameAndProperties)
+    val readFirst = convert(backStack, argumentReadingMapper)
+
+    assertThat(readFirst).isEqualTo(written)
+    assertThat(written)
+      .containsExactly(
+        NormalizedSentryBackStackEntry("/Catalog", mapOf("itemIds" to List(150) { it })),
+        NormalizedSentryBackStackEntry("/Draft", argumentDropReason = ArgumentDropReason.MAX_COUNT),
+        NormalizedSentryBackStackEntry("/Cart", argumentDropReason = ArgumentDropReason.MAX_COUNT),
+      )
+      .inOrder()
+  }
+
+  private fun convert(
+    backStack: List<Any>,
+    entryMapper: BackStackEntryMapper<Any>,
+  ): List<NormalizedSentryBackStackEntry> =
+    BackStackConverter(ForwardingBackStackEntryMapper { entryMapper }, logger)
+      .convert(backStack, RetentionPolicy.KEEP_FIRST)
 }

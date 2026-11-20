@@ -236,7 +236,7 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * properties you want to omit, or ii) use a custom [BackStackEntryMapper] that special-cases
      * entries with sensitive info or PII and falls back to this mapper (or [SerialName]) for
      * entries without it. See
-     * [Choosing which properties to send](https://docs.sentry.io/platforms/android/integrations/navigation/#choosing-which-properties-to-send)
+     * [Choosing Which Arguments to Send](https://docs.sentry.io/platforms/android/integrations/navigation/#choosing-which-arguments-to-send)
      * for examples.
      *
      * **Limited filtering for sensitive secrets**

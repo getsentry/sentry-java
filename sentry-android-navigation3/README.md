@@ -11,4 +11,3 @@ keys and the data Sentry should display for each (see `BackStackEntryMapper` and
 
 See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/) for additional details, including
 configuration, supported setups, and limitations.
-

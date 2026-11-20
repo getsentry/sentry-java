@@ -26,11 +26,6 @@ android {
     minSdk = libs.versions.minSdk.get().toInt()
 
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
-    buildConfigField(
-      "String",
-      "MIN_KOTLINX_SERIALIZATION_VERSION",
-      "\"${kotlinxSerializationFloor}\"",
-    )
   }
 
   buildTypes {
@@ -53,6 +48,8 @@ android {
       // AGP 9.5 can't create the Compose Preview task without it, which breaks any
       // build that creates every task, such as an LSP's Gradle import.
       isIncludeAndroidResources = true
+      // Lets tests check that MIN_KOTLINX_SERIALIZATION_VERSION matches the catalog's floor.
+      all { it.systemProperty("nav3.kotlinxSerializationFloor", kotlinxSerializationFloor) }
     }
   }
 
