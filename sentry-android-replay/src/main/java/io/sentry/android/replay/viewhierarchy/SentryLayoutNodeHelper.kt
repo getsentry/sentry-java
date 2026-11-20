@@ -18,13 +18,10 @@ import java.lang.reflect.Method
  * This class is not thread-safe, as Compose UI operations are expected to be performed on the main
  * thread.
  *
- * The internal `children` and `outerCoordinator` aren't called directly, as Kotlin mangles their
- * JVM names with a module suffix that changed between Compose versions (`$ui_release` before 1.10,
- * `$ui` in 1.10 - 1.12, `$androidx_compose_ui_ui` since 1.13). Since Compose 1.8, LayoutNode
- * implements `SemanticsInfo`, whose unmangled `childrenInfo` and `isTransparent()` call them from
- * within the Compose version the app ships. For apps on Compose < 1.8 the direct call will throw
- * [NoSuchMethodError] and we fall back to reflection-based accessors on the `$ui_release` names,
- * that are resolved and cached on first use.
+ * Compiled against Compose >= 1.10 where the mangled names use the "ui" module suffix (e.g.
+ * getChildren$ui()). For apps still on Compose < 1.10 (where the suffix is "$ui_release"), the
+ * direct call will throw [NoSuchMethodError] and we fall back to reflection-based accessors that
+ * are resolved and cached on first use.
  */
 internal object SentryLayoutNodeHelper {
   private class Fallback(val getChildren: Method?, val getOuterCoordinator: Method?)
@@ -40,17 +37,16 @@ internal object SentryLayoutNodeHelper {
     }
   }
 
-  @JvmStatic
   @Suppress("UNCHECKED_CAST")
   fun getChildren(node: LayoutNode): List<LayoutNode> {
     when (useFallback) {
-      false -> return node.childrenInfo as List<LayoutNode>
+      false -> return node.children
       true -> {
         return getFallback().getChildren!!.invoke(node) as List<LayoutNode>
       }
       null -> {
         try {
-          return (node.childrenInfo as List<LayoutNode>).also { useFallback = false }
+          return node.children.also { useFallback = false }
         } catch (_: NoSuchMethodError) {
           useFallback = true
           return getFallback().getChildren!!.invoke(node) as List<LayoutNode>
@@ -61,7 +57,7 @@ internal object SentryLayoutNodeHelper {
 
   fun isTransparent(node: LayoutNode): Boolean {
     when (useFallback) {
-      false -> return node.isTransparent()
+      false -> return node.outerCoordinator.isTransparent()
       true -> {
         val fb = getFallback()
         val coordinator = fb.getOuterCoordinator!!.invoke(node) as NodeCoordinator
@@ -69,7 +65,7 @@ internal object SentryLayoutNodeHelper {
       }
       null -> {
         try {
-          return node.isTransparent().also { useFallback = false }
+          return node.outerCoordinator.isTransparent().also { useFallback = false }
         } catch (_: NoSuchMethodError) {
           useFallback = true
           val fb = getFallback()

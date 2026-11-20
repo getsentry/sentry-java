@@ -285,8 +285,7 @@ internal object ComposeViewHierarchyNode {
     }
 
     try {
-      val rootNode =
-        (view as? Owner)?.root ?: error("${view::class.java.name} is not a Compose Owner")
+      val rootNode = (view as? Owner)?.root ?: return false
       rootNode.traverse(parent, isComposeRoot = true, options, logger)
     } catch (e: Throwable) {
       logger.log(
@@ -301,28 +300,11 @@ internal object ComposeViewHierarchyNode {
           .trimIndent(),
       )
       // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
-      // as crashes instead of a fully masked Compose view
+      // as crashes instead of silently skipping the whole Compose subtree (i.e. not masking it)
       if (SentryReplayDebug.failFast) {
         throw e
       }
-      // We can't tell which parts of the Compose view are sensitive, so we mask all of it,
-      // regardless of the masking options
-      parent.children =
-        listOf(
-          GenericViewHierarchyNode(
-            x = parent.x,
-            y = parent.y,
-            width = parent.width,
-            height = parent.height,
-            elevation = parent.elevation,
-            distance = 0,
-            parent = parent,
-            shouldMask = true,
-            isImportantForContentCapture = true,
-            isVisible = parent.isVisible,
-            visibleRect = parent.visibleRect,
-          ),
-        )
+      return false
     }
 
     return true
