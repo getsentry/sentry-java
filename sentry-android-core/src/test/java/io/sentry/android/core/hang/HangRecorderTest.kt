@@ -10,6 +10,7 @@ import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.hang.HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS
 import io.sentry.android.core.hang.HangRecorder.DEFAULT_POLLING_INTERVAL_MS
 import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.time.EpochClock
 import io.sentry.time.JavaMonotonicTicker
@@ -19,6 +20,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.locks.LockSupport
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.mockito.kotlin.any
@@ -668,20 +670,31 @@ class HangRecorderTest {
   }
 
   @Test
-  fun `recorder on the default executor posts the probe of a thread signal`() {
-    val posted = CountDownLatch(1)
+  fun `recorder on the default executor records the stack of the watched thread`() {
+    val parked = Thread { while (!Thread.currentThread().isInterrupted) LockSupport.park() }
+    parked.isDaemon = true
+    parked.start()
+    var posts = 0
     val poster =
       object : ThreadPoster {
-        override fun post(runnable: Runnable) = posted.countDown()
+        // The probe runs only at the 10th tick, so the thread looks blocked for about 600 ms.
+        override fun post(runnable: Runnable) {
+          if (++posts == 10) {
+            runnable.run()
+          }
+        }
 
         override fun remove(runnable: Runnable) = Unit
       }
+    val ticker = JavaMonotonicTicker.getInstance()
+    val recorded = CountDownLatch(1)
+    var record: HangRecord? = null
     appStateProvider.foreground()
     val created =
       HangRecorder(
-        options,
+        SentryOptions().apply { executorService = ImmediateExecutorService() },
         appStateProvider,
-        JavaMonotonicTicker.getInstance(),
+        ticker,
         epochClock,
         DEFAULT_POLLING_INTERVAL_MS,
         DEFAULT_MAX_RECORDING_TIME_MS,
@@ -690,23 +703,30 @@ class HangRecorderTest {
           listOf(
             ThreadHangSignal(
               metronome,
-              JavaMonotonicTicker.getInstance(),
+              ticker,
               { false },
               poster,
               HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS,
             ),
           )
         },
-        emptyList(),
+        listOf(ThreadSampleCollector(SentryOptions(), epochClock, ticker, parked)),
       )
 
-    created.subscribe(listener)
+    created.subscribe {
+      record = it
+      recorded.countDown()
+    }
 
     try {
-      assertThat(posted.await(10, TimeUnit.SECONDS)).isTrue()
+      assertThat(recorded.await(10, TimeUnit.SECONDS)).isTrue()
     } finally {
       created.close()
+      parked.interrupt()
+      parked.join()
     }
+    assertThat(record!!.samples).isNotEmpty()
+    assertThat(record!!.samples.first().stack.map { it.methodName }).contains("park")
   }
 
   private class FakeAppStateProvider : AppStateProvider {
