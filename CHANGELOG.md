@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Behavioral Changes
+
+- Nav3: If a back stack entry's arguments contain a map with two keys that are recorded as the same string (e.g., `1` and `"1"`), Sentry now drops that entry's arguments and records `dropped_by_sentry: duplicate_key`, instead of keeping only one of the values ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+
 ### Dependencies
 
 - Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
