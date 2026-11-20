@@ -9,11 +9,11 @@
 
 ### Dependencies
 
-- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
 
 ### Fixes
 
-- Nav3: `NaN` and infinite numbers in back stack entry arguments are now sent as the strings `"NaN"`, `"Infinity"`, and `"-Infinity"`, instead of causing the event they're attached to be dropped ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+- Nav3: `NaN` and infinite numbers in back stack entry arguments are now sent as the strings `"NaN"`, `"Infinity"`, and `"-Infinity"`, instead of causing the event they're attached to be dropped ([#6700](https://github.com/getsentry/sentry-java/pull/6700))
 
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
