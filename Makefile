@@ -2,7 +2,6 @@
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check
 publish: clean dryRelease
 
 # deep clean
@@ -56,3 +55,7 @@ runUiTestCritical:
 # Run tests and lint
 check:
 	./gradlew check
+
+# CI's Build job. Spotless is skipped because the Format Code workflow already runs it.
+preMerge:
+	./gradlew check -x spotlessCheck
