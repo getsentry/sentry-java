@@ -2563,6 +2563,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads non fatal anr options`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.NON_FATAL_ANR_SAMPLE_RATE to 0.25f,
+        ManifestMetadataReader.NON_FATAL_ANR_THRESHOLD_MS to 1500,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertEquals(0.25, fixture.options.nonFatalAnrSampleRate!!, 0.01)
+    assertEquals(1500L, fixture.options.nonFatalAnrThresholdMs)
+  }
+
+  @Test
+  fun `applyMetadata keeps non fatal anr defaults when not set in manifest`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertNull(fixture.options.nonFatalAnrSampleRate)
+    assertEquals(700L, fixture.options.nonFatalAnrThresholdMs)
+  }
+
+  @Test
   fun `applyMetadata reads enableAnrFingerprinting to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_ANR_FINGERPRINTING to true)
