@@ -1,4 +1,4 @@
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.internal.backstack
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
