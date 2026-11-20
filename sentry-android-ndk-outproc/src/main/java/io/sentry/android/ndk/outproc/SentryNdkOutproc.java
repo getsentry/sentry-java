@@ -2,7 +2,6 @@ package io.sentry.android.ndk.outproc;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.ServiceConnection;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
@@ -28,7 +27,7 @@ public final class SentryNdkOutproc {
   @SuppressLint("StaticFieldLeak") // the application context from NdkIntegration
   private static @Nullable Context serviceContext;
 
-  private static @Nullable ServiceConnection serviceConnection;
+  private static @Nullable SentryNdkCrashService.Connection serviceConnection;
 
   private SentryNdkOutproc() {}
 
@@ -106,7 +105,7 @@ public final class SentryNdkOutproc {
         ndkOptions.setEnableAppHangTracking(options.isEnableNdkAppHangTracking());
         ndkOptions.setAppHangTimeoutMillis(options.getNdkAppHangTimeoutIntervalMillis());
 
-        final @Nullable ServiceConnection connection =
+        final @Nullable SentryNdkCrashService.Connection connection =
             SentryNdkCrashService.start(context, options);
         if (connection == null) {
           throw new IllegalStateException("Failed to start the NDK crash service");
@@ -167,11 +166,12 @@ public final class SentryNdkOutproc {
 
   private static void unbindCrashService() {
     final @Nullable Context context = serviceContext;
-    final @Nullable ServiceConnection connection = serviceConnection;
+    final @Nullable SentryNdkCrashService.Connection connection = serviceConnection;
     serviceContext = null;
     serviceConnection = null;
     if (context != null && connection != null) {
       context.unbindService(connection);
+      connection.close();
     }
   }
 }

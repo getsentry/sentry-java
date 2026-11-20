@@ -113,7 +113,7 @@ public final class SentryNdkCrashService extends Service {
         }
       };
 
-  static @Nullable ServiceConnection start(
+  static @Nullable Connection start(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     // fail before binding, the crash daemon can't attach without the native libraries
     io.sentry.ndk.SentryNdk.loadNativeLibraries();
@@ -170,7 +170,7 @@ public final class SentryNdkCrashService extends Service {
       messageRead = null;
 
       final Intent intent = new Intent(context, SentryNdkCrashService.class);
-      final @Nullable ServiceConnection connection =
+      final @Nullable Connection connection =
           configureService(
               context,
               intent,
@@ -228,7 +228,7 @@ public final class SentryNdkCrashService extends Service {
     }
   }
 
-  private static @Nullable ServiceConnection configureService(
+  private static @Nullable Connection configureService(
       final @NotNull Context context,
       final @NotNull Intent intent,
       final @NotNull ILogger logger,
@@ -246,8 +246,8 @@ public final class SentryNdkCrashService extends Service {
     // a foreground app raises the service process only to visible without BIND_IMPORTANT
     final int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
 
-    final ServiceConnection connection =
-        new ServiceConnection() {
+    final Connection connection =
+        new Connection() {
           private volatile boolean configured;
 
           @Override
@@ -305,6 +305,13 @@ public final class SentryNdkCrashService extends Service {
             if (configured) {
               context.unbindService(this);
               bind(context, intent, flags, this);
+            }
+          }
+
+          @Override
+          public void close() {
+            if (ends.take()) {
+              ends.close();
             }
           }
         };
@@ -828,6 +835,12 @@ public final class SentryNdkCrashService extends Service {
       this.tombstoneEnabled = tombstoneEnabled;
       this.debug = debug;
     }
+  }
+
+  // closes the service's ends of the crash IPC unless a connection took them
+  abstract static class Connection implements ServiceConnection, Closeable {
+    @Override
+    public abstract void close();
   }
 
   // the service's ends of the crash IPC, handed over on the first connection or closed

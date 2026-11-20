@@ -146,6 +146,22 @@ class SentryNdkCrashServiceTest {
   }
 
   @Test
+  fun `close releases the service ends before the service connects`() {
+    val binder = configure(true)
+    val context = UnconnectedContext()
+    options.timerExecutorService = DeferredExecutorService()
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      native.`when`<Int> { io.sentry.ndk.SentryNdk.dupCrashShmFd() }.thenReturn(-1)
+      val connection = SentryNdkCrashService.start(context, options)!!
+
+      connection.close()
+      connection.onServiceConnected(component, binder)
+
+      assertThat(binder.transactions).isEqualTo(0)
+    }
+  }
+
+  @Test
   fun `init unbinds when native init fails`() {
     configure(true)
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->

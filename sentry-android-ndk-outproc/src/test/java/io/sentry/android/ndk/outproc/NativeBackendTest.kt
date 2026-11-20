@@ -1,7 +1,6 @@
 package io.sentry.android.ndk.outproc
 
 import android.content.Context
-import android.content.ServiceConnection
 import com.google.common.truth.Truth.assertThat
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.ndk.NdkOptions
@@ -73,8 +72,10 @@ class NativeBackendTest {
           .`when`<Any> { io.sentry.ndk.SentryNdk.init(any<NdkOptions>()) }
           .doAnswer { captured = it.arguments[0] as NdkOptions }
         service
-          .`when`<ServiceConnection> { SentryNdkCrashService.start(context, options) }
-          .thenReturn(mock<ServiceConnection>())
+          .`when`<SentryNdkCrashService.Connection> {
+            SentryNdkCrashService.start(context, options)
+          }
+          .thenReturn(mock<SentryNdkCrashService.Connection>())
 
         SentryNdkOutproc.init(context, options)
 
