@@ -1,6 +1,7 @@
 package io.sentry.compose.navigation3
 
 import androidx.compose.runtime.snapshots.Snapshot
+import io.sentry.compose.navigation3.internal.backstack.BackStackObserver
 import org.jetbrains.annotations.ApiStatus
 
 /** Info about a given back stack entry, suitable for display in Sentry. */

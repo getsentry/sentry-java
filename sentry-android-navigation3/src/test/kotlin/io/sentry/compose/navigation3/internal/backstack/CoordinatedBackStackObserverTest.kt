@@ -1,4 +1,4 @@
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.internal.backstack
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -16,10 +16,14 @@ import io.sentry.SentryTracer
 import io.sentry.SpanContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.compose.navigation3.lifecycle.INavStatePublisher
-import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
-import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
-import io.sentry.compose.navigation3.lifecycle.NavRootInfo
+import io.sentry.compose.navigation3.BackStackEntryMapper
+import io.sentry.compose.navigation3.ForwardingBackStackEntryMapper
+import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.SentryNavOptions
+import io.sentry.compose.navigation3.internal.lifecycle.INavStatePublisher
+import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
 import io.sentry.protocol.TransactionNameSource
 import org.junit.Test
 import org.mockito.kotlin.any
