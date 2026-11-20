@@ -2,6 +2,7 @@ package io.sentry.util
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.KeyValueCollectionBehavior
+import java.util.Locale
 import kotlin.test.Test
 
 class HttpUtilsTest {
@@ -14,11 +15,11 @@ class HttpUtilsTest {
   fun `query parameter deny list filters built-in sensitive and configured terms`() {
     assertThat(
         HttpUtils.filterQueryParams(
-          "name=value&access_token=secret&customerId=123",
-          KeyValueCollectionBehavior.denyList("customer"),
+          "name=value&ACCESS_TOKEN=secret&customerId=123",
+          KeyValueCollectionBehavior.denyList("CuStOmEr"),
         ),
       )
-      .isEqualTo("name=value&access_token=[Filtered]&customerId=[Filtered]")
+      .isEqualTo("name=value&ACCESS_TOKEN=[Filtered]&customerId=[Filtered]")
   }
 
   @Test
@@ -26,7 +27,7 @@ class HttpUtilsTest {
     assertThat(
         HttpUtils.filterQueryParams(
           "name=value&access_token=secret&customerId=123",
-          KeyValueCollectionBehavior.allowList("name", "access_token"),
+          KeyValueCollectionBehavior.allowList("NaMe", "AcCeSs_ToKeN"),
         ),
       )
       .isEqualTo("name=value&access_token=[Filtered]&customerId=[Filtered]")
@@ -71,18 +72,18 @@ class HttpUtilsTest {
       HttpUtils.filterHeaders(
         mapOf(
           "content-type" to "application/json",
-          "authorization" to "Bearer token",
+          "AUTHORIZATION" to "Bearer token",
           "x-customer" to "customer value",
           "Cookie" to "name=value",
         ),
-        KeyValueCollectionBehavior.denyList("customer"),
+        KeyValueCollectionBehavior.denyList("CuStOmEr"),
       )
 
     assertThat(filtered)
       .containsExactly(
         "content-type",
         "application/json",
-        "authorization",
+        "AUTHORIZATION",
         "[Filtered]",
         "x-customer",
         "[Filtered]",
@@ -97,20 +98,68 @@ class HttpUtilsTest {
       HttpUtils.filterHeaders(
         mapOf(
           "content-type" to "application/json",
-          "authorization" to "Bearer token",
+          "AUTHORIZATION" to "Bearer token",
           "x-customer" to "customer value",
         ),
-        KeyValueCollectionBehavior.allowList("content", "authorization"),
+        KeyValueCollectionBehavior.allowList("CoNtEnT", "AuThOrIzAtIoN"),
       )
 
     assertThat(filtered)
       .containsExactly(
         "content-type",
         "application/json",
-        "authorization",
+        "AUTHORIZATION",
         "[Filtered]",
         "x-customer",
         "[Filtered]",
       )
+  }
+
+  @Test
+  fun `containsSensitiveDataKey() - rejects an empty key`() {
+    assertThat(HttpUtils.containsSensitiveDataKey("")).isFalse()
+  }
+
+  @Test
+  fun `containsSensitiveDataKey() - matches independently of the default locale`() {
+    val originalLocale = Locale.getDefault()
+    try {
+      Locale.setDefault(Locale("tr", "TR"))
+
+      assertThat(HttpUtils.containsSensitiveDataKey("SESSION")).isTrue()
+      assertThat(HttpUtils.containsSensitiveDataKey("IDENTITY")).isTrue()
+    } finally {
+      Locale.setDefault(originalLocale)
+    }
+  }
+
+  @Test
+  fun `containsTerm() - matches substrings regardless of key and term case`() {
+    assertThat(HttpUtils.containsTerm("X-CUSTOMER-ID", listOf("CuStOmEr"))).isTrue()
+    assertThat(HttpUtils.containsTerm("X-CUSTOMER-ID", listOf("account"))).isFalse()
+  }
+
+  @Test
+  fun `containsTerm() - ignores null and empty terms`() {
+    assertThat(HttpUtils.containsTerm("customerId", listOf(null, "", "CuStOmEr"))).isTrue()
+    assertThat(HttpUtils.containsTerm("customerId", listOf(null, ""))).isFalse()
+  }
+
+  @Test
+  fun `containsTerm() - matches no keys when no terms are configured`() {
+    assertThat(HttpUtils.containsTerm("customerId", emptyList())).isFalse()
+  }
+
+  @Test
+  fun `containsTerm() - matches independently of the default locale`() {
+    val originalLocale = Locale.getDefault()
+    try {
+      Locale.setDefault(Locale("tr", "TR"))
+
+      assertThat(HttpUtils.containsTerm("DISPLAY", listOf("display"))).isTrue()
+      assertThat(HttpUtils.containsTerm("display", listOf("DISPLAY"))).isTrue()
+    } finally {
+      Locale.setDefault(originalLocale)
+    }
   }
 }
