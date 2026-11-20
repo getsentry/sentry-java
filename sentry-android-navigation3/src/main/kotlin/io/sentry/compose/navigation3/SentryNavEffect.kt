@@ -33,9 +33,7 @@ import org.jetbrains.annotations.ApiStatus
  *    // destination are attributed to the appropriate nav transaction.
  *    SentryNavEffect(
  *      backStack = navBackStack,
- *      backStackEntryMapper = { entry ->
- *        SentryBackStackEntry(entry.toName(), entry.extractArguments())
- *      },
+ *      backStackEntryMapper = BackStackEntryMapper.SerialName,
  *      options = SentryNavOptions(),
  *    )
  *

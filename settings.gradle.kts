@@ -38,6 +38,11 @@ dependencyResolutionManagement {
         mavenCentral()
         mavenLocal()
     }
+    versionCatalogs {
+        create("nav3Libs") {
+            from(files("gradle/nav3.versions.toml"))
+        }
+    }
 }
 
 rootProject.name = "sentry-root"

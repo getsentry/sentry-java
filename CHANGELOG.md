@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Features
+
+- Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+
 ### Behavioral Changes
 
 - Nav3: If a back stack entry's arguments contain a map with two keys that are recorded as the same string (e.g., `1` and `"1"`), Sentry now drops that entry's arguments and records `dropped_by_sentry: duplicate_key`, instead of keeping only one of the values ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
