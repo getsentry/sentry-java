@@ -16,6 +16,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 class ArgumentSanitizerTest {
 
@@ -74,6 +75,88 @@ class ArgumentSanitizerTest {
     verify(logger, times(1)).log(eq(WARNING), eq(UNSUPPORTED_VALUE_WARNING), eq("OpaqueValue"))
   }
 
+  // Arguments that write themselves
+
+  @Test
+  fun `sanitizeEntry() - lets an ArgumentSource write its arguments instead of reading them as a map`() {
+    val arguments = SelfWritingArguments { sink ->
+      sink.key("written")
+      sink.scalar("by the source")
+    }
+
+    val sanitized = sanitizer.sanitizeEntry(arguments)
+
+    assertThat(sanitized).isEqualTo(SanitizedArguments(mapOf("written" to "by the source")))
+  }
+
+  @Test
+  fun `sanitizeEntry() - records the drop reason of an ArgumentSource that drops its arguments`() {
+    val arguments = SelfWritingArguments {
+      throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, "source warning")
+    }
+
+    val sanitized = sanitizer.sanitizeEntry(arguments)
+
+    assertThat(sanitized)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.INVALID_STRUCTURE))
+  }
+
+  @Test
+  fun `sanitizeEntry() - logs the warning of an ArgumentSource that drops its arguments`() {
+    val arguments = SelfWritingArguments {
+      throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, "source warning")
+    }
+
+    sanitizer.sanitizeEntry(arguments)
+
+    verify(logger).log(eq(WARNING), eq("source warning"))
+  }
+
+  @Test
+  fun `sanitizeEntry() - logs nothing when an ArgumentSource drops its arguments without a warning`() {
+    val arguments = SelfWritingArguments {
+      throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, warning = null)
+    }
+
+    val sanitized = sanitizer.sanitizeEntry(arguments)
+
+    assertThat(sanitized)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.INVALID_STRUCTURE))
+    verifyNoInteractions(logger)
+  }
+
+  @Test
+  fun `sanitizeEntry() - records the broken limit when an ArgumentSource replaces it with another exception`() {
+    val arguments = overCharacterLimitReplacedWith { IllegalStateException("replaced") }
+
+    val sanitized = sanitizer.sanitizeEntry(arguments)
+
+    assertThat(sanitized)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.CHARACTER_LIMIT))
+  }
+
+  @Test
+  fun `sanitizeEntry() - logs the broken limit's warning when an ArgumentSource replaces it with another exception`() {
+    val arguments = overCharacterLimitReplacedWith { IllegalStateException("replaced") }
+
+    sanitizer.sanitizeEntry(arguments)
+
+    verify(logger).log(eq(WARNING), eq(DropArguments.MAX_CHARACTER_WARNING))
+    verify(logger, never()).log(eq(WARNING), eq(DropArguments.STRUCTURE_WARNING), any<Throwable>())
+  }
+
+  @Test
+  fun `sanitizeEntry() - records the broken limit when an ArgumentSource replaces it with its own DropArguments`() {
+    val arguments = overCharacterLimitReplacedWith {
+      DropArguments(ArgumentDropReason.INVALID_STRUCTURE, warning = null)
+    }
+
+    val sanitized = sanitizer.sanitizeEntry(arguments)
+
+    assertThat(sanitized)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.CHARACTER_LIMIT))
+  }
+
   // Dropped arguments
 
   @Test
@@ -82,7 +165,7 @@ class ArgumentSanitizerTest {
     val sanitized = sanitizer.sanitizeEntry(mapOf("values" to List(MAX_ARGUMENT_VALUES) { it }))
 
     assertThat(sanitized).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.MAX_COUNT))
-    verify(logger).log(eq(WARNING), eq(ArgumentSanitizer.MAX_COUNT_WARNING))
+    verify(logger).log(eq(WARNING), eq(DropArguments.MAX_COUNT_WARNING))
   }
 
   @Test
@@ -92,7 +175,7 @@ class ArgumentSanitizerTest {
 
     assertThat(sanitized)
       .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.CHARACTER_LIMIT))
-    verify(logger).log(eq(WARNING), eq(ArgumentSanitizer.MAX_CHARACTER_WARNING))
+    verify(logger).log(eq(WARNING), eq(DropArguments.MAX_CHARACTER_WARNING))
   }
 
   @Test
@@ -142,6 +225,74 @@ class ArgumentSanitizerTest {
     assertThat(third).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.CHARACTER_LIMIT))
   }
 
+  @Test
+  fun `entries share the value budget with arguments that write themselves`() {
+    // The source writes half of the value budget, so one value more than the other half doesn't
+    // fit.
+    val half = MAX_ARGUMENT_VALUES / 2
+    val first =
+      sanitizer.sanitizeEntry(
+        SelfWritingArguments { sink ->
+          sink.key("values")
+          sink.beginList()
+          repeat(half - 1) { sink.scalar(it) }
+          sink.end()
+        },
+      )
+    val second = sanitizer.sanitizeEntry(mapOf("values" to List(half) { it }))
+
+    assertThat(first.dropReason).isNull()
+    assertThat(second).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.MAX_COUNT))
+  }
+
+  @Test
+  fun `arguments that write themselves share the value budget with other entries`() {
+    // The first entry uses half of the value budget, so the source's one value more than the other
+    // half doesn't fit.
+    val half = MAX_ARGUMENT_VALUES / 2
+    sanitizer.sanitizeEntry(mapOf("values" to List(half - 1) { it }))
+
+    val sanitized =
+      sanitizer.sanitizeEntry(
+        SelfWritingArguments { sink ->
+          sink.key("values")
+          sink.beginList()
+          repeat(half) { sink.scalar(it) }
+          sink.end()
+        },
+      )
+
+    assertThat(sanitized).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.MAX_COUNT))
+  }
+
+  @Test
+  fun `an entry dropped for a duplicate map key doesn't spend the value budget of later entries`() {
+    // A list and its elements, which leave three values: two for the duplicate entry's nested map
+    // and its first value, and one for the later entry's value.
+    sanitizer.sanitizeEntry(mapOf("values" to List(MAX_ARGUMENT_VALUES - 4) { it }))
+
+    val duplicate = sanitizer.sanitizeEntry(mapOf("nested" to mapOf(1 to "a", "1" to "b")))
+    val later = sanitizer.sanitizeEntry(mapOf("one" to 1))
+
+    assertThat(duplicate)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.DUPLICATE_KEY))
+    assertThat(later).isEqualTo(SanitizedArguments(mapOf("one" to 1)))
+  }
+
+  @Test
+  fun `a duplicate map key with no values left drops only that entry, for the duplicate key`() {
+    // A list and its elements, which leave two values, for the duplicate entry's nested map and its
+    // first value.
+    sanitizer.sanitizeEntry(mapOf("values" to List(MAX_ARGUMENT_VALUES - 3) { it }))
+
+    val duplicate = sanitizer.sanitizeEntry(mapOf("nested" to mapOf(1 to "a", "1" to "b")))
+    val later = sanitizer.sanitizeEntry(emptyMap())
+
+    assertThat(duplicate)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.DUPLICATE_KEY))
+    assertThat(later).isEqualTo(SanitizedArguments(emptyMap(), dropReason = null))
+  }
+
   // Failures
 
   @Test
@@ -158,7 +309,7 @@ class ArgumentSanitizerTest {
 
     sanitizer.sanitizeEntry(mapOf("throwing" to throwing))
 
-    verify(logger).log(eq(WARNING), eq(ArgumentSanitizer.STRUCTURE_WARNING), eq(throwing.failure))
+    verify(logger).log(eq(WARNING), eq(DropArguments.STRUCTURE_WARNING), eq(throwing.failure))
   }
 
   @Test
@@ -171,8 +322,7 @@ class ArgumentSanitizerTest {
     assertFailsWith<StackOverflowError> {
       sanitizer.sanitizeEntry(mapOf("fatal" to fatal))
     }
-    verify(logger, never())
-      .log(eq(WARNING), eq(ArgumentSanitizer.STRUCTURE_WARNING), any<Throwable>())
+    verify(logger, never()).log(eq(WARNING), eq(DropArguments.STRUCTURE_WARNING), any<Throwable>())
   }
 
   @Test
@@ -195,7 +345,7 @@ class ArgumentSanitizerTest {
     val later = sanitizer.sanitizeEntry(laterArguments)
 
     assertThat(later).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.MAX_COUNT))
-    verify(logger, times(1)).log(eq(WARNING), eq(ArgumentSanitizer.MAX_COUNT_WARNING))
+    verify(logger, times(1)).log(eq(WARNING), eq(DropArguments.MAX_COUNT_WARNING))
   }
 
   @Test
@@ -205,7 +355,45 @@ class ArgumentSanitizerTest {
     val later = sanitizer.sanitizeEntry(laterArguments)
 
     assertThat(later).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.CHARACTER_LIMIT))
-    verify(logger, times(1)).log(eq(WARNING), eq(ArgumentSanitizer.MAX_CHARACTER_WARNING))
+    verify(logger, times(1)).log(eq(WARNING), eq(DropArguments.MAX_CHARACTER_WARNING))
+  }
+
+  @Test
+  fun `entries after an ArgumentSource exhausts the value budget are dropped`() {
+    sanitizer.sanitizeEntry(
+      SelfWritingArguments { sink ->
+        sink.key("values")
+        sink.beginList()
+        repeat(MAX_ARGUMENT_VALUES) { sink.scalar(it) }
+        sink.end()
+      },
+    )
+
+    val later = sanitizer.sanitizeEntry(laterArguments)
+
+    assertThat(later).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.MAX_COUNT))
+  }
+
+  @Test
+  fun `entries after an ArgumentSource replaces a broken character limit with another exception are dropped`() {
+    sanitizer.sanitizeEntry(overCharacterLimitReplacedWith { IllegalStateException("replaced") })
+
+    val later = sanitizer.sanitizeEntry(laterArguments)
+
+    assertThat(later).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.CHARACTER_LIMIT))
+  }
+
+  @Test
+  fun `entries after an ArgumentSource replaces a broken character limit with its own DropArguments are dropped`() {
+    sanitizer.sanitizeEntry(
+      overCharacterLimitReplacedWith {
+        DropArguments(ArgumentDropReason.INVALID_STRUCTURE, warning = null)
+      },
+    )
+
+    val later = sanitizer.sanitizeEntry(laterArguments)
+
+    assertThat(later).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.CHARACTER_LIMIT))
   }
 
   @Test
@@ -229,6 +417,17 @@ class ArgumentSanitizerTest {
   }
 
   @Test
+  fun `an ArgumentSource that drops its arguments for invalid structure doesn't drop later entries`() {
+    sanitizer.sanitizeEntry(
+      SelfWritingArguments { throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, null) },
+    )
+
+    val later = sanitizer.sanitizeEntry(laterArguments)
+
+    assertThat(later).isEqualTo(SanitizedArguments(laterArguments))
+  }
+
+  @Test
   fun `an entry that failed sanitization doesn't drop later entries`() {
     sanitizer.sanitizeEntry(mapOf("throwing" to ThrowingValue()))
 
@@ -236,4 +435,19 @@ class ArgumentSanitizerTest {
 
     assertThat(later).isEqualTo(SanitizedArguments(laterArguments))
   }
+
+  /**
+   * Arguments that write one character more than the character budget, then catch the sink's
+   * [DropArguments] and throw [replacement] instead, without it as the cause.
+   */
+  private fun overCharacterLimitReplacedWith(replacement: () -> Throwable) =
+    SelfWritingArguments { sink ->
+      try {
+        // The key and the value are one character more than the budget.
+        sink.key("v")
+        sink.scalar("x".repeat(MAX_ARGUMENT_CHARACTERS))
+      } catch (@Suppress("SwallowedException") e: DropArguments) {
+        throw replacement()
+      }
+    }
 }
