@@ -24,6 +24,9 @@ class MockRelay(
   /** List of unasserted requests sent to the [envelopePath]. */
   private val unassertedEnvelopes = mutableListOf<RelayAsserter.RelayResponse>()
 
+  /** Standalone app start transactions, kept out of [unassertedEnvelopes]. */
+  private val appStartEnvelopes = mutableListOf<RelayAsserter.RelayResponse>()
+
   /** List of responses to return when a request is sent. */
   private val responses = mutableListOf<(RecordedRequest) -> MockResponse?>()
 
@@ -34,6 +37,17 @@ class MockRelay(
     relay.dispatcher =
       object : Dispatcher() {
         override fun dispatch(request: RecordedRequest): MockResponse {
+          // Whether a headless app start is sent depends on the process importance, which tests
+          // can't control. So app start transactions aren't counted as requests and don't use up
+          // custom responses.
+          if (request.path == envelopePath) {
+            val appStart = RelayAsserter.RelayResponse(request, MockResponse())
+            if (appStart.isAppStartTransaction()) {
+              appStartEnvelopes.add(appStart)
+              return appStart.response
+            }
+          }
+
           // We check if there is any custom response previously set to return to this request,
           // otherwise we return a successful MockResponse.
           val response = responses.removeFirstOrNull()?.let { it(request) } ?: MockResponse()
@@ -133,6 +147,6 @@ class MockRelay(
         }
       }
     }
-    assertion(RelayAsserter(unassertedEnvelopes))
+    assertion(RelayAsserter(unassertedEnvelopes, appStartEnvelopes))
   }
 }

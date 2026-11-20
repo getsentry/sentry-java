@@ -61,6 +61,7 @@ class EnvelopeTests : BaseUiTest() {
 
     transaction.finish()
     relay.assert {
+      assertAppStartTransaction()
       findEnvelope {
         assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
           "ProfilingSampleActivity"
