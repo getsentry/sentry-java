@@ -3,7 +3,6 @@ package io.sentry.compose.navigation3.internal.backstack
 import androidx.lifecycle.LifecycleEventObserver
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.compose.navigation3.ForwardingBackStackEntryMapper
 import io.sentry.compose.navigation3.SentryNavOptions
 import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo

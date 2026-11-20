@@ -19,7 +19,6 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.BackStackEntryMapper
-import io.sentry.compose.navigation3.ForwardingBackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.SentryNavOptions
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY

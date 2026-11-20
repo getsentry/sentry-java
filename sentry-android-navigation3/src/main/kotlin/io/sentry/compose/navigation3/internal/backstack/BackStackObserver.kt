@@ -5,9 +5,7 @@ import io.sentry.Hint
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
-import io.sentry.compose.navigation3.BackStackKey
 import io.sentry.compose.navigation3.BuildConfig
-import io.sentry.compose.navigation3.ForwardingBackStackEntryMapper
 import io.sentry.compose.navigation3.SentryNavEffect
 import io.sentry.compose.navigation3.SentryNavOptions
 import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.RetentionPolicy
