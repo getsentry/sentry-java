@@ -1,5 +1,6 @@
 package io.sentry.jdbc
 
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -263,5 +264,47 @@ class DatabaseUtilsTest {
       )
     assertEquals("sqlserver", details.dbSystem)
     assertEquals("my_database", details.dbName)
+  }
+
+  // Wrapper URL forms from each project's docs. Testcontainers ignores the database name in the
+  // URL, so none is reported for it.
+
+  @Test
+  fun `detects db system for testcontainers with image tag`() {
+    val details = DatabaseUtils.parse("jdbc:tc:postgresql:9.6.8:///databasename")
+    assertThat(details.dbSystem).isEqualTo("postgresql")
+    assertThat(details.dbName).isNull()
+  }
+
+  @Test
+  fun `detects db system for testcontainers without image tag behind p6spy`() {
+    val details =
+      DatabaseUtils.parse("jdbc:p6spy:tc:mysql:///databasename?TC_INITSCRIPT=file:init.sql")
+    assertThat(details.dbSystem).isEqualTo("mysql")
+    assertThat(details.dbName).isNull()
+  }
+
+  @Test
+  fun `detects db system for aws advanced jdbc wrapper`() {
+    val details =
+      DatabaseUtils.parse(
+        "jdbc:aws-wrapper:postgresql://db.example.com/example?wrapperPlugins=failover2,efm2"
+      )
+    assertThat(details.dbSystem).isEqualTo("postgresql")
+    assertThat(details.dbName).isEqualTo("example")
+  }
+
+  @Test
+  fun `detects db system for opentelemetry jdbc driver`() {
+    val details = DatabaseUtils.parse("jdbc:otel:h2:mem:test")
+    assertThat(details.dbSystem).isEqualTo("h2")
+    assertThat(details.dbName).isEqualTo("test")
+  }
+
+  @Test
+  fun `detects db system for log4jdbc`() {
+    val details = DatabaseUtils.parse("jdbc:log4jdbc:mysql://localhost:3306/app?useSSL=false")
+    assertThat(details.dbSystem).isEqualTo("mysql")
+    assertThat(details.dbName).isEqualTo("app")
   }
 }

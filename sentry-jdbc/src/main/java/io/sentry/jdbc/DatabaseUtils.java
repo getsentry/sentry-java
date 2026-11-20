@@ -115,11 +115,22 @@ public final class DatabaseUtils {
         }
       }
     }
+    // Wrapping drivers: the database is named by the next segment. Closed list on purpose: the
+    // system picks the SQL dialect, and a wrongly guessed one can leak literals.
     if ("datadirect".equalsIgnoreCase(dbSystem)
         || "tibcosoftware".equalsIgnoreCase(dbSystem)
         || "jtds".equalsIgnoreCase(dbSystem)
-        || "microsoft".equalsIgnoreCase(dbSystem)) {
+        || "microsoft".equalsIgnoreCase(dbSystem)
+        || "aws-wrapper".equalsIgnoreCase(dbSystem)
+        || "otel".equalsIgnoreCase(dbSystem)
+        || "log4jdbc".equalsIgnoreCase(dbSystem)) {
       return parse(StringUtils.removePrefix(urlString, dbSystem + ":"));
+    }
+    if ("tc".equalsIgnoreCase(dbSystem)) {
+      // Testcontainers ignores the database name in the URL, so it is not reported.
+      final @NotNull DatabaseDetails inner =
+          parse(StringUtils.removePrefix(urlString, dbSystem + ":"));
+      return new DatabaseDetails(inner.getDbSystem(), null);
     }
 
     return new DatabaseDetails(dbSystem, null);
