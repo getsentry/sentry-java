@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  id("io.sentry.spring-boot-matrix")
+  id("io.sentry.dependency-matrix")
   id("io.sentry.otel-agent-tests")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
@@ -270,10 +270,15 @@ listOf(
   }
 
 // The suites on each Spring Boot 2 version the CI matrix tests.
-springBootMatrix {
-  versions(line = 2)
-  test("integrationTest")
-  test("integrationTestWebflux")
-  test("integrationTestOtelNoAgent")
-  otelAgentTests()
+dependencyMatrix {
+  jvmTestSuites(
+    name = "springBoot",
+    groups = listOf("org.springframework.boot"),
+    versionsFile = "spring-boot-2-versions.json",
+  ) {
+    test("integrationTest")
+    test("integrationTestWebflux")
+    test("integrationTestOtelNoAgent")
+    otelAgentTests()
+  }
 }

@@ -46,10 +46,6 @@ gradlePlugin {
       id = "io.sentry.robolectric"
       implementationClass = "io.sentry.gradle.SentryRobolectricPlugin"
     }
-    register("sentrySpringBootMatrix") {
-      id = "io.sentry.spring-boot-matrix"
-      implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
-    }
     register("sentryDependencyMatrix") {
       id = "io.sentry.dependency-matrix"
       implementationClass = "io.sentry.gradle.DependencyMatrixPlugin"
