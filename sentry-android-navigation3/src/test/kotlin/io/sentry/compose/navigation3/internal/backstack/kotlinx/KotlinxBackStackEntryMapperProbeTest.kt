@@ -161,6 +161,28 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
+  fun `keeps the name and records only the encoding failure when the properties encoder can't link`() {
+    // Runs the LinkageError through the real probe's failure handling instead of returning it.
+    val probe =
+      object : KotlinxCompatibilityProbe {
+        override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? =
+          null
+
+        override fun encoderIncompatibility(): Throwable? =
+          KotlinxCompatibilityProbe.encoderFailureOf {
+            throw NoSuchMethodError()
+          }
+      }
+    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
+    val mapper = fixture.mapper
+
+    val mapped = mapper.map(Detail("1"))
+
+    assertThat(mapped)
+      .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
+  }
+
+  @Test
   fun `records no arguments for objects when the properties encoder is incompatible`() {
     val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
