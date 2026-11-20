@@ -35,6 +35,8 @@ import java.util.regex.Pattern;
 %ignorecase
 
 %state BLOCK_COMMENT DOLLAR_STRING
+// Sentry: the rest of a # or // comment, and the body of a q'…' literal (option 06 step 8).
+%state LINE_COMMENT_BODY Q_STRING
 
 COMMA                = ","
 OPEN_PAREN           = "("
@@ -45,9 +47,7 @@ LINE_COMMENT         = "--" [^\r\n]*
 // Sentry: a whole block comment, and one that runs to the end of input.
 CLOSED_COMMENT       = "/*" ([^*] | "*"+ [^*/])* "*"+ "/"
 UNTERMINATED_COMMENT = "/*" ([^*] | "*"+ [^*/])* "*"*
-HASH_COMMENT         = "#" [^\r\n]*
-DOUBLE_SLASH_COMMENT = "//" [^\r\n]*
-UNQUOTED_IDENTIFIER  = ([:letter:] | "_") ([:letter:] | [0-9] | "_")*
+UNQUOTED_IDENTIFIER  = ([:letter:] | "_") ([:letter:] | [0-9] | "_" | "$")*
 IDENTIFIER_PART      = {UNQUOTED_IDENTIFIER} | {DOUBLE_QUOTED_STR} | {BACKTICK_QUOTED_STR} | {BRACKET_QUOTED_STR}
 // We are using {UNQUOTED_IDENTIFIER} instead of {IDENTIFIER_PART} here because DOUBLE_QUOTED_STR
 // and BACKTICK_QUOTED_STR are handled separately. Depending on the context they appear in they will
@@ -56,12 +56,15 @@ IDENTIFIER_PART      = {UNQUOTED_IDENTIFIER} | {DOUBLE_QUOTED_STR} | {BACKTICK_Q
 IDENTIFIER           = ({UNQUOTED_IDENTIFIER} | ({IDENTIFIER_PART} ("." {IDENTIFIER_PART})+)) ("@" {UNQUOTED_IDENTIFIER})?
 BASIC_NUM            = [.+-]* [0-9] ([0-9] | [eE.+-])*
 HEX_NUM              = "0x" ([a-f] | [A-F] | [0-9])+
-// Sentry: a binary literal; without it the digits after 0b are kept as an identifier.
-BIN_NUM              = "0b" [01]+
+// Sentry: word characters directly after a number are part of it: digit separators (1_000),
+// prefixes (0b, 0o, 0x_) and suffixes. Without this they are kept as an identifier.
+NUMBER_TAIL          = ([:letter:] | [0-9] | "_")*
 QUOTED_STR           = "'" ("''" | [^'])* "'"
 DOUBLE_QUOTED_STR    = "\"" ("\"\"" | [^\"])* "\""
 DOLLAR_QUOTED_STR    = "$$" [^$]* "$$"
-DOLLAR_TAG_START     = "$" {UNQUOTED_IDENTIFIER} "$"
+// Sentry: a tag has no $, a name may have one after its first character.
+DOLLAR_TAG           = ([:letter:] | "_") ([:letter:] | [0-9] | "_")*
+DOLLAR_TAG_START     = "$" {DOLLAR_TAG} "$"
 BACKTICK_QUOTED_STR  = "`" ("``" | [^`])* "`"
 // Sentry: no [ inside, so where [ is punctuation (D40) a [ never scans past the next one.
 BRACKET_QUOTED_STR   = "[" [^\]\[]* "]"
@@ -71,9 +74,8 @@ UNTERMINATED_QUOTED_STR          = "'" ("''" | [^'])*
 UNTERMINATED_DOUBLE_QUOTED_STR   = "\"" ("\"\"" | [^\"])*
 UNTERMINATED_BACKTICK_QUOTED_STR = "`" ("``" | [^`])*
 UNTERMINATED_DOLLAR_QUOTED_STR   = "$$" [^$]*
-// Sentry: Oracle q'…' / nq'…' with the delimiters of Oracle's documentation (D39).
+// Sentry: Oracle q'…' / nq'…' (D39). Only the opener; the Q_STRING state reads the body.
 Q_QUOTE_START        = [nN]? [qQ] "'"
-Q_QUOTED_STR         = {Q_QUOTE_START} ("[" ~"]'" | "{" ~"}'" | "(" ~")'" | "<" ~">'" | "!" ~"!'")
 POSTGRE_PARAM_MARKER = "$"[0-9]*
 WHITESPACE           = [ \t\r\n]+
 
@@ -103,6 +105,8 @@ WHITESPACE           = [ \t\r\n]+
   // Sentry: text and summary length after the last token that stayed within the limit (D5).
   private int textMark;
   private int summaryMark;
+  // Sentry: the character that closes the q'…' literal being read (Q_STRING).
+  private char qClose;
 
   // Sentry: cuts back to the last token boundary within the limit, so the summary covers only the
   // kept text (D5), and returns how the scan ended (D27). A stop over the limit is TRUNCATED: its ?
@@ -206,7 +210,8 @@ WHITESPACE           = [ \t\r\n]+
   // comment or dollar opener occurs before the next [ or ], appends ? instead and returns true (stop).
   private boolean appendBracketAsPunctuation() {
     if (dialect.bracketIdentifiers() == Support.UNKNOWN) {
-      for (int i = zzStartRead + 1; i < zzMarkedPos && zzBuffer[i] != ']'; i++) {
+      int i = zzStartRead + 1;
+      for (; i < zzMarkedPos && zzBuffer[i] != ']'; i++) {
         char c = zzBuffer[i];
         char next = i + 1 < zzMarkedPos ? zzBuffer[i + 1] : 0;
         if (c == '\'' || c == '"' || c == '`' || c == '$' || c == '#'
@@ -214,6 +219,10 @@ WHITESPACE           = [ \t\r\n]+
           builder.append('?');
           return true;
         }
+      }
+      if (i < zzMarkedPos && bracketMayContinue(i + 1)) {
+        builder.append('?');
+        return true;
       }
     }
     yypushback(yylength() - 1);
@@ -235,6 +244,71 @@ WHITESPACE           = [ \t\r\n]+
       }
     }
     return -1;
+  }
+
+  // Sentry: whether the ] before `end` may be followed by another one, which T-SQL reads as an
+  // escaped ] inside the name (option 06 step 8). SQLite has no such escape, so a ]] stops rather
+  // than being read on. The scanner has read the character at `end` unless the input ended there:
+  // the patterns that end in ] can continue with . or @, so their match is always followed by a
+  // read attempt.
+  private boolean bracketMayContinue(int end) {
+    return zzBuffer[end - 1] == ']' && end < zzEndRead && zzBuffer[end] == ']';
+  }
+
+  // Sentry: offset of the first $ in an {IDENTIFIER} match where a dollar quote could start there,
+  // or -1 (option 06 step 8). PostgreSQL reads $ after a name's first character as part of the name,
+  // and dialects without dollar quotes have nothing to start. Elsewhere, a name part with a second $
+  // holds a possible $$ or $tag$ opener.
+  private int dollarQuoteInName() {
+    if (dialect.taggedDollarQuotes() == Support.YES || (dialect.dollarQuotedStrings() == Support.NO
+        && dialect.taggedDollarQuotes() == Support.NO)) {
+      return -1;
+    }
+    char quote = 0;
+    int dollar = -1;
+    for (int i = zzStartRead; i < zzMarkedPos; i++) {
+      char c = zzBuffer[i];
+      if (quote != 0) {
+        if (c == quote) quote = 0;
+      } else if (c == '"' || c == '`') {
+        quote = c;
+      } else if (c == '[') {
+        quote = ']';
+      } else if (c == '.' || c == '@') {
+        dollar = -1;
+      } else if (c == '$') {
+        if (dollar >= 0) return dollar - zzStartRead;
+        dollar = i;
+      }
+    }
+    return -1;
+  }
+
+  // Sentry: where alternativeQuoting is not NO, q or nq ending a match directly before a quote opens
+  // a q'…' literal (option 06 step 8): after a number's digits, or as the last part of a dotted
+  // name. Pushes it back for the q'…' rules.
+  private void pushBackQQuote(boolean afterDot) {
+    if (dialect.alternativeQuoting() == Support.NO || zzMarkedPos >= zzEndRead
+        || zzBuffer[zzMarkedPos] != '\'') {
+      return;
+    }
+    int q = zzMarkedPos - 1;
+    if (zzBuffer[q] != 'q' && zzBuffer[q] != 'Q') return;
+    int start = q > zzStartRead && (zzBuffer[q - 1] == 'n' || zzBuffer[q - 1] == 'N') ? q - 1 : q;
+    if (start > zzStartRead && (!afterDot || zzBuffer[start - 1] == '.')) {
+      yypushback(zzMarkedPos - start);
+    }
+  }
+
+  // Sentry: the character that closes a q'…' literal opened with `open`.
+  private static char qQuoteClose(char open) {
+    switch (open) {
+      case '[': return ']';
+      case '{': return '}';
+      case '(': return ')';
+      case '<': return '>';
+      default: return open;
+    }
   }
 
   private boolean appendDollarAsText(Support rule) {
@@ -1513,6 +1587,19 @@ WHITESPACE           = [ \t\r\n]+
             if (bracket == 0) return appendBracketAsPunctuation() ? YYEOF : CONTINUE;
             if (bracket > 0) yypushback(yylength() - bracket + 1);
           }
+          // Sentry: ]], a possible dollar quote and q' after a name (option 06 step 8)
+          if (bracketMayContinue(zzMarkedPos)) {
+            builder.append('?');
+            return YYEOF;
+          }
+          int dollar = dollarQuoteInName();
+          if (dollar >= 0) {
+            yypushback(yylength() - dollar);
+            appendCurrentFragment();
+            builder.append('?');
+            return YYEOF;
+          }
+          pushBackQQuote(true);
           if (sanitizeAmbiguousRemainder()) return YYEOF;
           if (!insideComment) {
             // If we see an identifier where we expected a subquery, it's a parenthesized table name
@@ -1583,33 +1670,30 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   {LINE_COMMENT} {
-          // Sentry: where -- needs whitespace after it (MySQL), --x is two minus signs (D9).
+          // Sentry: where -- needs whitespace after it (MySQL), --x is two minus signs (D9). Reading on
+          // after them would scan the line again at each --, so --x stops there (option 06 step 8).
           Support needsWhitespace = yylength() > 2 && zzBuffer[zzStartRead + 2] > ' '
               ? dialect.dashDashCommentNeedsWhitespace() : Support.NO;
-          if (needsWhitespace == Support.UNKNOWN) {
+          if (needsWhitespace != Support.NO) {
             builder.append('?');
             return YYEOF;
           }
-          if (needsWhitespace == Support.YES) {
-            yypushback(yylength() - 1);
-            appendCurrentFragment();
-          } else {
-            // Sentry: line comment body dropped (R3)
-            appendSpace();
-          }
+          // Sentry: line comment body dropped (R3)
+          appendSpace();
           if (isOverLimit()) return YYEOF;
       }
 
-  // Sentry: # and // per dialect (D9). YES: a comment; NO: the first character is text.
-  {HASH_COMMENT} | {DOUBLE_SLASH_COMMENT} {
-          Support rule = zzBuffer[zzStartRead] == '#'
-              ? dialect.hashComments() : dialect.doubleSlashComments();
+  // Sentry: # and // per dialect (D9). YES: a comment; NO: the first character is text. Decided
+  // at the opener, so a line of them is scanned once (option 06 step 8).
+  "#" | "//" {
+          Support rule = yylength() == 1 ? dialect.hashComments() : dialect.doubleSlashComments();
           if (rule == Support.UNKNOWN) {
             builder.append('?');
             return YYEOF;
           }
           if (rule == Support.YES) {
             appendSpace();
+            yybegin(LINE_COMMENT_BODY);
           } else {
             yypushback(yylength() - 1);
             appendCurrentFragment();
@@ -1630,7 +1714,8 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   // here is where the actual sanitization happens
-  {BASIC_NUM} | {HEX_NUM} | {BIN_NUM} {
+  ({BASIC_NUM} | {HEX_NUM}) {NUMBER_TAIL} {
+          pushBackQQuote(false);
           if (!appendSignBeforeDashDash()) {
             builder.append('?');
           }
@@ -1669,6 +1754,10 @@ WHITESPACE           = [ \t\r\n]+
         // Sentry: [ per dialect (D9)
         if (zzBuffer[zzStartRead] == '[' && dialect.bracketIdentifiers() != Support.YES) {
           return appendBracketAsPunctuation() ? YYEOF : CONTINUE;
+        }
+        if (bracketMayContinue(zzMarkedPos)) {
+          builder.append('?');
+          return YYEOF;
         }
         if (sanitizeAmbiguousRemainder()) return YYEOF;
         if (!insideComment) {
@@ -1712,13 +1801,18 @@ WHITESPACE           = [ \t\r\n]+
           if (isOverLimit()) return YYEOF;
       }
 
-  // Sentry: Oracle q'…' (D9, D39). YES: a literal; UNKNOWN: stop.
-  {Q_QUOTED_STR} {
-          if (!qQuoteIsIdentifier()) {
-            builder.append('?');
-            if (dialect.alternativeQuoting() == Support.UNKNOWN) return YYEOF;
+  // Sentry: Oracle q'…' (D9, D39). YES: a literal, read in Q_STRING; UNKNOWN: stop.
+  {Q_QUOTE_START} [\[{(<!] {
+          if (qQuoteIsIdentifier()) {
+            if (isOverLimit()) return YYEOF;
+            return CONTINUE;
           }
-          if (isOverLimit()) return YYEOF;
+          if (dialect.alternativeQuoting() == Support.UNKNOWN) {
+            builder.append('?');
+            return YYEOF;
+          }
+          qClose = qQuoteClose(zzBuffer[zzMarkedPos - 1]);
+          yybegin(Q_STRING);
       }
 
   // Sentry: another delimiter, or no closing one: stop where alternativeQuoting is not NO.
@@ -1858,6 +1952,38 @@ WHITESPACE           = [ \t\r\n]+
 
   <<EOF>> {
           // Unterminated dollar-quoted string - output what we have as ?
+          builder.append('?');
+          return YYEOF;
+      }
+}
+
+// Sentry: the rest of a # or // comment, dropped (R3); the opener has appended a space. The end of
+// input goes back to YYINITIAL too, so the scan completes (option 06 step 8).
+<LINE_COMMENT_BODY> {
+  [^\r\n]+ | [^] {
+          yybegin(YYINITIAL);
+      }
+
+  <<EOF>> {
+          yybegin(YYINITIAL);
+          return YYEOF;
+      }
+}
+
+// Sentry: the body of a q'…' literal, up to its closing character and a quote (D39, option 06
+// step 8). Without one, the literal runs to the end of input and stops (R4).
+<Q_STRING> {
+  [\]})>!] "'" {
+          if (zzBuffer[zzStartRead] == qClose) {
+            builder.append('?');
+            yybegin(YYINITIAL);
+            if (isOverLimit()) return YYEOF;
+          }
+      }
+
+  [^\]})>!]+ | [^] {}
+
+  <<EOF>> {
           builder.append('?');
           return YYEOF;
       }

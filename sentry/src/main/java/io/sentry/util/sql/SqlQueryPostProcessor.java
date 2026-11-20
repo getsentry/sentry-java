@@ -186,7 +186,9 @@ final class SqlQueryPostProcessor {
    * Returns the index of the {@code ;} that ends the statement starting at {@code from}, the text
    * length if there is none, or -1 if a quoted identifier does not close. Skips the quoted
    * identifiers the grammar keeps: {@code "…"} and {@code `…`}, and {@code […]} where brackets
-   * quote identifiers. Like the grammar, a bracket identifier ends at its first {@code ]}.
+   * quote identifiers. Like the grammar, a bracket identifier ends at its first {@code ]}; the
+   * grammar stops where another {@code ]} follows (T-SQL's escape), so the text holds no {@code ]]}
+   * directly after a bracket identifier.
    */
   private static int statementEnd(
       final @NotNull String text, final int from, final boolean bracketQuotes) {
