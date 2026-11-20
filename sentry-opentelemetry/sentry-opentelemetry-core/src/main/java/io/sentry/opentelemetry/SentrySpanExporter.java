@@ -362,8 +362,7 @@ public final class SentrySpanExporter implements SpanExporter {
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
 
-    maybeTransferOtelAttribute(
-        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+    transferMessagingSystem(span, sentryTransaction);
     maybeTransferOtelAttribute(
         span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME);
     maybeTransferOtelAttribute(
@@ -380,6 +379,18 @@ public final class SentrySpanExporter implements SpanExporter {
         scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
+  }
+
+  /**
+   * {@code messaging.system} is deprecated in favor of {@code messaging.system.name}.
+   * Instrumentation may set either, so both are transferred.
+   */
+  @SuppressWarnings("deprecation")
+  private static void transferMessagingSystem(
+      final @NotNull SpanData span, final @NotNull ISpan sentrySpan) {
+    maybeTransferOtelAttribute(span, sentrySpan, MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+    maybeTransferOtelAttribute(
+        span, sentrySpan, MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME);
   }
 
   private List<SpanNode> findCompletedRootNodes(final @NotNull List<SpanNode> grouped) {
