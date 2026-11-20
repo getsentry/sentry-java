@@ -74,6 +74,7 @@ class SdkInitTests : BaseUiTest() {
     transaction2.finish()
 
     relay.assert {
+      assertAppStartTransaction()
       findEnvelope {
         assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests"
       }

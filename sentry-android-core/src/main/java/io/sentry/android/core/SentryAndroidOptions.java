@@ -303,7 +303,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean attachRawTombstone = false;
 
-  private boolean enableStandaloneAppStartTracing = false;
+  private boolean enableStandaloneAppStartTracing = true;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
@@ -874,16 +874,17 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Returns true if standalone app start tracing is enabled. See {@link
    * #setEnableStandaloneAppStartTracing(boolean)} for more details.
    */
-  @ApiStatus.Experimental
   public boolean isEnableStandaloneAppStartTracing() {
     return enableStandaloneAppStartTracing;
   }
 
   /**
-   * Enables or disables standalone app start tracing.
+   * Enables or disables standalone app start tracing. Enabled by default.
    *
    * <p>When enabled, app start is sent as its own transaction instead of an {@code app.start.*}
-   * child span on the first Activity transaction.
+   * child span on the first Activity transaction. To attach app start to the first Activity
+   * transaction instead, set this to false, or set the {@code
+   * io.sentry.standalone-app-start-tracing.enable} manifest metadata to false.
    *
    * <p>The SDK reports app start through these paths:
    *
@@ -912,7 +913,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param enableStandaloneAppStartTracing true if enabled or false otherwise
    */
-  @ApiStatus.Experimental
   public void setEnableStandaloneAppStartTracing(final boolean enableStandaloneAppStartTracing) {
     this.enableStandaloneAppStartTracing = enableStandaloneAppStartTracing;
   }

@@ -422,6 +422,7 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appStartEndTime = null;
     cachedStartInfo = null;
     appStartExtension.clear();
+    appStartExtension.setExtendAppStartListener(null);
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
