@@ -23,22 +23,13 @@ class KotlinxCompatibilityProbeTest {
     assertThat(inconclusive).isEmpty()
   }
 
-  // encodingLinkageError()
+  // encoderIncompatibility()
 
   @Test
-  fun `encodingLinkageError() - returns null for a compatible kotlinx serialization version`() {
-    val error = KotlinxCompatibilityProbe.encodingLinkageError {}
+  fun `encoderIncompatibility() - returns null for a compatible kotlinx serialization version`() {
+    val error = KotlinxCompatibilityProbe.encoderIncompatibility()
 
     assertThat(error).isNull()
-  }
-
-  @Test
-  fun `encodingLinkageError() - finds a compatible kotlinx serialization version conclusively`() {
-    val inconclusive = mutableListOf<Throwable>()
-
-    KotlinxCompatibilityProbe.encodingLinkageError { inconclusive += it }
-
-    assertThat(inconclusive).isEmpty()
   }
 
   // Probe types
@@ -58,7 +49,7 @@ class KotlinxCompatibilityProbeTest {
 
   @Test
   fun `the properties encoder encodes every property of the probe's class`() {
-    // A probe type that failed to encode for another reason would make the check inconclusive.
+    // A probe type that failed to encode for another reason would make the check fail closed.
     val encoded = encodeToMap(ProbeClass.serializer(), ProbeClass())
 
     assertThat(encoded)
