@@ -16,19 +16,19 @@ import kotlinx.serialization.Serializable
  *
  * **Disambiguating serializer errors from library incompatibility**
  *
- * Without a check like this, `KotlinxBackStackEntryMapper` would have to infer an incompatible
- * kotlinx.serialization version from [LinkageError]s thrown while handling the host app's own back
- * stack entry types. But such errors can also come from the host app's serializer code, and should
- * therefore only fail for the entry types that can't be deserialized. `ProbeClass` and
- * `ProbeObject` don't execute any host app code, so a `LinkageError` while handling them means the
- * app's kotlinx.serialization version is incompatible.
+ * A [LinkageError] while handling a host app's back stack entry may come from that entry's
+ * serializer, so it mustn't disable mapping for other types. The SDK-owned `ProbeClass` and
+ * `ProbeObject` run no host app code, letting us check kotlinx.serialization compatibility
+ * independently.
  *
- * Note: For the name lookup check ([nameLookupLinkageError]), only a `LinkageError` is conclusive.
- * Any other failure, or a probe type whose serializer can't be found, leaves it inconclusive: it's
- * reported to the caller's `onInconclusive` and otherwise ignored, as a real type that hits the
- * same failure is handled and logged on its own. The encoder check ([encoderIncompatibility])
- * instead treats any failure as conclusive, because a broken encoder can record wrong arguments
- * without throwing, and recording wrong arguments is worse than recording none.
+ * The checks use different failure policies:
+ *
+ * - [nameLookupLinkageError]: only a [LinkageError] establishes incompatibility. Other failures,
+ *   including a missing probe serializer, are reported through `onInconclusive`. Mapping continues,
+ *   and failures for real entry types are handled and logged individually.
+ *
+ * - [encoderIncompatibility]: any exception or incorrect output disables property encoding. A
+ *   broken encoder can silently record wrong arguments, so recording none is safer.
  */
 internal interface KotlinxCompatibilityProbe {
 
@@ -48,12 +48,10 @@ internal interface KotlinxCompatibilityProbe {
    * Encodes [ProbeClass] using the same path as [KotlinxBackStackEntryMapper], checks that it links
    * and runs, and verifies its output matches the known fixture.
    *
-   * Returns the error that makes the properties encoder unusable, or `null` if encoding succeeds
-   * and matches. Unlike [nameLookupLinkageError], any failure is conclusive: an incompatible
-   * kotlinx.serialization version can fail the encoder without a [LinkageError] (for instance, an
-   * API-incompatible encoder can throw a [NullPointerException] under R8) or mis-encode without
-   * throwing at all, and the caller disables property encoding on any failure here rather than risk
-   * recording wrong arguments.
+   * Returns an error if encoding fails or produces unexpected arguments, and `null` otherwise.
+   * Unlike [nameLookupLinkageError], every failure disables property encoding. An incompatible
+   * kotlinx.serialization version may throw something other than [LinkageError] (e.g.,
+   * [NullPointerException] under R8), or silently encode incorrect arguments.
    */
   fun encoderIncompatibility(): Throwable?
 
@@ -152,25 +150,27 @@ internal interface KotlinxCompatibilityProbe {
     )
 
     /**
+     * [ProbeClass]'s expected encoding.
+     *
+     * A kotlinx.serialization version that encodes it to anything else mis-encodes properties and
+     * must not be used. None of the keys are on the sensitive denylist, so none are filtered.
+     */
+    private val EXPECTED_PROBE_ENCODING: Map<String, Any?> =
+      mapOf("name" to "probe", "values" to listOf(1), "counts" to mapOf("count" to 1))
+
+    /**
      * A known serializable object used to test serializer lookup for the host app's object-based
      * back stack entries. This lookup reads the object's singleton instance.
      */
     @Serializable internal object ProbeObject
-
-    /**
-     * [ProbeClass]'s expected encoding. A kotlinx.serialization version that encodes it to anything
-     * else mis-encodes properties and must not be used. None of the keys are on the sensitive
-     * denylist, so none are filtered.
-     */
-    private val EXPECTED_PROBE_ENCODING: Map<String, Any?> =
-      mapOf("name" to "probe", "values" to listOf(1), "counts" to mapOf("count" to 1))
   }
 }
 
 /**
- * Signals that the properties encoder ran but produced output that didn't match the SDK's own
- * `ProbeClass` fixture, so the app's kotlinx.serialization version mis-encodes properties. Carries
- * only a fixed message, never route data: the fixture is the SDK's own.
+ * Signals that the encoder produced unexpected arguments for the SDK-owned `ProbeClass`, indicating
+ * incompatible kotlinx.serialization behavior.
+ *
+ * Carries a fixed message with no (potentially sensitive) back stack entry data.
  */
 internal class EncoderProducedUnexpectedOutput :
   RuntimeException(
