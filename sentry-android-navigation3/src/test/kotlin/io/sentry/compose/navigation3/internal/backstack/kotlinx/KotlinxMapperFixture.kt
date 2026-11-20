@@ -77,16 +77,15 @@ internal class ShapeThrowingDetailSerializer(
 
 /**
  * A [KotlinxCompatibilityProbe] that finds the app's kotlinx.serialization version compatible
- * unless [nameLookupError] or [encodingError] is set, so that mapper tests don't depend on the real
- * probe. Reports the name check inconclusive with [nameLookupInconclusive], if set, and the
- * encoding check inconclusive with [encodingInconclusiveError], if set. Counts the checks of the
- * properties encoder in [encodingChecks].
+ * unless [nameLookupError] or [encoderError] is set, so that mapper tests don't depend on the real
+ * probe. Reports the name check inconclusive with [nameLookupInconclusive], if set. Any
+ * [encoderError], whether a [LinkageError] or not, makes the properties encoder unusable and
+ * disables property encoding. Counts the checks of the properties encoder in [encodingChecks].
  */
 internal class FakeCompatibilityProbe(
   private val nameLookupError: LinkageError? = null,
-  private val encodingError: LinkageError? = null,
+  private val encoderError: Throwable? = null,
   private val nameLookupInconclusive: Inconclusive? = null,
-  private val encodingInconclusiveError: Throwable? = null,
 ) : KotlinxCompatibilityProbe {
   var encodingChecks = 0
 
@@ -98,10 +97,9 @@ internal class FakeCompatibilityProbe(
     return null
   }
 
-  override fun encodingLinkageError(onInconclusive: (Throwable) -> Unit): LinkageError? {
+  override fun encoderIncompatibility(): Throwable? {
     encodingChecks++
-    encodingInconclusiveError?.let(onInconclusive)
-    return encodingError
+    return encoderError
   }
 
   /** Why the name check is inconclusive: [error], or `null` if a probe serializer wasn't found. */

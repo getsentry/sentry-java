@@ -132,12 +132,8 @@ class KotlinxBackStackEntryMapperProbeTest {
 
   @Test
   fun `never checks the properties encoder when properties are excluded`() {
-    // Neither an incompatible nor an inconclusive check is logged, as neither is run.
-    val probe =
-      FakeCompatibilityProbe(
-        encodingError = NoSuchMethodError(),
-        encodingInconclusiveError = IllegalStateException(),
-      )
+    // No incompatible check is logged, as the check isn't run when properties are excluded.
+    val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
     val fixture = KotlinxMapperFixture.create(includeProperties = false, probe = probe)
     val mapper = fixture.mapper
 
@@ -150,7 +146,7 @@ class KotlinxBackStackEntryMapperProbeTest {
 
   @Test
   fun `keeps the name and records only the encoding failure when the properties encoder is incompatible`() {
-    val probe = FakeCompatibilityProbe(encodingError = NoSuchMethodError())
+    val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
     val mapper = fixture.mapper
 
@@ -166,7 +162,7 @@ class KotlinxBackStackEntryMapperProbeTest {
 
   @Test
   fun `records no arguments for objects when the properties encoder is incompatible`() {
-    val probe = FakeCompatibilityProbe(encodingError = NoSuchMethodError())
+    val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
     val mapper = fixture.mapper
 
@@ -177,7 +173,7 @@ class KotlinxBackStackEntryMapperProbeTest {
 
   @Test
   fun `doesn't encode properties when the properties encoder is incompatible`() {
-    val probe = FakeCompatibilityProbe(encodingError = NoSuchMethodError())
+    val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
     val mapper = fixture.mapper
 
@@ -190,7 +186,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   @Test
   fun `logs a warning with the error and compatibility advice when created for an incompatible properties encoder`() {
     val error = NoSuchMethodError("encodeStructure")
-    val probe = FakeCompatibilityProbe(encodingError = error)
+    val probe = FakeCompatibilityProbe(encoderError = error)
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
 
     val message = argumentCaptor<String>()
@@ -206,7 +202,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   @Test
   fun `logs nothing more for entries mapped when the properties encoder is incompatible`() {
     val error = NoSuchMethodError()
-    val probe = FakeCompatibilityProbe(encodingError = error)
+    val probe = FakeCompatibilityProbe(encoderError = error)
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
     val mapper = fixture.mapper
 
@@ -220,39 +216,58 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `records encoded properties when the encoding check is inconclusive`() {
-    val probe = FakeCompatibilityProbe(encodingInconclusiveError = IllegalStateException())
+  fun `keeps the name and records only the encoding failure when the encoder fails without a LinkageError`() {
+    val probe = FakeCompatibilityProbe(encoderError = NullPointerException())
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
     val mapper = fixture.mapper
 
     val mapped = mapper.map(Detail("1"))
 
-    assertThat(mapped).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "1")))
+    assertThat(mapped)
+      .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
   }
 
   @Test
-  fun `logs at debug level with the error when the encoding check is inconclusive`() {
-    val error = IllegalStateException("check failed")
-    val probe = FakeCompatibilityProbe(encodingInconclusiveError = error)
+  fun `records no arguments for objects when the encoder fails without a LinkageError`() {
+    val probe = FakeCompatibilityProbe(encoderError = NullPointerException())
+    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
+    val mapper = fixture.mapper
 
+    val mapped = mapper.map(Home)
+
+    assertThat(mapped).isEqualTo(SentryBackStackEntry("Home", arguments = null))
+  }
+
+  @Test
+  fun `doesn't encode properties when the encoder fails without a LinkageError`() {
+    val probe = FakeCompatibilityProbe(encoderError = NullPointerException())
+    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail("1"))
+    mapper.mapAndWriteArguments(Detail("2"))
+
+    assertThat(fixture.detailSerializer.serialized).isEmpty()
+  }
+
+  @Test
+  fun `logs a warning with the error and compatibility advice when the encoder fails without a LinkageError`() {
+    val error = NullPointerException("encodeStructure")
+    val probe = FakeCompatibilityProbe(encoderError = error)
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
 
     val message = argumentCaptor<String>()
-    verify(fixture.logger, times(1))
-      .log(
-        eq(SentryLevel.DEBUG),
-        eq(error),
-        message.capture(),
-        eq(ENCODING_CAPABILITY),
-        eq(PROBE_THREW),
+    verify(fixture.logger, times(1)).log(eq(SentryLevel.WARNING), message.capture(), eq(error))
+    assertThat(message.firstValue)
+      .startsWith(
+        "Nav3 SerialNameAndProperties is incompatible with this app's kotlinx.serialization " +
+          "version.",
       )
-    assertThat(message.firstValue).startsWith(INCONCLUSIVE_PROBE)
+    assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
   }
 
   private companion object {
     const val NAME_LOOKUP_CAPABILITY = "name lookups"
-
-    const val ENCODING_CAPABILITY = "property encoding"
 
     const val INCONCLUSIVE_PROBE = "Nav3 couldn't verify kotlinx.serialization support for %s"
 

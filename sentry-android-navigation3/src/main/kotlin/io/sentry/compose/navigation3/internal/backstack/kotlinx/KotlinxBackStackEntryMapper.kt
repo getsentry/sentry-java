@@ -75,10 +75,7 @@ internal class KotlinxBackStackEntryMapper(
   private val isEncodingIncompatible: Boolean =
     includeProperties &&
       run {
-        val error =
-          probe.encodingLinkageError { error ->
-            diagnostics.inconclusiveProbe(ENCODING_CAPABILITY, error)
-          } ?: return@run false
+        val error = probe.encoderIncompatibility() ?: return@run false
         diagnostics.incompatibleEncoder(error)
         true
       }
@@ -275,7 +272,6 @@ internal class KotlinxBackStackEntryMapper(
   private class SerializerLookup(val serializer: KSerializer<*>?, val error: Throwable?)
 
   private companion object {
-    private const val ENCODING_CAPABILITY = "property encoding"
     private const val NAME_LOOKUP_CAPABILITY = "name lookups"
     private val UNRESOLVED = CachedType(serializer = null, name = null)
   }
@@ -334,7 +330,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
    * Logs [error] indicating that the app's kotlinx.serialization version is incompatible with the
    * properties encoder. Entries are recorded by name without arguments.
    */
-  fun incompatibleEncoder(error: LinkageError) {
+  fun incompatibleEncoder(error: Throwable) {
     logger()
       .log(
         WARNING,

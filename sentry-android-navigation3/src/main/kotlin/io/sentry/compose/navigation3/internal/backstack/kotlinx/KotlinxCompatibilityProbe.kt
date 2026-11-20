@@ -23,9 +23,12 @@ import kotlinx.serialization.Serializable
  * `ProbeObject` don't execute any host app code, so a `LinkageError` while handling them means the
  * app's kotlinx.serialization version is incompatible.
  *
- * Note: Only a `LinkageError` is conclusive. Any other failure, or a probe type whose serializer
- * can't be found, leaves the check inconclusive: it's reported to the caller's `onInconclusive` and
- * otherwise ignored, as a real type that hits the same failure is handled and logged on its own.
+ * Note: For the name lookup check ([nameLookupLinkageError]), only a `LinkageError` is conclusive.
+ * Any other failure, or a probe type whose serializer can't be found, leaves it inconclusive: it's
+ * reported to the caller's `onInconclusive` and otherwise ignored, as a real type that hits the
+ * same failure is handled and logged on its own. The encoder check ([encoderIncompatibility])
+ * instead treats any failure as conclusive, because a broken encoder can record wrong arguments
+ * without throwing, and recording wrong arguments is worse than recording none.
  */
 internal interface KotlinxCompatibilityProbe {
 
@@ -42,14 +45,16 @@ internal interface KotlinxCompatibilityProbe {
   fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError?
 
   /**
-   * Encodes [ProbeClass] using the same path as [KotlinxBackStackEntryMapper].
+   * Encodes [ProbeClass] using the same path as [KotlinxBackStackEntryMapper] and checks that it
+   * links and runs.
    *
-   * Returns a [LinkageError] if the encoder can't link against the host app's kotlinx.serialization
-   * version, or `null` if encoding succeeds or the check is inconclusive.
-   *
-   * Calls [onInconclusive] for each inconclusive result, passing the cause.
+   * Returns the error that makes the properties encoder unusable, or `null` if encoding succeeds.
+   * Unlike [nameLookupLinkageError], any failure is conclusive: an incompatible
+   * kotlinx.serialization version can fail the encoder without a [LinkageError] (for instance, an
+   * API-incompatible encoder can throw a [NullPointerException] under R8), and the caller disables
+   * property encoding on any failure here rather than risk recording wrong arguments.
    */
-  fun encodingLinkageError(onInconclusive: (Throwable) -> Unit): LinkageError?
+  fun encoderIncompatibility(): Throwable?
 
   /** Probes the app's kotlinx.serialization version using [ProbeClass] and [ProbeObject]. */
   companion object : KotlinxCompatibilityProbe {
@@ -80,14 +85,22 @@ internal interface KotlinxCompatibilityProbe {
       return error
     }
 
-    override fun encodingLinkageError(onInconclusive: (Throwable) -> Unit): LinkageError? =
-      probe(onInconclusive) {
+    override fun encoderIncompatibility(): Throwable? =
+      try {
         @Suppress("UNCHECKED_CAST")
         KotlinxPropertiesEncoder.encode(
           ProbeClass.serializer() as KSerializer<Any>,
           ProbeClass(),
           TreeArgumentWriter(ArgumentBudget()),
         )
+        null
+      } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
+        // Broad because an incompatible kotlinx.serialization version can fail the encoder in any
+        // way, not only with a LinkageError. Any failure disables property encoding and keeps
+        // names,
+        // as recording wrong arguments would be worse than recording none.
+        ExceptionUtils.rethrowIfFatal(t)
+        t
       }
 
     /**
