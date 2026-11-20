@@ -11,6 +11,7 @@
 ### Fixes
 
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
+- Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 - Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
 
 ## 8.65.0
