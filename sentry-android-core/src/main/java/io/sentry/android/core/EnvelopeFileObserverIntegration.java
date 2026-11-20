@@ -15,6 +15,7 @@ import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.File;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -57,7 +58,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
                 }
               }
             });
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         logger.log(
             SentryLevel.DEBUG,
             "Failed to start EnvelopeFileObserverIntegration on executor thread.",

@@ -36,6 +36,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -249,7 +250,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
         // no later mutation would ever be able to queue a flush again
         hasPendingFlush.set(false);
       }
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       hasPendingFlush.set(false);
       options.getLogger().log(ERROR, "Scope persistence flush could not be submitted", e);
     }

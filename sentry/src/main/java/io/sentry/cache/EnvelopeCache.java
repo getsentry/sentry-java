@@ -280,7 +280,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       final String timestamp = DateUtils.getTimestamp(DateUtils.getCurrentDateTime());
       outputStream.write(timestamp.getBytes(UTF_8));
       outputStream.flush();
-    } catch (Throwable e) {
+    } catch (IOException | SecurityException e) {
+      // a SecurityManager can deny writing the file
       options.getLogger().log(ERROR, "Error writing the crash marker file to the disk", e);
     }
   }
@@ -377,7 +378,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           .log(DEBUG, "Overwriting session to offline storage: %s", session.getSessionId());
 
       serializer.getValue().serialize(session, writer);
-    } catch (Throwable e) {
+    } catch (IOException | SecurityException e) {
+      // a SecurityManager can deny writing the file
       options
           .getLogger()
           .log(ERROR, e, "Error writing Session to offline storage: %s", session.getSessionId());
@@ -530,7 +532,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         if (!renamed) {
           options.getLogger().log(WARNING, "Unable to move current session to previous session.");
         }
-      } catch (Throwable e) {
+      } catch (SecurityException e) {
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Error moving current session to previous session.", e);

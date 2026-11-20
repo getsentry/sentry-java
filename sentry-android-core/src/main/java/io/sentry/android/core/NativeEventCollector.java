@@ -223,7 +223,7 @@ public final class NativeEventCollector {
                 file.getAbsolutePath());
         return false;
       }
-    } catch (Throwable e) {
+    } catch (SecurityException e) {
       options
           .getLogger()
           .log(
@@ -285,7 +285,7 @@ public final class NativeEventCollector {
           break;
         }
       }
-    } catch (Throwable e) {
+    } catch (IOException e) {
       options
           .getLogger()
           .log(
@@ -337,7 +337,8 @@ public final class NativeEventCollector {
       if (NATIVE_PLATFORM.equals(platform) && timestamp != null) {
         result = new NativeEnvelopeMetadata(file, timestamp.getTime());
       }
-    } catch (Throwable e) {
+    } catch (IOException | IllegalStateException e) {
+      // IllegalStateException is how the JSON reader reports an unexpected token
       options
           .getLogger()
           .log(SentryLevel.DEBUG, e, "Error parsing event JSON from: %s", file.getName());
@@ -369,7 +370,9 @@ public final class NativeEventCollector {
           }
         }
       }
-    } catch (Throwable e) {
+    } catch (Exception e) {
+      // EnvelopeReader reports a malformed envelope with IllegalArgumentException, and getData()
+      // is declared to throw Exception for items that are created lazily
       options
           .getLogger()
           .log(SentryLevel.DEBUG, e, "Error loading envelope file: %s", file.getAbsolutePath());
@@ -420,7 +423,9 @@ public final class NativeEventCollector {
       if (length >= 0) {
         return new ItemHeaderInfo(type, length);
       }
-    } catch (Throwable e) {
+    } catch (IOException | IllegalStateException | NumberFormatException e) {
+      // the JSON reader reports an unexpected token with IllegalStateException, and a length that
+      // isn't an int with NumberFormatException
       options.getLogger().log(SentryLevel.DEBUG, e, "Error parsing item header");
     }
     return null;

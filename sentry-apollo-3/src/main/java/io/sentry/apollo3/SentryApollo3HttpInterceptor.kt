@@ -39,6 +39,7 @@ import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
+import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
@@ -192,7 +193,7 @@ constructor(
     return getHeader(headerName, request.headers)?.let {
       try {
         String(Base64.decode(it, Base64.NO_WRAP))
-      } catch (e: Throwable) {
+      } catch (e: IllegalArgumentException) {
         scopes.options.logger.log(
           SentryLevel.ERROR,
           "Error decoding internal apolloHeader $headerName",
@@ -381,7 +382,7 @@ constructor(
       val body =
         try {
           response.body?.peek()?.readUtf8() ?: ""
-        } catch (e: Throwable) {
+        } catch (e: IOException) {
           scopes.options.logger.log(SentryLevel.ERROR, "Error reading the response body.", e)
           // bail out because the response body has the most important information
           return

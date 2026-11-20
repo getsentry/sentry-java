@@ -67,7 +67,8 @@ public final class BuildInfoProvider {
           || Build.PRODUCT.contains("vbox86p")
           || Build.PRODUCT.contains("emulator")
           || Build.PRODUCT.contains("simulator");
-    } catch (Throwable e) {
+    } catch (NullPointerException e) {
+      // Build fields are only null off-device, e.g. in unit tests against the android.jar stubs
       logger.log(
           SentryLevel.ERROR, "Error checking whether application is running in an emulator.", e);
       return null;
