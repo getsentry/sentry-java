@@ -220,8 +220,11 @@ internal class BackStackConverter<T : Any>(
     private fun sanitizeScalar(value: Any?): Any? =
       when (value) {
         null,
-        is Number,
         is Boolean -> value
+        is Number ->
+          if (value.isNonFinite()) {
+            value.toString().also { consumeCharacters(it.length) }
+          } else value
         is String -> value.also { consumeCharacters(it.length) }
         is CharSequence,
         is Char -> value.toString().also { consumeCharacters(it.length) }
@@ -433,3 +436,7 @@ internal enum class ArgumentDropReason(
     const val ARGUMENT_DROP_REASON_KEY = "dropped_by_sentry"
   }
 }
+
+/** Whether this is a NaN or infinite Double or Float. */
+private fun Number.isNonFinite(): Boolean =
+  (this is Double && !isFinite()) || (this is Float && !isFinite())
