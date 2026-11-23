@@ -3,6 +3,11 @@
 Package contains code for coordinating multiple `SentryNavEffect`s and their access to a shared `IScope`, so that overlapping effects (e.g.,
 during Activity or Fragment transitions) don't clobber one another's screen names, nav context, or nav transactions.
 
+Before effects compete for the nav lease, `NavEffectGate` decides which of them may observe their back stack at all: at most one per back
+stack and, for effects installed by auto-instrumentation, at most one per Activity or Fragment, with the host app's own effects taking
+priority. That keeps the lease policy's assumption of one effect per Activity or Fragment true when auto-instrumentation instruments nested
+`NavDisplay`s or a `NavDisplay` the host app also observes. See the `NavEffectGate` KDoc for its rules.
+
 This package is meant to encapsulate knowledge about the possibility of multiple `SentryNavEffect`s and the shared mutable state issues it
 raises. Addressing those concerns is complicated. Confining them here makes them easier to reason about and easier to swap for alternative
 logic should we someday need to.

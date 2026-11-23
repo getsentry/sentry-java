@@ -2,9 +2,11 @@ package io.sentry.compose.navigation3
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
@@ -12,7 +14,11 @@ import io.sentry.SentryOptions
 import io.sentry.compose.navigation3.internal.backstack.BackStackKey
 import io.sentry.compose.navigation3.internal.backstack.CoordinatedBackStackObserver
 import io.sentry.compose.navigation3.internal.backstack.ForwardingBackStackEntryMapper
+import io.sentry.compose.navigation3.internal.backstack.GatedBackStackObserver
+import io.sentry.compose.navigation3.internal.backstack.defaultNavEffectGate
 import io.sentry.compose.navigation3.internal.backstack.defaultNavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavEffectGate
+import io.sentry.compose.navigation3.internal.lifecycle.NavEffectKind
 import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
 import io.sentry.compose.navigation3.internal.lifecycle.findActivity
@@ -99,6 +105,18 @@ public fun <T : Any> SentryNavEffect(
   )
 }
 
+/**
+ * Implements [SentryNavEffect] for both the host app's calls and auto-instrumentation.
+ *
+ * @param gate decides whether this effect may observe [backStack] alongside other effects (see
+ *   [NavEffectGate]).
+ * @param kind whether the host app or auto-instrumentation called this effect.
+ * @param navRoot the Activity or Fragment this effect belongs to. Its lifecycle is what
+ *   [coordinator] observes, and the [gate] groups effects by it. Defaults to [LocalLifecycleOwner],
+ *   which is the Activity or Fragment when the effect is placed next to its `NavDisplay`, as
+ *   [SentryNavEffect] requires.
+ */
+@Suppress("LongParameterList")
 @Composable
 internal fun <T : Any> SentryNavEffect(
   backStack: List<T>,
@@ -106,29 +124,41 @@ internal fun <T : Any> SentryNavEffect(
   options: SentryNavOptions,
   scopes: IScopes,
   coordinator: NavLeaseCoordinator,
+  gate: NavEffectGate = defaultNavEffectGate,
+  kind: NavEffectKind = NavEffectKind.MANUAL,
+  navRoot: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
   val currentBackStackEntryMapper = rememberUpdatedState(backStackEntryMapper)
-  val lifecycle = LocalLifecycleOwner.current.lifecycle
   val context = LocalContext.current
 
   val observer =
-    remember(scopes, options, lifecycle, coordinator) {
-      CoordinatedBackStackObserver(
-        scopes = scopes,
-        options = options,
-        entryMapper = ForwardingBackStackEntryMapper { currentBackStackEntryMapper.value },
-        coordinator = coordinator,
-      )
+    remember(scopes, options, navRoot, coordinator, gate, kind) {
+      GatedBackStackObserver {
+        CoordinatedBackStackObserver(
+          scopes = scopes,
+          options = options,
+          entryMapper = ForwardingBackStackEntryMapper { currentBackStackEntryMapper.value },
+          coordinator = coordinator,
+        )
+      }
     }
 
+  // Register first so the initial prepared back stack update can acquire navigation ownership.
+  //
   // Intentionally don't key on context. It's only used to find the Activity that displays the nav
-  // root, which can't change without the lifecycle changing too, and that replaces the observer.
+  // root, which can't change without the nav root changing too, and that replaces the observer.
   // The context's identity can change more often (e.g., if the host app provides a new
-  // ContextThemeWrapper on every recomposition), and re-attaching for those changes would
+  // ContextThemeWrapper on every recomposition), and re-registering for those changes would
   // needlessly finish the nav transaction.
   DisposableEffect(observer) {
-    observer.attach(NavRootInfo(lifecycle, context.findActivity()))
-    onDispose { observer.dispose() }
+    observer.register(
+      gate = gate,
+      kind = kind,
+      navRoot = navRoot,
+      rootInfo = NavRootInfo(navRoot.lifecycle, context.findActivity()),
+      backStack = backStack,
+    )
+    onDispose { observer.unregister() }
   }
 
   // Intentionally don't remember this copy. Snapshot-backed lists mutate in place, so
@@ -140,7 +170,11 @@ internal fun <T : Any> SentryNavEffect(
   val copy = backStack.toList()
 
   DisposableEffect(observer, BackStackKey(copy)) {
-    observer.onBackStackChanged(backStack = copy)
+    observer.onBackStackChanged(backStack = backStack, copy = copy)
     onDispose {}
   }
+
+  // The gate tells effects apart by the back stack instance they observe, which can change without
+  // the back stack's contents changing. The effect above only runs when the contents change.
+  SideEffect { observer.onBackStackInstanceChanged(backStack) }
 }
