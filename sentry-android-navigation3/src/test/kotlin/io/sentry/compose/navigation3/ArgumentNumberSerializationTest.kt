@@ -8,7 +8,6 @@ import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.BackStackConverter
-import io.sentry.compose.navigation3.internal.backstack.ForwardingBackStackEntryMapper
 import java.io.StringWriter
 import org.junit.Test
 
