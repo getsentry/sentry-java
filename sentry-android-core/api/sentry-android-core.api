@@ -927,12 +927,11 @@ public abstract interface class io/sentry/android/core/hang/ThreadPoster {
 }
 
 public final class io/sentry/android/core/hang/ThreadSampleCollector : io/sentry/android/core/hang/HangDataCollector {
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/time/EpochClock;Lio/sentry/time/MonotonicTicker;Ljava/lang/Thread;)V
+	public fun <init> (Lio/sentry/time/EpochClock;Ljava/lang/Thread;)V
 	public fun close ()V
-	public fun onRecordingCanceled ()V
-	public fun onRecordingStarted (Lio/sentry/android/core/hang/HangInterval;)V
-	public fun onRecordingStopped (Lio/sentry/android/core/hang/HangInterval;Lio/sentry/android/core/hang/HangRecord$Builder;)V
-	public fun onSample (Lio/sentry/android/core/hang/HangInterval;)V
+	public fun onRecordingStopped (Ljava/util/List;Lio/sentry/android/core/hang/HangRecord$Builder;)V
+	public fun onSample (Lio/sentry/android/core/hang/HangInterval;)Lio/sentry/android/core/anr/AnrStackTrace;
+	public synthetic fun onSample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
 }
 
 public abstract class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {

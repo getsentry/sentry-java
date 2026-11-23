@@ -1032,13 +1032,19 @@ class HangRecorderTest {
             ),
           )
         },
-        listOf(ThreadSampleCollector(SentryOptions(), epochClock, ticker, parked)),
+        listOf(CollectorSetup(ThreadSampleCollector(epochClock, parked), null)),
       )
 
-    created.subscribe {
-      record = it
-      recorded.countDown()
-    }
+    created.subscribe(
+      object : HangRecorderListener {
+        override fun onHangStarted(interval: HangInterval) = HangRecordingRequest.DEFAULT
+
+        override fun onHangRecorded(hangRecord: HangRecord) {
+          record = hangRecord
+          recorded.countDown()
+        }
+      },
+    )
 
     try {
       assertThat(recorded.await(10, TimeUnit.SECONDS)).isTrue()
