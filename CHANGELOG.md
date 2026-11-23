@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- Stop a transaction's CPU and memory collection 30 seconds after it starts even when the device's wall clock changes in between ([#6739](https://github.com/getsentry/sentry-java/pull/6739))
 - Nav3: Drop an entry’s arguments with `duplicate_key` when distinct map keys stringify to the same key, instead of silently overwriting a value ([#6714](https://github.com/getsentry/sentry-java/pull/6714))
 - Nav3: Serialize `NaN` and infinite navigation arguments as strings so they cannot prevent the containing error report or transaction from being serialized ([#6713](https://github.com/getsentry/sentry-java/pull/6713))
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
