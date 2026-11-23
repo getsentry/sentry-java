@@ -5,6 +5,12 @@
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
 > - The Android `minSdk` will be raised from 21 to 24. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
 
+## Unreleased
+
+### Fixes
+
+- Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
+
 ## 8.65.1
 
 ### Fixes
