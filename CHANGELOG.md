@@ -11,6 +11,10 @@
 
 - Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
 - Nav3: Add `BackStackEntryMapper.SerialNameAndProperties`, which is like `SerialName` except that it also records the properties of each back stack entry as arguments ([#6706](https://github.com/getsentry/sentry-java/pull/6706))
+- Nav3: Support auto-instrumentation by the Sentry Android Gradle Plugin, which records Nav3 navigation without calling `SentryNavEffect` ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - Opt in with `tracingInstrumentation { navigation3 { enabled = true } }` in a Sentry Android Gradle Plugin version that supports it
+  - Auto-instrumented `NavDisplay`s name back stack entries with `BackStackEntryMapper.SerialName` and don't record arguments
+  - When several `NavDisplay`s are on screen, only one records: your own `SentryNavEffect` takes priority, then the outermost auto-instrumented `NavDisplay` in each Activity or Fragment
 
 ### Dependencies
 

@@ -62,3 +62,9 @@ public final class io/sentry/compose/navigation3/SentryNavOptionsKt {
 	public static synthetic fun SentryNavOptions$default (Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/sentry/compose/navigation3/SentryNavOptions;
 }
 
+public final class io/sentry/compose/navigation3/internal/SentryNavAutoInstrumentation {
+	public static final field $stable I
+	public static final field INSTANCE Lio/sentry/compose/navigation3/internal/SentryNavAutoInstrumentation;
+	public static final fun rememberSentryDecoratedNavEntries (Ljava/util/List;Ljava/util/List;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Ljava/util/List;
+}
+

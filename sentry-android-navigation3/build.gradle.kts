@@ -89,6 +89,9 @@ dependencies {
   compileOnly(libs.androidx.compose.runtime)
   compileOnly(libs.androidx.compose.ui)
   compileOnly(libs.androidx.lifecycle.runtime.compose)
+  // Only SentryNavAutoInstrumentation uses navigation3-runtime. It's called from navigation3-ui's
+  // NavDisplay, so apps that reach it always have it.
+  compileOnly(libs.androidx.navigation3.runtime)
   // All Nav3 apps depend on kotlinx.serialization via navigation3-runtime.
   compileOnly(nav3Libs.kotlinx.serialization.core) {
     version { require(kotlinxSerializationFloor) }
@@ -98,6 +101,7 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.fragment.ktx)
+  testImplementation(libs.androidx.navigation3.runtime)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)
