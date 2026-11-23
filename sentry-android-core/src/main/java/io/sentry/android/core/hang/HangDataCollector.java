@@ -2,29 +2,31 @@ package io.sentry.android.core.hang;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-/** Collects data while a hang interval is open. */
+/**
+ * Reads one value of a data source on each tick of a hang interval. Called only on the recorder
+ * thread.
+ */
 @ApiStatus.Internal
-public interface HangDataCollector extends Closeable {
+public interface HangDataCollector<T> extends Closeable {
 
-  /** Called when an interval opens. */
-  void onRecordingStarted(@NotNull HangInterval interval);
-
-  /** Called on each tick while an interval is open. */
-  void onSample(@NotNull HangInterval interval);
-
-  /** Called when the interval ends with a record. */
-  void onRecordingStopped(@NotNull HangInterval interval, @NotNull HangRecord.Builder out);
+  /** One value for this tick, or null for no value. Must be fast, no IO. */
+  @Nullable
+  T onSample(@NotNull HangInterval interval);
 
   /**
-   * Called when the interval ends without a record, because a signal canceled it or the last
-   * subscription was removed.
+   * The interval ended with a record.
+   *
+   * @param samples all non-null values of this interval, in order, at most the recorder's {@code
+   *     maxSamples}
    */
-  void onRecordingCanceled();
+  void onRecordingStopped(@NotNull List<T> samples, @NotNull HangRecord.Builder out);
 
-  /** Called once, when the recorder is closed. The collector is not used after this. */
+  /** One time, when the recorder closes. */
   @Override
   void close() throws IOException;
 }

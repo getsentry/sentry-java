@@ -8,8 +8,10 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.android.core.hang.HangInterval
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangRecorderListener
+import io.sentry.android.core.hang.HangRecordingRequest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -47,8 +49,15 @@ class AnrProfilingIntegrationTest {
       }
   }
 
+  private fun subscribed(): HangRecorderListener {
+    AnrProfilingIntegration().register(scopes, options)
+    val captor = argumentCaptor<HangRecorderListener>()
+    verify(recorder).subscribe(captor.capture())
+    return captor.firstValue
+  }
+
   @Test
-  fun `register subscribes to the recorder when sampled`() {
+  fun `register subscribes to the recorder when ANR profiling is enabled`() {
     val integration = AnrProfilingIntegration()
 
     integration.register(scopes, options)
@@ -58,16 +67,60 @@ class AnrProfilingIntegrationTest {
   }
 
   @Test
-  fun `register does not subscribe when not sampled`() {
+  fun `register subscribes without a draw`() {
     // Enabled, but only a draw of exactly 0.0 is below it.
     options.anrProfilingSampleRate = Double.MIN_VALUE
     val integration = AnrProfilingIntegration()
 
     integration.register(scopes, options)
 
-    verify(recorder, never()).subscribe(any())
-    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
-      .doesNotContain("AnrProfiling")
+    verify(recorder, times(1)).subscribe(any())
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("AnrProfiling")
+  }
+
+  @Test
+  fun `sampled hang asks the recorder to persist`() {
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted(HangInterval(0)).shouldPersist()).isTrue()
+  }
+
+  @Test
+  fun `unsampled hang gets the default request`() {
+    options.anrProfilingSampleRate = Double.MIN_VALUE
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted(HangInterval(0)))
+      .isSameInstanceAs(HangRecordingRequest.DEFAULT)
+  }
+
+  @Test
+  fun `sample rate is drawn again at each hang`() {
+    val listener = subscribed()
+    assertThat(listener.onHangStarted(HangInterval(0)).shouldPersist()).isTrue()
+
+    options.anrProfilingSampleRate = Double.MIN_VALUE
+
+    assertThat(listener.onHangStarted(HangInterval(1_000)))
+      .isSameInstanceAs(HangRecordingRequest.DEFAULT)
+  }
+
+  @Test
+  fun `hang after the sample rate became null gets the default request`() {
+    val listener = subscribed()
+
+    options.anrProfilingSampleRate = null
+
+    assertThat(listener.onHangStarted(HangInterval(0)))
+      .isSameInstanceAs(HangRecordingRequest.DEFAULT)
+  }
+
+  @Test
+  fun `sampled hangs share one request`() {
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted(HangInterval(0)))
+      .isSameInstanceAs(listener.onHangStarted(HangInterval(1_000)))
   }
 
   @Test
@@ -136,7 +189,7 @@ class AnrProfilingIntegrationTest {
 
   @Test
   fun `close does not unsubscribe when not subscribed`() {
-    options.anrProfilingSampleRate = Double.MIN_VALUE
+    options.anrProfilingSampleRate = null
     val integration = AnrProfilingIntegration()
     integration.register(scopes, options)
 

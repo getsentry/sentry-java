@@ -9,9 +9,11 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.android.core.hang.HangInterval;
 import io.sentry.android.core.hang.HangRecord;
 import io.sentry.android.core.hang.HangRecorder;
 import io.sentry.android.core.hang.HangRecorderListener;
+import io.sentry.android.core.hang.HangRecordingRequest;
 import io.sentry.util.Objects;
 import io.sentry.util.SentryRandom;
 import java.io.Closeable;
@@ -24,8 +26,8 @@ import org.jetbrains.annotations.Nullable;
  * Captures main-thread stack profiles while the app is unresponsive and attaches them to ANR events
  * on the next app start.
  *
- * <p>If sampled, subscribes to the {@link HangRecorder} of the options for the SDK lifetime. The
- * recorder writes the profile to disk while a subscription exists.
+ * <p>Subscribes to the {@link HangRecorder} of the options for the SDK lifetime, and draws the
+ * sample rate at each hang. The recorder writes the stacks of a sampled hang to disk.
  *
  * <p>Enable via {@link SentryAndroidOptions#setAnrProfilingSampleRate(Double)} or the {@code
  * io.sentry.anr.profiling.sample-rate} manifest metadata.
@@ -37,8 +39,9 @@ public final class AnrProfilingIntegration
   public static final long POLLING_INTERVAL_MS = HangRecorder.DEFAULT_POLLING_INTERVAL_MS;
   public static final long THRESHOLD_ANR_MS = 4000;
 
-  private final @NotNull HangRecorderListener subscription = new DiskProfileSubscription();
   private final @NotNull AtomicReference<HangRecorder> subscribedRecorder = new AtomicReference<>();
+  private final @NotNull AtomicReference<HangRecorderListener> subscription =
+      new AtomicReference<>();
 
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
@@ -59,23 +62,21 @@ public final class AnrProfilingIntegration
       logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but there is no hang recorder");
       return;
     }
-    final @Nullable Double sampleRate = androidOptions.getAnrProfilingSampleRate();
-    if (sampleRate == null || SentryRandom.current().nextDouble() >= sampleRate) {
-      logger.log(SentryLevel.DEBUG, "ANR Profiling is not sampled");
-      return;
-    }
     if (!subscribedRecorder.compareAndSet(null, recorder)) {
       return;
     }
-    recorder.subscribe(subscription);
+    final @NotNull HangRecorderListener listener = new ProfileSampler(androidOptions);
+    subscription.set(listener);
+    recorder.subscribe(listener);
     addIntegrationToSdkVersion("AnrProfiling");
   }
 
   @Override
   public void close() throws IOException {
     final @Nullable HangRecorder recorder = subscribedRecorder.getAndSet(null);
-    if (recorder != null) {
-      recorder.unsubscribe(subscription);
+    final @Nullable HangRecorderListener listener = subscription.getAndSet(null);
+    if (recorder != null && listener != null) {
+      recorder.unsubscribe(listener);
     }
   }
 
@@ -100,8 +101,26 @@ public final class AnrProfilingIntegration
   @Override
   public void run() {}
 
-  // Not a lambda: a non-capturing lambda can be one shared instance across integrations.
-  private static final class DiskProfileSubscription implements HangRecorderListener {
+  private static final class ProfileSampler implements HangRecorderListener {
+
+    private static final @NotNull HangRecordingRequest PERSIST =
+        new HangRecordingRequest.Builder().setPersist(true).build();
+
+    private final @NotNull SentryAndroidOptions options;
+
+    ProfileSampler(final @NotNull SentryAndroidOptions options) {
+      this.options = options;
+    }
+
+    @Override
+    public @NotNull HangRecordingRequest onHangStarted(final @NotNull HangInterval interval) {
+      final @Nullable Double sampleRate = options.getAnrProfilingSampleRate();
+      if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
+        return PERSIST;
+      }
+      return HangRecordingRequest.DEFAULT;
+    }
+
     @Override
     public void onHangRecorded(final @NotNull HangRecord record) {
       // The fatal path reads the profile from disk at the next launch, it needs no record.
