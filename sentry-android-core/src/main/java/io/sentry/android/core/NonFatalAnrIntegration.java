@@ -158,7 +158,7 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
 
     private @NotNull SentryEvent buildEvent(
         final @NotNull HangRecord record, final long endTimestampMs) {
-      final @NotNull List<AnrStackTrace> samples = record.getSamples();
+      final @NotNull List<AnrStackTrace> samples = record.getStackTraces();
       final @Nullable AggregatedStackTrace culprit =
           samples.isEmpty() ? null : AnrCulpritIdentifier.identify(samples);
 
