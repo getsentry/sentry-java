@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public interface HangSampleStore<T> extends Closeable {
 
-  /** Called one time for each persisted interval, before its first {@link #add(Object)}. */
+  /** Called one time when a persisted hang starts, before its first {@link #add(Object)}. */
   void clear() throws IOException;
 
   void add(@NotNull T sample) throws IOException;

@@ -9,7 +9,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
-import io.sentry.android.core.hang.HangInterval;
 import io.sentry.android.core.hang.HangRecord;
 import io.sentry.android.core.hang.HangRecorder;
 import io.sentry.android.core.hang.HangRecorderListener;
@@ -104,9 +103,6 @@ public final class AnrProfilingIntegration
 
   private static final class ProfileSampler implements HangRecorderListener {
 
-    private static final @NotNull HangRecordingRequest PERSIST =
-        new HangRecordingRequest.Builder().setPersist(true).build();
-
     private final @NotNull SentryAndroidOptions options;
 
     ProfileSampler(final @NotNull SentryAndroidOptions options) {
@@ -114,12 +110,12 @@ public final class AnrProfilingIntegration
     }
 
     @Override
-    public @NotNull HangRecordingRequest onHangStarted(final @NotNull HangInterval interval) {
+    public @Nullable HangRecordingRequest onHangStarted() {
       final @Nullable Double sampleRate = options.getAnrProfilingSampleRate();
       if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
-        return PERSIST;
+        return new HangRecordingRequest(true, true);
       }
-      return HangRecordingRequest.NONE;
+      return null;
     }
 
     @Override

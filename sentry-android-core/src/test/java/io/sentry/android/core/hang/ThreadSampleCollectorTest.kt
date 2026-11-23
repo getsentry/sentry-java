@@ -12,7 +12,6 @@ class ThreadSampleCollectorTest {
 
   private var unixTimeMs = 1_700_000_000_000L
   private val epochClock = EpochClock { Timestamp.ofEpochNanos(MILLISECONDS.toNanos(unixTimeMs)) }
-  private val interval = HangInterval(0)
 
   @Test
   fun `sample returns the stack, the state and the time of the thread`() {
@@ -27,7 +26,7 @@ class ThreadSampleCollectorTest {
       assertThat(parked.state).isEqualTo(Thread.State.WAITING)
       val collector = ThreadSampleCollector(epochClock, parked)
 
-      val sample = collector.sample(interval)
+      val sample = collector.sample()
 
       assertThat(sample.state).isEqualTo(Thread.State.WAITING)
       assertThat(sample.timestampMs).isEqualTo(unixTimeMs)
@@ -42,9 +41,9 @@ class ThreadSampleCollectorTest {
   fun `each sample reads the clock again`() {
     val collector = ThreadSampleCollector(epochClock, Thread.currentThread())
 
-    val first = collector.sample(interval)
+    val first = collector.sample()
     unixTimeMs += 66
-    val second = collector.sample(interval)
+    val second = collector.sample()
 
     assertThat(second.timestampMs - first.timestampMs).isEqualTo(66)
   }

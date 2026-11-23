@@ -11,16 +11,16 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.anr.NonFatalAnrMarker
-import io.sentry.android.core.hang.HangInterval
 import io.sentry.android.core.hang.HangRecord
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangRecorderListener
-import io.sentry.android.core.hang.HangRecordingRequest
 import io.sentry.android.core.hang.RuntimeStatsSnapshot
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.hints.AbnormalExit
 import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
+import io.sentry.util.Random
+import io.sentry.util.SentryRandom
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -79,7 +79,9 @@ class NonFatalAnrIntegrationTest {
       ),
     runtimeStats: List<RuntimeStatsSnapshot> = emptyList(),
   ) =
-    HangRecord.Builder(durationMs, 1_000)
+    HangRecord.Builder()
+      .setDurationMs(durationMs)
+      .setStartTimestampMs(1_000)
       .apply {
         samples.forEach { addStackTrace(it) }
         runtimeStats.forEach { addRuntimeStats(it) }
@@ -105,19 +107,21 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `register subscribes when sampled`() {
+  fun `register subscribes when enabled`() {
     subscribed()
 
     assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("NonFatalAnr")
   }
 
   @Test
-  fun `not sampled does not subscribe`() {
+  fun `register subscribes without a draw`() {
+    // Enabled, but only a draw of exactly 0.0 is below it.
     options.nonFatalAnrSampleRate = Double.MIN_VALUE
 
     NonFatalAnrIntegration().register(scopes, options)
 
-    verify(recorder, never()).subscribe(any())
+    verify(recorder).subscribe(any())
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("NonFatalAnr")
   }
 
   @Test
@@ -163,11 +167,42 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `hang start asks only for values in memory`() {
+  fun `sampled hang asks for a record in memory only`() {
     val listener = subscribed()
 
-    assertThat(listener.onHangStarted(HangInterval(0)))
-      .isSameInstanceAs(HangRecordingRequest.DEFAULT)
+    val request = listener.onHangStarted()!!
+
+    assertThat(request.shouldRecord()).isTrue()
+    assertThat(request.shouldPersist()).isFalse()
+  }
+
+  @Test
+  fun `unsampled hang needs nothing from the recorder`() {
+    options.nonFatalAnrSampleRate = Double.MIN_VALUE
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted()).isNull()
+  }
+
+  @Test
+  fun `a new random number is drawn at each hang`() {
+    val draws = Random(SEED, 0).let { listOf(it.nextDouble(), it.nextDouble()) }
+    assertThat(draws[0]).isLessThan(draws[1])
+    options.nonFatalAnrSampleRate = draws[1]
+    val listener = subscribed()
+    SentryRandom.current().setSeed(SEED, 0)
+
+    assertThat(listener.onHangStarted()).isNotNull()
+    assertThat(listener.onHangStarted()).isNull()
+  }
+
+  @Test
+  fun `hang after the sample rate became null needs nothing from the recorder`() {
+    val listener = subscribed()
+
+    options.nonFatalAnrSampleRate = null
+
+    assertThat(listener.onHangStarted()).isNull()
   }
 
   @Test
@@ -220,7 +255,9 @@ class NonFatalAnrIntegrationTest {
     val listener = subscribed()
 
     listener.onHangRecorded(
-      HangRecord.Builder(8_000, 1_000)
+      HangRecord.Builder()
+        .setDurationMs(8_000)
+        .setStartTimestampMs(1_000)
         .addStackTrace(AnrStackTrace(1_100, systemStack))
         .setEndedAtMaxRecordingTime(true)
         .build(),
@@ -281,7 +318,9 @@ class NonFatalAnrIntegrationTest {
     val listener = subscribed()
 
     listener.onHangRecorded(
-      HangRecord.Builder(8_000, 1_000)
+      HangRecord.Builder()
+        .setDurationMs(8_000)
+        .setStartTimestampMs(1_000)
         .addStackTrace(AnrStackTrace(1_100, systemStack))
         .setEndedAtMaxRecordingTime(true)
         .build(),
@@ -511,5 +550,9 @@ class NonFatalAnrIntegrationTest {
     assertThat(breadcrumb.level).isEqualTo(SentryLevel.WARNING)
     assertThat(breadcrumb.message).isEqualTo("Non-fatal ANR")
     assertThat(breadcrumb.data["duration_ms"]).isEqualTo(1_000L)
+  }
+
+  private companion object {
+    const val SEED = 1L
   }
 }
