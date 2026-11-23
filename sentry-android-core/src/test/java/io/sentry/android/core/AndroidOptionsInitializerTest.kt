@@ -712,8 +712,6 @@ class AndroidOptionsInitializerTest {
       .isEqualTo(HangRecorder.DEFAULT_POLLING_INTERVAL_MS)
     assertThat(recorder.getProperty<Long>("maxRecordingTimeMs"))
       .isEqualTo(HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS)
-    assertThat(recorder.getProperty<Long>("persistAfterMs"))
-      .isEqualTo(HangRecorder.DEFAULT_PERSIST_AFTER_MS)
     assertThat(recorder.getProperty<Int>("maxSamples"))
       .isEqualTo(AnrProfileManager.MAX_NUM_STACKTRACES)
     assertThat(recorder.getProperty<Any>("executorFactory"))
@@ -776,7 +774,7 @@ class AndroidOptionsInitializerTest {
         .single()
     val writer = setup.getProperty<HangRecorder.RecordWriter<AnrStackTrace>>("writer")
     val stackTrace = AnrStackTrace(1, emptyArray())
-    val builder = HangRecord.Builder(0, 0)
+    val builder = HangRecord.Builder()
 
     writer.write(stackTrace, builder)
 
