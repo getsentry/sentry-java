@@ -1189,7 +1189,13 @@ class HangRecorderTest {
             ),
           )
         },
-        listOf(CollectorSetup(ThreadSampleCollector(epochClock, parked), null)),
+        listOf(
+          CollectorSetup(
+            ThreadSampleCollector(epochClock, parked),
+            { stackTrace, builder -> builder.addStackTrace(stackTrace) },
+            null,
+          ),
+        ),
       )
 
     created.subscribe(
@@ -1210,8 +1216,8 @@ class HangRecorderTest {
       parked.interrupt()
       parked.join()
     }
-    assertThat(record!!.samples).isNotEmpty()
-    assertThat(record!!.samples.first().stack.map { it.methodName }).contains("park")
+    assertThat(record!!.stackTraces).isNotEmpty()
+    assertThat(record!!.stackTraces.first().stack.map { it.methodName }).contains("park")
   }
 
   private class FakeAppStateProvider : AppStateProvider {
