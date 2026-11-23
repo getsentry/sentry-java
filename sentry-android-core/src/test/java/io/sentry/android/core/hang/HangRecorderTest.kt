@@ -1195,7 +1195,7 @@ class HangRecorderTest {
 
     created.subscribe(
       object : HangRecorderListener {
-        override fun onHangStarted(interval: HangInterval) = HangRecordingRequest.DEFAULT
+        override fun onHangStarted() = HangRecordingRequest(true, false)
 
         override fun onHangRecorded(hangRecord: HangRecord) {
           record = hangRecord
