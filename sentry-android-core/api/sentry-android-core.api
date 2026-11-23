@@ -812,10 +812,8 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 
 public abstract interface class io/sentry/android/core/hang/HangDataCollector : java/io/Closeable {
 	public abstract fun close ()V
-	public abstract fun onRecordingCanceled ()V
-	public abstract fun onRecordingStarted (Lio/sentry/android/core/hang/HangInterval;)V
-	public abstract fun onRecordingStopped (Lio/sentry/android/core/hang/HangInterval;Lio/sentry/android/core/hang/HangRecord$Builder;)V
-	public abstract fun onSample (Lio/sentry/android/core/hang/HangInterval;)V
+	public abstract fun onRecordingStopped (Ljava/util/List;Lio/sentry/android/core/hang/HangRecord$Builder;)V
+	public abstract fun onSample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
 }
 
 public final class io/sentry/android/core/hang/HangInterval {
@@ -840,8 +838,9 @@ public final class io/sentry/android/core/hang/HangRecord$Builder {
 public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome, java/io/Closeable {
 	public static final field DEFAULT_EXECUTOR_FACTORY Lio/sentry/android/core/hang/HangRecorder$ExecutorFactory;
 	public static final field DEFAULT_MAX_RECORDING_TIME_MS J
+	public static final field DEFAULT_PERSIST_AFTER_MS J
 	public static final field DEFAULT_POLLING_INTERVAL_MS J
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJLio/sentry/android/core/hang/HangRecorder$ExecutorFactory;Lio/sentry/android/core/hang/HangRecorder$SignalFactory;Ljava/util/List;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJJILio/sentry/android/core/hang/HangRecorder$ExecutorFactory;Lio/sentry/android/core/hang/HangRecorder$SignalFactory;Ljava/util/List;)V
 	public fun addTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
 	public fun close ()V
 	public fun onBackground ()V
@@ -849,6 +848,10 @@ public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/
 	public fun removeTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
 	public fun subscribe (Lio/sentry/android/core/hang/HangRecorderListener;)V
 	public fun unsubscribe (Lio/sentry/android/core/hang/HangRecorderListener;)V
+}
+
+public final class io/sentry/android/core/hang/HangRecorder$CollectorSetup {
+	public fun <init> (Lio/sentry/android/core/hang/HangDataCollector;Lio/sentry/android/core/hang/HangSampleStore;)V
 }
 
 public abstract interface class io/sentry/android/core/hang/HangRecorder$ExecutorFactory {
@@ -861,6 +864,24 @@ public abstract interface class io/sentry/android/core/hang/HangRecorder$SignalF
 
 public abstract interface class io/sentry/android/core/hang/HangRecorderListener {
 	public abstract fun onHangRecorded (Lio/sentry/android/core/hang/HangRecord;)V
+	public abstract fun onHangStarted (Lio/sentry/android/core/hang/HangInterval;)Lio/sentry/android/core/hang/HangRecordingRequest;
+}
+
+public final class io/sentry/android/core/hang/HangRecordingRequest {
+	public static final field DEFAULT Lio/sentry/android/core/hang/HangRecordingRequest;
+	public fun shouldPersist ()Z
+}
+
+public final class io/sentry/android/core/hang/HangRecordingRequest$Builder {
+	public fun <init> ()V
+	public fun build ()Lio/sentry/android/core/hang/HangRecordingRequest;
+	public fun setPersist (Z)Lio/sentry/android/core/hang/HangRecordingRequest$Builder;
+}
+
+public abstract interface class io/sentry/android/core/hang/HangSampleStore : java/io/Closeable {
+	public abstract fun add (Ljava/lang/Object;)V
+	public abstract fun clear ()V
+	public abstract fun close ()V
 }
 
 public abstract interface class io/sentry/android/core/hang/HangSignal : java/io/Closeable {
