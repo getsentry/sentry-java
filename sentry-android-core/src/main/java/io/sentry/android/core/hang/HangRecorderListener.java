@@ -13,6 +13,9 @@ public interface HangRecorderListener {
   @NotNull
   HangRecordingRequest onHangStarted(@NotNull HangInterval interval);
 
-  /** Called on the SDK executor. */
+  /**
+   * Called on the SDK executor, only if the request of this subscriber for the interval {@link
+   * HangRecordingRequest#shouldRecord() records}.
+   */
   void onHangRecorded(@NotNull HangRecord record);
 }
