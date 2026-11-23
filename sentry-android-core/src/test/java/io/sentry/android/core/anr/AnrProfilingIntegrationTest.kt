@@ -8,10 +8,8 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.android.core.hang.HangInterval
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangRecorderListener
-import io.sentry.android.core.hang.HangRecordingRequest
 import io.sentry.util.Random
 import io.sentry.util.SentryRandom
 import kotlin.test.BeforeTest
@@ -84,7 +82,7 @@ class AnrProfilingIntegrationTest {
   fun `sampled hang asks the recorder to persist`() {
     val listener = subscribed()
 
-    assertThat(listener.onHangStarted(HangInterval(0)).shouldPersist()).isTrue()
+    assertThat(listener.onHangStarted()!!.shouldPersist()).isTrue()
   }
 
   @Test
@@ -92,7 +90,7 @@ class AnrProfilingIntegrationTest {
     options.anrProfilingSampleRate = Double.MIN_VALUE
     val listener = subscribed()
 
-    assertThat(listener.onHangStarted(HangInterval(0))).isSameInstanceAs(HangRecordingRequest.NONE)
+    assertThat(listener.onHangStarted()).isNull()
   }
 
   @Test
@@ -103,20 +101,18 @@ class AnrProfilingIntegrationTest {
     val listener = subscribed()
     SentryRandom.current().setSeed(SEED, 0)
 
-    assertThat(listener.onHangStarted(HangInterval(0)).shouldPersist()).isTrue()
-    assertThat(listener.onHangStarted(HangInterval(1_000)))
-      .isSameInstanceAs(HangRecordingRequest.NONE)
+    assertThat(listener.onHangStarted()!!.shouldPersist()).isTrue()
+    assertThat(listener.onHangStarted()).isNull()
   }
 
   @Test
   fun `sample rate is read again at each hang`() {
     val listener = subscribed()
-    assertThat(listener.onHangStarted(HangInterval(0)).shouldPersist()).isTrue()
+    assertThat(listener.onHangStarted()!!.shouldPersist()).isTrue()
 
     options.anrProfilingSampleRate = Double.MIN_VALUE
 
-    assertThat(listener.onHangStarted(HangInterval(1_000)))
-      .isSameInstanceAs(HangRecordingRequest.NONE)
+    assertThat(listener.onHangStarted()).isNull()
   }
 
   @Test
@@ -125,15 +121,14 @@ class AnrProfilingIntegrationTest {
 
     options.anrProfilingSampleRate = null
 
-    assertThat(listener.onHangStarted(HangInterval(0))).isSameInstanceAs(HangRecordingRequest.NONE)
+    assertThat(listener.onHangStarted()).isNull()
   }
 
   @Test
-  fun `sampled hangs share one request`() {
+  fun `sampled hang asks for a record`() {
     val listener = subscribed()
 
-    assertThat(listener.onHangStarted(HangInterval(0)))
-      .isSameInstanceAs(listener.onHangStarted(HangInterval(1_000)))
+    assertThat(listener.onHangStarted()!!.shouldRecord()).isTrue()
   }
 
   @Test

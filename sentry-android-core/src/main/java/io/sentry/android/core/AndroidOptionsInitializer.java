@@ -555,7 +555,6 @@ final class AndroidOptionsInitializer {
             epochClock,
             HangRecorder.DEFAULT_POLLING_INTERVAL_MS,
             HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS,
-            HangRecorder.DEFAULT_PERSIST_AFTER_MS,
             AnrProfileManager.MAX_NUM_STACKTRACES,
             HangRecorder.DEFAULT_EXECUTOR_FACTORY,
             metronome ->

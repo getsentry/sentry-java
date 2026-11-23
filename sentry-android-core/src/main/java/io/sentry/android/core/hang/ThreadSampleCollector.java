@@ -7,7 +7,7 @@ import io.sentry.time.EpochClock;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/** Samples the stack and the state of a thread on each tick of a hang interval. */
+/** Samples the stack and the state of a thread on each sampling tick of a recorded hang. */
 @ApiStatus.Internal
 public final class ThreadSampleCollector implements HangDataCollector<AnrStackTrace> {
 
@@ -20,11 +20,8 @@ public final class ThreadSampleCollector implements HangDataCollector<AnrStackTr
   }
 
   @Override
-  public @NotNull AnrStackTrace sample(final @NotNull HangInterval interval) {
+  public @NotNull AnrStackTrace sample() {
     final long epochMs = NANOSECONDS.toMillis(epochClock.now().epochNanos());
     return new AnrStackTrace(epochMs, thread.getStackTrace(), thread.getState());
   }
-
-  @Override
-  public void close() {}
 }
