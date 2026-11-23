@@ -120,7 +120,7 @@ class ChunkMeasurementCollectorTest {
           PerformanceCollectionData(TimeUnit.HOURS.toNanos(5), chunkStart + 2_000_000).apply {
             usedHeapMemory = 2
           },
-        )
+        ),
       )
 
     val measurements = collector.stop()

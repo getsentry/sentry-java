@@ -307,8 +307,7 @@ class AndroidProfilerTest {
   @Test
   fun `performance measurements are placed by their tick, not their wall timestamp`() {
     val profiler = fixture.getSut()
-    profiler.start()
-    val profileStartNanos = profiler.getProperty<Long>("profileStartNanos")
+    val profileStartNanos = profiler.start()!!.startNanos
     // Wall timestamps that disagree with the ticks, as after a clock step during the profile.
     val samples =
       listOf(
