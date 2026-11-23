@@ -91,6 +91,8 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   // own activity rather than from the process start.
   private volatile boolean isWarmRelaunchPending = false;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
+  // Main thread only. Set in onActivityPreCreated, consumed by the onActivityCreated that follows.
+  private long activityPreCreatedUptimeMs = -1;
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartListenerInvoked = new AtomicBoolean(false);
@@ -419,6 +421,7 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     isWarmRelaunchPending = false;
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
+    activityPreCreatedUptimeMs = -1;
     firstIdle = -1;
     headlessAppStartCheckPending.set(false);
     headlessAppStartListenerInvoked.set(false);
@@ -665,8 +668,19 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   @Override
+  public void onActivityPreCreated(
+      @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    // ActivityLifecycleIntegration starts the activity.load span here, so a warm app start must not
+    // start any later than that. Classification stays in onActivityCreated, which also runs when
+    // the SDK is initialized inside Activity.onCreate, after this callback was dispatched.
+    activityPreCreatedUptimeMs = SystemClock.uptimeMillis();
+  }
+
+  @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    final long activityCreatedUptimeMillis = SystemClock.uptimeMillis();
+    final long activityCreatedUptimeMillis =
+        activityPreCreatedUptimeMs != -1 ? activityPreCreatedUptimeMs : SystemClock.uptimeMillis();
+    activityPreCreatedUptimeMs = -1;
     CurrentActivityHolder.getInstance().setActivity(activity);
 
     // the first activity determines the app start type
