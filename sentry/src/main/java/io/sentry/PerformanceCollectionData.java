@@ -18,9 +18,17 @@ public final class PerformanceCollectionData {
   private long usedNativeMemory;
   private boolean hasUsedNativeMemory;
   private final long nanoTimestamp;
+  private final long tickNanos;
 
-  public PerformanceCollectionData(final long nanoTimestamp) {
+  /**
+   * @param nanoTimestamp when the sample was taken, in epoch nanoseconds
+   * @param tickNanos when the sample was taken, on {@link SentryOptions#getMonotonicTicker()}.
+   *     Profilers place samples on their timeline with it, because the wall clock can step while a
+   *     profile runs.
+   */
+  public PerformanceCollectionData(final long nanoTimestamp, final long tickNanos) {
     this.nanoTimestamp = nanoTimestamp;
+    this.tickNanos = tickNanos;
   }
 
   /** Set the cpu usage percentage. */
@@ -68,5 +76,9 @@ public final class PerformanceCollectionData {
 
   public long getNanoTimestamp() {
     return nanoTimestamp;
+  }
+
+  public long getTickNanos() {
+    return tickNanos;
   }
 }

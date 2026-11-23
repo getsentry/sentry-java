@@ -14,6 +14,7 @@
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 - Android app start: Reopening the app within a minute of process start is now reported as a warm start timed from the reopened screen, instead of reusing the cold start's timing. In standalone app start mode, this no longer sends the cold start a second time, as a warm start ([#6687](https://github.com/getsentry/sentry-java/pull/6687))
+- Android: Keep CPU and memory samples aligned with the profile when the device clock changes during profiling ([#6591](https://github.com/getsentry/sentry-java/pull/6591))
 
 ## 8.65.0
 

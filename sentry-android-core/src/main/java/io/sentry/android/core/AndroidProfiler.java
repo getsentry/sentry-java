@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -303,13 +302,6 @@ public final class AndroidProfiler {
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
 
-    // This difference is required, since the PerformanceCollectionData timestamps are expressed in
-    // terms of System.currentTimeMillis() and measurements timestamps require the nanoseconds since
-    // the beginning, expressed with SystemClock.elapsedRealtimeNanos()
-    long timestampDiff =
-        SystemClock.elapsedRealtimeNanos()
-            - profileStartNanos
-            - TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
     if (performanceCollectionData != null) {
       final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
           new ArrayDeque<>(performanceCollectionData.size());
@@ -321,7 +313,9 @@ public final class AndroidProfiler {
       synchronized (performanceCollectionData) {
         for (final @NotNull PerformanceCollectionData data : performanceCollectionData) {
           final long nanoTimestamp = data.getNanoTimestamp();
-          final long relativeStartNs = nanoTimestamp + timestampDiff;
+          // The tick comes from options.getMonotonicTicker(), which on Android is
+          // SystemClock.elapsedRealtimeNanos(), the clock profileStartNanos was read from.
+          final long relativeStartNs = data.getTickNanos() - profileStartNanos;
 
           if (data.hasCpuUsagePercentage()) {
             cpuUsageMeasurements.add(

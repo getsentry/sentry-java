@@ -472,13 +472,13 @@ class AndroidTransactionProfilerTest {
   fun `profiler includes performance measurements when passed on transaction finish`() {
     val profiler = fixture.getSut(context)
     val performanceCollectionData = ArrayList<PerformanceCollectionData>()
-    var singleData = PerformanceCollectionData(10)
+    var singleData = PerformanceCollectionData(10, 10)
     singleData.usedHeapMemory = 2
     singleData.usedNativeMemory = 3
     singleData.cpuUsagePercentage = 1.4
     performanceCollectionData.add(singleData)
 
-    singleData = PerformanceCollectionData(20)
+    singleData = PerformanceCollectionData(20, 20)
     singleData.usedHeapMemory = 3
     singleData.usedNativeMemory = 4
     performanceCollectionData.add(singleData)
