@@ -5,6 +5,12 @@
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
 > - The Android `minSdk` will be raised from 21 to 24. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
 
+## Unreleased
+
+### Fixes
+
+- Android profiling: Uploading a Perfetto profile chunk now keeps the trace in memory once instead of up to three times, lowering peak memory use for traces up to 50 MB ([#6743](https://github.com/getsentry/sentry-java/pull/6743))
+
 ## 8.65.1
 
 ### Fixes
