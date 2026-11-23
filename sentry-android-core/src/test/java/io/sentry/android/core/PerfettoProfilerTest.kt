@@ -5,6 +5,7 @@ import android.os.ProfilingManager
 import android.os.ProfilingResult
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
@@ -25,7 +26,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -134,7 +134,7 @@ class PerfettoProfilerTest {
       }
     val thrown =
       assertFailsWith<OutOfMemoryError> { PerfettoProfiler(context, mockLogger, executor) }
-    assertSame(error, thrown)
+    assertThat(thrown).isSameInstanceAs(error)
   }
 
   private fun assertStartFailsWhenGetSystemServiceThrows(error: Throwable) {
@@ -143,7 +143,7 @@ class PerfettoProfilerTest {
         whenever(it.getSystemService(Context.PROFILING_SERVICE)).thenThrow(error)
       }
     val profiler = PerfettoProfiler(context, mockLogger, executor)
-    assertNull(profiler.startSession())
+    assertThat(profiler.startSession()).isNull()
     verify(mockLogger).log(eq(SentryLevel.WARNING), any<String>(), eq(error))
   }
 
