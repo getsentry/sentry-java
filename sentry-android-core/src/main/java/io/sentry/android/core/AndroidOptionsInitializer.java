@@ -32,11 +32,12 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOpenTelemetryMode;
+import io.sentry.android.core.anr.AnrProfileManager;
 import io.sentry.android.core.anr.AnrProfileRotationHelper;
+import io.sentry.android.core.anr.AnrProfileStore;
 import io.sentry.android.core.anr.AnrProfilingIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.hang.HandlerThreadPoster;
-import io.sentry.android.core.hang.HangDataCollector;
 import io.sentry.android.core.hang.HangRecorder;
 import io.sentry.android.core.hang.RuntimeStatsCollector;
 import io.sentry.android.core.hang.RuntimeStatsSource;
@@ -550,8 +551,11 @@ final class AndroidOptionsInitializer {
     // options.getMonotonicTicker() counts device sleep, which would read as a hang.
     final @NotNull MonotonicTicker ticker = JavaMonotonicTicker.getInstance();
     final @NotNull EpochClock epochClock = options.getEpochClock();
-    final @NotNull List<HangDataCollector> collectors = new ArrayList<>();
-    collectors.add(new ThreadSampleCollector(options, epochClock, ticker, mainLooper.getThread()));
+    final @NotNull List<HangRecorder.CollectorSetup<?>> collectors = new ArrayList<>();
+    collectors.add(
+        new HangRecorder.CollectorSetup<>(
+            new ThreadSampleCollector(epochClock, mainLooper.getThread()),
+            new AnrProfileStore(options)));
     final @Nullable RuntimeStatsSource runtimeStatsSource =
         createRuntimeStatsSource(buildInfoProvider, options.getLogger());
     if (runtimeStatsSource != null) {
@@ -565,6 +569,8 @@ final class AndroidOptionsInitializer {
             epochClock,
             HangRecorder.DEFAULT_POLLING_INTERVAL_MS,
             HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS,
+            HangRecorder.DEFAULT_PERSIST_AFTER_MS,
+            AnrProfileManager.MAX_NUM_STACKTRACES,
             HangRecorder.DEFAULT_EXECUTOR_FACTORY,
             metronome ->
                 Collections.singletonList(

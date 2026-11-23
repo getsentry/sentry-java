@@ -23,7 +23,7 @@ public final class AnrProfileManager implements AutoCloseable {
 
   /**
    * One sample per {@link HangRecorder#DEFAULT_POLLING_INTERVAL_MS} tick for {@link
-   * HangRecorder#DEFAULT_MAX_RECORDING_TIME_MS}. The ThreadSampleCollector stops at this size,
+   * HangRecorder#DEFAULT_MAX_RECORDING_TIME_MS}. The hang recorder stops sampling at this size,
    * because a full file drops its oldest entry.
    */
   public static final int MAX_NUM_STACKTRACES = 120;
