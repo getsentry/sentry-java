@@ -626,15 +626,19 @@ class HangRecorderTest {
   }
 
   @Test
-  fun `record carries the runtime stats of a runtime stats collector`() {
+  fun `record carries the runtime stats of each tick`() {
     var gcCount = 10L
-    val source = RuntimeStatsSource {
-      RuntimeStatsSnapshot().also {
-        it.gcCount = gcCount
-        it.totalMemory = 50
-      }
-    }
-    createRecorder(collectors = listOf(CollectorSetup(RuntimeStatsCollector(source), null)))
+    val source = RuntimeStatsSource { RuntimeStatsSnapshot().also { it.gcCount = gcCount } }
+    createRecorder(
+      collectors =
+        listOf(
+          CollectorSetup(
+            RuntimeStatsCollector(source),
+            { snapshot, record -> record.addRuntimeStats(snapshot) },
+            null,
+          ),
+        ),
+    )
     startInForeground()
     openIntervalInTick(300)
     gcCount = 13
@@ -643,13 +647,7 @@ class HangRecorderTest {
     signal.report(HangSignal.State.IDLE, 0)
     sdkExecutor.runAll()
 
-    assertThat(records.single().runtimeStats)
-      .containsAtLeast(
-        RuntimeStatsCollector.KEY_TOTAL_MEMORY,
-        50L,
-        RuntimeStatsCollector.KEY_GC_COUNT_DELTA,
-        3L,
-      )
+    assertThat(records.single().runtimeStats.map { it.gcCount }).containsExactly(10L, 13L).inOrder()
   }
 
   @Test

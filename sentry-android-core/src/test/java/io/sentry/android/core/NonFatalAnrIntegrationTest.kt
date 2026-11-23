@@ -16,7 +16,7 @@ import io.sentry.android.core.hang.HangRecord
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangRecorderListener
 import io.sentry.android.core.hang.HangRecordingRequest
-import io.sentry.android.core.hang.RuntimeStatsCollector
+import io.sentry.android.core.hang.RuntimeStatsSnapshot
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.hints.AbnormalExit
 import io.sentry.protocol.SentryId
@@ -77,11 +77,13 @@ class NonFatalAnrIntegrationTest {
         AnrStackTrace(1_100, systemStack, Thread.State.RUNNABLE),
         AnrStackTrace(1_200, systemStack, Thread.State.BLOCKED),
       ),
-    runtimeStats: Map<String, Any>? = null,
+    runtimeStats: List<RuntimeStatsSnapshot> = emptyList(),
   ) =
     HangRecord.Builder(durationMs, 1_000)
-      .apply { samples.forEach { addStackTrace(it) } }
-      .setRuntimeStats(runtimeStats)
+      .apply {
+        samples.forEach { addStackTrace(it) }
+        runtimeStats.forEach { addRuntimeStats(it) }
+      }
       .build()
 
   private fun subscribed(): HangRecorderListener {
@@ -400,22 +402,26 @@ class NonFatalAnrIntegrationTest {
     assertThat(context["sample_count"]).isEqualTo(2)
   }
 
+  private fun snapshot(gcCount: Long, gcTimeMs: Double, blocking: Long, blockingTimeMs: Double) =
+    RuntimeStatsSnapshot().also {
+      it.gcCount = gcCount
+      it.gcTimeMs = gcTimeMs
+      it.blockingGcCount = blocking
+      it.blockingGcTimeMs = blockingTimeMs
+    }
+
   private val runtimeStats =
-    mapOf<String, Any>(
-      RuntimeStatsCollector.KEY_GC_COUNT to 14L,
-      RuntimeStatsCollector.KEY_GC_TIME_MS to 130.5,
-      RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT to 3L,
-      RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS to 45.0,
-      RuntimeStatsCollector.KEY_PRE_OOME_GC_COUNT to 1L,
-      RuntimeStatsCollector.KEY_GC_WAITING_TIME_MS to 2.5,
-      RuntimeStatsCollector.KEY_FREE_MEMORY to 10L,
-      RuntimeStatsCollector.KEY_FREE_MEMORY_UNTIL_OOME to 60L,
-      RuntimeStatsCollector.KEY_TOTAL_MEMORY to 50L,
-      RuntimeStatsCollector.KEY_MAX_MEMORY to 100L,
-      RuntimeStatsCollector.KEY_GC_COUNT_DELTA to 4L,
-      RuntimeStatsCollector.KEY_GC_TIME_MS_DELTA to 30.5,
-      RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT_DELTA to 1L,
-      RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS_DELTA to 25.0,
+    listOf(
+      snapshot(10, 100.0, 2, 20.0),
+      snapshot(12, 110.0, 2, 30.0),
+      snapshot(14, 130.5, 3, 45.0).also {
+        it.preOomeGcCount = 1
+        it.gcWaitingTimeMs = 2.5
+        it.freeMemory = 10
+        it.freeMemoryUntilOome = 60
+        it.totalMemory = 50
+        it.maxMemory = 100
+      },
     )
 
   @Test
@@ -449,6 +455,34 @@ class NonFatalAnrIntegrationTest {
     assertThat(context["gc_time_ms_delta"]).isEqualTo(30.5)
     assertThat(context["blocking_gc_count_delta"]).isEqualTo(1L)
     assertThat(context["blocking_gc_time_ms_delta"]).isEqualTo(25.0)
+  }
+
+  @Test
+  fun `a gc delta is left out when the first or the last value is missing`() {
+    val listener = subscribed()
+    val first = RuntimeStatsSnapshot().also { it.gcTimeMs = 100.0 }
+    val last =
+      RuntimeStatsSnapshot().also {
+        it.gcCount = 14
+        it.gcTimeMs = 130.0
+      }
+
+    listener.onHangRecorded(record(runtimeStats = listOf(first, last)))
+
+    val context = capturedEvent().first.contexts["non_fatal_anr"] as Map<*, *>
+    assertThat(context).doesNotContainKey("gc_count_delta")
+    assertThat(context["gc_time_ms_delta"]).isEqualTo(30.0)
+  }
+
+  @Test
+  fun `one runtime stats snapshot gives zero gc deltas`() {
+    val listener = subscribed()
+
+    listener.onHangRecorded(record(runtimeStats = listOf(snapshot(10, 100.0, 2, 20.0))))
+
+    val context = capturedEvent().first.contexts["non_fatal_anr"] as Map<*, *>
+    assertThat(context["gc_count_delta"]).isEqualTo(0L)
+    assertThat(context["blocking_gc_time_ms_delta"]).isEqualTo(0.0)
   }
 
   @Test

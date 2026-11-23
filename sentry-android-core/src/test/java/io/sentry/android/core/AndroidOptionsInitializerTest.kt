@@ -32,6 +32,7 @@ import io.sentry.android.core.hang.HangRecord
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangSignal
 import io.sentry.android.core.hang.RuntimeStatsCollector
+import io.sentry.android.core.hang.RuntimeStatsSnapshot
 import io.sentry.android.core.hang.ThreadHangSignal
 import io.sentry.android.core.hang.ThreadSampleCollector
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
@@ -746,6 +747,11 @@ class AndroidOptionsInitializerTest {
       .containsExactly(ThreadSampleCollector::class.java, RuntimeStatsCollector::class.java)
       .inOrder()
     assertThat(setups[1].getProperty<Any?>("store")).isNull()
+    val writer = setups[1].getProperty<HangRecorder.RecordWriter<RuntimeStatsSnapshot>>("writer")
+    val snapshot = RuntimeStatsSnapshot()
+    val builder = HangRecord.Builder(0, 0)
+    writer.write(snapshot, builder)
+    assertThat(builder.build().runtimeStats).containsExactly(snapshot)
   }
 
   @Test

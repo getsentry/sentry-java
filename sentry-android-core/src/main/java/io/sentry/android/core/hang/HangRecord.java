@@ -4,10 +4,8 @@ import io.sentry.android.core.anr.AnrStackTrace;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /** The collected data of one hang interval that ended with a record. */
 @ApiStatus.Internal
@@ -16,14 +14,14 @@ public final class HangRecord {
   private final long durationMs;
   private final long startTimestampMs;
   private final @NotNull List<AnrStackTrace> stackTraces;
-  private final @Nullable Map<String, Object> runtimeStats;
+  private final @NotNull List<RuntimeStatsSnapshot> runtimeStats;
   private final boolean endedAtMaxRecordingTime;
 
   private HangRecord(final @NotNull Builder builder) {
     this.durationMs = builder.durationMs;
     this.startTimestampMs = builder.startTimestampMs;
     this.stackTraces = Collections.unmodifiableList(new ArrayList<>(builder.stackTraces));
-    this.runtimeStats = builder.runtimeStats;
+    this.runtimeStats = Collections.unmodifiableList(new ArrayList<>(builder.runtimeStats));
     this.endedAtMaxRecordingTime = builder.endedAtMaxRecordingTime;
   }
 
@@ -41,8 +39,8 @@ public final class HangRecord {
     return stackTraces;
   }
 
-  /** Null if no collector recorded runtime stats for this interval. */
-  public @Nullable Map<String, Object> getRuntimeStats() {
+  /** The runtime counters, in the order they were read. Empty if no collector read them. */
+  public @NotNull List<RuntimeStatsSnapshot> getRuntimeStats() {
     return runtimeStats;
   }
 
@@ -58,7 +56,7 @@ public final class HangRecord {
     private final long durationMs;
     private final long startTimestampMs;
     private final @NotNull List<AnrStackTrace> stackTraces = new ArrayList<>();
-    private @Nullable Map<String, Object> runtimeStats;
+    private final @NotNull List<RuntimeStatsSnapshot> runtimeStats = new ArrayList<>();
     private boolean endedAtMaxRecordingTime;
 
     public Builder(final long durationMs, final long startTimestampMs) {
@@ -71,8 +69,8 @@ public final class HangRecord {
       return this;
     }
 
-    public @NotNull Builder setRuntimeStats(final @Nullable Map<String, Object> runtimeStats) {
-      this.runtimeStats = runtimeStats;
+    public @NotNull Builder addRuntimeStats(final @NotNull RuntimeStatsSnapshot runtimeStats) {
+      this.runtimeStats.add(runtimeStats);
       return this;
     }
 

@@ -24,7 +24,7 @@ import io.sentry.android.core.hang.HangRecord;
 import io.sentry.android.core.hang.HangRecorder;
 import io.sentry.android.core.hang.HangRecorderListener;
 import io.sentry.android.core.hang.HangRecordingRequest;
-import io.sentry.android.core.hang.RuntimeStatsCollector;
+import io.sentry.android.core.hang.RuntimeStatsSnapshot;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.protocol.ArtContext;
 import io.sentry.protocol.Mechanism;
@@ -192,13 +192,16 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       final @NotNull Map<String, Object> context = new HashMap<>();
       context.put("duration_ms", record.getDurationMs());
       context.put("sample_count", samples.size());
-      final @Nullable Map<String, Object> runtimeStats = record.getRuntimeStats();
-      if (runtimeStats != null) {
-        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_GC_COUNT_DELTA);
-        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_GC_TIME_MS_DELTA);
-        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT_DELTA);
-        putDelta(context, runtimeStats, RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS_DELTA);
-        event.getContexts().setArt(toArtContext(runtimeStats));
+      final @NotNull List<RuntimeStatsSnapshot> runtimeStats = record.getRuntimeStats();
+      if (!runtimeStats.isEmpty()) {
+        final @NotNull RuntimeStatsSnapshot first = runtimeStats.get(0);
+        final @NotNull RuntimeStatsSnapshot last = runtimeStats.get(runtimeStats.size() - 1);
+        putDelta(context, "gc_count_delta", first.gcCount, last.gcCount);
+        putDelta(context, "gc_time_ms_delta", first.gcTimeMs, last.gcTimeMs);
+        putDelta(context, "blocking_gc_count_delta", first.blockingGcCount, last.blockingGcCount);
+        putDelta(
+            context, "blocking_gc_time_ms_delta", first.blockingGcTimeMs, last.blockingGcTimeMs);
+        event.getContexts().setArt(toArtContext(last));
       }
       event.getContexts().put("non_fatal_anr", context);
 
@@ -215,36 +218,37 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
 
     private static void putDelta(
         final @NotNull Map<String, Object> context,
-        final @NotNull Map<String, Object> runtimeStats,
-        final @NotNull String key) {
-      final @Nullable Object value = runtimeStats.get(key);
-      if (value != null) {
-        context.put(key, value);
+        final @NotNull String key,
+        final @Nullable Long first,
+        final @Nullable Long last) {
+      if (first != null && last != null) {
+        context.put(key, last - first);
       }
     }
 
-    private static @NotNull ArtContext toArtContext(final @NotNull Map<String, Object> stats) {
+    private static void putDelta(
+        final @NotNull Map<String, Object> context,
+        final @NotNull String key,
+        final @Nullable Double first,
+        final @Nullable Double last) {
+      if (first != null && last != null) {
+        context.put(key, last - first);
+      }
+    }
+
+    private static @NotNull ArtContext toArtContext(final @NotNull RuntimeStatsSnapshot stats) {
       final @NotNull ArtContext art = new ArtContext();
-      art.setGcTotalCount(asLong(stats.get(RuntimeStatsCollector.KEY_GC_COUNT)));
-      art.setGcTotalTime(asDouble(stats.get(RuntimeStatsCollector.KEY_GC_TIME_MS)));
-      art.setGcBlockingCount(asLong(stats.get(RuntimeStatsCollector.KEY_BLOCKING_GC_COUNT)));
-      art.setGcBlockingTime(asDouble(stats.get(RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS)));
-      art.setGcPreOomeCount(asLong(stats.get(RuntimeStatsCollector.KEY_PRE_OOME_GC_COUNT)));
-      art.setGcWaitingTime(asDouble(stats.get(RuntimeStatsCollector.KEY_GC_WAITING_TIME_MS)));
-      art.setFreeMemory(asLong(stats.get(RuntimeStatsCollector.KEY_FREE_MEMORY)));
-      art.setFreeMemoryUntilOome(
-          asLong(stats.get(RuntimeStatsCollector.KEY_FREE_MEMORY_UNTIL_OOME)));
-      art.setTotalMemory(asLong(stats.get(RuntimeStatsCollector.KEY_TOTAL_MEMORY)));
-      art.setMaxMemory(asLong(stats.get(RuntimeStatsCollector.KEY_MAX_MEMORY)));
+      art.setGcTotalCount(stats.gcCount);
+      art.setGcTotalTime(stats.gcTimeMs);
+      art.setGcBlockingCount(stats.blockingGcCount);
+      art.setGcBlockingTime(stats.blockingGcTimeMs);
+      art.setGcPreOomeCount(stats.preOomeGcCount);
+      art.setGcWaitingTime(stats.gcWaitingTimeMs);
+      art.setFreeMemory(stats.freeMemory);
+      art.setFreeMemoryUntilOome(stats.freeMemoryUntilOome);
+      art.setTotalMemory(stats.totalMemory);
+      art.setMaxMemory(stats.maxMemory);
       return art;
-    }
-
-    private static @Nullable Long asLong(final @Nullable Object value) {
-      return value instanceof Number ? ((Number) value).longValue() : null;
-    }
-
-    private static @Nullable Double asDouble(final @Nullable Object value) {
-      return value instanceof Number ? ((Number) value).doubleValue() : null;
     }
 
     private static @NotNull SentryThread mainThread(
