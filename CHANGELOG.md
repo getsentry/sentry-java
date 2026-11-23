@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Android: A crash long after `Sentry.init` is no longer marked as a startup crash when the device slept in between, because the time since init now counts deep sleep ([#6738](https://github.com/getsentry/sentry-java/pull/6738))
+
 ### Dependencies
 
 - Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
