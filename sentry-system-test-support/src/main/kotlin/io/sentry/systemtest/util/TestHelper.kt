@@ -380,11 +380,21 @@ class TestHelper(backendUrl: String) {
     transaction: SentryTransaction,
     op: String,
     description: String,
+    data: Map<String, Any?> = emptyMap(),
   ): Boolean {
     val span =
       transaction.spans.firstOrNull { span -> span.op == op && span.description == description }
     if (span == null) {
       println("Unable to find span with op $op and description $description in transaction:")
+      logObject(transaction)
+      return false
+    }
+
+    val mismatches = data.filter { (key, value) -> span.data?.get(key) != value }
+    if (mismatches.isNotEmpty()) {
+      println(
+        "Span with op $op and description $description has data ${span.data}, expected $mismatches in transaction:"
+      )
       logObject(transaction)
       return false
     }

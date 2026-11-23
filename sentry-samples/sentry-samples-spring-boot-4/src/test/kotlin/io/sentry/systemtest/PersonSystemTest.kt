@@ -83,6 +83,7 @@ class PersonSystemTest {
           transaction,
           "db.query",
           "insert into person (firstName, lastName) values (?, ?)",
+          mapOf("db.query.summary" to "insert person", "db.system.name" to "hsqldb"),
         )
     }
   }
