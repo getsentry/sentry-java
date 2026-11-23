@@ -7,7 +7,9 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.AppStateProvider
 import io.sentry.android.core.anr.AnrStackTrace
+import io.sentry.android.core.hang.HangRecorder.CollectorSetup
 import io.sentry.android.core.hang.HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS
+import io.sentry.android.core.hang.HangRecorder.DEFAULT_PERSIST_AFTER_MS
 import io.sentry.android.core.hang.HangRecorder.DEFAULT_POLLING_INTERVAL_MS
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
@@ -16,6 +18,7 @@ import io.sentry.time.EpochClock
 import io.sentry.time.JavaMonotonicTicker
 import io.sentry.time.TestMonotonicTicker
 import io.sentry.time.Timestamp
+import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
@@ -42,8 +45,10 @@ class HangRecorderTest {
   private lateinit var signal: FakeSignal
   private val signals = mutableListOf<FakeSignal>()
   private lateinit var collector: FakeCollector
+  private lateinit var store: FakeStore
   private val records = mutableListOf<HangRecord>()
-  private val listener = HangRecorderListener { records.add(it) }
+  private val listener = FakeListener(records)
+  private val persist = HangRecordingRequest.Builder().setPersist(true).build()
 
   private val executor: FakeScheduledExecutorService
     get() = executors.last()
@@ -60,10 +65,15 @@ class HangRecorderTest {
     options.executorService = sdkExecutor
     appStateProvider = FakeAppStateProvider()
     collector = FakeCollector()
+    store = FakeStore()
     createRecorder()
   }
 
-  private fun createRecorder(signalCount: Int = 1) {
+  private fun createRecorder(
+    signalCount: Int = 1,
+    collectors: List<CollectorSetup<*>> = listOf(CollectorSetup(collector, store)),
+    maxSamples: Int = MAX_SAMPLES,
+  ) {
     recorder =
       HangRecorder(
         options,
@@ -72,13 +82,15 @@ class HangRecorderTest {
         epochClock,
         DEFAULT_POLLING_INTERVAL_MS,
         DEFAULT_MAX_RECORDING_TIME_MS,
+        DEFAULT_PERSIST_AFTER_MS,
+        maxSamples,
         { FakeScheduledExecutorService().also { executors.add(it) } },
         { metronome ->
           signals.clear()
           repeat(signalCount) { signals.add(FakeSignal(metronome)) }
           signals
         },
-        listOf(collector),
+        collectors,
       )
     signal = signals.first()
   }
@@ -102,6 +114,13 @@ class HangRecorderTest {
     executor.runTick()
   }
 
+  private fun tickEvery66Ms(count: Int) {
+    repeat(count) {
+      advance(DEFAULT_POLLING_INTERVAL_MS)
+      executor.runTick()
+    }
+  }
+
   private fun tickUntilRecorded() {
     var ticks = 0
     while (
@@ -116,13 +135,42 @@ class HangRecorderTest {
   }
 
   @Test
-  fun `suspicious opens interval and starts collectors`() {
+  fun `suspicious opens interval, asks the subscriber and samples in the same tick`() {
     startInForeground()
     val sinceMs = nowMs() - 300
 
     openIntervalInTick(300)
 
-    assertThat(collector.calls).containsExactly("start $sinceMs", "sample $sinceMs").inOrder()
+    assertThat(listener.started).containsExactly(sinceMs)
+    assertThat(collector.calls).containsExactly("sample $sinceMs")
+  }
+
+  @Test
+  fun `each subscriber is asked once at interval open`() {
+    val other = FakeListener()
+    recorder.subscribe(other)
+    startInForeground()
+    val sinceMs = nowMs() - 300
+
+    openIntervalInTick(300)
+    executor.runTick()
+
+    assertThat(listener.started).containsExactly(sinceMs)
+    assertThat(other.started).containsExactly(sinceMs)
+  }
+
+  @Test
+  fun `subscriber added during an open interval is not asked`() {
+    startInForeground()
+    openIntervalInTick(300)
+    val late = FakeListener(request = persist)
+
+    recorder.subscribe(late)
+    executor.runPending()
+    tickEvery66Ms(15)
+
+    assertThat(late.started).isEmpty()
+    assertThat(store.calls).isEmpty()
   }
 
   @Test
@@ -144,7 +192,7 @@ class HangRecorderTest {
     executor.runTick()
 
     assertThat(calls)
-      .containsExactly("tick", "start $sinceMs", "sample $sinceMs", "tick", "sample $sinceMs")
+      .containsExactly("tick", "sample $sinceMs", "tick", "sample $sinceMs")
       .inOrder()
   }
 
@@ -155,19 +203,267 @@ class HangRecorderTest {
     val timestampAtOpenMs = unixTimeMs
     openIntervalInTick(300)
     val samples = listOf(AnrStackTrace(unixTimeMs, arrayOf()))
-    collector.onRecordingStoppedAction = { it.setSamples(samples) }
+    collector.onRecordingStoppedAction = { _, out -> out.setSamples(samples) }
     advance(1_000)
     val idleSinceMs = nowMs() - 20
 
     signal.report(HangSignal.State.IDLE, 20)
 
-    assertThat(collector.calls.last()).isEqualTo("stop $suspiciousSinceMs")
+    assertThat(collector.calls.last()).isEqualTo("stop [s1]")
     assertThat(records).isEmpty()
     sdkExecutor.runAll()
     val record = records.single()
     assertThat(record.durationMs).isEqualTo(idleSinceMs - suspiciousSinceMs)
     assertThat(record.startTimestampMs).isEqualTo(timestampAtOpenMs - 300)
     assertThat(record.samples).isSameInstanceAs(samples)
+  }
+
+  @Test
+  fun `onRecordingStopped gets the non-null values of the interval in order`() {
+    startInForeground()
+    openIntervalInTick(300)
+    collector.returnNull = true
+    executor.runTick()
+    collector.returnNull = false
+    executor.runTick()
+
+    signal.report(HangSignal.State.IDLE, 0)
+
+    assertThat(collector.stopped.single()).containsExactly("s1", "s3").inOrder()
+  }
+
+  @Test
+  fun `a new interval starts with an empty buffer`() {
+    startInForeground()
+    openIntervalInTick(300)
+    signal.report(HangSignal.State.IDLE, 0)
+
+    openIntervalInTick(300)
+    signal.report(HangSignal.State.IDLE, 0)
+
+    assertThat(collector.stopped).containsExactly(listOf("s1"), listOf("s2")).inOrder()
+  }
+
+  @Test
+  fun `collector is not sampled once its buffer has maxSamples values`() {
+    createRecorder(maxSamples = 3)
+    startInForeground()
+    openIntervalInTick(300)
+
+    tickEvery66Ms(5)
+    signal.report(HangSignal.State.IDLE, 0)
+
+    assertThat(collector.calls.count { it.startsWith("sample") }).isEqualTo(3)
+    assertThat(collector.stopped.single()).containsExactly("s1", "s2", "s3").inOrder()
+  }
+
+  @Test
+  fun `null values do not count towards maxSamples`() {
+    createRecorder(maxSamples = 2)
+    startInForeground()
+    collector.returnNull = true
+    openIntervalInTick(300)
+    executor.runTick()
+    collector.returnNull = false
+
+    tickEvery66Ms(5)
+    signal.report(HangSignal.State.IDLE, 0)
+
+    assertThat(collector.stopped.single()).containsExactly("s3", "s4").inOrder()
+  }
+
+  @Test
+  fun `each collector has its own buffer`() {
+    val second = FakeCollector("t")
+    createRecorder(
+      collectors = listOf(CollectorSetup(collector, null), CollectorSetup(second, null)),
+    )
+    startInForeground()
+    openIntervalInTick(300)
+
+    signal.report(HangSignal.State.IDLE, 0)
+
+    assertThat(collector.stopped.single()).containsExactly("s1")
+    assertThat(second.stopped.single()).containsExactly("t1")
+  }
+
+  @Test
+  fun `values stay in memory when no subscriber asks to persist`() {
+    startInForeground()
+    openIntervalInTick(0)
+
+    tickEvery66Ms(20)
+
+    assertThat(store.calls).isEmpty()
+  }
+
+  @Test
+  fun `persisting interval writes nothing before persistAfterMs`() {
+    listener.request = persist
+    startInForeground()
+    openIntervalInTick(0)
+
+    tickEvery66Ms(10) // 660 ms
+
+    assertThat(store.calls).isEmpty()
+  }
+
+  @Test
+  fun `persisting interval clears the store and writes the buffer at persistAfterMs, then each value`() {
+    listener.request = persist
+    startInForeground()
+    openIntervalInTick(0)
+    tickEvery66Ms(10) // 660 ms
+
+    tickEvery66Ms(1) // 726 ms
+    assertThat(store.calls)
+      .containsExactlyElementsIn(listOf("clear") + (1..12).map { "add s$it" })
+      .inOrder()
+
+    tickEvery66Ms(1)
+    assertThat(store.calls.last()).isEqualTo("add s13")
+    assertThat(store.calls.count { it == "clear" }).isEqualTo(1)
+  }
+
+  @Test
+  fun `persisting starts at the threshold also when that tick has no value`() {
+    listener.request = persist
+    startInForeground()
+    openIntervalInTick(0)
+    tickEvery66Ms(10)
+    collector.returnNull = true
+
+    tickEvery66Ms(1)
+
+    assertThat(store.calls)
+      .containsExactlyElementsIn(listOf("clear") + (1..11).map { "add s$it" })
+      .inOrder()
+  }
+
+  @Test
+  fun `one persisting subscriber is enough`() {
+    recorder.subscribe(FakeListener(request = persist))
+    startInForeground()
+    openIntervalInTick(0)
+
+    tickEvery66Ms(11)
+
+    assertThat(store.calls).contains("clear")
+  }
+
+  @Test
+  fun `persisting interval stops writing at maxSamples`() {
+    listener.request = persist
+    createRecorder(maxSamples = 12)
+    startInForeground()
+    openIntervalInTick(0)
+
+    tickEvery66Ms(20)
+
+    assertThat(store.calls.count { it.startsWith("add") }).isEqualTo(12)
+  }
+
+  @Test
+  fun `collector without a store is sampled but not persisted`() {
+    listener.request = persist
+    createRecorder(collectors = listOf(CollectorSetup(collector, null)))
+    startInForeground()
+    openIntervalInTick(0)
+
+    tickEvery66Ms(15)
+    signal.report(HangSignal.State.IDLE, 0)
+
+    assertThat(collector.stopped.single()).hasSize(16)
+  }
+
+  @Test
+  fun `each persisted interval clears the store once`() {
+    listener.request = persist
+    startInForeground()
+    openIntervalInTick(0)
+    tickEvery66Ms(11)
+    signal.report(HangSignal.State.IDLE, 0)
+    store.calls.clear()
+
+    openIntervalInTick(0)
+    tickEvery66Ms(11)
+
+    assertThat(store.calls.first()).isEqualTo("clear")
+    assertThat(store.calls.count { it == "clear" }).isEqualTo(1)
+  }
+
+  @Test
+  fun `the persist decision is fixed for the interval`() {
+    startInForeground()
+    openIntervalInTick(0)
+
+    listener.request = persist
+    tickEvery66Ms(15)
+
+    assertThat(store.calls).isEmpty()
+  }
+
+  @Test
+  fun `store that fails is not written again in this interval`() {
+    listener.request = persist
+    store.throwOnAdd = true
+    startInForeground()
+    openIntervalInTick(0)
+    tickEvery66Ms(11)
+    store.throwOnAdd = false
+
+    tickEvery66Ms(5)
+
+    assertThat(store.calls).containsExactly("clear", "add s1").inOrder()
+    verify(logger)
+      .log(eq(SentryLevel.WARNING), eq("Failed to write to a hang sample store"), any<Throwable>())
+  }
+
+  @Test
+  fun `store that failed is written again in the next interval`() {
+    listener.request = persist
+    store.throwOnClear = true
+    startInForeground()
+    openIntervalInTick(0)
+    tickEvery66Ms(11)
+    signal.report(HangSignal.State.IDLE, 0)
+    store.throwOnClear = false
+    store.calls.clear()
+
+    openIntervalInTick(0)
+    tickEvery66Ms(11)
+
+    assertThat(store.calls.first()).isEqualTo("clear")
+    assertThat(store.calls.count { it.startsWith("add") }).isEqualTo(12)
+  }
+
+  @Test
+  fun `store that fails does not stop the record`() {
+    listener.request = persist
+    store.throwOnClear = true
+    startInForeground()
+    openIntervalInTick(0)
+    tickEvery66Ms(11)
+
+    signal.report(HangSignal.State.IDLE, 0)
+    sdkExecutor.runAll()
+
+    assertThat(records).hasSize(1)
+    assertThat(collector.stopped.single()).hasSize(12)
+  }
+
+  @Test
+  fun `cancel does not touch the store`() {
+    listener.request = persist
+    startInForeground()
+    openIntervalInTick(0)
+    tickEvery66Ms(11)
+    val callsBeforeCancel = store.calls.toList()
+
+    signal.cancel()
+    executor.runTick()
+
+    assertThat(store.calls).isEqualTo(callsBeforeCancel)
   }
 
   @Test
@@ -207,7 +503,7 @@ class HangRecorderTest {
     signal.report(HangSignal.State.IDLE, 0)
     sdkExecutor.runAll()
 
-    assertThat(collector.calls.count { it.startsWith("start") }).isEqualTo(1)
+    assertThat(listener.started).hasSize(1)
     assertThat(records.single().durationMs).isEqualTo(500)
   }
 
@@ -222,6 +518,8 @@ class HangRecorderTest {
         epochClock,
         DEFAULT_POLLING_INTERVAL_MS,
         DEFAULT_MAX_RECORDING_TIME_MS,
+        DEFAULT_PERSIST_AFTER_MS,
+        MAX_SAMPLES,
         { FakeScheduledExecutorService() },
         {
           metronome = it
@@ -315,14 +613,14 @@ class HangRecorderTest {
     openIntervalInTick(0)
     advance(DEFAULT_MAX_RECORDING_TIME_MS)
     executor.runTick()
-    collector.calls.clear()
+    listener.started.clear()
 
     signal.report(HangSignal.State.SUSPICIOUS, 0)
-    assertThat(collector.calls).isEmpty()
+    assertThat(listener.started).isEmpty()
 
     signal.report(HangSignal.State.IDLE, 0)
     signal.report(HangSignal.State.SUSPICIOUS, 0)
-    assertThat(collector.calls).containsExactly("start ${nowMs()}")
+    assertThat(listener.started).containsExactly(nowMs())
   }
 
   @Test
@@ -364,7 +662,7 @@ class HangRecorderTest {
     executor.runTick()
     sdkExecutor.runAll()
 
-    assertThat(collector.calls).containsExactly("cancel")
+    assertThat(collector.calls).isEmpty()
     assertThat(records).isEmpty()
   }
 
@@ -376,10 +674,10 @@ class HangRecorderTest {
     val thread = Thread { signal.report(HangSignal.State.SUSPICIOUS, 0) }
     thread.start()
     thread.join()
-    assertThat(collector.calls).isEmpty()
+    assertThat(listener.started).isEmpty()
 
     executor.runPending()
-    assertThat(collector.calls).containsExactly("start $sinceMs")
+    assertThat(listener.started).containsExactly(sinceMs)
   }
 
   @Test
@@ -393,7 +691,7 @@ class HangRecorderTest {
     advance(100)
     executor.runPending()
 
-    assertThat(collector.calls).containsExactly("start $sinceMs")
+    assertThat(listener.started).containsExactly(sinceMs)
   }
 
   @Test
@@ -429,7 +727,7 @@ class HangRecorderTest {
 
   @Test
   fun `last unsubscribe stops signals and the tick but keeps the executor`() {
-    val otherListener = HangRecorderListener {}
+    val otherListener = FakeListener()
     recorder.subscribe(otherListener)
     startInForeground()
 
@@ -448,7 +746,7 @@ class HangRecorderTest {
   @Test
   fun `subscribers share one app state listener`() {
     recorder.subscribe(listener)
-    recorder.subscribe(HangRecorderListener {})
+    recorder.subscribe(FakeListener())
     executor.runPending()
 
     assertThat(appStateProvider.listeners).hasSize(1)
@@ -463,7 +761,6 @@ class HangRecorderTest {
     executor.runPending()
     sdkExecutor.runAll()
 
-    assertThat(collector.calls.last()).isEqualTo("cancel")
     assertThat(collector.calls.none { it.startsWith("stop") }).isTrue()
     assertThat(records).isEmpty()
   }
@@ -477,6 +774,21 @@ class HangRecorderTest {
 
     assertThat(signal.closeCount).isEqualTo(0)
     assertThat(collector.calls).doesNotContain("close")
+    assertThat(store.calls).doesNotContain("close")
+  }
+
+  @Test
+  fun `interval after the last unsubscribe and a new subscribe starts with an empty buffer`() {
+    startInForeground()
+    openIntervalInTick(300)
+    recorder.unsubscribe(listener)
+    executor.runPending()
+
+    startInForeground()
+    openIntervalInTick(300)
+    signal.report(HangSignal.State.IDLE, 0)
+
+    assertThat(collector.stopped.single()).containsExactly("s2")
   }
 
   @Test
@@ -510,22 +822,6 @@ class HangRecorderTest {
   }
 
   @Test
-  fun `collector that throws on cancel does not block a later subscribe`() {
-    collector.throwOnCancel = true
-    startInForeground()
-    openIntervalInTick(300)
-    recorder.unsubscribe(listener)
-    executor.runPending()
-    collector.throwOnCancel = false
-
-    startInForeground()
-
-    assertThat(executor.taskFailures).hasSize(1)
-    assertThat(signal.isStarted).isTrue()
-    assertThat(executor.activePeriodicTasks).hasSize(1)
-  }
-
-  @Test
   fun `exception in collector does not stop the tick loop`() {
     startInForeground()
     collector.throwOnSample = true
@@ -539,19 +835,41 @@ class HangRecorderTest {
   }
 
   @Test
-  fun `close closes signals and collectors once on the recorder thread`() {
+  fun `close closes signals, collectors and stores once on the recorder thread`() {
     startInForeground()
 
     recorder.close()
     assertThat(signal.closeCount).isEqualTo(0)
     assertThat(collector.calls).doesNotContain("close")
+    assertThat(store.calls).doesNotContain("close")
     executor.runPending()
     recorder.close()
     executor.runPending()
 
     assertThat(signal.closeCount).isEqualTo(1)
     assertThat(collector.calls.count { it == "close" }).isEqualTo(1)
+    assertThat(store.calls).containsExactly("close")
     assertThat(executor.isShutdown).isTrue()
+  }
+
+  @Test
+  fun `collector and store that fail to close are logged and the next ones are closed`() {
+    val second = FakeCollector("t")
+    val secondStore = FakeStore()
+    collector.throwIoOnClose = true
+    store.throwOnClose = true
+    createRecorder(
+      collectors = listOf(CollectorSetup(collector, store), CollectorSetup(second, secondStore)),
+    )
+
+    recorder.close()
+
+    assertThat(second.calls).containsExactly("close")
+    assertThat(secondStore.calls).containsExactly("close")
+    verify(logger)
+      .log(eq(SentryLevel.WARNING), eq("Failed to close a hang data collector"), any<Throwable>())
+    verify(logger)
+      .log(eq(SentryLevel.WARNING), eq("Failed to close a hang sample store"), any<Throwable>())
   }
 
   @Test
@@ -565,6 +883,7 @@ class HangRecorderTest {
 
     assertThat(signal.closeCount).isEqualTo(1)
     assertThat(collector.calls.count { it == "close" }).isEqualTo(1)
+    assertThat(store.calls).containsExactly("close")
     assertThat(executor.isShutdown).isTrue()
   }
 
@@ -637,7 +956,7 @@ class HangRecorderTest {
     sdkExecutor.runAll()
 
     assertThat(records).isEmpty()
-    assertThat(collector.calls).contains("cancel")
+    assertThat(collector.calls.none { it.startsWith("stop") }).isTrue()
   }
 
   @Test
@@ -667,6 +986,7 @@ class HangRecorderTest {
 
     assertThat(signal.closeCount).isEqualTo(1)
     assertThat(collector.calls).containsExactly("close")
+    assertThat(store.calls).containsExactly("close")
   }
 
   @Test
@@ -698,6 +1018,8 @@ class HangRecorderTest {
         epochClock,
         DEFAULT_POLLING_INTERVAL_MS,
         DEFAULT_MAX_RECORDING_TIME_MS,
+        DEFAULT_PERSIST_AFTER_MS,
+        MAX_SAMPLES,
         HangRecorder.DEFAULT_EXECUTOR_FACTORY,
         { metronome ->
           listOf(
@@ -710,13 +1032,19 @@ class HangRecorderTest {
             ),
           )
         },
-        listOf(ThreadSampleCollector(SentryOptions(), epochClock, ticker, parked)),
+        listOf(CollectorSetup(ThreadSampleCollector(epochClock, parked), null)),
       )
 
-    created.subscribe {
-      record = it
-      recorded.countDown()
-    }
+    created.subscribe(
+      object : HangRecorderListener {
+        override fun onHangStarted(interval: HangInterval) = HangRecordingRequest.DEFAULT
+
+        override fun onHangRecorded(hangRecord: HangRecord) {
+          record = hangRecord
+          recorded.countDown()
+        }
+      },
+    )
 
     try {
       assertThat(recorded.await(10, TimeUnit.SECONDS)).isTrue()
@@ -807,34 +1135,48 @@ class HangRecorderTest {
     }
   }
 
-  private class FakeCollector : HangDataCollector {
-    val calls = mutableListOf<String>()
-    var throwOnSample = false
-    var throwOnCancel = false
-    var throwOnClose = false
-    var onRecordingStoppedAction: (HangRecord.Builder) -> Unit = {}
+  private class FakeListener(
+    private val records: MutableList<HangRecord> = mutableListOf(),
+    var request: HangRecordingRequest = HangRecordingRequest.DEFAULT,
+  ) : HangRecorderListener {
+    val started = mutableListOf<Long>()
 
-    override fun onRecordingStarted(interval: HangInterval) {
-      calls.add("start ${interval.startTimeMs}")
+    override fun onHangStarted(interval: HangInterval): HangRecordingRequest {
+      started.add(interval.startTimeMs)
+      return request
     }
 
-    override fun onSample(interval: HangInterval) {
+    override fun onHangRecorded(record: HangRecord) {
+      records.add(record)
+    }
+  }
+
+  /**
+   * Returns the values "s1", "s2", ..., counting every sample call, also those that return null.
+   */
+  private class FakeCollector(private val prefix: String = "s") : HangDataCollector<String> {
+    val calls = mutableListOf<String>()
+    val stopped = mutableListOf<List<String>>()
+    private var sampleCount = 0
+    var returnNull = false
+    var throwOnSample = false
+    var throwOnClose = false
+    var throwIoOnClose = false
+    var onRecordingStoppedAction: (List<String>, HangRecord.Builder) -> Unit = { _, _ -> }
+
+    override fun onSample(interval: HangInterval): String? {
       calls.add("sample ${interval.startTimeMs}")
+      sampleCount++
       if (throwOnSample) {
         throw IllegalStateException("collector failed")
       }
+      return if (returnNull) null else "$prefix$sampleCount"
     }
 
-    override fun onRecordingStopped(interval: HangInterval, out: HangRecord.Builder) {
-      calls.add("stop ${interval.startTimeMs}")
-      onRecordingStoppedAction(out)
-    }
-
-    override fun onRecordingCanceled() {
-      calls.add("cancel")
-      if (throwOnCancel) {
-        throw IllegalStateException("cancel failed")
-      }
+    override fun onRecordingStopped(samples: List<String>, out: HangRecord.Builder) {
+      calls.add("stop $samples")
+      stopped.add(samples)
+      onRecordingStoppedAction(samples, out)
     }
 
     override fun close() {
@@ -842,6 +1184,41 @@ class HangRecorderTest {
       if (throwOnClose) {
         throw IllegalStateException("close failed")
       }
+      if (throwIoOnClose) {
+        throw IOException("close failed")
+      }
     }
+  }
+
+  private class FakeStore : HangSampleStore<String> {
+    val calls = mutableListOf<String>()
+    var throwOnClear = false
+    var throwOnAdd = false
+    var throwOnClose = false
+
+    override fun clear() {
+      calls.add("clear")
+      if (throwOnClear) {
+        throw IOException("clear failed")
+      }
+    }
+
+    override fun add(sample: String) {
+      calls.add("add $sample")
+      if (throwOnAdd) {
+        throw IOException("add failed")
+      }
+    }
+
+    override fun close() {
+      calls.add("close")
+      if (throwOnClose) {
+        throw IOException("close failed")
+      }
+    }
+  }
+
+  private companion object {
+    const val MAX_SAMPLES = 120
   }
 }
