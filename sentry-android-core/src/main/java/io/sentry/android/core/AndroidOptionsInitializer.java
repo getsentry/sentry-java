@@ -563,7 +563,7 @@ final class AndroidOptionsInitializer {
       collectors.add(
           new HangRecorder.CollectorSetup<>(
               new RuntimeStatsCollector(runtimeStatsSource),
-              (snapshot, record) -> record.addRuntimeStats(snapshot),
+              (sample, record) -> record.addRuntimeStats(sample),
               null));
     }
     final @NotNull HangRecorder recorder =

@@ -3,7 +3,7 @@ package io.sentry.android.core.hang;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/** Reads the runtime counters on each tick of a hang interval. */
+/** Reads the runtime counters on each sampling tick of a recorded hang. */
 @ApiStatus.Internal
 public final class RuntimeStatsCollector implements HangDataCollector<RuntimeStatsSnapshot> {
 
@@ -14,10 +14,7 @@ public final class RuntimeStatsCollector implements HangDataCollector<RuntimeSta
   }
 
   @Override
-  public @NotNull RuntimeStatsSnapshot sample(final @NotNull HangInterval interval) {
+  public @NotNull RuntimeStatsSnapshot sample() {
     return source.read();
   }
-
-  @Override
-  public void close() {}
 }

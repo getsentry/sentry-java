@@ -747,7 +747,7 @@ class AndroidOptionsInitializerTest {
     assertThat(setups[1].getProperty<Any?>("store")).isNull()
     val writer = setups[1].getProperty<HangRecorder.RecordWriter<RuntimeStatsSnapshot>>("writer")
     val snapshot = RuntimeStatsSnapshot()
-    val builder = HangRecord.Builder(0, 0)
+    val builder = HangRecord.Builder()
     writer.write(snapshot, builder)
     assertThat(builder.build().runtimeStats).containsExactly(snapshot)
   }

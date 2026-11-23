@@ -5,14 +5,12 @@ import kotlin.test.Test
 
 class RuntimeStatsCollectorTest {
 
-  private val interval = HangInterval(0)
-
   @Test
   fun `sample returns a read of the source`() {
     val snapshot = RuntimeStatsSnapshot()
     val collector = RuntimeStatsCollector { snapshot }
 
-    assertThat(collector.sample(interval)).isSameInstanceAs(snapshot)
+    assertThat(collector.sample()).isSameInstanceAs(snapshot)
   }
 
   @Test
@@ -23,8 +21,8 @@ class RuntimeStatsCollectorTest {
       RuntimeStatsSnapshot()
     }
 
-    collector.sample(interval)
-    collector.sample(interval)
+    collector.sample()
+    collector.sample()
 
     assertThat(reads).isEqualTo(2)
   }

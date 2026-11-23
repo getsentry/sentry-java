@@ -658,7 +658,7 @@ class HangRecorderTest {
         ),
     )
     startInForeground()
-    openIntervalInTick(300)
+    openHangInTick(300)
     gcCount = 13
     executor.runTick()
 
