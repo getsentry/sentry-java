@@ -180,8 +180,13 @@ internal class BackStackConverter<T : Any>(
           val keyString = key.toString()
           consumeCharacters(keyString.length)
           if (sanitized.containsKey(keyString)) {
+            // Types only b/c key strings may contain host data. Collisions are rare, so we re-scan
+            // instead of tracking original keys for every map.
+            val otherKey = value.keys.firstOrNull { it !== key && it.toString() == keyString }
             throw DropSubtree(
-              "Nav3 map keys stringify to the same string. Dropping this entry's arguments.",
+              "A Nav3 map key (${key?.let { it::class.simpleName }}) stringifies to the same " +
+                "string as another key (${otherKey?.let { it::class.simpleName }}). " +
+                "Dropping this entry's arguments.",
               ArgumentDropReason.DUPLICATE_KEY,
             )
           }
