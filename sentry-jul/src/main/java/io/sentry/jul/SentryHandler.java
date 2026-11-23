@@ -172,6 +172,7 @@ public class SentryHandler extends Handler {
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.jul");
+    params.setMessageAlreadyFormatted(true);
 
     Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
