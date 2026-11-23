@@ -92,7 +92,7 @@ public class SentryBackStackEntry(
  * - [CharSequence]
  * - [Char]
  * - [Boolean]
- * - any [Number]
+ * - any [Number] (`NaN` and infinite values are sent as strings)
  * - enums (via [Enum.name])
  * - `null`
  *

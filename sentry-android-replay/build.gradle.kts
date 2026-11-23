@@ -1,5 +1,3 @@
-import com.android.build.api.variant.HasHostTestsBuilder
-import com.android.build.api.variant.HostTestBuilder
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -16,11 +14,8 @@ plugins {
   id("io.sentry.publish")
   id("io.sentry.api-validation")
   id("io.sentry.robolectric")
+  id("io.sentry.dependency-matrix")
 }
-
-// Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
-// Creating extra build types to run tests against the latest stable, and latest preview version.
-val composeUiTestVersions = mapOf("composeUi112" to "1.12.1", "composeUi113" to "1.13.0-rc01")
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -43,12 +38,6 @@ android {
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
-    composeUiTestVersions.keys.forEach { name ->
-      create(name) {
-        initWith(getByName("release"))
-        matchingFallbacks += "release"
-      }
-    }
   }
 
   // AGP 9 only generates unit tests for the testBuildType. The debug variant is
@@ -85,9 +74,6 @@ android {
 
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-    if (it.buildType in composeUiTestVersions) {
-      (it as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
-    }
   }
 }
 
@@ -117,14 +103,21 @@ dependencies {
   testImplementation(libs.coil.compose)
 }
 
-composeUiTestVersions.forEach { (buildType, version) ->
-  configurations
-    .matching { it.name == "${buildType}UnitTestRuntimeClasspath" }
-    .configureEach {
-      resolutionStrategy.eachDependency {
-        if (requested.group == "androidx.compose.ui") useVersion(version)
-      }
-    }
+// Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
+// .github/workflows/compose-ui-matrix.yml runs each version's task. The oldest entry pins material3
+// to a version that runs on that Compose UI, because the catalog's material3 needs a newer one.
+dependencyMatrix {
+  matrix(
+    name = "composeUi",
+    groups =
+      listOf(
+        "androidx.compose.ui",
+        "androidx.compose.foundation",
+        "androidx.compose.animation",
+        "androidx.compose.runtime",
+      ),
+    versionsFile = "compose-ui-versions.json",
+  )
 }
 
 tasks.withType<Detekt>().configureEach {
