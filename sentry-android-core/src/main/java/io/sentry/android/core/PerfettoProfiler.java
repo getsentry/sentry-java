@@ -56,15 +56,11 @@ public final class PerfettoProfiler {
 
   private volatile @Nullable ChunkRecord chunkRecord = null;
 
-  @SuppressLint("WrongConstant")
   public PerfettoProfiler(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull ISentryExecutorService executorService) {
-    this(
-        logger,
-        executorService,
-        (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE));
+    this(logger, executorService, getProfilingManager(context, logger));
   }
 
   PerfettoProfiler(
@@ -74,6 +70,19 @@ public final class PerfettoProfiler {
     this.logger = logger;
     this.executorService = executorService;
     this.profilingManager = profilingManager;
+  }
+
+  @SuppressLint("WrongConstant")
+  private static @Nullable ProfilingManager getProfilingManager(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    try {
+      return (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE);
+    } catch (NoClassDefFoundError e) {
+      // Some devices report API 35+ but ship a framework without ProfilingManager, so resolving it
+      // throws. Returning null makes start() fail, so this device records no profiles.
+      logger.log(SentryLevel.WARNING, "ProfilingManager can't be loaded on this device.", e);
+      return null;
+    }
   }
 
   /**

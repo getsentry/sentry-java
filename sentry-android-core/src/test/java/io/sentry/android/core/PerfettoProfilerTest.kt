@@ -6,6 +6,7 @@ import android.os.ProfilingResult
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
+import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.internal.profiling.ChunkRecord
 import io.sentry.profiling.ProfileRecordingState
@@ -27,7 +28,9 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
@@ -103,6 +106,18 @@ class PerfettoProfilerTest {
   fun `start returns null when ProfilingManager is null`() {
     val profiler = getSut(profilingManager = null)
     assertNull(profiler.startSession())
+  }
+
+  @Test
+  fun `start returns null when ProfilingManager can't be loaded`() {
+    val error = NoClassDefFoundError("android.os.ProfilingManager")
+    val context =
+      mock<Context>().also {
+        whenever(it.getSystemService(Context.PROFILING_SERVICE)).thenThrow(error)
+      }
+    val profiler = PerfettoProfiler(context, mockLogger, executor)
+    assertNull(profiler.startSession())
+    verify(mockLogger).log(eq(SentryLevel.WARNING), any<String>(), eq(error))
   }
 
   @Test
