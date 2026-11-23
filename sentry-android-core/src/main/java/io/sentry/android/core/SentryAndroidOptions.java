@@ -1028,8 +1028,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Sets the sample rate for reporting non-fatal ANRs. The sampling decision is made once per SDK
-   * initialization, not once per hang.
+   * Sets the sample rate for reporting non-fatal ANRs. The sampling decision is made for each hang.
    *
    * <p>Use {@code null} to disable (default). Values must be between {@code 0.0} and {@code 1.0}.
    *

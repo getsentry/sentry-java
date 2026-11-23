@@ -19,7 +19,6 @@ import io.sentry.android.core.anr.AnrCulpritEventHelper;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
 import io.sentry.android.core.anr.AnrStackTrace;
 import io.sentry.android.core.anr.NonFatalAnrMarker;
-import io.sentry.android.core.hang.HangInterval;
 import io.sentry.android.core.hang.HangRecord;
 import io.sentry.android.core.hang.HangRecorder;
 import io.sentry.android.core.hang.HangRecorderListener;
@@ -46,9 +45,9 @@ import org.jetbrains.annotations.Nullable;
  * Reports main-thread hangs as non-fatal ANR events: hangs that recover, before or after Android
  * shows the ANR dialog, and hangs that still block the main thread after 8 s, which are cut there.
  *
- * <p>If sampled, subscribes to the {@link HangRecorder} of the options for the SDK lifetime.
- * Installed from Android 11 (API 30), where {@link AnrV2Integration} skips the fatal ANRs that this
- * integration already reported.
+ * <p>Subscribes to the {@link HangRecorder} of the options for the SDK lifetime, and draws the
+ * sample rate at each hang. Installed from Android 11 (API 30), where {@link AnrV2Integration}
+ * skips the fatal ANRs that this integration already reported.
  *
  * <p>Enable via {@link SentryAndroidOptions#setNonFatalAnrSampleRate(Double)} or the {@code
  * io.sentry.anr.non-fatal.sample-rate} manifest metadata.
@@ -79,11 +78,6 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
     final @Nullable HangRecorder recorder = androidOptions.getHangRecorder();
     if (recorder == null) {
       logger.log(SentryLevel.WARNING, "Non-fatal ANR is enabled but there is no hang recorder");
-      return;
-    }
-    final @Nullable Double sampleRate = androidOptions.getNonFatalAnrSampleRate();
-    if (sampleRate == null || SentryRandom.current().nextDouble() >= sampleRate) {
-      logger.log(SentryLevel.DEBUG, "Non-fatal ANR is not sampled");
       return;
     }
     if (!subscribedRecorder.compareAndSet(null, recorder)) {
@@ -119,8 +113,12 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
     }
 
     @Override
-    public @NotNull HangRecordingRequest onHangStarted(final @NotNull HangInterval interval) {
-      return HangRecordingRequest.DEFAULT;
+    public @Nullable HangRecordingRequest onHangStarted() {
+      final @Nullable Double sampleRate = options.getNonFatalAnrSampleRate();
+      if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
+        return new HangRecordingRequest(true, false);
+      }
+      return null;
     }
 
     @Override
