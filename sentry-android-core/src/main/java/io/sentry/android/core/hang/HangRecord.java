@@ -1,6 +1,7 @@
 package io.sentry.android.core.hang;
 
 import io.sentry.android.core.anr.AnrStackTrace;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -12,13 +13,13 @@ public final class HangRecord {
 
   private final long durationMs;
   private final long startTimestampMs;
-  private final @NotNull List<AnrStackTrace> samples;
+  private final @NotNull List<AnrStackTrace> stackTraces;
   private final boolean endedAtMaxRecordingTime;
 
   private HangRecord(final @NotNull Builder builder) {
     this.durationMs = builder.durationMs;
     this.startTimestampMs = builder.startTimestampMs;
-    this.samples = builder.samples;
+    this.stackTraces = Collections.unmodifiableList(new ArrayList<>(builder.stackTraces));
     this.endedAtMaxRecordingTime = builder.endedAtMaxRecordingTime;
   }
 
@@ -31,8 +32,9 @@ public final class HangRecord {
     return startTimestampMs;
   }
 
-  public @NotNull List<AnrStackTrace> getSamples() {
-    return samples;
+  /** The stacks of the watched thread, in the order they were sampled. */
+  public @NotNull List<AnrStackTrace> getStackTraces() {
+    return stackTraces;
   }
 
   /**
@@ -46,7 +48,7 @@ public final class HangRecord {
   public static final class Builder {
     private final long durationMs;
     private final long startTimestampMs;
-    private @NotNull List<AnrStackTrace> samples = Collections.emptyList();
+    private final @NotNull List<AnrStackTrace> stackTraces = new ArrayList<>();
     private boolean endedAtMaxRecordingTime;
 
     public Builder(final long durationMs, final long startTimestampMs) {
@@ -54,8 +56,8 @@ public final class HangRecord {
       this.startTimestampMs = startTimestampMs;
     }
 
-    public @NotNull Builder setSamples(final @NotNull List<AnrStackTrace> samples) {
-      this.samples = samples;
+    public @NotNull Builder addStackTrace(final @NotNull AnrStackTrace stackTrace) {
+      stackTraces.add(stackTrace);
       return this;
     }
 
