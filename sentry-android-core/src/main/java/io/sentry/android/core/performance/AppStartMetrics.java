@@ -87,6 +87,9 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private boolean isCallbackRegistered = false;
   private volatile boolean shouldSendStartMeasurements = true;
+  // Set when the app moves to the background, so a relaunch in the same process is timed from its
+  // own activity rather than from the process start.
+  private volatile boolean isWarmRelaunchPending = false;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
@@ -413,6 +416,7 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appLaunchedInForeground = null;
     isCallbackRegistered = false;
     shouldSendStartMeasurements = true;
+    isWarmRelaunchPending = false;
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
     firstIdle = -1;
@@ -677,8 +681,10 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       // the extended vital measure from the activity while the eager app.start transaction stays
       // anchored at process start.
       if ((!isAppLaunchedInForeground()
+              || isWarmRelaunchPending
               || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1))
           && !appStartExtension.isActive()) {
+        isWarmRelaunchPending = false;
         appStartType = AppStartType.WARM;
         shouldSendStartMeasurements = true;
         appStartSpan.reset();
@@ -745,6 +751,7 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       appStartType = AppStartType.WARM;
       appLaunchedInForeground = true;
       shouldSendStartMeasurements = true;
+      isWarmRelaunchPending = true;
       firstDrawDone.set(false);
     }
   }
