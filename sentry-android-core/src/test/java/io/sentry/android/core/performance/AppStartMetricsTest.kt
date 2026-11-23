@@ -618,6 +618,23 @@ class AppStartMetricsTest {
   }
 
   @Test
+  @Config(sdk = [Build.VERSION_CODES.Q])
+  fun `on API 29+ a warm start is still detected when onActivityPreCreated was missed`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())
+    val coldActivity = mock<Activity>()
+    metrics.onActivityCreated(coldActivity, null)
+    metrics.onActivityDestroyed(coldActivity)
+
+    val createdUptimeMs = SystemClock.uptimeMillis() + TimeUnit.SECONDS.toMillis(25)
+    SystemClock.setCurrentTimeMillis(createdUptimeMs)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertThat(metrics.appStartType).isEqualTo(AppStartMetrics.AppStartType.WARM)
+    assertThat(metrics.appStartTimeSpan.startUptimeMs).isEqualTo(createdUptimeMs)
+  }
+
+  @Test
   fun `provider sets both appstart and sdk init start + end times`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())
