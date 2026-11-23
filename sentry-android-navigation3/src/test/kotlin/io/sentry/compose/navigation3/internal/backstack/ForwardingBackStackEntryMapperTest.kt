@@ -1,8 +1,10 @@
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.internal.backstack
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import com.google.common.truth.Truth.assertThat
+import io.sentry.compose.navigation3.BackStackEntryMapper
+import io.sentry.compose.navigation3.SentryBackStackEntry
 import org.junit.Test
 
 class ForwardingBackStackEntryMapperTest {
