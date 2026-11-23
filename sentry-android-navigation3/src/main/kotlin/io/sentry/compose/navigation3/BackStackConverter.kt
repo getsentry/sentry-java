@@ -179,6 +179,17 @@ internal class BackStackConverter<T : Any>(
         for ((key, childValue) in value) {
           val keyString = key.toString()
           consumeCharacters(keyString.length)
+          if (sanitized.containsKey(keyString)) {
+            // Types only b/c key strings may contain host data. Collisions are rare, so we re-scan
+            // instead of tracking original keys for every map.
+            val otherKey = value.keys.firstOrNull { it !== key && it.toString() == keyString }
+            throw DropSubtree(
+              "A Nav3 map key (${key?.let { it::class.simpleName }}) stringifies to the same " +
+                "string as another key (${otherKey?.let { it::class.simpleName }}). " +
+                "Dropping this entry's arguments.",
+              ArgumentDropReason.DUPLICATE_KEY,
+            )
+          }
           sanitized[keyString] = sanitizeValue(childValue, depth + 1)
         }
         return sanitized
@@ -460,6 +471,7 @@ internal enum class ArgumentDropReason(
 ) {
 
   CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
+  DUPLICATE_KEY("duplicate_key"),
   INVALID_STRUCTURE("invalid_structure"),
   MAPPING_FAILED("mapping_failed"),
   MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),
