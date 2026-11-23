@@ -861,8 +861,7 @@ public final class io/sentry/android/core/hang/HandlerThreadPoster : io/sentry/a
 
 public abstract interface class io/sentry/android/core/hang/HangDataCollector : java/io/Closeable {
 	public abstract fun close ()V
-	public abstract fun onRecordingStopped (Ljava/util/List;Lio/sentry/android/core/hang/HangRecord$Builder;)V
-	public abstract fun onSample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
+	public abstract fun sample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
 }
 
 public final class io/sentry/android/core/hang/HangInterval {
@@ -873,17 +872,17 @@ public final class io/sentry/android/core/hang/HangInterval {
 public final class io/sentry/android/core/hang/HangRecord {
 	public fun getDurationMs ()J
 	public fun getRuntimeStats ()Ljava/util/Map;
-	public fun getSamples ()Ljava/util/List;
+	public fun getStackTraces ()Ljava/util/List;
 	public fun getStartTimestampMs ()J
 	public fun hasEndedAtMaxRecordingTime ()Z
 }
 
 public final class io/sentry/android/core/hang/HangRecord$Builder {
 	public fun <init> (JJ)V
+	public fun addStackTrace (Lio/sentry/android/core/anr/AnrStackTrace;)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun build ()Lio/sentry/android/core/hang/HangRecord;
 	public fun setEndedAtMaxRecordingTime (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setRuntimeStats (Ljava/util/Map;)Lio/sentry/android/core/hang/HangRecord$Builder;
-	public fun setSamples (Ljava/util/List;)Lio/sentry/android/core/hang/HangRecord$Builder;
 }
 
 public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome, java/io/Closeable {
@@ -903,11 +902,15 @@ public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/
 }
 
 public final class io/sentry/android/core/hang/HangRecorder$CollectorSetup {
-	public fun <init> (Lio/sentry/android/core/hang/HangDataCollector;Lio/sentry/android/core/hang/HangSampleStore;)V
+	public fun <init> (Lio/sentry/android/core/hang/HangDataCollector;Lio/sentry/android/core/hang/HangRecorder$RecordWriter;Lio/sentry/android/core/hang/HangSampleStore;)V
 }
 
 public abstract interface class io/sentry/android/core/hang/HangRecorder$ExecutorFactory {
 	public abstract fun create ()Ljava/util/concurrent/ScheduledExecutorService;
+}
+
+public abstract interface class io/sentry/android/core/hang/HangRecorder$RecordWriter {
+	public abstract fun write (Ljava/lang/Object;Lio/sentry/android/core/hang/HangRecord$Builder;)V
 }
 
 public abstract interface class io/sentry/android/core/hang/HangRecorder$SignalFactory {
@@ -921,7 +924,9 @@ public abstract interface class io/sentry/android/core/hang/HangRecorderListener
 
 public final class io/sentry/android/core/hang/HangRecordingRequest {
 	public static final field DEFAULT Lio/sentry/android/core/hang/HangRecordingRequest;
+	public static final field NONE Lio/sentry/android/core/hang/HangRecordingRequest;
 	public fun shouldPersist ()Z
+	public fun shouldRecord ()Z
 }
 
 public final class io/sentry/android/core/hang/HangRecordingRequest$Builder {
@@ -1019,9 +1024,8 @@ public abstract interface class io/sentry/android/core/hang/ThreadPoster {
 public final class io/sentry/android/core/hang/ThreadSampleCollector : io/sentry/android/core/hang/HangDataCollector {
 	public fun <init> (Lio/sentry/time/EpochClock;Ljava/lang/Thread;)V
 	public fun close ()V
-	public fun onRecordingStopped (Ljava/util/List;Lio/sentry/android/core/hang/HangRecord$Builder;)V
-	public fun onSample (Lio/sentry/android/core/hang/HangInterval;)Lio/sentry/android/core/anr/AnrStackTrace;
-	public synthetic fun onSample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
+	public fun sample (Lio/sentry/android/core/hang/HangInterval;)Lio/sentry/android/core/anr/AnrStackTrace;
+	public synthetic fun sample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
 }
 
 public abstract class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {

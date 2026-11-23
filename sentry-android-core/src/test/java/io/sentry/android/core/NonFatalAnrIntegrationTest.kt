@@ -79,7 +79,10 @@ class NonFatalAnrIntegrationTest {
       ),
     runtimeStats: Map<String, Any>? = null,
   ) =
-    HangRecord.Builder(durationMs, 1_000).setSamples(samples).setRuntimeStats(runtimeStats).build()
+    HangRecord.Builder(durationMs, 1_000)
+      .apply { samples.forEach { addStackTrace(it) } }
+      .setRuntimeStats(runtimeStats)
+      .build()
 
   private fun subscribed(): HangRecorderListener {
     val integration = NonFatalAnrIntegration()
@@ -216,7 +219,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(
       HangRecord.Builder(8_000, 1_000)
-        .setSamples(listOf(AnrStackTrace(1_100, systemStack)))
+        .addStackTrace(AnrStackTrace(1_100, systemStack))
         .setEndedAtMaxRecordingTime(true)
         .build(),
     )
@@ -277,7 +280,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(
       HangRecord.Builder(8_000, 1_000)
-        .setSamples(listOf(AnrStackTrace(1_100, systemStack)))
+        .addStackTrace(AnrStackTrace(1_100, systemStack))
         .setEndedAtMaxRecordingTime(true)
         .build(),
     )

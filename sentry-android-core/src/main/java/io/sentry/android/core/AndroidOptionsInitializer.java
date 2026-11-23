@@ -555,6 +555,7 @@ final class AndroidOptionsInitializer {
     collectors.add(
         new HangRecorder.CollectorSetup<>(
             new ThreadSampleCollector(epochClock, mainLooper.getThread()),
+            (stackTrace, record) -> record.addStackTrace(stackTrace),
             new AnrProfileStore(options)));
     final @Nullable RuntimeStatsSource runtimeStatsSource =
         createRuntimeStatsSource(buildInfoProvider, options.getLogger());

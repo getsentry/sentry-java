@@ -25,8 +25,10 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
 import io.sentry.android.core.anr.AnrProfileManager
 import io.sentry.android.core.anr.AnrProfileStore
+import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.hang.HangDataCollector
+import io.sentry.android.core.hang.HangRecord
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangSignal
 import io.sentry.android.core.hang.RuntimeStatsCollector
@@ -814,6 +816,22 @@ class AndroidOptionsInitializerTest {
     val store = setup.getProperty<Any>("store")
     assertThat(store).isInstanceOf(AnrProfileStore::class.java)
     assertThat(store.getProperty<Any>("options")).isSameInstanceAs(fixture.sentryOptions)
+  }
+
+  @Test
+  fun `HangRecorder writes the main thread samples into the record as stack traces`() {
+    fixture.initSut()
+    val setup =
+      fixture.sentryOptions.hangRecorder!!
+        .getProperty<List<HangRecorder.CollectorSetup<*>>>("collectors")
+        .single()
+    val writer = setup.getProperty<HangRecorder.RecordWriter<AnrStackTrace>>("writer")
+    val stackTrace = AnrStackTrace(1, emptyArray())
+    val builder = HangRecord.Builder(0, 0)
+
+    writer.write(stackTrace, builder)
+
+    assertThat(builder.build().stackTraces).containsExactly(stackTrace)
   }
 
   @Test
