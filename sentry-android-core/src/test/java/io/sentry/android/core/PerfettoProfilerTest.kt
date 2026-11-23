@@ -21,9 +21,11 @@ import java.util.function.Consumer
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -110,7 +112,32 @@ class PerfettoProfilerTest {
 
   @Test
   fun `start returns null when ProfilingManager can't be loaded`() {
-    val error = NoClassDefFoundError("android.os.ProfilingManager")
+    assertStartFailsWhenGetSystemServiceThrows(NoClassDefFoundError("android.os.ProfilingManager"))
+  }
+
+  @Test
+  fun `start returns null when ProfilingManager can't be initialized`() {
+    assertStartFailsWhenGetSystemServiceThrows(ExceptionInInitializerError())
+  }
+
+  @Test
+  fun `start returns null when getSystemService throws`() {
+    assertStartFailsWhenGetSystemServiceThrows(IllegalStateException())
+  }
+
+  @Test
+  fun `fatal errors from getSystemService are rethrown`() {
+    val error = OutOfMemoryError()
+    val context =
+      mock<Context>().also {
+        whenever(it.getSystemService(Context.PROFILING_SERVICE)).thenThrow(error)
+      }
+    val thrown =
+      assertFailsWith<OutOfMemoryError> { PerfettoProfiler(context, mockLogger, executor) }
+    assertSame(error, thrown)
+  }
+
+  private fun assertStartFailsWhenGetSystemServiceThrows(error: Throwable) {
     val context =
       mock<Context>().also {
         whenever(it.getSystemService(Context.PROFILING_SERVICE)).thenThrow(error)
