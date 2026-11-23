@@ -1,4 +1,4 @@
-# `io.sentry.compose.navigation3.lifecycle`
+# `io.sentry.compose.navigation3.internal.lifecycle`
 
 Package contains code for coordinating multiple `SentryNavEffect`s and their access to a shared `IScope`, so that overlapping effects (e.g.,
 during Activity or Fragment transitions) don't clobber one another's screen names, nav context, or nav transactions.

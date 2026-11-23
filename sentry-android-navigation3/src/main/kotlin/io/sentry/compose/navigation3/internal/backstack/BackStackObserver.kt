@@ -1,19 +1,24 @@
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.internal.backstack
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
-import io.sentry.compose.navigation3.BackStackConverter.RetentionPolicy
-import io.sentry.compose.navigation3.PreparedChange.BackStackHasNewTop
-import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
-import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
-import io.sentry.compose.navigation3.lifecycle.INavScope
-import io.sentry.compose.navigation3.lifecycle.INavScopes
-import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
-import io.sentry.compose.navigation3.lifecycle.NAVIGATION_OP
-import io.sentry.compose.navigation3.lifecycle.NavTransactionRequest
+import io.sentry.compose.navigation3.BackStackKey
+import io.sentry.compose.navigation3.BuildConfig
+import io.sentry.compose.navigation3.ForwardingBackStackEntryMapper
+import io.sentry.compose.navigation3.SentryNavEffect
+import io.sentry.compose.navigation3.SentryNavOptions
+import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.RetentionPolicy
+import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackHasNewTop
+import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackHasSameTop
+import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackIsEmpty
+import io.sentry.compose.navigation3.internal.lifecycle.INavScope
+import io.sentry.compose.navigation3.internal.lifecycle.INavScopes
+import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_OP
+import io.sentry.compose.navigation3.internal.lifecycle.NavTransactionRequest
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
 
