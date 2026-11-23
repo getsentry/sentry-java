@@ -265,6 +265,7 @@ public class SentryAppender extends AbstractAppender {
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.log4j2");
+    params.setMessageAlreadyFormatted(true);
 
     scopes.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
