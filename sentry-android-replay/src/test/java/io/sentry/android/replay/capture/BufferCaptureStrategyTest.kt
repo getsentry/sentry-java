@@ -547,12 +547,11 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
-  fun `a backward wall-clock jump buffers the frames before it as a segment of their own`() {
+  fun `a backward wall-clock jump drops what was buffered before it`() {
     val frames = fixture.storeFrames()
     val strategy = fixture.getSut()
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
-    val segmentStart = fixture.now
     strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
     fixture.elapse(3_000)
     fixture.jumpWallClock(-120_000)
@@ -562,45 +561,19 @@ class BufferCaptureStrategyTest {
 
     strategy.captureReplay(false) {}
 
-    val segments = capturedSegments(count = 2).map { it.first }
-    assertThat(segments.map { it.segmentId }).containsExactly(0, 1).inOrder()
-    assertThat(segments.map { it.replayStartTimestamp!!.time })
-      .containsExactly(segmentStart, newTimelineStart)
-      .inOrder()
-    assertThat(segments.map { it.timestamp!!.time - it.replayStartTimestamp!!.time })
-      .containsExactly(3_000L, 2_000L)
-      .inOrder()
+    assertThat(frames).containsExactly(newTimelineStart)
+    val segment = capturedSegments(count = 1).single().first
+    assertThat(segment.segmentId).isEqualTo(0)
+    assertThat(segment.replayStartTimestamp!!.time).isEqualTo(newTimelineStart)
+    assertThat(segment.timestamp!!.time - newTimelineStart).isEqualTo(2_000L)
   }
 
   @Test
-  fun `the segment buffered at a forward wall-clock jump ages by the time that passed`() {
+  fun `a wall-clock jump drops the touch events of the old timeline`() {
     val frames = fixture.storeFrames()
     val strategy = fixture.getSut()
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
-    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
-    fixture.elapse(3_000)
-    fixture.jumpWallClock(120_000)
-
-    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
-    assertThat(strategy.currentSegment).isEqualTo(1)
-
-    fixture.elapse(fixture.options.sessionReplay.errorReplayDuration)
-    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
-    assertThat(strategy.currentSegment).isEqualTo(1)
-
-    fixture.elapse(1)
-    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
-    assertThat(strategy.currentSegment).isEqualTo(0)
-  }
-
-  @Test
-  fun `touch events stay with the timeline they were stamped on`() {
-    val frames = fixture.storeFrames()
-    val strategy = fixture.getSut()
-    strategy.start()
-    strategy.onConfigurationChanged(fixture.recorderConfig)
-    val segmentStart = fixture.now
     strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
     fixture.elapse(1_000)
     strategy.onTouchEvent(fixture.mockedMotionEvent(MotionEvent.ACTION_DOWN))
@@ -614,12 +587,13 @@ class BufferCaptureStrategyTest {
 
     strategy.captureReplay(false) {}
 
-    val touches =
-      capturedSegments(count = 2).map { (_, payload) ->
-        payload.filterIsInstance<RRWebInteractionEvent>().map { it.interactionType to it.timestamp }
-      }
-    assertThat(touches[0]).containsExactly(InteractionType.TouchStart to segmentStart + 1_000)
-    assertThat(touches[1]).containsExactly(InteractionType.TouchEnd to newTimelineStart + 1_000)
+    val (_, payload) = capturedSegments(count = 1).single()
+    assertThat(
+        payload.filterIsInstance<RRWebInteractionEvent>().map {
+          it.interactionType to it.timestamp
+        },
+      )
+      .containsExactly(InteractionType.TouchEnd to newTimelineStart + 1_000)
   }
 
   @Test
@@ -653,7 +627,7 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
-  fun `a forward wall-clock jump longer than the session duration drops what was buffered before it`() {
+  fun `a forward wall-clock jump drops the segments and frames buffered before it`() {
     val videoDir = tmpDir.newFolder()
     val frames = fixture.storeFrames(videoDir)
     val strategy = fixture.getSut()
@@ -687,7 +661,7 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
-  fun `a segment request made before the jump's frame task ran reads the buffer again in its task`() {
+  fun `a segment request made before the jump's frame task ran starts after the jump`() {
     val frames = fixture.storeFrames()
     val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
     strategy.start()

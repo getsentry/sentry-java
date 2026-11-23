@@ -15,7 +15,8 @@ import kotlin.math.abs
  * can't drop frames or freeze the video. Breadcrumbs, errors and spans, though, are stamped from
  * the wall clock elsewhere in the SDK, and the player places them on the video by that stamp. So
  * the timeline must not drift away from the wall clock either: when [wallClockJumpMillis] reports a
- * jump, the recording closes the segment on the current timeline and [restart]s on the wall clock.
+ * jump, the recording drops what it recorded on the current timeline and [restart]s on the wall
+ * clock.
  *
  * Reads are safe from any thread. Checking for a jump and then restarting is a check-then-act, so
  * [BaseCaptureStrategy] does both under its timeline lock.

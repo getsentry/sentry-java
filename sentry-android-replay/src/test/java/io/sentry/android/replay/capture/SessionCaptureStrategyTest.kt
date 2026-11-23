@@ -144,14 +144,10 @@ class SessionCaptureStrategyTest {
 
     private val queuedTasks = ArrayDeque<Runnable>()
 
-    /** Runs once in the next submit, before its task is queued, like another thread getting in. */
-    var beforeNextSubmit: (() -> Unit)? = null
-
     /** Holds submitted tasks until [runQueuedTasks], like a busy replay executor. */
     val queuedExecutor =
       mock<ScheduledExecutorService> {
         doAnswer {
-            beforeNextSubmit?.also { beforeNextSubmit = null }?.invoke()
             queuedTasks += it.arguments[0] as Runnable
             null
           }
@@ -971,7 +967,7 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
-  fun `a backward wall-clock jump closes the segment where the old timeline ended`() {
+  fun `a backward wall-clock jump drops the segment and starts the next on the new timeline`() {
     val strategy = fixture.getSut()
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
@@ -986,13 +982,12 @@ class SessionCaptureStrategyTest {
 
     inOrder(fixture.replayCache) {
       verify(fixture.replayCache).addFrame(any<File>(), eq(segmentStart + 1_000), anyOrNull())
-      verify(fixture.replayCache).encodedVideoOf(3_000, segmentStart, 0)
-      verify(fixture.replayCache).rotate(eq(segmentStart + 3_000))
-      // stored only once the old timeline is closed, so it is not encoded or rotated with it
+      verify(fixture.replayCache).rotate(eq(Long.MAX_VALUE))
+      // stored only once the old timeline is dropped, so it is not dropped with it
       verify(fixture.replayCache).addFrame(any<File>(), eq(newTimelineStart), anyOrNull())
     }
-    verify(fixture.scopes).captureReplay(argThat { segmentId == 0 }, any())
-    assertThat(strategy.currentSegment).isEqualTo(1)
+    verify(fixture.scopes, never()).captureReplay(any(), any())
+    assertThat(strategy.currentSegment).isEqualTo(0)
     assertThat(strategy.segmentTimestamp!!.time).isEqualTo(newTimelineStart)
     // what crash recovery on the next launch starts the recovered segment at
     assertThat(fixture.persistedSegment[SEGMENT_KEY_TIMESTAMP])
@@ -1002,20 +997,19 @@ class SessionCaptureStrategyTest {
       fixture.elapse(1_000)
       strategy.recordFrame()
     }
-    verify(fixture.scopes, times(1)).captureReplay(any(), any())
+    verify(fixture.scopes, never()).captureReplay(any(), any())
 
     fixture.elapse(1_000)
     strategy.recordFrame()
-    verify(fixture.replayCache).encodedVideoOf(5_000, newTimelineStart, 1)
-    verify(fixture.scopes, times(2)).captureReplay(any(), any())
+    verify(fixture.replayCache).encodedVideoOf(5_000, newTimelineStart, 0)
+    verify(fixture.scopes, times(1)).captureReplay(any(), any())
   }
 
   @Test
-  fun `a forward wall-clock jump closes the segment instead of cutting frozen ones`() {
+  fun `a forward wall-clock jump starts a new segment instead of cutting frozen ones`() {
     val strategy = fixture.getSut()
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
-    val segmentStart = fixture.now
     fixture.elapse(3_000)
     fixture.jumpWallClock(120_000)
     val newTimelineStart = fixture.now
@@ -1026,14 +1020,13 @@ class SessionCaptureStrategyTest {
       strategy.recordFrame()
     }
 
-    verify(fixture.replayCache).encodedVideoOf(3_000, segmentStart, 0)
-    verify(fixture.scopes, times(1)).captureReplay(any(), any())
+    verify(fixture.scopes, never()).captureReplay(any(), any())
     assertThat(strategy.segmentTimestamp!!.time).isEqualTo(newTimelineStart)
 
     fixture.elapse(1_000)
     strategy.recordFrame()
-    verify(fixture.replayCache).encodedVideoOf(5_000, newTimelineStart, 1)
-    verify(fixture.scopes, times(2)).captureReplay(any(), any())
+    verify(fixture.replayCache).encodedVideoOf(5_000, newTimelineStart, 0)
+    verify(fixture.scopes, times(1)).captureReplay(any(), any())
   }
 
   @Test
@@ -1062,20 +1055,16 @@ class SessionCaptureStrategyTest {
     fixture.elapse(5_000)
     strategy.recordFrame()
 
-    val payloads = capturedPayloads(count = 2)
+    val payloads = capturedPayloads(count = 1)
     assertThat(payloads[0]!!.filterIsInstance<RRWebBreadcrumbEvent>().map { it.message })
-      .containsExactly("before")
-    assertThat(payloads[1]!!.filterIsInstance<RRWebBreadcrumbEvent>().map { it.message })
       .containsExactly("after")
   }
 
   @Test
-  fun `touch events stay with the timeline they were stamped on`() {
-    val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
+  fun `a wall-clock jump drops the touch events of the old timeline`() {
+    val strategy = fixture.getSut()
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
-    fixture.runQueuedTasks()
-    val segmentStart = fixture.now
     fixture.elapse(1_000)
     strategy.onTouchEvent(fixture.mockedMotionEvent(MotionEvent.ACTION_DOWN))
     fixture.elapse(2_000)
@@ -1083,21 +1072,14 @@ class SessionCaptureStrategyTest {
     val newTimelineStart = fixture.now
 
     strategy.recordFrame()
-    // stamped on the new timeline while the old one is still being closed
     fixture.elapse(100)
     strategy.onTouchEvent(fixture.mockedMotionEvent(MotionEvent.ACTION_UP))
-    fixture.runQueuedTasks()
     fixture.elapse(4_900)
     strategy.recordFrame()
-    fixture.runQueuedTasks()
 
-    val payloads = capturedPayloads(count = 2)
-    assertThat(payloads[0]!!.filterIsInstance<RRWebInteractionEvent>().map { it.timestamp })
-      .containsExactly(segmentStart + 1_000)
-    val touchesAfterJump = payloads[1]!!.filterIsInstance<RRWebInteractionEvent>()
-    assertThat(touchesAfterJump.map { it.interactionType })
-      .containsExactly(InteractionType.TouchEnd)
-    assertThat(touchesAfterJump.map { it.timestamp }).containsExactly(newTimelineStart + 100)
+    val touches = capturedPayloads(count = 1)[0]!!.filterIsInstance<RRWebInteractionEvent>()
+    assertThat(touches.map { it.interactionType to it.timestamp })
+      .containsExactly(InteractionType.TouchEnd to newTimelineStart + 100)
   }
 
   @Test
@@ -1118,13 +1100,13 @@ class SessionCaptureStrategyTest {
 
     fixture.runQueuedTasks()
 
-    val payloads = capturedPayloads(count = 2)
+    val payloads = capturedPayloads(count = 1)
     assertThat(payloads[0]!!.filterIsInstance<RRWebInteractionEvent>().map { it.timestamp })
       .containsExactly(segmentStart + 1_000)
   }
 
   @Test
-  fun `executor delay across a wall-clock jump keeps both timelines apart`() {
+  fun `executor delay across a wall-clock jump drops the old timeline's frames`() {
     val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
@@ -1142,10 +1124,10 @@ class SessionCaptureStrategyTest {
 
     inOrder(fixture.replayCache) {
       verify(fixture.replayCache).addFrame(any<File>(), eq(segmentStart + 1_000), anyOrNull())
-      verify(fixture.replayCache).encodedVideoOf(3_000, segmentStart, 0)
+      verify(fixture.replayCache).rotate(eq(Long.MAX_VALUE))
       verify(fixture.replayCache).addFrame(any<File>(), eq(newTimelineStart), anyOrNull())
     }
-    verify(fixture.scopes, times(1)).captureReplay(any(), any())
+    verify(fixture.scopes, never()).captureReplay(any(), any())
     assertThat(strategy.segmentTimestamp!!.time).isEqualTo(newTimelineStart)
   }
 
@@ -1155,7 +1137,6 @@ class SessionCaptureStrategyTest {
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
     fixture.runQueuedTasks()
-    val segmentStart = fixture.now
     fixture.elapse(3_000)
     fixture.jumpWallClock(120_000)
     val newTimelineStart = fixture.now
@@ -1165,8 +1146,8 @@ class SessionCaptureStrategyTest {
     strategy.flush {}
     fixture.runQueuedTasks()
 
-    verify(fixture.replayCache).encodedVideoOf(3_000, segmentStart, 0)
-    verify(fixture.replayCache).encodedVideoOf(2_000, newTimelineStart, 1)
+    verify(fixture.replayCache).encodedVideoOf(2_000, newTimelineStart, 0)
+    verify(fixture.scopes, times(1)).captureReplay(any(), any())
   }
 
   @Test
@@ -1181,36 +1162,12 @@ class SessionCaptureStrategyTest {
     fixture.jumpWallClock(-120_000)
 
     strategy.resume()
-    val resumedAt = strategy.segmentTimestamp!!.time
+    assertThat(strategy.segmentTimestamp!!.time).isEqualTo(segmentStart + 12_000)
     fixture.elapse(1_000)
     strategy.onScreenshotRecorded(mock<Bitmap>()) { assertThat(it).isEqualTo(fixture.now) }
 
-    assertThat(resumedAt).isEqualTo(segmentStart + 12_000)
-    // closes what the old timeline recorded since resuming, which is nothing in a real cache
-    verify(fixture.replayCache).encodedVideoOf(1_000, resumedAt, 1)
+    // only the segment pause() sent
+    verify(fixture.scopes, times(1)).captureReplay(any(), any())
     assertThat(strategy.segmentTimestamp!!.time).isEqualTo(fixture.now)
-  }
-
-  @Test
-  fun `a segment request queued behind a wall-clock jump it read the clock before uses the new timeline`() {
-    val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
-    strategy.start()
-    strategy.onConfigurationChanged(fixture.recorderConfig)
-    fixture.runQueuedTasks()
-    val segmentStart = fixture.now
-    fixture.elapse(3_000)
-    fixture.jumpWallClock(-120_000)
-    val newTimelineStart = fixture.now
-    // the flush reads the clock on the old timeline, then a frame follows the jump and queues its
-    // task first
-    fixture.beforeNextSubmit = { strategy.recordFrame() }
-
-    strategy.flush {}
-    fixture.elapse(500)
-    fixture.runQueuedTasks()
-
-    verify(fixture.replayCache).encodedVideoOf(3_000, segmentStart, 0)
-    // not the 2 minutes from the new timeline's start to the request time on the old one
-    verify(fixture.replayCache).encodedVideoOf(500, newTimelineStart, 1)
   }
 }
