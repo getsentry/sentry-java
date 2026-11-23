@@ -15,10 +15,12 @@ import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.FileUtils;
 import java.io.File;
@@ -35,6 +37,10 @@ public final class SentryAndroid {
 
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long sdkInitMillis = SystemClock.uptimeMillis();
+
+  // There are no options to take the ticker from at class load.
+  private static final @NotNull Stopwatch sdkInitStopwatch =
+      Stopwatch.started(AndroidMonotonicTicker.getInstance());
 
   static final String SENTRY_FRAGMENT_INTEGRATION_CLASS_NAME =
       "io.sentry.android.fragment.FragmentLifecycleIntegration";
@@ -183,6 +189,7 @@ public final class SentryAndroid {
             final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
             if (sdkInitTimeSpan.hasNotStarted()) {
               sdkInitTimeSpan.setStartedAt(sdkInitMillis);
+              appStartMetrics.setSdkInitStopwatch(sdkInitStopwatch);
             }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(

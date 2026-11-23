@@ -12,11 +12,9 @@ import io.sentry.android.core.AnrV2Integration;
 import io.sentry.android.core.MemoryLimiterIntegration;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.TombstoneIntegration;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.performance.AppStartMetrics;
-import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.cache.EnvelopeCache;
-import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -26,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,22 +37,11 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   public static final String LAST_TOMBSTONE_REPORT = "last_tombstone_report";
   public static final String LAST_MEMORY_LIMITER_REPORT = "last_memory_limiter_report";
 
-  private final @NotNull ICurrentDateProvider currentDateProvider;
-
-  // TODO: JAVA-729
-  @SuppressWarnings("deprecation")
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
-    this(options, AndroidCurrentDateProvider.getInstance());
-  }
-
-  AndroidEnvelopeCache(
-      final @NotNull SentryAndroidOptions options,
-      final @NotNull ICurrentDateProvider currentDateProvider) {
     super(
         options,
         Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
         options.getMaxCacheItems());
-    this.currentDateProvider = currentDateProvider;
   }
 
   @SuppressWarnings("deprecation")
@@ -71,12 +59,12 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final boolean didStore = super.storeEnvelope(envelope, hint);
 
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
-    final TimeSpan sdkInitTimeSpan = AppStartMetrics.getInstance().getSdkInitTimeSpan();
+    final @Nullable Stopwatch sdkInitStopwatch =
+        AppStartMetrics.getInstance().getSdkInitStopwatch();
 
     if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)
-        && sdkInitTimeSpan.hasStarted()) {
-      long timeSinceSdkInit =
-          currentDateProvider.getCurrentTimeMillis() - sdkInitTimeSpan.getStartUptimeMs();
+        && sdkInitStopwatch != null) {
+      final long timeSinceSdkInit = sdkInitStopwatch.elapsed(TimeUnit.MILLISECONDS);
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
             .getLogger()

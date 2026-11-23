@@ -48,6 +48,8 @@ import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
+import io.sentry.time.Stopwatch
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.LoadClass
 import io.sentry.util.StringUtils
@@ -65,6 +67,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withAlias
@@ -532,12 +535,15 @@ class SentryAndroidTest {
     }
     assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
     assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
+    assertNotNull(AppStartMetrics.getInstance().sdkInitStopwatch)
   }
 
   @Test
   fun `init does not backfill sdk init and app start times if already set`() {
     AppStartMetrics.getInstance().clear()
     AppStartMetrics.getInstance().sdkInitTimeSpan.setStartedAt(99)
+    val sdkInitStopwatch = Stopwatch.started(TestMonotonicTicker())
+    AppStartMetrics.getInstance().setSdkInitStopwatch(sdkInitStopwatch)
     AppStartMetrics.getInstance().appStartTimeSpan.setStartedAt(99)
 
     SentryShadowProcess.setStartUptimeMillis(42)
@@ -547,6 +553,7 @@ class SentryAndroidTest {
     }
 
     assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)
+    assertSame(sdkInitStopwatch, AppStartMetrics.getInstance().sdkInitStopwatch)
     assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
   }
 
