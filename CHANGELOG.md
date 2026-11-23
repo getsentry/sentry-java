@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 - Nav3: Drop an entry’s arguments with `duplicate_key` when distinct map keys stringify to the same key, instead of silently overwriting a value ([#6714](https://github.com/getsentry/sentry-java/pull/6714))
 - Nav3: Serialize `NaN` and infinite navigation arguments as strings so they cannot prevent the containing error report or transaction from being serialized ([#6713](https://github.com/getsentry/sentry-java/pull/6713))
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
