@@ -11,9 +11,11 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.anr.NonFatalAnrMarker
+import io.sentry.android.core.hang.HangInterval
 import io.sentry.android.core.hang.HangRecord
 import io.sentry.android.core.hang.HangRecorder
 import io.sentry.android.core.hang.HangRecorderListener
+import io.sentry.android.core.hang.HangRecordingRequest
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.hints.AbnormalExit
 import io.sentry.protocol.SentryId
@@ -150,6 +152,14 @@ class NonFatalAnrIntegrationTest {
     integration.close()
 
     verify(recorder, times(1)).unsubscribe(captor.firstValue)
+  }
+
+  @Test
+  fun `hang start asks only for values in memory`() {
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted(HangInterval(0)))
+      .isSameInstanceAs(HangRecordingRequest.DEFAULT)
   }
 
   @Test

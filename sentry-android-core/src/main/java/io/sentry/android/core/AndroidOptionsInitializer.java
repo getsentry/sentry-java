@@ -32,7 +32,9 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOpenTelemetryMode;
+import io.sentry.android.core.anr.AnrProfileManager;
 import io.sentry.android.core.anr.AnrProfileRotationHelper;
+import io.sentry.android.core.anr.AnrProfileStore;
 import io.sentry.android.core.anr.AnrProfilingIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.hang.HandlerThreadPoster;
@@ -553,6 +555,8 @@ final class AndroidOptionsInitializer {
             epochClock,
             HangRecorder.DEFAULT_POLLING_INTERVAL_MS,
             HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS,
+            HangRecorder.DEFAULT_PERSIST_AFTER_MS,
+            AnrProfileManager.MAX_NUM_STACKTRACES,
             HangRecorder.DEFAULT_EXECUTOR_FACTORY,
             metronome ->
                 Collections.singletonList(
@@ -563,7 +567,9 @@ final class AndroidOptionsInitializer {
                         mainThreadPoster,
                         HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS)),
             Collections.singletonList(
-                new ThreadSampleCollector(options, epochClock, ticker, mainLooper.getThread())));
+                new HangRecorder.CollectorSetup<>(
+                    new ThreadSampleCollector(epochClock, mainLooper.getThread()),
+                    new AnrProfileStore(options))));
     options.setHangRecorder(recorder);
   }
 

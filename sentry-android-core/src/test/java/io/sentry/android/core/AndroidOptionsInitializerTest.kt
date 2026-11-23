@@ -23,6 +23,8 @@ import io.sentry.NoOpTransactionProfiler
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
+import io.sentry.android.core.anr.AnrProfileManager
+import io.sentry.android.core.anr.AnrProfileStore
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.hang.HangDataCollector
 import io.sentry.android.core.hang.HangRecorder
@@ -708,6 +710,10 @@ class AndroidOptionsInitializerTest {
       .isEqualTo(HangRecorder.DEFAULT_POLLING_INTERVAL_MS)
     assertThat(recorder.getProperty<Long>("maxRecordingTimeMs"))
       .isEqualTo(HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS)
+    assertThat(recorder.getProperty<Long>("persistAfterMs"))
+      .isEqualTo(HangRecorder.DEFAULT_PERSIST_AFTER_MS)
+    assertThat(recorder.getProperty<Int>("maxSamples"))
+      .isEqualTo(AnrProfileManager.MAX_NUM_STACKTRACES)
     assertThat(recorder.getProperty<Any>("executorFactory"))
       .isSameInstanceAs(HangRecorder.DEFAULT_EXECUTOR_FACTORY)
   }
@@ -741,20 +747,22 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
-  fun `HangRecorder collector samples the main thread`() {
+  fun `HangRecorder collector samples the main thread into the ANR profile store`() {
     fixture.initSut()
 
-    val collector =
+    val setup =
       fixture.sentryOptions.hangRecorder!!
-        .getProperty<List<HangDataCollector>>("collectors")
+        .getProperty<List<HangRecorder.CollectorSetup<*>>>("collectors")
         .single()
+    val collector = setup.getProperty<HangDataCollector<*>>("collector")
     assertThat(collector).isInstanceOf(ThreadSampleCollector::class.java)
     assertThat(collector.getProperty<Any>("epochClock"))
       .isSameInstanceAs(fixture.sentryOptions.epochClock)
-    assertThat(collector.getProperty<Any>("ticker"))
-      .isSameInstanceAs(JavaMonotonicTicker.getInstance())
     assertThat(collector.getProperty<Thread>("thread"))
       .isSameInstanceAs(Looper.getMainLooper().thread)
+    val store = setup.getProperty<Any>("store")
+    assertThat(store).isInstanceOf(AnrProfileStore::class.java)
+    assertThat(store.getProperty<Any>("options")).isSameInstanceAs(fixture.sentryOptions)
   }
 
   @Test

@@ -19,9 +19,11 @@ import io.sentry.android.core.anr.AnrCulpritEventHelper;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
 import io.sentry.android.core.anr.AnrStackTrace;
 import io.sentry.android.core.anr.NonFatalAnrMarker;
+import io.sentry.android.core.hang.HangInterval;
 import io.sentry.android.core.hang.HangRecord;
 import io.sentry.android.core.hang.HangRecorder;
 import io.sentry.android.core.hang.HangRecorderListener;
+import io.sentry.android.core.hang.HangRecordingRequest;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
@@ -114,6 +116,11 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       this.culpritEventHelper =
           new AnrCulpritEventHelper(
               new SentryExceptionFactory(new SentryStackTraceFactory(options)));
+    }
+
+    @Override
+    public @NotNull HangRecordingRequest onHangStarted(final @NotNull HangInterval interval) {
+      return HangRecordingRequest.DEFAULT;
     }
 
     @Override
