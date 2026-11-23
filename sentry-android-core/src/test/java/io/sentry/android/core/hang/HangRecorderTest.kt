@@ -475,10 +475,11 @@ class HangRecorderTest {
         it.totalMemory = 50
       }
     }
-    createRecorder(collectors = listOf(RuntimeStatsCollector(source)))
+    createRecorder(collectors = listOf(CollectorSetup(RuntimeStatsCollector(source), null)))
     startInForeground()
     openIntervalInTick(300)
     gcCount = 13
+    executor.runTick()
 
     signal.report(HangSignal.State.IDLE, 0)
     sdkExecutor.runAll()

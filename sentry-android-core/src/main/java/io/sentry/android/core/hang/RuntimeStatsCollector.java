@@ -1,20 +1,19 @@
 package io.sentry.android.core.hang;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Records the runtime counters at the first sample and at the end of a hang interval. The record
- * gets the final values and the change of the GC counters over the hang, see the {@code KEY_*}
- * constants.
- *
- * <p>Not thread-safe, {@link HangRecorder} calls it only on its recorder thread.
+ * Reads the runtime counters on each tick of a hang interval. The record gets the values of the
+ * last tick and the change of the GC counters from the first to the last tick, see the {@code
+ * KEY_*} constants.
  */
 @ApiStatus.Internal
-public final class RuntimeStatsCollector implements HangDataCollector {
+public final class RuntimeStatsCollector implements HangDataCollector<RuntimeStatsSnapshot> {
 
   public static final @NotNull String KEY_GC_COUNT = "gc_count";
   public static final @NotNull String KEY_GC_TIME_MS = "gc_time_ms";
@@ -33,32 +32,24 @@ public final class RuntimeStatsCollector implements HangDataCollector {
   public static final @NotNull String KEY_BLOCKING_GC_TIME_MS_DELTA = "blocking_gc_time_ms_delta";
 
   private final @NotNull RuntimeStatsSource source;
-  private @Nullable RuntimeStatsSnapshot baseline;
 
   public RuntimeStatsCollector(final @NotNull RuntimeStatsSource source) {
     this.source = source;
   }
 
   @Override
-  public void onRecordingStarted(final @NotNull HangInterval interval) {
-    baseline = null;
-  }
-
-  @Override
-  public void onSample(final @NotNull HangInterval interval) {
-    if (baseline == null) {
-      baseline = source.read();
-    }
+  public @NotNull RuntimeStatsSnapshot onSample(final @NotNull HangInterval interval) {
+    return source.read();
   }
 
   @Override
   public void onRecordingStopped(
-      final @NotNull HangInterval interval, final @NotNull HangRecord.Builder out) {
-    final @Nullable RuntimeStatsSnapshot start = baseline;
-    if (start == null) {
+      final @NotNull List<RuntimeStatsSnapshot> samples, final @NotNull HangRecord.Builder out) {
+    if (samples.isEmpty()) {
       return;
     }
-    final @NotNull RuntimeStatsSnapshot end = source.read();
+    final @NotNull RuntimeStatsSnapshot start = samples.get(0);
+    final @NotNull RuntimeStatsSnapshot end = samples.get(samples.size() - 1);
 
     final @NotNull Map<String, Object> stats = new HashMap<>();
     put(stats, KEY_GC_COUNT, end.gcCount);
@@ -89,14 +80,7 @@ public final class RuntimeStatsCollector implements HangDataCollector {
   }
 
   @Override
-  public void onRecordingCanceled() {
-    baseline = null;
-  }
-
-  @Override
-  public void close() {
-    baseline = null;
-  }
+  public void close() {}
 
   private static void put(
       final @NotNull Map<String, Object> map, final @NotNull String key, final @Nullable Object v) {

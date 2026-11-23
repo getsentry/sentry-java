@@ -33,19 +33,31 @@ class RuntimeStatsCollectorTest {
       it.maxMemory = 100
     }
 
-  private fun stop(): Map<String, Any>? {
+  private fun stop(samples: List<RuntimeStatsSnapshot>): Map<String, Any>? {
     val builder = HangRecord.Builder(1_000, 1)
-    collector.onRecordingStopped(interval, builder)
+    collector.onRecordingStopped(samples, builder)
     return builder.build().runtimeStats
   }
 
   @Test
-  fun `records the final values and the deltas over the hang`() {
-    source.next = snapshot(10, 100.0, 2, 20.0)
-    collector.onSample(interval)
-    source.next = snapshot(14, 130.5, 3, 45.0)
+  fun `onSample returns a read of the source`() {
+    val snapshot = snapshot(10, 100.0, 2, 20.0)
+    source.next = snapshot
 
-    val stats = stop()!!
+    assertThat(collector.onSample(interval)).isSameInstanceAs(snapshot)
+    assertThat(source.reads).isEqualTo(1)
+  }
+
+  @Test
+  fun `records the last values and the deltas from the first to the last sample`() {
+    val stats =
+      stop(
+        listOf(
+          snapshot(10, 100.0, 2, 20.0),
+          snapshot(12, 110.0, 2, 30.0),
+          snapshot(14, 130.5, 3, 45.0),
+        ),
+      )!!
 
     assertThat(stats[RuntimeStatsCollector.KEY_GC_COUNT]).isEqualTo(14L)
     assertThat(stats[RuntimeStatsCollector.KEY_GC_TIME_MS]).isEqualTo(130.5)
@@ -64,68 +76,38 @@ class RuntimeStatsCollectorTest {
   }
 
   @Test
-  fun `only the first sample takes the baseline`() {
-    source.next = snapshot(10, 100.0, 2, 20.0)
-    collector.onSample(interval)
-    source.next = snapshot(12, 100.0, 2, 20.0)
-    collector.onSample(interval)
-    source.next = snapshot(15, 100.0, 2, 20.0)
+  fun `one sample gives zero deltas`() {
+    val stats = stop(listOf(snapshot(10, 100.0, 2, 20.0)))!!
 
-    assertThat(stop()!![RuntimeStatsCollector.KEY_GC_COUNT_DELTA]).isEqualTo(5L)
-    assertThat(source.reads).isEqualTo(2)
+    assertThat(stats[RuntimeStatsCollector.KEY_GC_COUNT]).isEqualTo(10L)
+    assertThat(stats[RuntimeStatsCollector.KEY_GC_COUNT_DELTA]).isEqualTo(0L)
+    assertThat(stats[RuntimeStatsCollector.KEY_BLOCKING_GC_TIME_MS_DELTA]).isEqualTo(0.0)
   }
 
   @Test
-  fun `stop without a sample adds nothing`() {
-    assertThat(stop()).isNull()
-    assertThat(source.reads).isEqualTo(0)
-  }
-
-  @Test
-  fun `onRecordingCanceled drops the baseline`() {
-    collector.onSample(interval)
-    collector.onRecordingCanceled()
-
-    assertThat(stop()).isNull()
-  }
-
-  @Test
-  fun `a new interval after onRecordingCanceled gets a new baseline`() {
-    source.next = snapshot(10, 100.0, 2, 20.0)
-    collector.onSample(interval)
-    collector.onRecordingCanceled()
-    source.next = snapshot(20, 100.0, 2, 20.0)
-    collector.onSample(interval)
-    source.next = snapshot(21, 100.0, 2, 20.0)
-
-    assertThat(stop()!![RuntimeStatsCollector.KEY_GC_COUNT_DELTA]).isEqualTo(1L)
-  }
-
-  @Test
-  fun `onRecordingStarted drops the baseline of the previous interval`() {
-    collector.onSample(interval)
-
-    collector.onRecordingStarted(HangInterval(1_000))
-
-    assertThat(stop()).isNull()
-  }
-
-  @Test
-  fun `close drops the baseline`() {
-    collector.onSample(interval)
-
-    collector.close()
-
-    assertThat(stop()).isNull()
+  fun `no samples adds nothing`() {
+    assertThat(stop(emptyList())).isNull()
   }
 
   @Test
   fun `values the source does not provide are left out`() {
-    source.next = RuntimeStatsSnapshot().also { it.totalMemory = 50 }
-    collector.onSample(interval)
-
-    val stats = stop()!!
+    val stats = stop(listOf(RuntimeStatsSnapshot().also { it.totalMemory = 50 }))!!
 
     assertThat(stats).containsExactly(RuntimeStatsCollector.KEY_TOTAL_MEMORY, 50L)
+  }
+
+  @Test
+  fun `a delta needs the value in the first and the last sample`() {
+    val first = RuntimeStatsSnapshot().also { it.gcTimeMs = 100.0 }
+    val last =
+      RuntimeStatsSnapshot().also {
+        it.gcCount = 14
+        it.gcTimeMs = 130.0
+      }
+
+    val stats = stop(listOf(first, last))!!
+
+    assertThat(stats).doesNotContainKey(RuntimeStatsCollector.KEY_GC_COUNT_DELTA)
+    assertThat(stats[RuntimeStatsCollector.KEY_GC_TIME_MS_DELTA]).isEqualTo(30.0)
   }
 }

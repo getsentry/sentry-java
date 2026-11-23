@@ -736,11 +736,14 @@ class AndroidOptionsInitializerTest {
   fun `HangRecorder collects runtime stats on API 23 and above`() {
     fixture.initSut()
 
-    val collectors =
-      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangDataCollector>>("collectors")
-    assertThat(collectors.map { it.javaClass })
+    val setups =
+      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangRecorder.CollectorSetup<*>>>(
+        "collectors",
+      )
+    assertThat(setups.map { it.getProperty<Any>("collector").javaClass })
       .containsExactly(ThreadSampleCollector::class.java, RuntimeStatsCollector::class.java)
       .inOrder()
+    assertThat(setups[1].getProperty<Any?>("store")).isNull()
   }
 
   @Test
@@ -750,9 +753,12 @@ class AndroidOptionsInitializerTest {
 
     fixture.initSut(buildInfoProvider = buildInfo)
 
-    val collectors =
-      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangDataCollector>>("collectors")
-    assertThat(collectors.map { it.javaClass }).containsExactly(ThreadSampleCollector::class.java)
+    val setups =
+      fixture.sentryOptions.hangRecorder!!.getProperty<List<HangRecorder.CollectorSetup<*>>>(
+        "collectors",
+      )
+    assertThat(setups.map { it.getProperty<Any>("collector").javaClass })
+      .containsExactly(ThreadSampleCollector::class.java)
   }
 
   @Test

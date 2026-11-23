@@ -559,7 +559,8 @@ final class AndroidOptionsInitializer {
     final @Nullable RuntimeStatsSource runtimeStatsSource =
         createRuntimeStatsSource(buildInfoProvider, options.getLogger());
     if (runtimeStatsSource != null) {
-      collectors.add(new RuntimeStatsCollector(runtimeStatsSource));
+      collectors.add(
+          new HangRecorder.CollectorSetup<>(new RuntimeStatsCollector(runtimeStatsSource), null));
     }
     final @NotNull HangRecorder recorder =
         new HangRecorder(

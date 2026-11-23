@@ -980,10 +980,9 @@ public final class io/sentry/android/core/hang/RuntimeStatsCollector : io/sentry
 	public static final field KEY_TOTAL_MEMORY Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/hang/RuntimeStatsSource;)V
 	public fun close ()V
-	public fun onRecordingCanceled ()V
-	public fun onRecordingStarted (Lio/sentry/android/core/hang/HangInterval;)V
-	public fun onRecordingStopped (Lio/sentry/android/core/hang/HangInterval;Lio/sentry/android/core/hang/HangRecord$Builder;)V
-	public fun onSample (Lio/sentry/android/core/hang/HangInterval;)V
+	public fun onRecordingStopped (Ljava/util/List;Lio/sentry/android/core/hang/HangRecord$Builder;)V
+	public fun onSample (Lio/sentry/android/core/hang/HangInterval;)Lio/sentry/android/core/hang/RuntimeStatsSnapshot;
+	public synthetic fun onSample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
 }
 
 public final class io/sentry/android/core/hang/RuntimeStatsSnapshot {
