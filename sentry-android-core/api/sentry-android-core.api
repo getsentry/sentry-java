@@ -811,14 +811,8 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
-public abstract interface class io/sentry/android/core/hang/HangDataCollector : java/io/Closeable {
-	public abstract fun close ()V
-	public abstract fun sample (Lio/sentry/android/core/hang/HangInterval;)Ljava/lang/Object;
-}
-
-public final class io/sentry/android/core/hang/HangInterval {
-	public fun <init> (J)V
-	public fun getStartTimeMs ()J
+public abstract interface class io/sentry/android/core/hang/HangDataCollector {
+	public abstract fun sample ()Ljava/lang/Object;
 }
 
 public final class io/sentry/android/core/hang/HangRecord {
@@ -829,19 +823,25 @@ public final class io/sentry/android/core/hang/HangRecord {
 }
 
 public final class io/sentry/android/core/hang/HangRecord$Builder {
-	public fun <init> (JJ)V
+	public fun <init> ()V
 	public fun addStackTrace (Lio/sentry/android/core/anr/AnrStackTrace;)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun build ()Lio/sentry/android/core/hang/HangRecord;
+	public fun getStartTimeMs ()J
+	public fun increaseSamplingCount ()I
+	public fun isShouldPersist ()Z
+	public fun setDurationMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setEndedAtMaxRecordingTime (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
+	public fun setShouldPersist (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
+	public fun setStartTimeMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
+	public fun setStartTimestampMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 }
 
 public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome, java/io/Closeable {
 	public static final field DEFAULT_EXECUTOR_FACTORY Lio/sentry/android/core/hang/HangRecorder$ExecutorFactory;
 	public static final field DEFAULT_MAX_RECORDING_TIME_MS J
-	public static final field DEFAULT_PERSIST_AFTER_MS J
 	public static final field DEFAULT_POLLING_INTERVAL_MS J
 	public static final field DEFAULT_SUSPICIOUS_THRESHOLD_MS J
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJJILio/sentry/android/core/hang/HangRecorder$ExecutorFactory;Lio/sentry/android/core/hang/HangRecorder$SignalFactory;Ljava/util/List;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJILio/sentry/android/core/hang/HangRecorder$ExecutorFactory;Lio/sentry/android/core/hang/HangRecorder$SignalFactory;Ljava/util/List;)V
 	public fun addTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
 	public fun close ()V
 	public fun onBackground ()V
@@ -853,6 +853,7 @@ public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/
 
 public final class io/sentry/android/core/hang/HangRecorder$CollectorSetup {
 	public fun <init> (Lio/sentry/android/core/hang/HangDataCollector;Lio/sentry/android/core/hang/HangRecorder$RecordWriter;Lio/sentry/android/core/hang/HangSampleStore;)V
+	public fun sample (Lio/sentry/android/core/hang/HangRecord$Builder;)V
 }
 
 public abstract interface class io/sentry/android/core/hang/HangRecorder$ExecutorFactory {
@@ -869,20 +870,13 @@ public abstract interface class io/sentry/android/core/hang/HangRecorder$SignalF
 
 public abstract interface class io/sentry/android/core/hang/HangRecorderListener {
 	public abstract fun onHangRecorded (Lio/sentry/android/core/hang/HangRecord;)V
-	public abstract fun onHangStarted (Lio/sentry/android/core/hang/HangInterval;)Lio/sentry/android/core/hang/HangRecordingRequest;
+	public abstract fun onHangStarted ()Lio/sentry/android/core/hang/HangRecordingRequest;
 }
 
 public final class io/sentry/android/core/hang/HangRecordingRequest {
-	public static final field DEFAULT Lio/sentry/android/core/hang/HangRecordingRequest;
-	public static final field NONE Lio/sentry/android/core/hang/HangRecordingRequest;
+	public fun <init> (ZZ)V
 	public fun shouldPersist ()Z
 	public fun shouldRecord ()Z
-}
-
-public final class io/sentry/android/core/hang/HangRecordingRequest$Builder {
-	public fun <init> ()V
-	public fun build ()Lio/sentry/android/core/hang/HangRecordingRequest;
-	public fun setPersist (Z)Lio/sentry/android/core/hang/HangRecordingRequest$Builder;
 }
 
 public abstract interface class io/sentry/android/core/hang/HangSampleStore : java/io/Closeable {

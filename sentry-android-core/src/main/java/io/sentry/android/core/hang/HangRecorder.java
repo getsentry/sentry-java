@@ -27,14 +27,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Opens a {@link HangInterval} when a {@link HangSignal} reports {@link
- * HangSignal.State#SUSPICIOUS}, lets the {@link HangDataCollector}s sample on each tick, and gives
- * a {@link HangRecord} to the subscribers when the interval ends.
+ * Starts a {@link HangRecord} when a {@link HangSignal} reports {@link
+ * HangSignal.State#SUSPICIOUS}, lets the {@link HangDataCollector}s sample into it on each tick,
+ * and gives it to the subscribers that asked for it when the hang ends.
  *
- * <p>Each subscriber says in {@link HangRecorderListener#onHangStarted(HangInterval)} what it needs
- * from the interval. If no subscriber needs a record, the collectors are not called. The values of
- * an interval stay in memory. If a subscriber asks for it, they also go to the {@link
- * HangSampleStore}s once the hang is {@code persistAfterMs} old, so most hangs cause no disk IO.
+ * <p>Each subscriber says in {@link HangRecorderListener#onHangStarted()} what it needs from the
+ * hang. If no subscriber needs a record, the hang is not recorded and the collectors are not
+ * called. If a subscriber asks for it, the values also go to the {@link HangSampleStore}s from the
+ * start of the hang, so the fatal ANR path can read them after a process kill.
  *
  * <p>Runs on its own thread, {@code SentryHangRecorder}, which starts at the first subscription and
  * stops at {@link #close()}. All calls from other threads are moved to that thread, so the
@@ -50,7 +50,6 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
   public static final long DEFAULT_POLLING_INTERVAL_MS = 66;
   public static final long DEFAULT_MAX_RECORDING_TIME_MS = 8_000;
   public static final long DEFAULT_SUSPICIOUS_THRESHOLD_MS = 300;
-  public static final long DEFAULT_PERSIST_AFTER_MS = 700;
 
   /**
    * Creates the executor of the recorder thread. It must run one task at a time on one thread, in
@@ -87,6 +86,16 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       this.writer = writer;
       this.store = store;
     }
+
+    public void sample(final @NotNull HangRecord.Builder record) throws IOException {
+      final @Nullable T sample = collector.sample();
+      if (sample != null) {
+        writer.write(sample, record);
+        if (store != null && record.isShouldPersist()) {
+          store.add(sample);
+        }
+      }
+    }
   }
 
   public static final @NotNull ExecutorFactory DEFAULT_EXECUTOR_FACTORY =
@@ -103,7 +112,6 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
   private final @NotNull EpochClock epochClock;
   private final long pollingIntervalMs;
   private final long maxRecordingTimeMs;
-  private final long persistAfterMs;
   private final int maxSamples;
   private final @NotNull ExecutorFactory executorFactory;
   private final @NotNull List<HangSignal> signals;
@@ -120,11 +128,8 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
   private final @NotNull Set<HangRecorderListener> subscriptions = new LinkedHashSet<>();
   private boolean signalsStarted;
   private @Nullable Future<?> tickFuture;
-  private @Nullable HangInterval openInterval;
-  private long openIntervalStartTimestampMs;
-  private boolean persistOpenInterval;
+  private @Nullable HangRecord.Builder openHangRecord;
   private @NotNull List<HangRecorderListener> recordingSubscribers = Collections.emptyList();
-  private @NotNull List<Recording<?>> recordings = Collections.emptyList();
   private boolean waitingForIdleAfterMaxRecordingTime;
 
   private final @NotNull HangSignalListener signalListener =
@@ -155,7 +160,6 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       final @NotNull EpochClock epochClock,
       final long pollingIntervalMs,
       final long maxRecordingTimeMs,
-      final long persistAfterMs,
       final int maxSamples,
       final @NotNull ExecutorFactory executorFactory,
       final @NotNull SignalFactory signalFactory,
@@ -166,7 +170,6 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
     this.epochClock = epochClock;
     this.pollingIntervalMs = pollingIntervalMs;
     this.maxRecordingTimeMs = maxRecordingTimeMs;
-    this.persistAfterMs = persistAfterMs;
     this.maxSamples = maxSamples;
     this.executorFactory = executorFactory;
     this.signals = Collections.unmodifiableList(new ArrayList<>(signalFactory.create(this)));
@@ -175,9 +178,9 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
 
   /**
    * Starts the recorder thread at the first call, and the signals when the app is in the
-   * foreground. The recorder calls {@link HangRecorderListener#onHangStarted(HangInterval)} on the
-   * recorder thread and {@link HangRecorderListener#onHangRecorded(HangRecord)} on the SDK
-   * executor, see {@link SentryOptions#getExecutorService()}. Does nothing after {@link #close()}.
+   * foreground. The recorder calls {@link HangRecorderListener#onHangStarted()} on the recorder
+   * thread and {@link HangRecorderListener#onHangRecorded(HangRecord)} on the SDK executor, see
+   * {@link SentryOptions#getExecutorService()}. Does nothing after {@link #close()}.
    */
   public void subscribe(final @NotNull HangRecorderListener listener) {
     postOnRecorderThread(
@@ -190,8 +193,8 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
   }
 
   /**
-   * At the last subscription, stops the signals and the tick, and drops an open interval without a
-   * record. The recorder thread stays for the next {@link #subscribe(HangRecorderListener)}.
+   * At the last subscription, stops the signals and the tick, and drops an open hang record without
+   * delivering it. The recorder thread stays for the next {@link #subscribe(HangRecorderListener)}.
    */
   public void unsubscribe(final @NotNull HangRecorderListener listener) {
     postOnRecorderThread(
@@ -219,8 +222,8 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
   }
 
   /**
-   * Drops an open interval without a record, closes the signals, the collectors and the stores, and
-   * stops the recorder thread. Later calls do nothing.
+   * Drops an open hang record without delivering it, closes the signals and the stores, and stops
+   * the recorder thread. Later calls do nothing.
    */
   @Override
   public void close() {
@@ -237,7 +240,7 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
     }
     if (current == null) {
       // No recorder thread was started, so close here.
-      closeSignalsAndCollectors();
+      closeSignalsAndStores();
     }
   }
 
@@ -289,25 +292,20 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
         }
       } finally {
         subscriptions.clear();
-        closeSignalsAndCollectors();
+        closeSignalsAndStores();
       }
     } finally {
       self.shutdown();
     }
   }
 
-  private void closeSignalsAndCollectors() {
+  private void closeSignalsAndStores() {
     try {
       for (final @NotNull HangSignal signal : signals) {
         signal.close();
       }
     } finally {
       for (final @NotNull CollectorSetup<?> setup : collectors) {
-        try {
-          setup.collector.close();
-        } catch (IOException e) {
-          options.getLogger().log(SentryLevel.WARNING, "Failed to close a hang data collector", e);
-        }
         final @Nullable HangSampleStore<?> store = setup.store;
         if (store != null) {
           try {
@@ -350,9 +348,9 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       }
     } finally {
       if (endIntervalWithRecord) {
-        endInterval(nowMs(), false);
+        endRecord(nowMs(), false);
       } else {
-        cancelInterval();
+        cancelRecord();
       }
     }
   }
@@ -363,18 +361,26 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       for (final @NotNull TickListener listener : tickListeners) {
         listener.onMetronomeTick(nowMs);
       }
-      final @Nullable HangInterval interval = openInterval;
-      if (interval == null) {
+      final @Nullable HangRecord.Builder hangRecord = openHangRecord;
+      if (hangRecord == null) {
         return;
       }
       try {
-        for (final @NotNull Recording<?> recording : recordings) {
-          sample(recording, interval, nowMs);
+        // Stop sampling at the cap instead of rotating out samples: the early ones show how the
+        // hang began.
+        if (hangRecord.increaseSamplingCount() <= maxSamples) {
+          for (final @NotNull CollectorSetup<?> setup : collectors) {
+            try {
+              setup.sample(hangRecord);
+            } catch (IOException e) {
+              stopPersisting(hangRecord, e);
+            }
+          }
         }
       } finally {
-        // A collector that throws on every tick must not keep the interval open past the maximum.
-        if (nowMs - interval.getStartTimeMs() >= maxRecordingTimeMs) {
-          endInterval(interval.getStartTimeMs() + maxRecordingTimeMs, true);
+        // A collector that throws on every tick must not keep the hang open past the maximum.
+        if (nowMs - hangRecord.getStartTimeMs() >= maxRecordingTimeMs) {
+          endRecord(hangRecord.getStartTimeMs() + maxRecordingTimeMs, true);
           waitingForIdleAfterMaxRecordingTime = true;
         }
       }
@@ -390,73 +396,91 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       return;
     }
     if (state == HangSignal.State.SUSPICIOUS) {
-      if (openInterval != null || waitingForIdleAfterMaxRecordingTime) {
+      if (openHangRecord != null || waitingForIdleAfterMaxRecordingTime) {
         return;
       }
       final long nowTimestampMs = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
-      final @NotNull HangInterval interval = new HangInterval(sinceMs);
       boolean persist = false;
-      final @NotNull List<HangRecorderListener> intervalSubscribers = new ArrayList<>();
+      final @NotNull List<HangRecorderListener> hangSubscribers = new ArrayList<>();
       for (final @NotNull HangRecorderListener listener : subscriptions) {
-        final @NotNull HangRecordingRequest request = listener.onHangStarted(interval);
-        if (request.shouldRecord()) {
-          intervalSubscribers.add(listener);
-        }
-        if (request.shouldPersist()) {
-          persist = true;
-        }
-      }
-      final @NotNull List<Recording<?>> intervalRecordings = new ArrayList<>();
-      if (!intervalSubscribers.isEmpty()) {
-        for (final @NotNull CollectorSetup<?> setup : collectors) {
-          intervalRecordings.add(new Recording<>(setup));
+        final @Nullable HangRecordingRequest request = listener.onHangStarted();
+        if (request != null && request.shouldRecord()) {
+          hangSubscribers.add(listener);
+          if (request.shouldPersist()) {
+            persist = true;
+          }
         }
       }
-      openInterval = interval;
-      openIntervalStartTimestampMs = nowTimestampMs - (nowMs() - sinceMs);
-      persistOpenInterval = persist;
-      recordingSubscribers = intervalSubscribers;
-      recordings = intervalRecordings;
+      if (hangSubscribers.isEmpty()) {
+        return;
+      }
+      final @NotNull HangRecord.Builder hangRecord =
+          new HangRecord.Builder()
+              .setStartTimeMs(sinceMs)
+              .setStartTimestampMs(nowTimestampMs - (nowMs() - sinceMs))
+              .setShouldPersist(persist);
+      if (persist) {
+        clearStores(hangRecord);
+      }
+      openHangRecord = hangRecord;
+      recordingSubscribers = hangSubscribers;
     } else {
       waitingForIdleAfterMaxRecordingTime = false;
-      endInterval(sinceMs, false);
+      endRecord(sinceMs, false);
     }
   }
 
   private void handleSignalCanceled() {
     waitingForIdleAfterMaxRecordingTime = false;
-    cancelInterval();
+    cancelRecord();
   }
 
-  private void cancelInterval() {
-    openInterval = null;
+  private void clearStores(final @NotNull HangRecord.Builder hangRecord) {
+    for (final @NotNull CollectorSetup<?> setup : collectors) {
+      final @Nullable HangSampleStore<?> store = setup.store;
+      if (store == null) {
+        continue;
+      }
+      try {
+        store.clear();
+      } catch (IOException e) {
+        stopPersisting(hangRecord, e);
+        return;
+      }
+    }
+  }
+
+  private void stopPersisting(
+      final @NotNull HangRecord.Builder hangRecord, final @NotNull IOException e) {
+    hangRecord.setShouldPersist(false);
+    options.getLogger().log(SentryLevel.WARNING, "Failed to write to a hang sample store", e);
+  }
+
+  private void cancelRecord() {
+    openHangRecord = null;
     recordingSubscribers = Collections.emptyList();
-    recordings = Collections.emptyList();
   }
 
-  private void endInterval(final long endTimeMs, final boolean endedAtMaxRecordingTime) {
-    final @Nullable HangInterval interval = openInterval;
-    if (interval == null) {
+  private void endRecord(final long endTimeMs, final boolean endedAtMaxRecordingTime) {
+    final @Nullable HangRecord.Builder builder = openHangRecord;
+    if (builder == null) {
       return;
     }
-    final @NotNull List<Recording<?>> intervalRecordings = recordings;
     final @NotNull List<HangRecorderListener> listeners = new ArrayList<>();
     for (final @NotNull HangRecorderListener listener : recordingSubscribers) {
       if (subscriptions.contains(listener)) {
         listeners.add(listener);
       }
     }
-    cancelInterval();
+    cancelRecord();
     if (listeners.isEmpty()) {
       return;
     }
-    final @NotNull HangRecord.Builder builder =
-        new HangRecord.Builder(endTimeMs - interval.getStartTimeMs(), openIntervalStartTimestampMs)
-            .setEndedAtMaxRecordingTime(endedAtMaxRecordingTime);
-    for (final @NotNull Recording<?> recording : intervalRecordings) {
-      recording.writeTo(builder);
-    }
-    final @NotNull HangRecord record = builder.build();
+    final @NotNull HangRecord record =
+        builder
+            .setDurationMs(endTimeMs - builder.getStartTimeMs())
+            .setEndedAtMaxRecordingTime(endedAtMaxRecordingTime)
+            .build();
     try {
       final @NotNull Future<?> delivery =
           options
@@ -477,59 +501,7 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
     }
   }
 
-  private <T> void sample(
-      final @NotNull Recording<T> recording,
-      final @NotNull HangInterval interval,
-      final long nowMs) {
-    if (recording.samples.size() >= maxSamples) {
-      return;
-    }
-    final @Nullable T value = recording.setup.collector.sample(interval);
-    if (value != null) {
-      recording.samples.add(value);
-    }
-    final @Nullable HangSampleStore<T> store = recording.setup.store;
-    if (!persistOpenInterval
-        || store == null
-        || recording.storeFailed
-        || nowMs - interval.getStartTimeMs() < persistAfterMs) {
-      return;
-    }
-    try {
-      if (!recording.persisting) {
-        recording.persisting = true;
-        store.clear();
-        for (final @NotNull T buffered : recording.samples) {
-          store.add(buffered);
-        }
-      } else if (value != null) {
-        store.add(value);
-      }
-    } catch (IOException e) {
-      recording.storeFailed = true;
-      options.getLogger().log(SentryLevel.WARNING, "Failed to write to a hang sample store", e);
-    }
-  }
-
   private long nowMs() {
     return TimeUnit.NANOSECONDS.toMillis(ticker.tickNanos());
-  }
-
-  /** The values of one collector in the open interval. */
-  private static final class Recording<T> {
-    private final @NotNull CollectorSetup<T> setup;
-    private final @NotNull List<T> samples = new ArrayList<>();
-    private boolean persisting;
-    private boolean storeFailed;
-
-    private Recording(final @NotNull CollectorSetup<T> setup) {
-      this.setup = setup;
-    }
-
-    private void writeTo(final @NotNull HangRecord.Builder record) {
-      for (final @NotNull T sample : samples) {
-        setup.writer.write(sample, record);
-      }
-    }
   }
 }
