@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- Nav3: Serialize `NaN` and infinite navigation arguments as strings so they cannot prevent the containing error report or transaction from being serialized ([#6713](https://github.com/getsentry/sentry-java/pull/6713))
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 - Android app start: Reopening the app within a minute of process start is now reported as a warm start timed from the reopened screen, instead of reusing the cold start's timing. In standalone app start mode, this no longer sends the cold start a second time, as a warm start ([#6687](https://github.com/getsentry/sentry-java/pull/6687))
