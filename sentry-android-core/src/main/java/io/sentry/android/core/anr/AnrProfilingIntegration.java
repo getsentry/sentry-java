@@ -27,7 +27,8 @@ import org.jetbrains.annotations.Nullable;
  * on the next app start.
  *
  * <p>Subscribes to the {@link HangRecorder} of the options for the SDK lifetime, and draws the
- * sample rate at each hang. The recorder writes the stacks of a sampled hang to disk.
+ * sample rate at each hang. The recorder writes the stacks of a sampled hang to disk. An unsampled
+ * hang needs nothing from the recorder.
  *
  * <p>Enable via {@link SentryAndroidOptions#setAnrProfilingSampleRate(Double)} or the {@code
  * io.sentry.anr.profiling.sample-rate} manifest metadata.
@@ -118,7 +119,7 @@ public final class AnrProfilingIntegration
       if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
         return PERSIST;
       }
-      return HangRecordingRequest.DEFAULT;
+      return HangRecordingRequest.NONE;
     }
 
     @Override

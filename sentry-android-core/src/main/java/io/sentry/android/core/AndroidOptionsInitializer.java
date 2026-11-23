@@ -565,6 +565,7 @@ final class AndroidOptionsInitializer {
             Collections.singletonList(
                 new HangRecorder.CollectorSetup<>(
                     new ThreadSampleCollector(epochClock, mainLooper.getThread()),
+                    (stackTrace, record) -> record.addStackTrace(stackTrace),
                     new AnrProfileStore(options))));
     options.setHangRecorder(recorder);
   }

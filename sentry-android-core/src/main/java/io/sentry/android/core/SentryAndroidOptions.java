@@ -981,7 +981,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * detected. The profile is attached to the ANR event on the next app start.
    *
    * <p>The sampling decision is made at each hang. Stack sampling starts after the main thread was
-   * blocked for 300 ms.
+   * blocked for 300 ms. An unsampled hang captures no stacks, unless another feature, such as
+   * non-fatal ANR reporting, needs them.
    *
    * <p>Use {@code null} to disable ANR profiling (default). Values must be between {@code 0.0} and
    * {@code 1.0}.
