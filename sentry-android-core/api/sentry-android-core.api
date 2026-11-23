@@ -766,6 +766,14 @@ public final class io/sentry/android/core/anr/AnrProfileRotationHelper {
 	public static fun rotate ()V
 }
 
+public final class io/sentry/android/core/anr/AnrProfileStore : io/sentry/android/core/hang/HangSampleStore {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun add (Lio/sentry/android/core/anr/AnrStackTrace;)V
+	public synthetic fun add (Ljava/lang/Object;)V
+	public fun clear ()V
+	public fun close ()V
+}
+
 public final class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable, java/lang/Runnable {
 	public static final field POLLING_INTERVAL_MS J
 	public static final field THRESHOLD_ANR_MS J

@@ -980,9 +980,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Sets the sample rate for capturing main-thread stack profiles when a foreground ANR is
    * detected. The profile is attached to the ANR event on the next app start.
    *
-   * <p>The sampling decision is made once per SDK initialization, so a process records the stacks
-   * of all its hangs, or of none. Stack sampling starts after the main thread was blocked for 300
-   * ms.
+   * <p>The sampling decision is made at each hang. Stack sampling starts after the main thread was
+   * blocked for 300 ms.
    *
    * <p>Use {@code null} to disable ANR profiling (default). Values must be between {@code 0.0} and
    * {@code 1.0}.
