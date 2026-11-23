@@ -43,7 +43,11 @@ class MockRelay(
           if (request.path == envelopePath) {
             val appStart = RelayAsserter.RelayResponse(request, MockResponse())
             if (appStart.isAppStartTransaction()) {
-              appStartEnvelopes.add(appStart)
+              // The app start is sent right after init, while the cached envelopes are being sent,
+              // which can send it a second time from the disk cache
+              if (receivedEnvelopes.add(appStart.envelope!!.header.eventId.toString())) {
+                appStartEnvelopes.add(appStart)
+              }
               return appStart.response
             }
           }

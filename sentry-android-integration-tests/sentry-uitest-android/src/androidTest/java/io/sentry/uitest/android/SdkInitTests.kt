@@ -3,6 +3,7 @@ package io.sentry.uitest.android
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
@@ -123,6 +124,10 @@ class SdkInitTests : BaseUiTest() {
     }
     val afterRestart = System.currentTimeMillis()
     val restartMs = afterRestart - beforeRestart
+    // With tracing on, the second init sends a headless app start from a main thread IdleHandler.
+    // It would take the profiler, so we let it finish before starting our transaction. Espresso's
+    // onIdle() can return before IdleHandlers run, waitForIdleSync() can't.
+    InstrumentationRegistry.getInstrumentation().waitForIdleSync()
 
     relayIdlingResource.increment()
     Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
