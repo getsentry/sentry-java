@@ -436,7 +436,7 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `main thread is current and has culprit thread state`() {
+  fun `main thread is current and has no thread state`() {
     val listener = subscribed()
 
     listener.onHangRecorded(record())
@@ -446,25 +446,8 @@ class NonFatalAnrIntegrationTest {
     assertThat(thread.name).isEqualTo("main")
     assertThat(thread.isCurrent).isTrue()
     assertThat(thread.isMain).isTrue()
-    assertThat(thread.state).isEqualTo("BLOCKED")
+    assertThat(thread.state).isNull()
     assertThat(thread.stacktrace!!.frames).isNotEmpty()
-  }
-
-  @Test
-  fun `thread state is taken from the last sample with the culprit stack`() {
-    val other = arrayOf(frame("java.lang.Thread", "sleep"))
-    val samples =
-      listOf(
-        AnrStackTrace(1_100, systemStack, Thread.State.RUNNABLE),
-        AnrStackTrace(1_200, systemStack, Thread.State.WAITING),
-        AnrStackTrace(1_300, other, Thread.State.TIMED_WAITING),
-      )
-    val listener = subscribed()
-
-    listener.onHangRecorded(record(samples = samples))
-
-    val (event, _) = capturedEvent()
-    assertThat(event.threads!!.single().state).isEqualTo("WAITING")
   }
 
   @Test
