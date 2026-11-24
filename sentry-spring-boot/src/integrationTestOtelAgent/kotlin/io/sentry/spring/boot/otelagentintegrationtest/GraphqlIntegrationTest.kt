@@ -10,9 +10,13 @@ import kotlin.test.Test
 
 /**
  * The agent traces each GraphQL operation as one span, with the operation's name as its op and
- * description, so the queries are named.
+ * description, so the queries are named. The tests enable the OpenTelemetry v3 preview, where the
+ * deprecated operation-name configuration property is ignored.
  */
 class GraphqlIntegrationTest : IntegrationTest() {
+
+  override val app: AgentApp
+    get() = v3PreviewApp
 
   @Test
   fun `query is traced`() {
@@ -114,5 +118,14 @@ class GraphqlIntegrationTest : IntegrationTest() {
     return server
       .awaitEnvelope { it.transaction()?.contexts?.trace?.traceId == traceId }
       .transaction()!!
+  }
+
+  companion object {
+    private val v3PreviewApp: AgentApp by lazy {
+      AgentApp(additionalJvmArgs = listOf("-Dotel.instrumentation.common.v3-preview=true")).also {
+        app ->
+        Runtime.getRuntime().addShutdownHook(Thread { app.close() })
+      }
+    }
   }
 }

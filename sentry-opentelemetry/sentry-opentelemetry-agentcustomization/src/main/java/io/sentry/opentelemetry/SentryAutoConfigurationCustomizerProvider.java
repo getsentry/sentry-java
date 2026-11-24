@@ -61,10 +61,10 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   private void customizeOpenTelemetryDefaults() {
     try {
-      if (System.getProperty("otel.instrumentation.graphql.add-operation-name-to-span-name.enabled")
+      if (System.getProperty("otel.instrumentation.graphql.operation-name-in-span-name.enabled")
           == null) {
         System.setProperty(
-            "otel.instrumentation.graphql.add-operation-name-to-span-name.enabled", "true");
+            "otel.instrumentation.graphql.operation-name-in-span-name.enabled", "true");
       }
     } catch (Exception e) {
       logger.log(Level.WARNING, "Unable to change OpenTelemetry defaults for use with Sentry.", e);
