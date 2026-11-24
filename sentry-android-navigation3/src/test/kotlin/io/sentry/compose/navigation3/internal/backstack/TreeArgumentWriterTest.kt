@@ -115,6 +115,52 @@ class TreeArgumentWriterTest {
   }
 
   @Test
+  fun `scalar() - drops for the character limit without converting a CharSequence that's too long`() {
+    val limitedSink = TreeArgumentWriter(budgetWithCharactersRemaining(1))
+    limitedSink.key("")
+    val text = CountingText(length = 2, text = "ab")
+
+    val drop = assertFailsWith<DropArguments> { limitedSink.scalar(text) }
+
+    assertThat(drop.signal).isEqualTo(characterLimitDrop)
+    assertThat(text.toStringCalls).isEqualTo(0)
+  }
+
+  @Test
+  fun `scalar() - drops for the character limit when a CharSequence is longer than its reported length`() {
+    val limitedSink = TreeArgumentWriter(budgetWithCharactersRemaining(1))
+    limitedSink.key("")
+
+    val drop =
+      assertFailsWith<DropArguments> { limitedSink.scalar(CountingText(length = 1, text = "ab")) }
+
+    assertThat(drop.signal).isEqualTo(characterLimitDrop)
+  }
+
+  @Test
+  fun `scalar() - propagates the exception a CharSequence's toString() throws`() {
+    val error = IllegalArgumentException("unreadable")
+    sink.key("text")
+
+    val thrown = assertFailsWith<IllegalArgumentException> { sink.scalar(FailingText(error)) }
+
+    assertThat(thrown).isSameInstanceAs(error)
+    assertThat(sink.failure).isNull()
+  }
+
+  @Test
+  fun `scalar() - adds nothing for a CharSequence whose toString() throws, so its key can take a value`() {
+    sink.key("text")
+    assertFailsWith<IllegalArgumentException> {
+      sink.scalar(FailingText(IllegalArgumentException("unreadable")))
+    }
+
+    sink.scalar("replacement")
+
+    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("text" to "replacement"))
+  }
+
+  @Test
   fun `scalar() - spends characters for a Char value`() {
     val limitedSink = TreeArgumentWriter(budgetWithCharactersRemaining(0))
     limitedSink.key("")

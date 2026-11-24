@@ -3,6 +3,7 @@
 package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.ArgumentSink
@@ -72,9 +73,9 @@ import kotlinx.serialization.modules.SerializersModule
  * and open polymorphic values whose runtime classes aren't `@Serializable` (e.g., a `Parcelable`
  * property), need serializers registered in a `SerializersModule` we don't have, and some
  * serializers only work with a specific encoder. Their serializers throw an
- * [IllegalArgumentException] (which includes [SerializationException]). Rather than dropping all of
- * the entry's arguments, the encoder records such a value as [UNENCODABLE_SUBSTITUTE] and continues
- * with the next one.
+ * [IllegalArgumentException] (which includes [SerializationException]), as may a `CharSequence`
+ * value's `toString()`. Rather than dropping all of the entry's arguments, the encoder records such
+ * a value as [UNENCODABLE_SUBSTITUTE] and continues with the next one.
  *
  * It only does so if the serializer threw before writing anything for the value. Sinks can't undo
  * writes, so recording a value that's only partly written would show Sentry an incomplete value as
@@ -436,6 +437,11 @@ internal object KotlinxPropertiesEncoder {
 
     override fun put(value: Any?) {
       if (isKey) {
+        if (value is CharSequence && value.length > MAX_ARGUMENT_CHARACTERS) {
+          // The sink checks a key's length only once it's text, so we reject a CharSequence key
+          // that can't fit in any budget before copying it.
+          sink.reject(ArgumentDropReason.CHARACTER_LIMIT, DropArguments.MAX_CHARACTER_WARNING)
+        }
         val key = value.toString()
         // Let the sink reject oversized keys before the denylist scan allocates a lowercase copy.
         sink.key(key)
@@ -664,6 +670,11 @@ internal object KotlinxPropertiesEncoder {
   /**
    * Forwards to [sink], counting the values, keys, and structure boundaries written, so that an
    * encoder can tell whether a failing serializer wrote part of its value.
+   *
+   * Scalars are counted only once [sink] accepts them. A sink adds nothing for a scalar whose
+   * conversion fails (e.g., a `CharSequence` whose `toString()` throws), so the encoder can still
+   * record [UNENCODABLE_SUBSTITUTE] in its place. The failed scalar still counts towards the
+   * entry's value limit.
    */
   private class WriteCountingSink(private val sink: SensitiveKeyFilter) : ArgumentSink {
 
@@ -697,13 +708,13 @@ internal object KotlinxPropertiesEncoder {
     }
 
     override fun scalar(value: Any?) {
-      writes++
       sink.scalar(value)
+      writes++
     }
 
     override fun computedScalar(compute: () -> Any?) {
-      writes++
       sink.computedScalar(compute)
+      writes++
     }
 
     override fun end() {

@@ -4,11 +4,15 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
+import io.sentry.compose.navigation3.internal.backstack.FailingText
+import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
+import io.sentry.compose.navigation3.internal.backstack.budgetWithValuesRemaining
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE
 import io.sentry.util.UrlUtils
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
@@ -39,6 +43,12 @@ class KotlinxPropertiesEncoderUnencodableTest {
 
   @Serializable
   internal data class WithContextualSecret(val id: String, @Contextual val authToken: Unregistered)
+
+  @Serializable internal data class WithTextList(val labels: List<CharSequence>)
+
+  @Serializable internal data class WithTextMapValues(val byId: Map<String, CharSequence>)
+
+  @Serializable internal data class WithTextMapKeys(val countsByLabel: Map<CharSequence, Int>)
 
   /** Places [value] between two properties that encode, so its neighbors on both sides show. */
   @Serializable data class Labeled<T>(val id: String, val value: T, val page: Int)
@@ -93,6 +103,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
     }
   }
 
+  private val textSerializer = PolymorphicSerializer(CharSequence::class)
   private val unencodableValues = mutableListOf<IllegalArgumentException>()
 
   // Values recorded as the Unencodable substitute
@@ -180,6 +191,39 @@ class KotlinxPropertiesEncoderUnencodableTest {
       .isEqualTo(mapOf("id" to "1", "value" to UNENCODABLE_SUBSTITUTE, "page" to 2))
   }
 
+  @Test
+  fun `encode() - records a CharSequence property whose toString() throws as the Unencodable substitute`() {
+    val text = FailingText(IllegalArgumentException("unreadable"))
+
+    val encoded = encodeToMap(Labeled.serializer(textSerializer), Labeled("1", text, page = 2))
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("id" to "1", "value" to UNENCODABLE_SUBSTITUTE, "page" to 2))
+  }
+
+  @Test
+  fun `encode() - records a CharSequence list element whose toString() throws as the Unencodable substitute`() {
+    val text = FailingText(IllegalArgumentException("unreadable"))
+    val entry = WithTextList(listOf("a", text, "c"))
+
+    val encoded = encodeToMap(WithTextList.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("labels" to listOf("a", UNENCODABLE_SUBSTITUTE, "c")))
+  }
+
+  @Test
+  fun `encode() - records a CharSequence map value whose toString() throws as the Unencodable substitute`() {
+    val text = FailingText(IllegalArgumentException("unreadable"))
+    val entry = WithTextMapValues(mapOf("a" to "first", "b" to text, "c" to "third"))
+
+    val encoded = encodeToMap(WithTextMapValues.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf("byId" to mapOf("a" to "first", "b" to UNENCODABLE_SUBSTITUTE, "c" to "third")),
+      )
+  }
+
   // Reporting values recorded as the Unencodable substitute
 
   @Test
@@ -193,6 +237,19 @@ class KotlinxPropertiesEncoderUnencodableTest {
     )
 
     assertThat(unencodableValues).containsExactly(failing.error)
+  }
+
+  @Test
+  fun `encode() - passes the exception a CharSequence's toString() throws to onUnencodableValue`() {
+    val text = FailingText(IllegalArgumentException("unreadable"))
+
+    encodeToMap(
+      Labeled.serializer(textSerializer),
+      Labeled("1", text, page = 2),
+      unencodableValues::add,
+    )
+
+    assertThat(unencodableValues).containsExactly(text.error)
   }
 
   @Test
@@ -304,6 +361,20 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
+  fun `encode() - throws when a CharSequence map key's toString() throws`() {
+    val text = FailingText(IllegalArgumentException("unreadable"))
+    val entry = WithTextMapKeys(mapOf(text to 1))
+
+    val thrown =
+      assertFailsWith<IllegalArgumentException> {
+        encodeToMap(WithTextMapKeys.serializer(), entry, unencodableValues::add)
+      }
+
+    assertThat(thrown).isSameInstanceAs(text.error)
+    assertThat(unencodableValues).isEmpty()
+  }
+
+  @Test
   fun `encode() - throws when the entry's own serializer throws a SerializationException`() {
     val error = SerializationException("entry unencodable")
     val serializer = RecordingSerializer(Detail.serializer()).apply { this.error = error }
@@ -341,6 +412,37 @@ class KotlinxPropertiesEncoderUnencodableTest {
 
     assertThat(thrown).isSameInstanceAs(failing.error)
     assertThat(unencodableValues).isEmpty()
+  }
+
+  @Test
+  fun `encode() - propagates a CharSequence's toString() exception that isn't an IllegalArgumentException`() {
+    val text = FailingText(IllegalStateException("unreadable"))
+
+    val thrown =
+      assertFailsWith<IllegalStateException> {
+        encodeToMap(
+          Labeled.serializer(textSerializer),
+          Labeled("1", text, page = 2),
+          unencodableValues::add,
+        )
+      }
+
+    assertThat(thrown).isSameInstanceAs(text.error)
+    assertThat(unencodableValues).isEmpty()
+  }
+
+  @Test
+  fun `encode() - counts a CharSequence whose toString() throws toward the value limit, besides its substitute`() {
+    // The id, the failed text, its substitute, and the page need four values.
+    val sink = TreeArgumentWriter(budgetWithValuesRemaining(3))
+    val text = FailingText(IllegalArgumentException("unreadable"))
+
+    val thrown =
+      assertFailsWith<DropArguments> {
+        encodeInto(Labeled.serializer(textSerializer), Labeled("1", text, page = 2), sink)
+      }
+
+    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
   }
 
   @Test

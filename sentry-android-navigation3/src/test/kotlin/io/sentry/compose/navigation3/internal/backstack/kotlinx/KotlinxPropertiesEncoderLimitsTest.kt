@@ -6,6 +6,7 @@ import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
+import io.sentry.compose.navigation3.internal.backstack.CountingText
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
 import io.sentry.compose.navigation3.internal.backstack.budgetWithValuesRemaining
@@ -106,6 +107,9 @@ class KotlinxPropertiesEncoderLimitsTest {
     override fun deserialize(decoder: Decoder): Code = throw UnsupportedOperationException()
   }
 
+  private val textKeyedMapSerializer =
+    MapSerializer(PolymorphicSerializer(CharSequence::class), Int.serializer())
+
   // Character limit
 
   @Test
@@ -178,6 +182,43 @@ class KotlinxPropertiesEncoderLimitsTest {
 
     assertThat(exception.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
     assertThat(exception.warning).isEqualTo(DropArguments.MAX_CHARACTER_WARNING)
+  }
+
+  @Test
+  fun `encode() - encodes a CharSequence map key of the maximum number of characters`() {
+    val key =
+      CountingText(length = MAX_ARGUMENT_CHARACTERS, text = "k".repeat(MAX_ARGUMENT_CHARACTERS))
+    val (serializer, entry) =
+      boxed(depth = 0, value = mapOf<CharSequence, Int>(key to 1), textKeyedMapSerializer)
+
+    val encoded = encodeToMap(serializer, entry)
+
+    assertThat(encoded).isEqualTo(mapOf("k".repeat(MAX_ARGUMENT_CHARACTERS) to 1))
+  }
+
+  @Test
+  fun `encode() - drops for the character limit without converting a CharSequence map key that's too long`() {
+    val key = CountingText(length = MAX_ARGUMENT_CHARACTERS + 1, text = "short")
+    val (serializer, entry) =
+      boxed(depth = 0, value = mapOf<CharSequence, Int>(key to 1), textKeyedMapSerializer)
+
+    val exception = assertFailsWith<DropArguments> { encodeToMap(serializer, entry) }
+
+    assertThat(exception.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
+    assertThat(exception.warning).isEqualTo(DropArguments.MAX_CHARACTER_WARNING)
+    assertThat(key.toStringCalls).isEqualTo(0)
+  }
+
+  @Test
+  fun `encode() - drops for the character limit without converting a CharSequence property that's too long`() {
+    val text = CountingText(length = MAX_ARGUMENT_CHARACTERS - "value".length + 1, text = "short")
+    val (serializer, entry) =
+      boxed(depth = 1, value = text, PolymorphicSerializer(CharSequence::class))
+
+    val exception = assertFailsWith<DropArguments> { encodeToMap(serializer, entry) }
+
+    assertThat(exception.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
+    assertThat(text.toStringCalls).isEqualTo(0)
   }
 
   // Depth limit

@@ -268,7 +268,7 @@ internal class TreeArgumentWriter(
         // JSON has no NaN or infinity, and Sentry's JSON writer throws for them, which would drop
         // the whole event these arguments are attached to. We record them as strings instead.
         is Number -> if (value.isNonFinite()) budget.spendText(value.toString()) else value
-        is CharSequence,
+        is CharSequence -> budget.spendText(value)
         is Char -> budget.spendText(value.toString())
         else ->
           throw IllegalArgumentException("Unsupported scalar of type ${value.javaClass.name}.")
@@ -415,11 +415,26 @@ internal class ArgumentBudget {
 
   /** Returns [text] after spending its characters. */
   fun spendText(text: String): String {
-    if (text.length > remainingCharacters) {
-      throw DropArguments(ArgumentDropReason.CHARACTER_LIMIT, DropArguments.MAX_CHARACTER_WARNING)
-    }
+    checkFits(text.length)
     remainingCharacters -= text.length
     return text
+  }
+
+  /**
+   * Returns [text] as a [String] after spending its characters.
+   *
+   * Checks [text]'s length before converting it, so that host app text that doesn't fit isn't
+   * copied, and again after, in case a custom [CharSequence]'s length doesn't match its text.
+   */
+  fun spendText(text: CharSequence): String {
+    checkFits(text.length)
+    return spendText(text.toString())
+  }
+
+  private fun checkFits(characters: Int) {
+    if (characters > remainingCharacters) {
+      throw DropArguments(ArgumentDropReason.CHARACTER_LIMIT, DropArguments.MAX_CHARACTER_WARNING)
+    }
   }
 }
 
