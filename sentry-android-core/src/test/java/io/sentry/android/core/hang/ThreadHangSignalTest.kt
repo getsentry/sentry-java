@@ -76,7 +76,7 @@ class ThreadHangSignalTest {
     metronome = FakeMetronome()
     poster = FakePoster()
     listener = RecordingListener()
-    signal = createSignal(HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
+    signal = createSignal(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
     signal.start(listener)
   }
 
@@ -104,7 +104,7 @@ class ThreadHangSignalTest {
     advanceAndTick(66)
     poster.runProbe()
     val probeRun = nowMs
-    advanceAndTick(HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS + 1)
+    advanceAndTick(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS + 1)
 
     assertThat(listener.changes).containsExactly(HangSignal.State.SUSPICIOUS to probeRun)
     assertThat(probeRun).isEqualTo(start + 66)
@@ -150,7 +150,7 @@ class ThreadHangSignalTest {
   fun `delay below 300ms sends nothing`() {
     advanceAndTick(66)
     poster.runProbe()
-    advanceAndTick(HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
+    advanceAndTick(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
 
     assertThat(listener.changes).isEmpty()
     assertThat(listener.canceled).isEqualTo(0)

@@ -9,9 +9,9 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.android.core.hang.HangManager;
 import io.sentry.android.core.hang.HangRecord;
-import io.sentry.android.core.hang.HangRecorder;
-import io.sentry.android.core.hang.HangRecorderListener;
+import io.sentry.android.core.hang.HangRecordingListener;
 import io.sentry.android.core.hang.HangRecordingRequest;
 import io.sentry.util.Objects;
 import io.sentry.util.SentryRandom;
@@ -25,9 +25,9 @@ import org.jetbrains.annotations.Nullable;
  * Captures main-thread stack profiles while the app is unresponsive and attaches them to ANR events
  * on the next app start.
  *
- * <p>Subscribes to the {@link HangRecorder} of the options for the SDK lifetime, and draws the
- * sample rate at each hang. The recorder writes the stacks of a sampled hang to disk. An unsampled
- * hang needs nothing from the recorder.
+ * <p>Subscribes to the {@link HangManager} of the options for the SDK lifetime, and draws the
+ * sample rate at each hang. The hang manager writes the stacks of a sampled hang to disk. An
+ * unsampled hang needs nothing from the hang manager.
  *
  * <p>Enable via {@link SentryAndroidOptions#setAnrProfilingSampleRate(Double)} or the {@code
  * io.sentry.anr.profiling.sample-rate} manifest metadata.
@@ -36,11 +36,11 @@ public final class AnrProfilingIntegration
     implements Integration, Closeable, AppState.AppStateListener, Runnable {
 
   // StackTraceConverter expects the samples this far apart.
-  public static final long POLLING_INTERVAL_MS = HangRecorder.DEFAULT_POLLING_INTERVAL_MS;
+  public static final long POLLING_INTERVAL_MS = HangManager.DEFAULT_POLLING_INTERVAL_MS;
   public static final long THRESHOLD_ANR_MS = 4000;
 
-  private final @NotNull AtomicReference<HangRecorder> subscribedRecorder = new AtomicReference<>();
-  private final @NotNull AtomicReference<HangRecorderListener> subscription =
+  private final @NotNull AtomicReference<HangManager> subscribedManager = new AtomicReference<>();
+  private final @NotNull AtomicReference<HangRecordingListener> subscription =
       new AtomicReference<>();
 
   @Override
@@ -57,26 +57,26 @@ public final class AnrProfilingIntegration
       logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
       return;
     }
-    final @Nullable HangRecorder recorder = androidOptions.getHangRecorder();
-    if (recorder == null) {
-      logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but there is no hang recorder");
+    final @Nullable HangManager manager = androidOptions.getHangManager();
+    if (manager == null) {
+      logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but there is no hang manager");
       return;
     }
-    if (!subscribedRecorder.compareAndSet(null, recorder)) {
+    if (!subscribedManager.compareAndSet(null, manager)) {
       return;
     }
-    final @NotNull HangRecorderListener listener = new ProfileSampler(androidOptions);
+    final @NotNull HangRecordingListener listener = new ProfileSampler(androidOptions);
     subscription.set(listener);
-    recorder.subscribe(listener);
+    manager.subscribe(listener);
     addIntegrationToSdkVersion("AnrProfiling");
   }
 
   @Override
   public void close() throws IOException {
-    final @Nullable HangRecorder recorder = subscribedRecorder.getAndSet(null);
-    final @Nullable HangRecorderListener listener = subscription.getAndSet(null);
-    if (recorder != null && listener != null) {
-      recorder.unsubscribe(listener);
+    final @Nullable HangManager manager = subscribedManager.getAndSet(null);
+    final @Nullable HangRecordingListener listener = subscription.getAndSet(null);
+    if (manager != null && listener != null) {
+      manager.unsubscribe(listener);
     }
   }
 
@@ -101,7 +101,7 @@ public final class AnrProfilingIntegration
   @Override
   public void run() {}
 
-  private static final class ProfileSampler implements HangRecorderListener {
+  private static final class ProfileSampler implements HangRecordingListener {
 
     private final @NotNull SentryAndroidOptions options;
 

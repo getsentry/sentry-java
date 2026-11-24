@@ -8,8 +8,8 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.android.core.hang.HangRecorder
-import io.sentry.android.core.hang.HangRecorderListener
+import io.sentry.android.core.hang.HangManager
+import io.sentry.android.core.hang.HangRecordingListener
 import io.sentry.util.Random
 import io.sentry.util.SentryRandom
 import kotlin.test.BeforeTest
@@ -33,7 +33,7 @@ class AnrProfilingIntegrationTest {
 
   private val scopes = mock<IScopes>()
   private val mockLogger = mock<ILogger>()
-  private val recorder = mock<HangRecorder>()
+  private val manager = mock<HangManager>()
   private lateinit var options: SentryAndroidOptions
 
   @BeforeTest
@@ -45,24 +45,24 @@ class AnrProfilingIntegrationTest {
         setLogger(mockLogger)
         isDebug = true
         anrProfilingSampleRate = 1.0
-        hangRecorder = recorder
+        hangManager = manager
       }
   }
 
-  private fun subscribed(): HangRecorderListener {
+  private fun subscribed(): HangRecordingListener {
     AnrProfilingIntegration().register(scopes, options)
-    val captor = argumentCaptor<HangRecorderListener>()
-    verify(recorder).subscribe(captor.capture())
+    val captor = argumentCaptor<HangRecordingListener>()
+    verify(manager).subscribe(captor.capture())
     return captor.firstValue
   }
 
   @Test
-  fun `register subscribes to the recorder when ANR profiling is enabled`() {
+  fun `register subscribes to the hang manager when ANR profiling is enabled`() {
     val integration = AnrProfilingIntegration()
 
     integration.register(scopes, options)
 
-    verify(recorder, times(1)).subscribe(any())
+    verify(manager, times(1)).subscribe(any())
     assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("AnrProfiling")
   }
 
@@ -74,19 +74,19 @@ class AnrProfilingIntegrationTest {
 
     integration.register(scopes, options)
 
-    verify(recorder, times(1)).subscribe(any())
+    verify(manager, times(1)).subscribe(any())
     assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("AnrProfiling")
   }
 
   @Test
-  fun `sampled hang asks the recorder to persist`() {
+  fun `sampled hang asks the hang manager to persist`() {
     val listener = subscribed()
 
     assertThat(listener.onHangStarted()!!.shouldPersist()).isTrue()
   }
 
   @Test
-  fun `unsampled hang needs nothing from the recorder`() {
+  fun `unsampled hang needs nothing from the hang manager`() {
     options.anrProfilingSampleRate = Double.MIN_VALUE
     val listener = subscribed()
 
@@ -116,7 +116,7 @@ class AnrProfilingIntegrationTest {
   }
 
   @Test
-  fun `hang after the sample rate became null needs nothing from the recorder`() {
+  fun `hang after the sample rate became null needs nothing from the hang manager`() {
     val listener = subscribed()
 
     options.anrProfilingSampleRate = null
@@ -138,7 +138,7 @@ class AnrProfilingIntegrationTest {
 
     integration.register(scopes, options)
 
-    verify(recorder, never()).subscribe(any())
+    verify(manager, never()).subscribe(any())
   }
 
   @Test
@@ -148,14 +148,14 @@ class AnrProfilingIntegrationTest {
 
     integration.register(scopes, options)
 
-    verify(recorder, never()).subscribe(any())
+    verify(manager, never()).subscribe(any())
     verify(mockLogger)
       .log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set")
   }
 
   @Test
-  fun `register does nothing when there is no recorder`() {
-    options.hangRecorder = null
+  fun `register does nothing when there is no hang manager`() {
+    options.hangManager = null
     val integration = AnrProfilingIntegration()
 
     integration.register(scopes, options)
@@ -179,9 +179,9 @@ class AnrProfilingIntegrationTest {
 
     integration.close()
 
-    val subscribed = argumentCaptor<HangRecorderListener>()
-    verify(recorder).subscribe(subscribed.capture())
-    verify(recorder).unsubscribe(subscribed.firstValue)
+    val subscribed = argumentCaptor<HangRecordingListener>()
+    verify(manager).subscribe(subscribed.capture())
+    verify(manager).unsubscribe(subscribed.firstValue)
   }
 
   @Test
@@ -192,7 +192,7 @@ class AnrProfilingIntegrationTest {
     integration.close()
     integration.close()
 
-    verify(recorder, times(1)).unsubscribe(any())
+    verify(manager, times(1)).unsubscribe(any())
   }
 
   @Test
@@ -203,18 +203,18 @@ class AnrProfilingIntegrationTest {
 
     integration.close()
 
-    verify(recorder, never()).unsubscribe(any())
+    verify(manager, never()).unsubscribe(any())
   }
 
   @Test
-  fun `two integrations on one recorder use distinct subscriptions`() {
+  fun `two integrations on one hang manager use distinct subscriptions`() {
     val first = AnrProfilingIntegration()
     val second = AnrProfilingIntegration()
     first.register(scopes, options)
     second.register(scopes, options)
 
-    val subscribed = argumentCaptor<HangRecorderListener>()
-    verify(recorder, times(2)).subscribe(subscribed.capture())
+    val subscribed = argumentCaptor<HangRecordingListener>()
+    verify(manager, times(2)).subscribe(subscribed.capture())
     assertThat(subscribed.firstValue).isNotSameInstanceAs(subscribed.secondValue)
   }
 
@@ -223,13 +223,13 @@ class AnrProfilingIntegrationTest {
   fun `deprecated lifecycle and run methods do nothing`() {
     val integration = AnrProfilingIntegration()
     integration.register(scopes, options)
-    verify(recorder).subscribe(any())
+    verify(manager).subscribe(any())
 
     integration.onForeground()
     integration.onBackground()
     integration.run()
 
-    verifyNoMoreInteractions(recorder)
+    verifyNoMoreInteractions(manager)
   }
 
   private companion object {
