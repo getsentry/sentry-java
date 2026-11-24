@@ -3,14 +3,11 @@ package io.sentry.android.core.hang;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Reads one value of a data source on each sampling tick of a recorded hang. Called only on the
- * recorder thread.
- */
+/** Reads one value from a data source. */
 @ApiStatus.Internal
 public interface HangDataCollector<T> {
 
-  /** One value for this tick, or null for no value. Must be fast, no IO. */
+  /** One value, or null for no value. Must be fast, no IO. */
   @Nullable
   T sample();
 }
