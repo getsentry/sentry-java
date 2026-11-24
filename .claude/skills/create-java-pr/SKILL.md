@@ -112,6 +112,15 @@ default body shape — it is the single source of truth for the sections and che
 reproduce it from memory. Fill in each section based on the changes being PR'd, drop the HTML
 comment hints, and check any checklist items that apply.
 
+Before you create the PR, check which repository `gh` targets:
+
+```bash
+gh repo set-default --view
+```
+
+If it prints anything other than `getsentry/sentry-java`, or nothing, ask the user which repository
+to target. Don't let `gh` pick a community fork.
+
 Write the body to `/tmp/pr-body-<branch>.md`, with each `/` in the branch name replaced by `-`, not
 to pr-writer's `/tmp/pr-body.md`: that file outlives sessions and can still hold another PR's body.
 Only after the write succeeds, pass that file to `gh pr create` in place of pr-writer's:
