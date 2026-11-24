@@ -132,7 +132,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             file.getAbsolutePath(),
             errorMessageSuffix);
       }
-    } catch (Throwable e) {
+    } catch (SecurityException e) {
       logger.log(
           SentryLevel.ERROR,
           e,

@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -89,7 +90,7 @@ public final class AnrV2Integration implements Integration, Closeable {
             .submit(
                 new ApplicationExitInfoHistoryDispatcher(
                     context, scopes, this.options, dateProvider, new AnrV2Policy(this.options)));
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start ANR processor.", e);
       }
       options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");

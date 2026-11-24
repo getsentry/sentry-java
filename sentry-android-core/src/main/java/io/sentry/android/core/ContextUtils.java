@@ -438,7 +438,8 @@ public final class ContextUtils {
   static @Nullable String getFamily(final @NotNull ILogger logger) {
     try {
       return Build.MODEL.split(" ", -1)[0];
-    } catch (Throwable e) {
+    } catch (NullPointerException e) {
+      // Build fields are only null off-device, e.g. in unit tests against the android.jar stubs
       logger.log(SentryLevel.ERROR, "Error getting device family.", e);
       return null;
     }

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -214,7 +215,10 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
         final OperatingSystem androidOS = deviceInfoUtil.get().getOperatingSystem();
         // make Android OS the main OS using the 'os' key
         event.getContexts().setOperatingSystem(androidOS);
-      } catch (Throwable e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+      } catch (ExecutionException e) {
         options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
       }
     } else {
@@ -314,7 +318,10 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
       if (this.deviceInfoUtil != null) {
         try {
           deviceInfoUtil = this.deviceInfoUtil.get();
-        } catch (Throwable e) {
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        } catch (ExecutionException e) {
           options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
         }
       } else {
@@ -371,7 +378,10 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
             event.setTag(entry.getKey(), entry.getValue());
           }
         }
-      } catch (Throwable e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+      } catch (ExecutionException e) {
         options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
       }
     } else {

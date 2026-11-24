@@ -66,7 +66,9 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (calculateMetaLength != null) {
       try {
         return calculateMetaLength.call();
-      } catch (Throwable ignored) {
+      } catch (Exception e) {
+        // Callable.call() declares Exception, but the only factory reads a value that the data
+        // factory stored. The header is written without a meta length.
         return null;
       }
     }

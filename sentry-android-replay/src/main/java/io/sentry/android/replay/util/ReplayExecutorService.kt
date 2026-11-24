@@ -4,6 +4,7 @@ import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
 import io.sentry.util.ExceptionUtils
 import java.util.concurrent.Future
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -47,7 +48,7 @@ internal class ReplayExecutorService(
           )
         }
       }
-    } catch (e: Throwable) {
+    } catch (e: RejectedExecutionException) {
       options.logger.log(
         ERROR,
         "Failed to submit task ${if (task is ReplayRunnable) task.taskName else ""} to executor",
