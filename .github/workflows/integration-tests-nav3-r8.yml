@@ -16,12 +16,13 @@ on:
       - "sentry-android-integration-tests/*.gradle.kts"
       - "scripts/test-nav3-backstack-entry-mapper-r8.sh"
       - "scripts/update-nav3-kotlinx-serialization.sh"
+      - "scripts/nav3-r8-check-relevant.sh"
       - "gradle/libs.versions.toml"
       - "gradle/nav3.versions.toml"
       - ".github/workflows/integration-tests-nav3-r8.yml"
-  # Omit PRs that only change gradle/libs.versions.toml so we don't trigger R8 tests on unrelated
-  # dependency bumps. (Those changes are checked once they reach main.) The kotlinx.serialization
-  # floor lives in gradle/nav3.versions.toml so that PRs changing it are still checked.
+  # PRs that only change gradle/libs.versions.toml run the check only if they change a version it
+  # depends on (see the relevance job). When changing these paths, also update
+  # scripts/nav3-r8-check-relevant.sh.
   pull_request:
     paths:
       - "sentry-android-navigation3/**"
@@ -30,6 +31,8 @@ on:
       - "sentry-android-integration-tests/*.gradle.kts"
       - "scripts/test-nav3-backstack-entry-mapper-r8.sh"
       - "scripts/update-nav3-kotlinx-serialization.sh"
+      - "scripts/nav3-r8-check-relevant.sh"
+      - "gradle/libs.versions.toml"
       - "gradle/nav3.versions.toml"
       - ".github/workflows/integration-tests-nav3-r8.yml"
 
@@ -42,8 +45,39 @@ env:
   APK_ARTIFACT_NAME: "nav3-r8-check-apks"
 
 jobs:
+  # Skips the check for PRs whose only relevant change is an unrelated bump in
+  # gradle/libs.versions.toml. Skipping jobs (rather than the whole workflow) lets them report as
+  # skipped.
+  relevance:
+    name: Check relevance
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.check.outputs.relevant }}
+
+    steps:
+      # A PR's checkout is a merge commit, whose first parent is the base branch, so two commits
+      # are enough to diff the PR's changes.
+      - name: Checkout code
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: Check whether the changes affect the check
+        id: check
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            relevant="$(./scripts/nav3-r8-check-relevant.sh HEAD^1 HEAD)"
+          else
+            relevant=true
+          fi
+          echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+          echo "Nav3 R8 check relevant: $relevant"
+
   build:
     name: Build
+    needs: relevance
+    if: needs.relevance.outputs.relevant == 'true'
     runs-on: ubuntu-latest
 
     steps:
