@@ -5,14 +5,11 @@ import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Keeps the values of one collector on disk, so a process kill does not lose them. Called only on
- * the recorder thread.
- */
+/** Stores values on disk. */
 @ApiStatus.Internal
 public interface HangSampleStore<T> extends Closeable {
 
-  /** Called one time when a persisted hang starts, before its first {@link #add(Object)}. */
+  /** Removes all stored values. */
   void clear() throws IOException;
 
   void add(@NotNull T sample) throws IOException;
