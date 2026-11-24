@@ -382,18 +382,18 @@ class TestHelper(backendUrl: String) {
     description: String,
     data: Map<String, Any?> = emptyMap(),
   ): Boolean {
-    val span =
-      transaction.spans.firstOrNull { span -> span.op == op && span.description == description }
-    if (span == null) {
+    val candidates =
+      transaction.spans.filter { span -> span.op == op && span.description == description }
+    if (candidates.isEmpty()) {
       println("Unable to find span with op $op and description $description in transaction:")
       logObject(transaction)
       return false
     }
 
-    val mismatches = data.filter { (key, value) -> span.data?.get(key) != value }
-    if (mismatches.isNotEmpty()) {
+    val match = candidates.any { span -> data.all { (key, value) -> span.data?.get(key) == value } }
+    if (!match) {
       println(
-        "Span with op $op and description $description has data ${span.data}, expected $mismatches in transaction:"
+        "No span with op $op and description $description has data $data; found ${candidates.map { it.data }} in transaction:"
       )
       logObject(transaction)
       return false

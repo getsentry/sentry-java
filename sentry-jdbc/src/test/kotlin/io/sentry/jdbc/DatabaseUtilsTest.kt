@@ -1,6 +1,7 @@
 package io.sentry.jdbc
 
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -306,5 +307,26 @@ class DatabaseUtilsTest {
     val details = DatabaseUtils.parse("jdbc:log4jdbc:mysql://localhost:3306/app?useSSL=false")
     assertThat(details.dbSystem).isEqualTo("mysql")
     assertThat(details.dbName).isEqualTo("app")
+  }
+
+  @Test
+  fun `keeps connection properties out of file-based database names`() {
+    // url to expected db.name; the properties may hold the database key or password
+    val cases =
+      listOf(
+        "jdbc:sqlite:sample.db?journal_mode=WAL&password=secret" to "sample.db",
+        "jdbc:sqlite:/data/app.db?key=secret" to "/data/app.db",
+        "jdbc:sqlite:file:/data/app.db?key=secret#frag" to "/data/app.db",
+        "jdbc:sqlite:file:/data/app.db#secret" to "/data/app.db",
+        "jdbc:sqlite:file::memory:?cache=shared" to null,
+        "jdbc:otel:sqlite:file:sample.db?mode=ro&key=secret" to "sample.db",
+        "jdbc:p6spy:sqlite:sample.db?password=secret" to "sample.db",
+        "jdbc:hsqldb:file:db?password=secret" to "db",
+        "jdbc:h2:file:/data/app?key=secret" to "/data/app",
+      )
+
+    cases.forEach { (url, dbName) ->
+      assertWithMessage(url).that(DatabaseUtils.parse(url).dbName).isEqualTo(dbName)
+    }
   }
 }

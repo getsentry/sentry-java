@@ -31,6 +31,8 @@ import org.hsqldb.jdbc.JDBCDataSource
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryJdbcEventListenerTest {
@@ -124,6 +126,25 @@ class SentryJdbcEventListenerTest {
   }
 
   @Test
+  fun `does not read the statement when the jdbc span origin is ignored`() {
+    // OpenTelemetry's AGENT and AGENTLESS_SPRING modes ignore auto.db.jdbc by default
+    val sut = fixture.getListener()
+    fixture.options.setIgnoredSpanOrigins(listOf("auto.db.jdbc"))
+    val connection = mock<ConnectionInformation>()
+    val statement =
+      mock<StatementInformation>().apply {
+        whenever(connectionInformation).thenReturn(connection)
+      }
+
+    sut.onBeforeAnyExecute(statement)
+    sut.onAfterAnyExecute(statement, 0, null)
+
+    verify(statement, never()).sql
+    verify(connection, never()).url
+    assertThat(fixture.tx.children).isEmpty()
+  }
+
+  @Test
   fun `resolves database details for more connection URLs than are cached`() {
     // 65 URLs (url, db.system, db.name), alternating systems so a wrong entry shows
     val connections =
@@ -135,6 +156,7 @@ class SentryJdbcEventListenerTest {
 
     repeat(2) { connections.forEach { (url, _, _) -> sut.execute(url, "SELECT 1") } }
 
+    assertThat(fixture.tx.children).hasSize(2 * connections.size)
     (connections + connections).zip(fixture.tx.children).forEach { (connection, span) ->
       val (url, dbSystem, dbName) = connection
       assertWithMessage(url).that(span.data[DB_SYSTEM_KEY]).isEqualTo(dbSystem)
@@ -174,6 +196,7 @@ class SentryJdbcEventListenerTest {
 
     cases.forEach { (sql, _, _) -> sut.execute("jdbc:postgresql://localhost/app", sql) }
 
+    assertThat(fixture.tx.children).hasSize(cases.size)
     cases.zip(fixture.tx.children).forEach { (case, span) ->
       val (sql, text, summaryAndProcedure) = case
       val (summary, procedure) = summaryAndProcedure

@@ -65,12 +65,10 @@ public final class DatabaseUtils {
         return parseAsUri(dbSystem, StringUtils.removePrefix(urlString, dbSystem + ":"));
       }
       if (urlParts.length > 2) {
-        String dbNameAndMaybeMore = urlParts[2];
-        return new DatabaseDetails(dbSystem, StringUtils.substringBefore(dbNameAndMaybeMore, ";"));
+        return new DatabaseDetails(dbSystem, fileDbNameWithoutProperties(urlParts[2]));
       }
       if (urlParts.length > 1) {
-        String dbNameAndMaybeMore = urlParts[1];
-        return new DatabaseDetails(dbSystem, StringUtils.substringBefore(dbNameAndMaybeMore, ";"));
+        return new DatabaseDetails(dbSystem, fileDbNameWithoutProperties(urlParts[1]));
       }
     }
     if ("mariadb".equalsIgnoreCase(dbSystem)
@@ -134,6 +132,22 @@ public final class DatabaseUtils {
     }
 
     return new DatabaseDetails(dbSystem, null);
+  }
+
+  /**
+   * Cuts connection properties off a database name: {@code ;} (H2, HSQLDB, Derby) and {@code ?} or
+   * {@code #} (SQLite and HSQLDB URIs). The properties can hold a database key or password.
+   */
+  private static @Nullable String fileDbNameWithoutProperties(
+      final @NotNull String dbNameAndMaybeMore) {
+    int end = dbNameAndMaybeMore.length();
+    for (final char separator : new char[] {';', '?', '#'}) {
+      final int index = dbNameAndMaybeMore.indexOf(separator);
+      if (index >= 0 && index < end) {
+        end = index;
+      }
+    }
+    return end == 0 ? null : dbNameAndMaybeMore.substring(0, end);
   }
 
   private static @NotNull DatabaseDetails parseAsUri(

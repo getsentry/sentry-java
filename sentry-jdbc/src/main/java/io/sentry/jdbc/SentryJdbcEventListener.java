@@ -18,6 +18,7 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import io.sentry.util.sql.SqlSpanData;
 import java.sql.SQLException;
 import java.util.Map;
@@ -38,7 +39,8 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
 
   /**
    * p6spy shares one listener across all datasources of the JVM, so details are cached per
-   * connection URL. Bounded; URLs beyond the bound are parsed on every query.
+   * connection URL. Bounded; URLs beyond the bound are parsed on every query. The keys are full
+   * connection URLs and may contain credentials: never log them.
    */
   private static final int MAX_CACHED_DATABASE_DETAILS = 64;
 
@@ -171,7 +173,15 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
     }
   }
 
+  /**
+   * Returns the parent for a JDBC span, or {@code null} if no span would be recorded: no active
+   * span, or our origin is ignored (the default under OpenTelemetry), which would only yield a
+   * no-op child after the statement was analyzed.
+   */
   private @Nullable ISpan getActiveParent() {
+    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)) {
+      return null;
+    }
     final @Nullable ISpan parent = scopes.getSpan();
     return parent != null && !parent.isNoOp() ? parent : null;
   }
