@@ -13,7 +13,4 @@ public interface HangSampleStore<T> extends Closeable {
   void clear() throws IOException;
 
   void add(@NotNull T sample) throws IOException;
-
-  @Override
-  void close() throws IOException;
 }

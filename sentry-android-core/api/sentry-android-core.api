@@ -926,10 +926,9 @@ public final class io/sentry/android/core/hang/HangRecordingRequest {
 public abstract interface class io/sentry/android/core/hang/HangSampleStore : java/io/Closeable {
 	public abstract fun add (Ljava/lang/Object;)V
 	public abstract fun clear ()V
-	public abstract fun close ()V
 }
 
-public abstract interface class io/sentry/android/core/hang/HangSignal : java/io/Closeable {
+public abstract interface class io/sentry/android/core/hang/HangSignal {
 	public abstract fun close ()V
 	public abstract fun start (Lio/sentry/android/core/hang/HangSignalListener;)V
 	public abstract fun stop ()V
