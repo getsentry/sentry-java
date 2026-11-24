@@ -2801,7 +2801,7 @@ class ScopesTest {
 
   @Test
   fun `already formatted log is not formatted again`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
     val params =
       SentryLogParameters.create(
         SentryAttributes.of(SentryAttribute.stringAttribute("sentry.message.template", "q={}")),

@@ -899,7 +899,7 @@ class SentryAppenderTest {
 
   @Test
   fun `does not format an already formatted log message again`() {
-    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.ERROR, logsEnabled = true)
     fixture.logger.error("q={}", "PO%2010B")
 
     Sentry.flush(1000)
