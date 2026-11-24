@@ -80,7 +80,7 @@ internal class KotlinxArgumentSource(
     } catch (e: LinkageError) {
       // Preserve the entry's name and drop its properties. The creation-time probe checks encoder
       // compatibility but can't exercise every path. This LinkageError may be specific to the
-      // entry's serializers, so we keep the failure local to this type.
+      // entry's serializers, so only this entry's arguments are dropped.
       sink.failure?.let { throw it }
       onFailure(e)
       throw DropArguments(ArgumentDropReason.ENCODING_FAILED, warning = null)

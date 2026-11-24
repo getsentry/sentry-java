@@ -1,9 +1,7 @@
 # nav3-backstack-entry-mapper-r8-check
 
-Verifies that `BackStackEntryMapper.SerialName` and
-`BackStackEntryMapper.SerialNameAndProperties` from `sentry-android-navigation3` return expected Sentry names and arguments despite
-R8 obfuscation. `sentry-android-navigation3` ships no kotlinx.serialization keep rules, so the check relies on kotlinx.serialization's own
-consumer rules, plus the per-class rules in this app's `proguard-rules.pro` file.
+Verifies that `BackStackEntryMapper.SerialName` and `SerialNameAndProperties` return expected names and arguments after R8 obfuscation.
+The SDK ships no kotlinx.serialization keep rules; this app uses the library's consumer rules and per-class rules in `proguard-rules.pro`.
 
 The tests check serialization names, argument encoding (including open polymorphic values, whose serializers are looked up by
 reflection), and sensitive-value filtering. They also check that the mappers' compatibility probes passed (neither
@@ -19,17 +17,17 @@ Run the tests against a booted emulator or device:
 ```
 The script tests the kotlinx.serialization versions in `gradle/dependency-matrix.versions.toml`: the floor
 (`kotlinxSerialization-floor`), the latest stable release (`kotlinxSerialization-stable`), and the latest release candidate
-(`kotlinxSerialization-preview`), but the release candidate only while it's newer than the stable release. It builds and runs an APK in
-R8 full mode for each, and one in R8 compat mode for the floor, so three or four APKs. Compat mode keeps more than full mode, and only
-changes the outcome for named companion objects before kotlinx.serialization 1.10.0. It also builds and runs an APK from
-`nav3-no-kotlinx-r8-check`, which checks apps without kotlinx.serialization (see its README).
+(`kotlinxSerialization-preview`), when newer than stable. Each version runs in R8 full mode; the floor also runs in compat mode to cover
+named-companion lookups with older consumer rules. The script also runs
+[nav3-no-kotlinx-r8-check](../nav3-no-kotlinx-r8-check/README.md) to check apps without kotlinx.serialization.
 
 `scripts/test-nav3-kotlinx-versions.sh` runs the module's unit tests that use kotlinx.serialization against the same newer versions.
 
-Every APK must report `RESULT=PASS` in order to pass, except the release candidate's. Its build and run failures are warnings, unless
-`NAV3_PREVIEW_REQUIRED=true`. CI sets that on PRs that change `kotlinxSerialization-preview`, so a release candidate that breaks
-something only blocks its own PR. Set `NAV3_EXTRA_KOTLINX_VERSIONS` to override the extra versions tested (i.e., the versions besides the
-floor, which is always tested). Each of those is required.
+Each APK must report `RESULT=PASS`. Release candidate build and run failures are advisory unless `NAV3_PREVIEW_REQUIRED=true`, which
+CI sets on PRs that change `kotlinxSerialization-preview`.
+
+Set `NAV3_EXTRA_KOTLINX_VERSIONS="1.10.0 1.12.0"` to replace the extra versions with required versions of your choice. An empty string
+tests only the floor, which always runs.
 
 ## When a kotlinx.serialization bump fails
 
@@ -40,10 +38,8 @@ Two kinds of PRs bump the versions this check and the module's unit tests run ag
 - Each week, `update-deps.yml` opens or updates a PR that sets `kotlinxSerialization-preview` to the latest release candidate, using
   `scripts/update-kotlinx-serialization-preview.sh`.
 
-Each PR runs this check and the module's unit tests against the new version. Apps can adopt a release as soon as it ships, so treat a
-failure as a sign that apps on that version may already be affected, not as CI noise. For a release candidate, it's a sign that the
-next stable release may break them. Don't raise the kotlinx.serialization floor to fix it (see "Version floor" in the `kotlinx` package
-README of `sentry-android-navigation3`).
+Each PR runs the R8 check and unit tests against the new version. A failure may affect apps already using that release or signal a
+problem in the next stable release. Keep the existing floor supported; see "Version floor" in the `kotlinx` package README.
 
 **The PR doesn't compile.** A kotlinx.serialization release can require a newer Kotlin compiler than the repo uses (e.g., errors about
 an incompatible Kotlin metadata version or `Require-Kotlin-Version`). Our tests and this app are compiled by
@@ -57,7 +53,7 @@ our Kotlin compiler against the new release, so they can't be built until the re
 This doesn't mean apps on the new release are broken: they compile with their own, newer Kotlin compiler. It does mean that release is
 untested until the Kotlin upgrade lands.
 
-**Tests or this check fail.** kotlinx.serialization changed behavior our mappers rely on.
+**Tests or the R8 check fail.** Investigate whether kotlinx.serialization changed behavior the mappers rely on.
 
 1. Read the release's changelog, especially for changes to experimental APIs. `KotlinxPropertiesEncoder` subclasses the experimental
    `AbstractEncoder`, so changes to the calls serializers make on encoders matter most. A failing `KotlinxEncoderContractTest` shows

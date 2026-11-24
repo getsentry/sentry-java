@@ -70,13 +70,11 @@ internal class KotlinxBackStackEntryMapper(
   }
 
   /**
-   * `true` if the app's kotlinx.serialization version doesn't support the properties encoder, in
-   * which case no arguments are produced for any entries. Instead, entries with properties record
-   * [ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION] without being encoded. Names are
-   * unaffected.
+   * Whether the compatibility probe disabled property encoding. Entries with properties record
+   * [ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION]; names are unaffected.
    *
-   * Also adds [PROPERTY_ENCODING_DISABLED_INTEGRATION] to the SDK's integrations, which are sent
-   * with every event, so that the version problem is visible without debug logs.
+   * A failed probe also adds [PROPERTY_ENCODING_DISABLED_INTEGRATION] to event SDK info, making the
+   * problem visible without debug logs.
    */
   private val isEncodingIncompatible: Boolean =
     includeProperties &&
@@ -206,12 +204,9 @@ internal class KotlinxBackStackEntryMapper(
       // Any other reflective failure is specific to this type's serializer members.
       SerializerLookup(serializer = null, error = e)
     } catch (e: LinkageError) {
-      // A LinkageError, which the SDK otherwise rethrows as fatal, only fails this type. If the
-      // app's kotlinx.serialization version couldn't support name lookups at all, the probe that
-      // ran when this mapper was created would most likely have failed. So the error most likely
-      // comes from linking or initializing a class this type's serializer needs (e.g., a
-      // NoSuchMethodError from a serializer compiled against another version, or a
-      // NoClassDefFoundError for a class that failed to initialize earlier).
+      // The creation-time probe checks library compatibility. A later LinkageError may come
+      // from this type's serializer or its dependencies, so cache it as unresolved without
+      // disabling other types. Catch before rethrowIfFatal, which rethrows LinkageErrors.
       SerializerLookup(serializer = null, error = e)
     } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
       // Broad because the lookup reflects over the app's classes, and the reflection and
@@ -234,7 +229,7 @@ internal class KotlinxBackStackEntryMapper(
       descriptor.elementsCount > 0 ||
         (descriptor.kind != StructureKind.CLASS && descriptor.kind != StructureKind.OBJECT)
     } catch (_: LinkageError) {
-      // As for the name, a LinkageError from the type's own descriptor only fails this type.
+      // Preserve the resolved name and attempt encoding, which handles descriptor failures.
       true
     } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
       // Broad because a custom serializer's descriptor is host app code, which may throw anything.

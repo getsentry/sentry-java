@@ -59,11 +59,9 @@ internal class ShapeThrowingDetailSerializer(
 }
 
 /**
- * A [KotlinxCompatibilityProbe] that finds the app's kotlinx.serialization version compatible
- * unless [nameLookupError] or [encoderError] is set, so that mapper tests don't depend on the real
- * probe. Reports the name check inconclusive with [nameLookupInconclusive], if set. Any
- * [encoderError], whether a [LinkageError] or not, makes the properties encoder unusable and
- * disables property encoding. Counts the checks of the properties encoder in [encodingChecks].
+ * A controllable [KotlinxCompatibilityProbe] that reports compatibility by default. Set
+ * [nameLookupError] or [encoderError] to fail a check, or [nameLookupInconclusive] to report an
+ * inconclusive name check. Counts encoder checks in [encodingChecks].
  */
 internal class FakeCompatibilityProbe(
   private val nameLookupError: LinkageError? = null,

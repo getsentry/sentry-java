@@ -503,10 +503,8 @@ class KotlinxPropertiesEncoderFilteringTest {
   // Sensitive keys anywhere in the encoded tree
 
   /**
-   * Deliberately structure-agnostic: rather than asserting the encoded shape, this walks the whole
-   * output looking for any secret at the structural positions [SecretsEverywhere] covers. It checks
-   * the end result only, so it passes whether the encoders' own checks or `SensitiveKeyFilter`
-   * filter each value; it can't tell whether an encoding path bypasses the encoders' checks.
+   * Scans the entire output for secrets without requiring a particular shape. This checks the
+   * combined filtering result; it doesn't distinguish encoder checks from `SensitiveKeyFilter`.
    */
   @Test
   fun `encode() - doesn't record the values of sensitive keys anywhere in the encoded tree`() {

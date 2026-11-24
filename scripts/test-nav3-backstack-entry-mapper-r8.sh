@@ -6,9 +6,7 @@
 # The app is built against kotlinxSerialization-floor in gradle/dependency-matrix.versions.toml,
 # plus kotlinxSerialization-stable and, if it's newer, kotlinxSerialization-preview (or each version
 # in NAV3_EXTRA_KOTLINX_VERSIONS instead), in R8 full mode, and against the floor in R8 compat mode
-# too. Also builds
-# nav3-no-kotlinx-r8-check once, which checks that an app without kotlinx.serialization builds and
-# runs.
+# too. Also builds nav3-no-kotlinx-r8-check once to verify apps without kotlinx.serialization.
 #
 # A release candidate's APKs are advisory: if they fail to build or run, the script warns instead
 # of failing, unless NAV3_PREVIEW_REQUIRED=true (set by CI on PRs that change
@@ -28,13 +26,8 @@ noKotlinxModule="nav3-no-kotlinx-r8-check"
 noKotlinxModuleDir="sentry-android-integration-tests/nav3-no-kotlinx-r8-check"
 previewRequired="${NAV3_PREVIEW_REQUIRED:-false}"
 
-# Newer kotlinx.serialization versions to also build the app against, on top of the floor, as
-# "<role> <version>" entries. Lets us prevent regressions should host apps ship a newer
-# kotlinx.serialization version than we compile against. Also protects us against changes to the
-# experimental kotlinx.serialization APIs used by the arguments encoder.
-#
-# Defaults to the latest stable release (bumped by Dependabot) and any newer release candidate
-# (bumped weekly by scripts/update-kotlinx-serialization-preview.sh). Override with, e.g.,
+# Extra versions as "<role> <version>" lines. Defaults to stable and any newer preview from the
+# matrix catalog. Override with, e.g.,
 # NAV3_EXTRA_KOTLINX_VERSIONS="1.10.0 1.12.0" to test the floor, 1.10.0, and 1.12.0, all required.
 # (Provide an empty string to test the floor only.)
 extraKotlinxVersions=()

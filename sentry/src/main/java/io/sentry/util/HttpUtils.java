@@ -138,7 +138,7 @@ public final class HttpUtils {
 
   /**
    * Returns whether {@code key} contains a term from the Data Collection spec's sensitive denylist,
-   * matched partially and case-insensitively.
+   * matched as a case-insensitive substring.
    */
   public static boolean containsSensitiveDataKey(final @NotNull String key) {
     final @NotNull String normalizedKey = key.toLowerCase(Locale.ROOT);

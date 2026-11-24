@@ -174,14 +174,10 @@ internal interface KotlinxCompatibilityProbe {
      * A known serializable type used to test whether the app's kotlinx.serialization version
      * supports serializer lookup and property encoding, without running host app code.
      *
-     * Its properties use every encoding rule of [KotlinxPropertiesEncoder] that the encoder relies
-     * on kotlinx.serialization's serializers for: primitives, unsigned numbers, value classes,
-     * enums with serial names, lists, sets, maps, nested classes, sealed polymorphism, nullable
-     * values, and transient properties. It also has sensitive property names, a sensitive map key,
-     * and a value class with a sensitive underlying property name, which must be filtered. A
-     * kotlinx.serialization version that changes how its serializers drive the encoder for any of
-     * these is likely to change the encoding, so the probe catches it on versions CI never tested,
-     * before wrong arguments reach Sentry.
+     * Covers primitives, unsigned numbers, value classes, renamed enums, collections, maps, nested
+     * classes, sealed polymorphism, nulls, and transient properties, plus sensitive property names
+     * and map keys. Changes to these serializers may change the expected output, letting the probe
+     * detect incompatibilities on versions CI hasn't tested.
      *
      * Internal visibility lets the probe look up its serializer the same way
      * [KotlinxBackStackEntryMapper] looks up serializers for the host app's public back stack entry

@@ -132,7 +132,7 @@ internal interface ArgumentSink {
 }
 
 /**
- * Something that can write info about a back stack entry's properties to an [ArgumentSink].
+ * Writes a back stack entry's arguments to an [ArgumentSink].
  *
  * Sources decide which data to expose and whether to filter sensitive values. The sink applies size
  * and structural limits without performing sensitive-data filtering.
@@ -395,8 +395,8 @@ private fun Any.asCollectionOrNull(): Collection<*>? =
  * Control-flow signal to drop an entry's arguments. Overrides [fillInStackTrace] to skip
  * stack-trace capture.
  *
- * [warning] is logged when the arguments are dropped, or no-ops if `null` (e.g., because the source
- * logged its own).
+ * [warning] is logged when the arguments are dropped. Use `null` if no warning is needed, for
+ * example when the source already logged the failure.
  */
 internal class DropArguments(
   val reason: ArgumentDropReason,

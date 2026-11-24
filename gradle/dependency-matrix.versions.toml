@@ -1,6 +1,5 @@
-# Versions of dependencies we test against more than one version of: the oldest version we support
-# and compile against (low end), and their latest releases (high end). Registered as the
-# `matrixLibs` catalog.
+# Dependency test matrices, registered as the `matrixLibs` catalog: compile against the oldest
+# supported version and test against newer releases too.
 #
 # Kept apart from libs.versions.toml so that each matrix's tests can run on PRs that change its
 # versions, without also running on every unrelated dependency bump.

@@ -77,11 +77,10 @@ import kotlinx.serialization.modules.SerializersModule
  * value's `toString()`. Rather than dropping all of the entry's arguments, the encoder records such
  * a value as [UNENCODABLE_SUBSTITUTE] and continues with the next one.
  *
- * It only does so if the serializer threw before writing anything for the value. Sinks can't undo
- * writes, so recording a value that's only partly written would show Sentry an incomplete value as
- * if it were complete. Such failures still propagate, as do failures of the entry's own serializer
- * and of scalar map keys. (A key that fails can't be replaced without risking two keys with the
- * same text. Structured keys are recorded as entry values, so they are replaced like any value.)
+ * Substitution requires that the serializer failed before writing any part of the value, because
+ * sinks can't undo writes. Partial writes, failures of the entry's own serializer, and failures of
+ * scalar map keys propagate instead. Replacing a scalar key could create duplicate keys; structured
+ * keys are entry values and can be substituted like other values.
  *
  * **Open polymorphic values**
  *
@@ -131,10 +130,10 @@ internal object KotlinxPropertiesEncoder {
   /**
    * Encodes [value] with [serializer], writing its top-level properties to [sink]'s root map.
    *
-   * Throws [SerializationException] when the entry itself can't be encoded, or when a value fails
-   * after its serializer wrote part of it. Values that fail before being written are recorded as
-   * [UNENCODABLE_SUBSTITUTE] instead, and reported to [onUnencodableValue]. Throws [DropArguments]
-   * when an argument limit is exceeded.
+   * Propagates serializer failures for the entry itself, scalar map keys, or partially written
+   * values. Eligible values that fail before being written are recorded as [UNENCODABLE_SUBSTITUTE]
+   * instead, and reported to [onUnencodableValue]. Throws [DropArguments] when an argument limit is
+   * exceeded.
    *
    * Limit failures, including [MAX_SERIALIZER_NESTING], are recorded in [ArgumentSink.failure]. A
    * serializer can catch [DropArguments] and then throw a different exception or return normally.

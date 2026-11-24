@@ -29,11 +29,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 
 /**
- * Tests through [BuiltInBackStackEntryMappers.serialName] and
- * [BuiltInBackStackEntryMappers.serialNameAndProperties], directly or via [BackStackEntryMapper]'s
- * companion, share their lazily created mappers with every other test in the JVM. Those mappers'
- * caches, including which types they already logged, persist across tests, so tests that assert
- * logs must create their own mapper with `create()` or a fresh class loader.
+ * The built-in mappers are singletons whose caches and warning history persist across tests. Tests
+ * that assert logs must use `create()` or a fresh class loader to isolate that state.
  */
 class BuiltInBackStackEntryMappersTest {
 
@@ -277,14 +274,11 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   /**
-   * Races two threads on the first access of a fresh copy of the companion mapper [getterName], in
-   * the shape of a deadlock: this thread holds a lock of the app's while it accesses the mapper,
-   * and the other thread's creation of the mapper, which is already logging that the kotlinx mapper
-   * can't be loaded, waits for that lock in the app's logger.
+   * Races first accesses to [getterName] to detect lock inversion: this thread holds an app lock
+   * while accessing the mapper, and the other thread's mapper creation logs through a logger that
+   * needs the same lock. Holding a lazy-initialization lock while logging would deadlock.
    *
-   * Every wait is bounded, so a deadlock makes the logger give up on the lock rather than hang. The
-   * assertions inside are precondition guards that the race ran as intended, not the contracts
-   * under test.
+   * Bounded waits prevent a hang. Assertions inside the helper verify the race's preconditions.
    */
   private fun raceOnFirstAccess(getterName: String): FirstAccessRace {
     val appLock = ReentrantLock()

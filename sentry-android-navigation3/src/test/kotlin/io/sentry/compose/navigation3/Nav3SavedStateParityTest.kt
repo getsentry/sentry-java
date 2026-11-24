@@ -41,10 +41,8 @@ import org.robolectric.annotation.Config
  * `encodeToSavedState`, a [NavBackStackSerializer], and either [NavKeySerializer] with the default
  * configuration, or a polymorphic [NavKey] serializer with an app-provided configuration.
  *
- * [BackStackEntryMapper.SerialNameAndProperties] is a lazily created singleton shared with every
- * other test in the JVM, and its caches, including which types it already logged, persist across
- * tests. So these tests assert only mapped entries, not logs; a test that asserts logs must create
- * its own mapper.
+ * The mapper is a singleton whose caches and warning history persist across tests. These tests
+ * assert mapped entries; tests that assert logs need their own mapper.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])

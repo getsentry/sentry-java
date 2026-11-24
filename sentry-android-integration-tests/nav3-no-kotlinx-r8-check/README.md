@@ -2,9 +2,8 @@
 
 Verifies that an R8-minified app that uses `sentry-android-navigation3` without kotlinx.serialization builds and runs.
 
-kotlinx.serialization is a `compileOnly` dependency of `sentry-android-navigation3`, which doesn't require Nav3, so an app can include the
-module without kotlinx.serialization. R8 then sees missing classes referenced by the built-in `BackStackEntryMapper`s. The module's
-consumer `-dontwarn kotlinx.serialization.**` rule keeps R8 from failing the build on them. Without the rule, this app's build fails.
+The module can be used without Nav3, and kotlinx.serialization is a `compileOnly` dependency. R8 therefore encounters missing classes
+referenced by the built-in mappers. The module's consumer `-dontwarn kotlinx.serialization.**` rule allows the build to succeed.
 
 At runtime, the app checks that kotlinx.serialization is absent, that `BackStackEntryMapper.SerialName` and `SerialNameAndProperties` map
 an entry to `null` (recorded as `/unknown`) instead of crashing, that the `ComposeNavigation3SerialNameMappersUnavailable` integration

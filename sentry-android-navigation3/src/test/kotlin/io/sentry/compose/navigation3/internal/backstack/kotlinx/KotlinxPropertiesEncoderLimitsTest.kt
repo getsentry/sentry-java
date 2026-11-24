@@ -108,9 +108,8 @@ class KotlinxPropertiesEncoderLimitsTest {
   }
 
   /**
-   * Forwards to [sink], counting [beginMap] calls in [beginMapCalls] and recording the reasons the
-   * encoder passes to [reject], so a test can tell the depth limit, which a write breaks, from the
-   * serializer nesting limit, which the encoder rejects itself.
+   * Forwards to [sink], counting [beginMap] calls in [beginMapCalls] and recording [reject]
+   * reasons. This distinguishes sink depth violations from encoder serializer-nesting violations.
    */
   private class LimitObservingSink(private val sink: TreeArgumentWriter) : ArgumentSink by sink {
     var beginMapCalls = 0
