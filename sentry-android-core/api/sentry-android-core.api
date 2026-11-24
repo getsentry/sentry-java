@@ -826,6 +826,7 @@ public final class io/sentry/android/core/hang/HangManager : io/sentry/android/c
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJILio/sentry/android/core/hang/HangManager$ExecutorFactory;Lio/sentry/android/core/hang/HangManager$SignalFactory;Ljava/util/List;)V
 	public fun addTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
 	public fun close ()V
+	public fun nowMs ()J
 	public fun onBackground ()V
 	public fun onForeground ()V
 	public fun removeTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
@@ -898,6 +899,7 @@ public abstract interface class io/sentry/android/core/hang/HangSignalListener {
 
 public abstract interface class io/sentry/android/core/hang/Metronome {
 	public abstract fun addTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
+	public abstract fun nowMs ()J
 	public abstract fun removeTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
 }
 
