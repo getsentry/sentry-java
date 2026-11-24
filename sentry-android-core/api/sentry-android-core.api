@@ -822,6 +822,7 @@ public final class io/sentry/android/core/anr/AnrStackTrace : java/lang/Comparab
 public final class io/sentry/android/core/anr/NonFatalAnrMarker {
 	public static final field FILE_NAME Ljava/lang/String;
 	public static fun delete (Lio/sentry/SentryOptions;)V
+	public fun getPid ()I
 	public fun matches (IJ)Z
 	public static fun read (Lio/sentry/SentryOptions;)Lio/sentry/android/core/anr/NonFatalAnrMarker;
 	public static fun write (Lio/sentry/SentryOptions;IJJ)V
