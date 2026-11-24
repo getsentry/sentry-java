@@ -39,7 +39,6 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import io.sentry.protocol.SentryException
-import io.sentry.util.HintUtils
 import io.sentry.util.thread.IThreadChecker
 import java.io.File
 import kotlin.test.BeforeTest
@@ -186,32 +185,6 @@ class ScreenshotEventProcessorTest {
     assertEquals("image/png", screenshot.contentType)
 
     assertSame(fixture.activity, hint[ANDROID_ACTIVITY])
-  }
-
-  @Test
-  fun `non-fatal ANR with the main thread blocked gets no screenshot`() {
-    val sut = fixture.getSut(true)
-    val hint = HintUtils.createWithTypeCheckHint(NonFatalAnrHint(true, null))
-
-    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
-
-    val event = fixture.mainProcessor.process(getEvent(), hint)
-    sut.process(event, hint)
-
-    assertNull(hint.screenshot)
-  }
-
-  @Test
-  fun `non-fatal ANR without the main thread blocked gets a screenshot`() {
-    val sut = fixture.getSut(true)
-    val hint = HintUtils.createWithTypeCheckHint(NonFatalAnrHint(false, null))
-
-    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
-
-    val event = fixture.mainProcessor.process(getEvent(), hint)
-    sut.process(event, hint)
-
-    assertNotNull(hint.screenshot)
   }
 
   @Test

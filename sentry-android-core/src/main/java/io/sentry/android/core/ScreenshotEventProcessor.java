@@ -88,12 +88,6 @@ public final class ScreenshotEventProcessor implements SentryEventProcessor {
       return event;
     }
 
-    final @Nullable Object sdkHint = HintUtils.getSentrySdkHint(hint);
-    if (sdkHint instanceof NonFatalAnrHint && ((NonFatalAnrHint) sdkHint).isMainThreadBlocked()) {
-      // The main thread is still blocked, waiting for it would delay the event.
-      return event;
-    }
-
     // skip capturing in case of debouncing (=too many frequent capture requests)
     // the BeforeCaptureCallback may overrules the debouncing decision
     final boolean shouldDebounce = debouncer.checkForDebounce();

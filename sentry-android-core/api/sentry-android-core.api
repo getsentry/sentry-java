@@ -404,9 +404,8 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 }
 
 public final class io/sentry/android/core/NonFatalAnrHint : io/sentry/hints/DiskFlushNotification {
-	public fun <init> (ZLjava/lang/Runnable;)V
+	public fun <init> (Ljava/lang/Runnable;)V
 	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
-	public fun isMainThreadBlocked ()Z
 	public fun markFlushed ()V
 	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
 }
