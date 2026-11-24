@@ -14,7 +14,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Remembers the last non-fatal ANR of this process that can also be a fatal ANR, so that the next
- * launch can tell that a fatal ANR it finds in the exit reasons was already reported.
+ * launch can tell that a fatal ANR it finds in the exit reasons was already reported. The next hang
+ * of the same process deletes it.
  *
  * <p>Format, big-endian: {@code short version (1)}, {@code int pid}, {@code long startTimestampMs},
  * {@code long endTimestampMs}, both as Unix time in milliseconds.
