@@ -38,6 +38,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -105,6 +107,7 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
     private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
     private final @NotNull AnrCulpritEventHelper culpritEventHelper;
+    private final @NotNull AtomicBoolean markerWritten = new AtomicBoolean(false);
 
     Reporter(final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
       this.scopes = scopes;
@@ -116,6 +119,11 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
 
     @Override
     public @Nullable HangRecordingRequest onHangStarted() {
+      // A fatal ANR of this hang must not match the marker of an earlier hang. A marker of the
+      // previous process stays, AnrV2Integration still needs it.
+      if (markerWritten.getAndSet(false)) {
+        deleteMarker();
+      }
       final @Nullable Double sampleRate = options.getNonFatalAnrSampleRate();
       if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
         return new HangRecordingRequest(true, false);
@@ -131,12 +139,17 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       final long startTimestampMs = record.getStartTimestampMs();
       final long endTimestampMs = startTimestampMs + record.getDurationMs();
 
-      // Only once the event is on disk: a kill before that must not suppress the fatal ANR.
+      // Only once the transport has handled the event: a kill before that must not suppress the
+      // fatal ANR.
       final @Nullable Runnable writeMarker;
       if (record.hasEndedAtMaxRecordingTime()
           || record.getDurationMs() >= MIN_FATAL_ANR_DURATION_MS) {
         final int pid = Process.myPid();
-        writeMarker = () -> NonFatalAnrMarker.write(options, pid, startTimestampMs, endTimestampMs);
+        writeMarker =
+            () -> {
+              NonFatalAnrMarker.write(options, pid, startTimestampMs, endTimestampMs);
+              markerWritten.set(true);
+            };
       } else {
         writeMarker = null;
       }
@@ -203,13 +216,11 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       }
       event.getContexts().put("non_fatal_anr", context);
 
-      if (event.getFingerprints() == null) {
-        if (options.isEnableAnrFingerprinting()
-            && AnrCulpritEventHelper.hasOnlySystemFrames(exceptions)) {
-          event.setFingerprints(Arrays.asList("system-frames-only-anr", "non-fatal-anr"));
-        } else {
-          event.setFingerprints(Arrays.asList("{{ default }}", "non-fatal-anr"));
-        }
+      if (options.isEnableAnrFingerprinting()
+          && AnrCulpritEventHelper.hasOnlySystemFrames(exceptions)) {
+        event.setFingerprints(Arrays.asList("system-frames-only-anr", "non-fatal-anr"));
+      } else {
+        event.setFingerprints(Arrays.asList("{{ default }}", "non-fatal-anr"));
       }
       return event;
     }
@@ -247,6 +258,17 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       art.setTotalMemory(stats.totalMemory);
       art.setMaxMemory(stats.maxMemory);
       return art;
+    }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private void deleteMarker() {
+      try {
+        options.getExecutorService().submit(() -> NonFatalAnrMarker.delete(options));
+      } catch (RejectedExecutionException e) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Failed to delete the non-fatal ANR marker", e);
+      }
     }
 
     private static @NotNull SentryThread mainThread(
