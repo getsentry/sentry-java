@@ -40,6 +40,11 @@ public final class NonFatalAnrMarker {
     this.endTimestampMs = endTimestampMs;
   }
 
+  /** The pid of the process that wrote this marker. */
+  public int getPid() {
+    return pid;
+  }
+
   /** Whether an exit of the process {@code pid} at {@code exitTimestampMs} belongs to this hang. */
   public boolean matches(final int pid, final long exitTimestampMs) {
     return this.pid == pid
