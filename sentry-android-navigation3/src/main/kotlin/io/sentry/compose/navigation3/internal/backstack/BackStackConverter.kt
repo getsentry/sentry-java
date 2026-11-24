@@ -326,6 +326,12 @@ internal enum class ArgumentDropReason(
   CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
   DUPLICATE_KEY("duplicate_key"),
   ENCODING_FAILED("encoding_failed"),
+  /**
+   * The app's kotlinx.serialization version can't run the built-in mapper's properties encoder, so
+   * no entry's properties are recorded. Kept apart from [ENCODING_FAILED], which is specific to an
+   * entry, so that developers can tell a version problem from a problem with one route type.
+   */
+  INCOMPATIBLE_KOTLINX_SERIALIZATION("incompatible_kotlinx_serialization"),
   INVALID_STRUCTURE("invalid_structure"),
   MAPPING_FAILED("mapping_failed"),
   MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),

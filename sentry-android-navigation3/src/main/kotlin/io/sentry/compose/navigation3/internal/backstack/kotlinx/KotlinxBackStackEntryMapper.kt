@@ -14,6 +14,7 @@ import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStac
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING
 import io.sentry.util.ExceptionUtils
+import io.sentry.util.IntegrationUtils
 import java.lang.reflect.InvocationTargetException
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -70,13 +71,18 @@ internal class KotlinxBackStackEntryMapper(
   /**
    * `true` if the app's kotlinx.serialization version doesn't support the properties encoder, in
    * which case no arguments are produced for any entries. Instead, entries with properties record
-   * [ArgumentDropReason.ENCODING_FAILED] without being encoded. Names are unaffected.
+   * [ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION] without being encoded. Names are
+   * unaffected.
+   *
+   * Also adds [PROPERTY_ENCODING_DISABLED_INTEGRATION] to the SDK's integrations, which are sent
+   * with every event, so that the version problem is visible without debug logs.
    */
   private val isEncodingIncompatible: Boolean =
     includeProperties &&
       run {
         val error = probe.encoderIncompatibility() ?: return@run false
         diagnostics.incompatibleEncoder(error)
+        IntegrationUtils.addIntegrationToSdkVersion(PROPERTY_ENCODING_DISABLED_INTEGRATION)
         true
       }
 
@@ -275,7 +281,14 @@ internal class KotlinxBackStackEntryMapper(
   /** A type's serializer, or the error that made looking it up fail, if any. */
   private class SerializerLookup(val serializer: KSerializer<*>?, val error: Throwable?)
 
-  private companion object {
+  internal companion object {
+    /**
+     * Added to the SDK's integrations when the app's kotlinx.serialization version can't run the
+     * properties encoder, so `SerialNameAndProperties` records no entry's arguments.
+     */
+    const val PROPERTY_ENCODING_DISABLED_INTEGRATION: String =
+      "ComposeNavigation3PropertyEncodingDisabled"
+
     private const val NAME_LOOKUP_CAPABILITY = "name lookups"
     private val UNRESOLVED = CachedType(serializer = null, name = null)
   }

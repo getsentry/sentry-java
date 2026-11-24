@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.internal.backstack
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.Sentry
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
@@ -17,6 +18,8 @@ import kotlin.concurrent.thread
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
@@ -35,6 +38,16 @@ class BuiltInBackStackEntryMappersTest {
 
   private val kotlinxMapper = BackStackEntryMapper<Any> { SentryBackStackEntry("Kotlinx") }
   private val logger = mock<ILogger>()
+
+  @Before
+  fun clearIntegrations() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+  }
+
+  @After
+  fun clearIntegrationsAfterTest() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+  }
 
   // serialName and serialNameAndProperties
 
@@ -197,6 +210,14 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
+  fun `create() - doesn't add the mappers unavailable integration when the kotlinx mapper can be created`() {
+    BuiltInBackStackEntryMappers.create(logger = { logger }) { kotlinxMapper }
+
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
+  }
+
+  @Test
   fun `create() - maps entries to null when creating the kotlinx mapper throws NoClassDefFoundError`() {
     val mapper =
       BuiltInBackStackEntryMappers.create(logger = { logger }) {
@@ -225,6 +246,16 @@ class BuiltInBackStackEntryMappersTest {
     val message = argumentCaptor<String>()
     verify(logger, times(1)).log(eq(SentryLevel.WARNING), message.capture(), eq(error))
     assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
+  }
+
+  @Test
+  fun `create() - adds the mappers unavailable integration when creating the kotlinx mapper throws a LinkageError`() {
+    BuiltInBackStackEntryMappers.create(logger = { logger }) {
+      throw NoClassDefFoundError("kotlinx/serialization/KSerializer")
+    }
+
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test

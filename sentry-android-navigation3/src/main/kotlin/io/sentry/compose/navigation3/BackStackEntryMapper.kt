@@ -268,7 +268,10 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * Other failures preserve the entry's name and replace its arguments with a drop reason, e.g.,
      * `{"dropped_by_sentry": "encoding_failed"}`. Encoding errors are logged once per entry type
-     * when `debug` is enabled.
+     * when `debug` is enabled. If the app's kotlinx.serialization version can't encode properties
+     * at all, every entry with properties records `{"dropped_by_sentry":
+     * "incompatible_kotlinx_serialization"}` instead, and events list the
+     * `ComposeNavigation3PropertyEncodingDisabled` integration in their SDK info.
      */
     @get:ApiStatus.Experimental
     public val SerialNameAndProperties: BackStackEntryMapper<Any>

@@ -14,7 +14,7 @@ be linked.
 
 Creating a mapper also runs `KotlinxCompatibilityProbe`, which names and encodes SDK-owned `@Serializable` types. Those run no app code,
 so a `LinkageError` from them shows that the app's version is incompatible. If naming fails, creating the mapper fails. If encoding fails,
-`SerialNameAndProperties` keeps entry names but drops their arguments with `encoding_failed`. A `LinkageError` thrown while mapping an entry
+`SerialNameAndProperties` keeps entry names but drops their arguments with `incompatible_kotlinx_serialization`. A `LinkageError` thrown while mapping an entry
 then fails only that entry's type.
 
 To keep our isolation policy intact:
