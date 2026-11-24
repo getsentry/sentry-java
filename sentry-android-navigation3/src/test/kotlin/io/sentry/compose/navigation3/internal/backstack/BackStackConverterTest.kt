@@ -2,17 +2,23 @@ package io.sentry.compose.navigation3.internal.backstack
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
+import io.sentry.JsonSerializer
 import io.sentry.SentryLevel.WARNING
+import io.sentry.SentryOptions
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
+import java.io.StringWriter
 import java.util.AbstractCollection
+import kotlin.test.assertFailsWith
 import org.junit.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
@@ -32,6 +38,16 @@ class BackStackConverterTest {
   }
 
   private val logger = mock<ILogger>()
+
+  private companion object {
+    const val BLANK_NAME_WARNING =
+      "Nav3 backStackEntryMapper returned a blank name. Using /unknown."
+    const val MAPPER_FAILURE_WARNING =
+      "Nav3 backStackEntryMapper threw. Using /unknown without arguments."
+    const val UNSUPPORTED_VALUE_WARNING =
+      "Nav3 argument type %s is unsupported. Using toString(). Return scalars, enums, maps, " +
+        "collections, or arrays from BackStackEntryMapper."
+  }
 
   private val defaultEntryMapper =
     BackStackEntryMapper<Any> { entry ->
@@ -95,7 +111,7 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert preserves input order when top entry is first`() {
+  fun `convert with KEEP_FIRST returns entries in back stack order`() {
     val sut = getSut()
 
     val routes =
@@ -114,20 +130,20 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert preserves input order when top entry is last`() {
+  fun `convert with KEEP_LAST returns entries in back stack order`() {
     val sut = getSut()
 
     val routes =
       sut.convert(
-        listOf(HomeScreen(), ProfileScreen("123"), SettingsScreen("privacy")),
-        RetentionPolicy.KEEP_FIRST,
+        listOf(SettingsScreen("privacy"), ProfileScreen("123"), HomeScreen()),
+        RetentionPolicy.KEEP_LAST,
       )
 
     assertThat(routes)
       .containsExactly(
-        NormalizedSentryBackStackEntry("/HomeScreen"),
-        NormalizedSentryBackStackEntry("/ProfileScreen"),
         NormalizedSentryBackStackEntry("/SettingsScreen"),
+        NormalizedSentryBackStackEntry("/ProfileScreen"),
+        NormalizedSentryBackStackEntry("/HomeScreen"),
       )
       .inOrder()
   }
@@ -320,11 +336,17 @@ class BackStackConverterTest {
     verify(logger)
       .log(
         eq(WARNING),
-        eq(
-          "Nav3 backStackEntryMapper returned a blank name while processing this back stack update. " +
-            "Using /unknown instead.",
-        ),
+        eq(BLANK_NAME_WARNING),
       )
+  }
+
+  @Test
+  fun `convert logs the blank name warning once per back stack update`() {
+    val sut = getSut(entryMapper = { SentryBackStackEntry("   ") })
+
+    sut.convert(listOf(HomeScreen(), ProfileScreen("123")), RetentionPolicy.KEEP_FIRST)
+
+    verify(logger, times(1)).log(eq(WARNING), eq(BLANK_NAME_WARNING))
   }
 
   @Test
@@ -349,11 +371,26 @@ class BackStackConverterTest {
     verify(logger)
       .log(
         eq(WARNING),
-        eq(
-          "Nav3 backStackEntryMapper threw while resolving an entry. Using /unknown without arguments instead.",
-        ),
-        org.mockito.kotlin.any<Throwable>(),
+        eq(MAPPER_FAILURE_WARNING),
+        any<Throwable>(),
       )
+  }
+
+  @Test
+  fun `convert logs the mapper failure warning once per back stack update`() {
+    val sut = getSut(entryMapper = { error("boom") })
+
+    sut.convert(listOf(HomeScreen(), ProfileScreen("123")), RetentionPolicy.KEEP_FIRST)
+
+    verify(logger, times(1)).log(eq(WARNING), eq(MAPPER_FAILURE_WARNING), any<Throwable>())
+  }
+
+  @Test
+  fun `convert rethrows fatal errors thrown by the mapper`() {
+    val sut = getSut(entryMapper = { throw StackOverflowError("fatal") })
+
+    assertFailsWith<StackOverflowError> { sut.convert(HomeScreen()) }
+    verify(logger, never()).log(eq(WARNING), eq(MAPPER_FAILURE_WARNING), any<Throwable>())
   }
 
   @Test
@@ -471,18 +508,13 @@ class BackStackConverterTest {
     verify(logger, times(1))
       .log(
         eq(WARNING),
-        eq(
-          "Nav3 backStackEntryMapper returned unsupported argument value of type %s while processing this " +
-            "back stack update. Falling back to toString(). Use String, CharSequence, Char, " +
-            "Number, Boolean, Enum, Map, Collection, object Array, and primitive array values " +
-            "for reliable results.",
-        ),
+        eq(UNSUPPORTED_VALUE_WARNING),
         eq("OpaqueValue"),
       )
   }
 
   @Test
-  fun `unsupported value warning can recur with a fresh update state`() {
+  fun `convert logs the unsupported value warning again in a later back stack update`() {
     class OpaqueValue {
       override fun toString(): String = "opaque-value"
     }
@@ -497,12 +529,7 @@ class BackStackConverterTest {
     verify(logger, times(1))
       .log(
         eq(WARNING),
-        eq(
-          "Nav3 backStackEntryMapper returned unsupported argument value of type %s while processing this " +
-            "back stack update. Falling back to toString(). Use String, CharSequence, Char, " +
-            "Number, Boolean, Enum, Map, Collection, object Array, and primitive array values " +
-            "for reliable results.",
-        ),
+        eq(UNSUPPORTED_VALUE_WARNING),
         eq("OpaqueValue"),
       )
   }
@@ -553,6 +580,18 @@ class BackStackConverterTest {
 
     assertThat(entry.arguments).isEmpty()
     assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
+  }
+
+  @Test
+  fun `convert starts each back stack update with a fresh argument budget`() {
+    val sut =
+      getSut(entryMapper = { entry -> entryInfo(entry, mapOf("values" to List(150) { it })) })
+
+    sut.convert(HomeScreen())
+    val entry = sut.convert(HomeScreen())
+
+    assertThat(entry.arguments).isEqualTo(mapOf("values" to List(150) { it }))
+    assertThat(entry.argumentDropReason).isNull()
   }
 
   @Test
@@ -625,6 +664,31 @@ class BackStackConverterTest {
         mapOf("entry" to "/ProfileScreen"),
       )
       .inOrder()
+  }
+
+  @Test
+  fun `converted entries with non-finite number arguments serialize to valid JSON through Sentry's JSON serializer`() {
+    val sut =
+      getSut(
+        entryMapper = { entry ->
+          entryInfo(
+            entry,
+            mapOf(
+              "price" to Double.NaN,
+              "limits" to floatArrayOf(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY),
+            ),
+          )
+        },
+      )
+    val serializedEntry = sut.convert(HomeScreen()).serialize()
+    val json = StringWriter()
+
+    JsonSerializer(SentryOptions()).serialize(serializedEntry, json)
+
+    assertThat(json.toString())
+      .isEqualTo(
+        """{"entry":"/HomeScreen","entry_arguments":{"price":"NaN","limits":["Infinity","-Infinity"]}}""",
+      )
   }
 
   @Test
