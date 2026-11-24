@@ -96,8 +96,12 @@ internal interface ArgumentSink {
    * Names the next value in the current map. If the map already has a value named [name], writing
    * the next value throws [DropArguments], as recording only one of them would show Sentry a
    * partial map as if it were complete.
+   *
+   * [describeDuplicate], if provided, returns the warning to log in that case instead of
+   * [DropArguments.DUPLICATE_KEY_WARNING]. It's only called for a duplicate, so it may do work that
+   * would be wasteful for every key, e.g., finding the key that [name] collides with.
    */
-  fun key(name: String)
+  fun key(name: String, describeDuplicate: (() -> String)? = null)
 
   /**
    * Writes [value] as the next value. Supports `null`, [Boolean], [Number], [CharSequence], and
@@ -175,6 +179,7 @@ internal class TreeArgumentWriter(
     IdentityHashMap<Any, Unit>().apply { rootIdentity?.let { put(it, Unit) } }
 
   private var pendingKey: String? = null
+  private var describePendingDuplicate: (() -> String)? = null
 
   override var failure: DropArguments? = null
     private set
@@ -183,7 +188,10 @@ internal class TreeArgumentWriter(
 
   override fun beginList(identity: Any?) = guarded { begin(ArrayList<Any?>(), identity) }
 
-  override fun key(name: String) = guarded { pendingKey = budget.spendText(name) }
+  override fun key(name: String, describeDuplicate: (() -> String)?) = guarded {
+    pendingKey = budget.spendText(name)
+    describePendingDuplicate = describeDuplicate
+  }
 
   override fun scalar(value: Any?) = writeScalar { value }
 
@@ -237,7 +245,7 @@ internal class TreeArgumentWriter(
     val key = pendingKey
     val isKeyTaken = key != null && (containers.last() as? Map<*, *>)?.containsKey(key) == true
     if (isKeyTaken && !key.isSubstitute()) {
-      throw DropArguments(ArgumentDropReason.DUPLICATE_KEY, DropArguments.DUPLICATE_KEY_WARNING)
+      throw duplicateKey()
     }
   }
 
@@ -251,13 +259,20 @@ internal class TreeArgumentWriter(
         val replacesSubstituteWithSubstitute =
           key.isSubstitute() && map[key].isSubstitute() && value.isSubstitute()
         if (map.containsKey(key) && !replacesSubstituteWithSubstitute) {
-          throw DropArguments(ArgumentDropReason.DUPLICATE_KEY, DropArguments.DUPLICATE_KEY_WARNING)
+          throw duplicateKey()
         }
         map[key] = value
         pendingKey = null
+        describePendingDuplicate = null
       }
     }
   }
+
+  private fun duplicateKey(): DropArguments =
+    DropArguments(
+      ArgumentDropReason.DUPLICATE_KEY,
+      describePendingDuplicate?.invoke() ?: DropArguments.DUPLICATE_KEY_WARNING,
+    )
 
   private inline fun writeScalar(compute: () -> Any?) = guarded {
     visitValue()
@@ -307,9 +322,21 @@ internal class HostArgumentSource(
 
   private fun writeEntries(map: Map<*, *>, sink: ArgumentSink) {
     for ((key, value) in map) {
-      sink.key(key.toString())
+      val name = key.toString()
+      sink.key(name) { duplicateKeyWarning(map, key, name) }
       write(value, sink)
     }
+  }
+
+  /**
+   * Names only the colliding keys' types, as the keys themselves may contain host data. Collisions
+   * are rare, so we re-scan [map] instead of tracking the original keys of every map.
+   */
+  private fun duplicateKeyWarning(map: Map<*, *>, key: Any?, name: String): String {
+    val otherKey = map.keys.firstOrNull { it !== key && it.toString() == name }
+    return "A Nav3 map key (${key?.let { it::class.simpleName }}) stringifies to the same " +
+      "string as another key (${otherKey?.let { it::class.simpleName }}). Dropping this " +
+      "entry's arguments."
   }
 
   private fun write(value: Any?, sink: ArgumentSink) {

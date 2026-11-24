@@ -8,6 +8,7 @@ import io.sentry.util.UrlUtils
 import kotlin.test.assertFailsWith
 import org.junit.Test
 
+@Suppress("LargeClass")
 class TreeArgumentWriterTest {
 
   private val budget = ArgumentBudget()
@@ -525,6 +526,31 @@ class TreeArgumentWriterTest {
     val drop = assertFailsWith<DropArguments> { sink.scalar(2) }
 
     assertThat(drop.signal).isEqualTo(duplicateKeyDrop)
+  }
+
+  @Test
+  fun `a duplicate key drops the arguments with the warning its describeDuplicate returns`() {
+    sink.key("id")
+    sink.scalar(1)
+    sink.key("id") { "described duplicate" }
+
+    val drop = assertFailsWith<DropArguments> { sink.scalar(2) }
+
+    assertThat(drop.signal).isEqualTo(ArgumentDropReason.DUPLICATE_KEY to "described duplicate")
+  }
+
+  @Test
+  fun `key() - doesn't call describeDuplicate for a key that isn't taken`() {
+    var calls = 0
+    sink.key("id") {
+      calls++
+      "described duplicate"
+    }
+    sink.scalar(1)
+    sink.key("other")
+    sink.scalar(2)
+
+    assertThat(calls).isEqualTo(0)
   }
 
   @Test

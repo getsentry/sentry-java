@@ -694,9 +694,9 @@ internal object KotlinxPropertiesEncoder {
       sink.beginList(identity)
     }
 
-    override fun key(name: String) {
+    override fun key(name: String, describeDuplicate: (() -> String)?) {
       writes++
-      sink.key(name)
+      sink.key(name, describeDuplicate)
     }
 
     /**
@@ -774,11 +774,11 @@ internal object KotlinxPropertiesEncoder {
       begin { sink.beginList(identity) }
     }
 
-    override fun key(name: String) {
+    override fun key(name: String, describeDuplicate: (() -> String)?) {
       if (discardDepth > 0) {
         return
       }
-      sink.key(name)
+      sink.key(name, describeDuplicate)
       isNextValueSensitive = isSensitive(name)
     }
 
