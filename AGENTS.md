@@ -26,6 +26,10 @@ Rules can be combined — a tracing scope issue may need both `scopes` and `open
 There is no rule for Android profiling yet; read the `sentry-android-core` profiling code
 directly and fetch related rules such as `options`, `offline`, or `api` as needed.
 
+## Code Review
+
+When reviewing a pull request, follow [`REVIEWS.md`](REVIEWS.md).
+
 ## Project Overview
 
 This is the Sentry Java/Android SDK - a comprehensive error monitoring and performance tracking SDK for Java and Android applications. The repository contains multiple modules for different integrations and platforms.

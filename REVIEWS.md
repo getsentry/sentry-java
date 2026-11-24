@@ -1,9 +1,9 @@
-# PR Review Guidelines for Cursor Bugbot
+# PR Review Guidelines
 
-You are reviewing a pull request for the Sentry Java/Android SDK.
+Applies to any agent reviewing a pull request for the Sentry Java/Android SDK.
 
-Read [`AGENTS.md`](../AGENTS.md) for build commands and contributing rules, and the matching
-rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `options`, `scopes`,
+Read [`AGENTS.md`](AGENTS.md) for build commands and contributing rules, and the matching
+rule file in [`.cursor/rules/`](.cursor/rules) for the area the diff touches (`api`, `options`, `scopes`,
 `offline`, `opentelemetry`, ...).
 
 ## Critical
