@@ -255,7 +255,12 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * Properties are encoded on the first argument read, including by `equals` or `hashCode`.
      *
-     * Failures preserve the entry's name and replace its arguments with a drop reason, e.g.,
+     * Some values can't be encoded, e.g., contextual and open polymorphic properties (including
+     * `Parcelable` properties), since their serializers require a `SerializersModule` or saved
+     * state encoder this mapper doesn't have. Each such property value, list element, or map value
+     * is recorded as `"[Unencodable]"`, and the entry's other arguments are kept.
+     *
+     * Other failures preserve the entry's name and replace its arguments with a drop reason, e.g.,
      * `{"dropped_by_sentry": "encoding_failed"}`. Encoding errors are logged once per entry type
      * when `debug` is enabled.
      */

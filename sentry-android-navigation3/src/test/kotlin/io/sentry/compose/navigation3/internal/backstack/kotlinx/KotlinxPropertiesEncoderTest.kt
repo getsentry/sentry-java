@@ -7,7 +7,6 @@ import java.math.BigInteger
 import kotlin.jvm.JvmInline
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -139,10 +138,6 @@ class KotlinxPropertiesEncoderTest {
   @Serializable data class WithOriginMapKeys(val byOrigin: Map<Origin, Int>)
 
   @Serializable data class WithNestedPointMapKeys(val groups: List<Map<Point, Int>>)
-
-  interface OpenOrigin
-
-  @Serializable data class WithOpenPolymorphic(val id: String, @Polymorphic val origin: OpenOrigin)
 
   // Encoded shapes
 
@@ -471,26 +466,6 @@ class KotlinxPropertiesEncoderTest {
 
     assertFailsWith<SerializationException> {
       encodeToMap(WithNestedPointMapKeys.serializer(), entry)
-    }
-  }
-
-  // Unsupported properties
-
-  @Test
-  fun `encode() - throws for a contextual property without a registered serializer`() {
-    val entry = WithContextual("1", Unregistered("2"))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithContextual.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for an open polymorphic property without a registered serializer`() {
-    val entry = WithOpenPolymorphic("1", object : OpenOrigin {})
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithOpenPolymorphic.serializer(), entry)
     }
   }
 

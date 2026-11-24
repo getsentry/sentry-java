@@ -253,7 +253,11 @@ internal class KotlinxBackStackEntryMapper(
       return KotlinxUnencodableArguments
     }
     @Suppress("UNCHECKED_CAST")
-    return KotlinxArgumentSource(backStackEntry, cached.serializer as KSerializer<Any>) { error ->
+    return KotlinxArgumentSource(
+      backStackEntry,
+      cached.serializer as KSerializer<Any>,
+      onUnencodableValue = { diagnostics.unencodableValue(type) },
+    ) { error ->
       diagnostics.propertyFailure(type, error)
     }
   }
@@ -401,7 +405,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
           log(
             WARNING,
             "Nav3 couldn't encode properties for type %s. Recording names without arguments. " +
-              "Contextual and open polymorphic properties and structured map keys aren't " +
+              "Structured map keys, and contextual and open polymorphic entries, aren't " +
               "supported. Use a custom BackStackEntryMapper to select supported properties or " +
               "extract arguments directly.",
             type.name,
@@ -431,6 +435,26 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
     }
   }
 
+  /**
+   * Logs that some values of an entry of [type] were recorded as
+   * [KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE] because their serializers couldn't encode
+   * them. Logged once per type, like [propertyFailure], and for the same reason: which values fail
+   * can depend on the entry. The serializer's exception isn't logged, as its message can contain
+   * route data.
+   */
+  fun unencodableValue(type: Class<*>) {
+    logOncePerType(type, PropertyFailure.SUBSTITUTED) {
+      log(
+        WARNING,
+        "Nav3 couldn't encode some property values for type %s. Recording them as " +
+          "${KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE}. Contextual and open polymorphic " +
+          "values (e.g., Parcelable properties) aren't supported. Use a custom " +
+          "BackStackEntryMapper to extract those values directly.",
+        type.name,
+      )
+    }
+  }
+
   /** Runs [log] on the logger unless a [failure] of this kind was already logged for [type]. */
   private inline fun logOncePerType(
     type: Class<*>,
@@ -444,8 +468,14 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
 
   /** Why encoding an entry's properties failed, which determines the warning we log. */
   private enum class PropertyFailure {
-    /** Encoding threw a [SerializationException], e.g., for a contextual property. */
+    /** Encoding threw a [SerializationException], e.g., for a structured map key. */
     UNENCODABLE,
+
+    /**
+     * Some values couldn't be encoded and were recorded as
+     * [KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE], e.g., a contextual property.
+     */
+    SUBSTITUTED,
 
     /**
      * The entry broke an argument limit, e.g., by having too many values, or has a map with two

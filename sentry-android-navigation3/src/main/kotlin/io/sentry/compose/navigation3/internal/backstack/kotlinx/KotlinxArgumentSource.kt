@@ -26,6 +26,9 @@ import kotlinx.serialization.KSerializer
  *
  * If the arguments are dropped, reading them as a map returns only the drop reason.
  *
+ * Values that the properties encoder records as [KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE]
+ * are reported to [onUnencodableValue]; the rest of the entry's arguments are still recorded.
+ *
  * In general, all failures are reported to [onFailure]. The sole exception is an argument
  * constraint violated while writing to the `ArgumentSanitizer`'s sink. The sanitizer reports that
  * instead, as those limits can depend on what fraction of the [ArgumentBudget] the update's other
@@ -34,6 +37,7 @@ import kotlinx.serialization.KSerializer
 internal class KotlinxArgumentSource(
   private val backStackEntry: Any,
   private val serializer: KSerializer<Any>,
+  private val onUnencodableValue: (IllegalArgumentException) -> Unit = {},
   private val onFailure: (Throwable) -> Unit,
 ) : AbstractMap<String, Any?>(), ArgumentSource {
 
@@ -68,7 +72,7 @@ internal class KotlinxArgumentSource(
   @Suppress("ThrowsCount")
   private fun encode(sink: ArgumentSink) {
     try {
-      KotlinxPropertiesEncoder.encode(serializer, backStackEntry, sink)
+      KotlinxPropertiesEncoder.encode(serializer, backStackEntry, sink, onUnencodableValue)
     } catch (e: DropArguments) {
       // Prefer the sink's first failure because it determines whether older entries keep their
       // arguments.

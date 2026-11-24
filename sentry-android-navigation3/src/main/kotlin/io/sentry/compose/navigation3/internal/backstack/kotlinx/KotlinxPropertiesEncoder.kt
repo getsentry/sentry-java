@@ -46,6 +46,23 @@ import kotlinx.serialization.modules.SerializersModule
  *
  * - Properties marked `@Transient` are omitted.
  *
+ * - A property, list element, or map value whose serializer can't encode it with this encoder
+ *   becomes [UNENCODABLE_SUBSTITUTE]. See "Unencodable values" below.
+ *
+ * **Unencodable values**
+ *
+ * Some values that the app's own saved state can store can't be encoded here: contextual and open
+ * polymorphic values (e.g., a `Parcelable` property) need serializers registered in a
+ * `SerializersModule` we don't have, and some serializers only work with a specific encoder. Their
+ * serializers throw an [IllegalArgumentException] (which includes [SerializationException]). Rather
+ * than dropping all of the entry's arguments, the encoder records such a value as
+ * [UNENCODABLE_SUBSTITUTE] and continues with the next one.
+ *
+ * It only does so if the serializer threw before writing anything for the value. Sinks can't undo
+ * writes, so recording a value that's only partly written would show Sentry an incomplete value as
+ * if it were complete. Such failures still propagate, as do failures of the entry's own serializer
+ * and of map keys.
+ *
  * **Argument limits**
  *
  * Writes through [ArgumentSink], which enforces the same size and structural limits as for custom
@@ -73,30 +90,106 @@ internal object KotlinxPropertiesEncoder {
   /** Key for top-level values encoded without a map, such as by a custom serializer. */
   const val VALUE_KEY: String = "value"
 
+  /** Recorded in place of a value whose serializer can't encode it with this encoder. */
+  const val UNENCODABLE_SUBSTITUTE: String = "[Unencodable]"
+
   /**
    * Encodes [value] with [serializer], writing its top-level properties to [sink]'s root map.
    *
-   * Throws [SerializationException] when a value cannot be encoded, such as when a contextual or
-   * open polymorphic property has no registered serializer. Throws [DropArguments] when an argument
-   * limit is exceeded.
+   * Throws [SerializationException] when the entry itself can't be encoded, or when a value fails
+   * after its serializer wrote part of it. Values that fail before being written are recorded as
+   * [UNENCODABLE_SUBSTITUTE] instead, and reported to [onUnencodableValue]. Throws [DropArguments]
+   * when an argument limit is exceeded.
    *
    * Limit failures, including [MAX_SERIALIZER_NESTING], are recorded in [ArgumentSink.failure]. A
    * serializer can catch [DropArguments] and then throw a different exception or return normally.
    * Callers must check [ArgumentSink.failure] to determine whether to drop the arguments.
    */
-  fun encode(serializer: KSerializer<Any>, value: Any, sink: ArgumentSink) {
+  fun encode(
+    serializer: KSerializer<Any>,
+    value: Any,
+    sink: ArgumentSink,
+    onUnencodableValue: (IllegalArgumentException) -> Unit = {},
+  ) {
     val filteredSink = SensitiveKeyFilter(sink)
-    RootEncoder(filteredSink, SerializerNesting(filteredSink))
-      .encodeSerializableValue(serializer, value)
+    val context = EncodingContext(SerializerNesting(filteredSink), onUnencodableValue)
+    RootEncoder(WriteCountingSink(filteredSink), context).encodeSerializableValue(serializer, value)
   }
 
+  /** State shared by all the encoders that encode one entry. */
+  private class EncodingContext(
+    val nesting: SerializerNesting,
+    val onUnencodableValue: (IllegalArgumentException) -> Unit,
+  )
+
   /** Encodes a single value and writes it to [sink]. Structures are delegated to child encoders. */
+  // Nearly all of its functions override AbstractEncoder's, whose API sets their number.
+  @Suppress("TooManyFunctions")
   private open class ValueEncoder(
-    protected val sink: ArgumentSink,
-    protected val nesting: SerializerNesting,
+    protected val sink: WriteCountingSink,
+    protected val context: EncodingContext,
   ) : AbstractEncoder() {
 
+    protected val nesting: SerializerNesting
+      get() = context.nesting
+
     override val serializersModule: SerializersModule = EmptySerializersModule()
+
+    /**
+     * Whether an element of the structure this encodes can be recorded as [UNENCODABLE_SUBSTITUTE]
+     * if its serializer fails.
+     */
+    protected open val canSubstituteElement: Boolean
+      get() = true
+
+    override fun <T> encodeSerializableElement(
+      descriptor: SerialDescriptor,
+      index: Int,
+      serializer: SerializationStrategy<T>,
+      value: T,
+    ) {
+      if (encodeElement(descriptor, index)) {
+        substitutingUnencodable { encodeSerializableValue(serializer, value) }
+      }
+    }
+
+    override fun <T : Any> encodeNullableSerializableElement(
+      descriptor: SerialDescriptor,
+      index: Int,
+      serializer: SerializationStrategy<T>,
+      value: T?,
+    ) {
+      if (encodeElement(descriptor, index)) {
+        substitutingUnencodable { encodeNullableSerializableValue(serializer, value) }
+      }
+    }
+
+    /**
+     * Runs [encodeValue], recording [UNENCODABLE_SUBSTITUTE] instead if it throws an
+     * [IllegalArgumentException] before writing anything. See "Unencodable values" in
+     * [KotlinxPropertiesEncoder].
+     */
+    private inline fun substitutingUnencodable(encodeValue: () -> Unit) {
+      val writesBefore = sink.writes
+      try {
+        encodeValue()
+      } catch (e: IllegalArgumentException) {
+        // Broad within IllegalArgumentException because the value's serializer is host app or
+        // library code: kotlinx.serialization throws SerializationException (a subclass) for
+        // missing contextual and polymorphic serializers, and savedstate's serializers throw a
+        // plain IllegalArgumentException when used with any encoder but its own. Other exceptions
+        // and partially written values still drop the entry's arguments.
+        //
+        // A serializer may catch a limit violation and throw its own exception. The sink's
+        // recorded failure takes precedence, as it decides whether older entries keep arguments.
+        sink.failure?.let { throw it }
+        if (!canSubstituteElement || sink.writes != writesBefore) {
+          throw e
+        }
+        context.onUnencodableValue(e)
+        put(UNENCODABLE_SUBSTITUTE)
+      }
+    }
 
     protected open fun put(value: Any?) {
       sink.scalar(value)
@@ -146,15 +239,15 @@ internal object KotlinxPropertiesEncoder {
       when (descriptor.kind) {
         StructureKind.LIST -> {
           sink.beginList()
-          ListEncoder(sink, nesting)
+          ListEncoder(sink, context)
         }
         StructureKind.MAP -> {
           sink.beginMap()
-          MapEncoder(sink, nesting)
+          MapEncoder(sink, context)
         }
         else -> {
           sink.beginMap()
-          ClassEncoder(sink, nesting)
+          ClassEncoder(sink, context)
         }
       }
   }
@@ -164,8 +257,8 @@ internal object KotlinxPropertiesEncoder {
    * root map. Anything else (e.g., a custom serializer that encodes to a string) is written under
    * [VALUE_KEY].
    */
-  private class RootEncoder(sink: ArgumentSink, nesting: SerializerNesting) :
-    ValueEncoder(sink, nesting) {
+  private class RootEncoder(sink: WriteCountingSink, context: EncodingContext) :
+    ValueEncoder(sink, context) {
 
     override fun put(value: Any?) {
       sink.key(VALUE_KEY)
@@ -178,8 +271,8 @@ internal object KotlinxPropertiesEncoder {
           sink.key(VALUE_KEY)
           super.beginStructure(descriptor)
         }
-        StructureKind.MAP -> MapEncoder(sink, nesting, isRoot = true)
-        else -> ClassEncoder(sink, nesting, isRoot = true)
+        StructureKind.MAP -> MapEncoder(sink, context, isRoot = true)
+        else -> ClassEncoder(sink, context, isRoot = true)
       }
   }
 
@@ -189,10 +282,10 @@ internal object KotlinxPropertiesEncoder {
    * If [isRoot] is true, uses the sink's already-open root map.
    */
   private class ClassEncoder(
-    sink: ArgumentSink,
-    nesting: SerializerNesting,
+    sink: WriteCountingSink,
+    context: EncodingContext,
     private val isRoot: Boolean = false,
-  ) : ValueEncoder(sink, nesting) {
+  ) : ValueEncoder(sink, context) {
 
     override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
       val name = descriptor.getElementName(index)
@@ -213,8 +306,8 @@ internal object KotlinxPropertiesEncoder {
   }
 
   /** Writes the elements of a list or set. */
-  private class ListEncoder(sink: ArgumentSink, nesting: SerializerNesting) :
-    ValueEncoder(sink, nesting) {
+  private class ListEncoder(sink: WriteCountingSink, context: EncodingContext) :
+    ValueEncoder(sink, context) {
 
     override fun endStructure(descriptor: SerialDescriptor) {
       sink.end()
@@ -232,13 +325,17 @@ internal object KotlinxPropertiesEncoder {
    * sensitive value-class property, its original text is unavailable, so the value is filtered too.
    */
   private class MapEncoder(
-    sink: ArgumentSink,
-    nesting: SerializerNesting,
+    sink: WriteCountingSink,
+    context: EncodingContext,
     private val isRoot: Boolean = false,
-  ) : ValueEncoder(sink, nesting) {
+  ) : ValueEncoder(sink, context) {
 
     private var isKey = true
     private var isCurrentValueSensitive = false
+
+    /** Only values: a map can't be recorded without its keys. */
+    override val canSubstituteElement: Boolean
+      get() = !isKey
 
     override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
       isKey = index % 2 == 0
@@ -347,6 +444,52 @@ internal object KotlinxPropertiesEncoder {
         },
       )
     }
+  }
+
+  /**
+   * Forwards to [sink], counting the values, keys, and structure boundaries written, so that an
+   * encoder can tell whether a failing serializer wrote part of its value.
+   */
+  private class WriteCountingSink(private val sink: ArgumentSink) : ArgumentSink {
+
+    var writes: Long = 0
+      private set
+
+    override val failure: DropArguments?
+      get() = sink.failure
+
+    override fun beginMap(identity: Any?) {
+      writes++
+      sink.beginMap(identity)
+    }
+
+    override fun beginList(identity: Any?) {
+      writes++
+      sink.beginList(identity)
+    }
+
+    override fun key(name: String) {
+      writes++
+      sink.key(name)
+    }
+
+    override fun scalar(value: Any?) {
+      writes++
+      sink.scalar(value)
+    }
+
+    override fun computedScalar(compute: () -> Any?) {
+      writes++
+      sink.computedScalar(compute)
+    }
+
+    override fun end() {
+      writes++
+      sink.end()
+    }
+
+    override fun reject(reason: ArgumentDropReason, warning: String): Nothing =
+      sink.reject(reason, warning)
   }
 
   /**

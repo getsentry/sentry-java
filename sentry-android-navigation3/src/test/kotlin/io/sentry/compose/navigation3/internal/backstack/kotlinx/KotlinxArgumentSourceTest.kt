@@ -100,6 +100,7 @@ class KotlinxArgumentSourceTest {
   }
 
   private val failures = mutableListOf<Throwable>()
+  private val unencodableValues = mutableListOf<IllegalArgumentException>()
 
   private val detailSerializer = RecordingSerializer(Detail.serializer())
   private val mutableDetailSerializer = RecordingSerializer(MutableDetail.serializer())
@@ -166,6 +167,20 @@ class KotlinxArgumentSourceTest {
 
     assertThat(source).isNotEqualTo(mapOf("id" to "2"))
     assertThat(mapOf("id" to "2")).isNotEqualTo(source)
+  }
+
+  @Test
+  fun `reads unencodable values as the Unencodable substitute and reports them to onUnencodableValue`() {
+    val source =
+      argumentSourceOf(WithContextual.serializer(), WithContextual("1", Unregistered("2")))
+
+    val read = source.toMap()
+
+    assertThat(read)
+      .isEqualTo(mapOf("id" to "1", "other" to KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE))
+    assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues.single()).isInstanceOf(SerializationException::class.java)
+    assertThat(failures).isEmpty()
   }
 
   @Test
@@ -340,6 +355,20 @@ class KotlinxArgumentSourceTest {
     argumentSourceOf(detailSerializer, Detail("1")).writeTo(sink)
 
     assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "1"))
+  }
+
+  @Test
+  fun `writeTo() - writes unencodable values as the Unencodable substitute and reports them to onUnencodableValue`() {
+    val sink = TreeArgumentWriter(ArgumentBudget())
+
+    argumentSourceOf(WithContextual.serializer(), WithContextual("1", Unregistered("2")))
+      .writeTo(sink)
+
+    assertThat(sink.argumentsOrThrow())
+      .isEqualTo(mapOf("id" to "1", "other" to KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE))
+    assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues.single()).isInstanceOf(SerializationException::class.java)
+    assertThat(failures).isEmpty()
   }
 
   @Test
@@ -712,7 +741,13 @@ class KotlinxArgumentSourceTest {
     serializer: KSerializer<T>,
     entry: T,
   ): KotlinxArgumentSource =
-    KotlinxArgumentSource(entry, serializer as KSerializer<Any>) { failures += it }
+    KotlinxArgumentSource(
+      entry,
+      serializer as KSerializer<Any>,
+      onUnencodableValue = { unencodableValues += it },
+    ) {
+      failures += it
+    }
 
   private companion object {
     /** Bounds every wait, so that a deadlock fails the test rather than hanging it. */

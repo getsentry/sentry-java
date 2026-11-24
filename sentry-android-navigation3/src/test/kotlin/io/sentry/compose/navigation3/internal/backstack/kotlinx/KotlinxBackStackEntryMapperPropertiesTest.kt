@@ -11,8 +11,10 @@ import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import kotlin.test.assertFailsWith
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -70,6 +72,31 @@ class KotlinxBackStackEntryMapperPropertiesTest {
 
     override fun deserialize(decoder: Decoder): PropertyLess = throw UnsupportedOperationException()
   }
+
+  interface OpenOrigin
+
+  class SearchOrigin : OpenOrigin
+
+  @Serializable
+  @SerialName("WithOpenPolymorphic")
+  data class WithOpenPolymorphic(val id: String, @Polymorphic val origin: OpenOrigin)
+
+  @Serializable data class Point(val x: Int)
+
+  /** Has a contextual property, and a map whose class keys fail the whole entry when not empty. */
+  @Serializable
+  @SerialName("WithContextualAndPointKeys")
+  internal data class WithContextualAndPointKeys(
+    @Contextual val other: Unregistered?,
+    val byPoint: Map<Point, Int>,
+  )
+
+  /** Serializers of this suite's own types, which tests add to the fixture's lookup. */
+  private val otherSerializers: Map<Class<*>, KSerializer<*>> =
+    mapOf(
+      WithOpenPolymorphic::class.java to WithOpenPolymorphic.serializer(),
+      WithContextualAndPointKeys::class.java to WithContextualAndPointKeys.serializer(),
+    )
 
   /** An id over the argument character limit. */
   private val overLimitId = "x".repeat(MAX_ARGUMENT_CHARACTERS + 1)
@@ -160,10 +187,10 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     assertThat(mapped).isEqualTo(SentryBackStackEntry("Search", mapOf("query" to "shoes")))
   }
 
-  // Properties that can't be encoded
+  // Property values that can't be encoded
 
   @Test
-  fun `keeps the name and records only the encoding failure when a type's properties can't be encoded`() {
+  fun `records unencodable property values as the Unencodable substitute and keeps the other arguments`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     val mapper = fixture.mapper
 
@@ -171,7 +198,89 @@ class KotlinxBackStackEntryMapperPropertiesTest {
 
     assertThat(mapped)
       .isEqualTo(
-        SentryBackStackEntry("WithContextual", droppedBy(ArgumentDropReason.ENCODING_FAILED)),
+        SentryBackStackEntry(
+          "WithContextual",
+          mapOf("id" to "1", "other" to KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE),
+        ),
+      )
+  }
+
+  @Test
+  fun `logs only an unencodable-values warning, once per type, for values recorded as the Unencodable substitute`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    repeat(3) {
+      mapper.mapAndReadArguments(WithContextual("$it", Unregistered("$it")))
+      mapper.mapAndReadArguments(WithOpenPolymorphic("$it", SearchOrigin()))
+    }
+
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNENCODABLE_VALUES) },
+        eq(WithContextual::class.java.name),
+      )
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNENCODABLE_VALUES) },
+        eq(WithOpenPolymorphic::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `doesn't log that values were recorded as the Unencodable substitute until the arguments are read`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    val mapper = fixture.mapper
+
+    mapper.map(WithContextual("1", Unregistered("2")))
+
+    verifyNoInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `logs the unencodable-values warning separately from the unsupported-properties warning for the same type`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+    mapper.mapAndReadArguments(WithContextualAndPointKeys(Unregistered("1"), emptyMap()))
+
+    mapper.mapAndReadArguments(WithContextualAndPointKeys(null, mapOf(Point(1) to 1)))
+
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNENCODABLE_VALUES) },
+        eq(WithContextualAndPointKeys::class.java.name),
+      )
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNSUPPORTED_PROPERTIES) },
+        eq(WithContextualAndPointKeys::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  // Properties that can't be encoded
+
+  @Test
+  fun `keeps the name and records only the encoding failure when a type's properties can't be encoded`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    val mapped = mapper.map(WithContextualAndPointKeys(null, mapOf(Point(1) to 1)))
+
+    assertThat(mapped)
+      .isEqualTo(
+        SentryBackStackEntry(
+          "WithContextualAndPointKeys",
+          droppedBy(ArgumentDropReason.ENCODING_FAILED),
+        ),
       )
   }
 
@@ -626,7 +735,9 @@ class KotlinxBackStackEntryMapperPropertiesTest {
 
   private companion object {
     const val UNSUPPORTED_PROPERTIES =
-      "Contextual and open polymorphic properties and structured map keys aren't supported"
+      "Structured map keys, and contextual and open polymorphic entries, aren't supported"
+
+    const val UNENCODABLE_VALUES = "Recording them as [Unencodable]"
 
     const val SERIALIZER_THREW = "because a serializer threw"
   }
