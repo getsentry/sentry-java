@@ -408,7 +408,8 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
     }
   }
 
-  private long nowMs() {
+  @Override
+  public long nowMs() {
     return TimeUnit.NANOSECONDS.toMillis(ticker.tickNanos());
   }
 }
