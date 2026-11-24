@@ -1224,6 +1224,132 @@
       "note": "doubleSlashComments is UNKNOWN: stop at //."
     },
     {
+      "id": "comment.dash_dash.bare_cr.sqlite",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t -- note\rWHERE b = Zq9xK7xm",
+      "expected": {
+        "text": "SELECT a FROM t ?",
+        "summary": "SELECT t",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7xm"],
+      "source": "sentry",
+      "note": "A line comment followed by a CR that is not followed by LF stops (D64): databases disagree on whether the CR ends the comment. SQLite ends the comment at LF only, so the text after the CR is comment."
+    },
+    {
+      "id": "comment.dash_dash.bare_cr.postgresql",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "postgresql",
+      "input": "SELECT a FROM t -- c\r WHERE b = 'x\n Zq9xK7xn'",
+      "expected": {
+        "text": "SELECT a FROM t ?",
+        "summary": "SELECT t",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7xn"],
+      "source": "sentry",
+      "note": "A line comment followed by a CR that is not followed by LF stops (D64): databases disagree on whether the CR ends the comment. PostgreSQL ends the comment at the CR and reads a literal across the LF; ending comments at LF only would put Zq9xK7xn in the text."
+    },
+    {
+      "id": "comment.dash_dash.bare_cr_empty.sqlite",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t --\rZq9xK7xo",
+      "expected": {
+        "text": "SELECT a FROM t ?",
+        "summary": "SELECT t",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7xo"],
+      "source": "sentry",
+      "note": "A line comment followed by a CR that is not followed by LF stops (D64): databases disagree on whether the CR ends the comment."
+    },
+    {
+      "id": "comment.dash_dash.crlf.sqlite",
+      "requirements": ["R3"],
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t -- Zq9xK7xp\r\nWHERE b = 1",
+      "expected": {
+        "text": "SELECT a FROM t WHERE b = ?",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xp"],
+      "source": "sentry",
+      "note": "CRLF ends the comment in every reading, so it does not stop (D64)."
+    },
+    {
+      "id": "comment.dash_dash.cr_at_end.sqlite",
+      "requirements": ["R3"],
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t -- Zq9xK7xq\r",
+      "expected": {
+        "text": "SELECT a FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xq"],
+      "source": "sentry",
+      "note": "Nothing follows the CR, so there is nothing to misread (D64)."
+    },
+    {
+      "id": "comment.hash.bare_cr.mysql",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT a FROM t # note\rWHERE b = Zq9xK7xr",
+      "expected": {
+        "text": "SELECT a FROM t ?",
+        "summary": "SELECT t",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7xr"],
+      "source": "sentry",
+      "note": "A line comment followed by a CR that is not followed by LF stops (D64): databases disagree on whether the CR ends the comment."
+    },
+    {
+      "id": "comment.hash.bare_cr_empty.mysql",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "mysql",
+      "input": "SELECT a FROM t #\rZq9xK7xs",
+      "expected": {
+        "text": "SELECT a FROM t ?",
+        "summary": "SELECT t",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7xs"],
+      "source": "sentry",
+      "note": "A line comment followed by a CR that is not followed by LF stops (D64): databases disagree on whether the CR ends the comment."
+    },
+    {
+      "id": "comment.hash.crlf.mysql",
+      "requirements": ["R3"],
+      "dialect": "mysql",
+      "input": "SELECT a FROM t # Zq9xK7xt\r\nWHERE b = 1",
+      "expected": {
+        "text": "SELECT a FROM t WHERE b = ?",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xt"],
+      "source": "sentry",
+      "note": "CRLF ends the comment in every reading, so it does not stop (D64)."
+    },
+    {
+      "id": "comment.double_slash.bare_cr.h2",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "h2",
+      "input": "SELECT a FROM t // note\rWHERE b = Zq9xK7xu",
+      "expected": {
+        "text": "SELECT a FROM t ?",
+        "summary": "SELECT t",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7xu"],
+      "source": "sentry",
+      "note": "A line comment followed by a CR that is not followed by LF stops (D64): databases disagree on whether the CR ends the comment."
+    },
+    {
       "id": "comment.block.after_star.postgresql",
       "requirements": ["R3"],
       "dialect": "postgresql",
@@ -1675,6 +1801,159 @@
       "note": "DCL reduction (D23): the statement keeps only its operation, followed by ?. The summary is SET PASSWORD."
     },
     {
+      "id": "credentials.config_value.pragma_key.sqlite",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "PRAGMA key = Zq9xK7xa",
+      "expected": {
+        "text": "PRAGMA key ?",
+        "summary": "PRAGMA key",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xa"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value. SQLCipher's database key."
+    },
+    {
+      "id": "credentials.config_value.pragma_key_call.sqlite",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "PRAGMA key(Zq9xK7xb)",
+      "expected": {
+        "text": "PRAGMA key ?",
+        "summary": "PRAGMA key",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xb"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.pragma_schema_key.sqlite",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "PRAGMA main.key = Zq9xK7xc",
+      "expected": {
+        "text": "PRAGMA main.key ?",
+        "summary": "PRAGMA main.key",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xc"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.attach_key.sqlite",
+      "requirements": ["R2", "R6"],
+      "dialect": "sqlite",
+      "input": "ATTACH DATABASE 'Zq9xK7xd.db' AS other KEY Zq9xK7xe",
+      "expected": {
+        "text": "ATTACH ?",
+        "summary": "ATTACH",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xd", "Zq9xK7xe"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value. SQLCipher's KEY clause."
+    },
+    {
+      "id": "credentials.config_value.set_custom.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SET app.tenant = Zq9xK7xf",
+      "expected": {
+        "text": "SET ?",
+        "summary": "SET",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xf"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.set_local_to.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SET LOCAL app.tenant TO Zq9xK7xg",
+      "expected": {
+        "text": "SET ?",
+        "summary": "SET",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xg"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.set_session_authorization.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SET SESSION AUTHORIZATION Zq9xK7xh",
+      "expected": {
+        "text": "SET ?",
+        "summary": "SET",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xh"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.alter_system.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "ALTER SYSTEM SET app.k = Zq9xK7xi",
+      "expected": {
+        "text": "ALTER SYSTEM ?",
+        "summary": "ALTER SYSTEM",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xi"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.set_list.mysql",
+      "requirements": ["R2", "R6"],
+      "dialect": "mysql",
+      "input": "SET sql_mode = TRADITIONAL, @a = Zq9xK7xj",
+      "expected": {
+        "text": "SET ?",
+        "summary": "SET",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xj"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.alter_session.oracle",
+      "requirements": ["R2", "R6"],
+      "dialect": "oracle",
+      "input": "ALTER SESSION SET CURRENT_SCHEMA = Zq9xK7xk",
+      "expected": {
+        "text": "ALTER SESSION ?",
+        "summary": "ALTER SESSION",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xk"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
+    },
+    {
+      "id": "credentials.config_value.multi_statement.postgresql",
+      "requirements": ["R2", "R6"],
+      "dialect": "postgresql",
+      "input": "SET app.tenant = Zq9xK7xl; SELECT a FROM t",
+      "expected": {
+        "text": "SET ?; SELECT a FROM t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7xl"],
+      "source": "sentry",
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value. With a reduced statement the summary is null (D34)."
+    },
+    {
       "id": "credentials.reduction_ends_at_statement_end.postgresql",
       "requirements": ["R2", "R6"],
       "dialect": "postgresql",
@@ -1736,13 +2015,13 @@
       "dialect": "oracle",
       "input": "SET ROLE app_role IDENTIFIED BY Zq9xK7pa",
       "expected": {
-        "text": "SET ROLE app_role IDENTIFIED BY ?",
+        "text": "SET ?",
         "summary": "SET",
         "status": "STOPPED"
       },
       "secrets": ["Zq9xK7pa"],
       "source": "sentry",
-      "note": "IDENTIFIED BY stops in every statement, not only in CREATE/ALTER/DROP and GRANT as in OTel Java (D23)."
+      "note": "IDENTIFIED BY stops in every statement, not only in CREATE/ALTER/DROP and GRANT as in OTel Java (D23). SET is reduced (D63); the stop inside the reduced part still makes it STOPPED (D43)."
     },
     {
       "id": "credentials.identified_by.comment_between.oracle",
@@ -1750,13 +2029,13 @@
       "dialect": "oracle",
       "input": "SET ROLE app_role IDENTIFIED /* role password */ BY Zq9xK7pb",
       "expected": {
-        "text": "SET ROLE app_role IDENTIFIED BY ?",
+        "text": "SET ?",
         "summary": "SET",
         "status": "STOPPED"
       },
       "secrets": ["Zq9xK7pb"],
       "source": "sentry",
-      "note": "A comment between IDENTIFIED and BY does not hide the credential clause (D23). OTel Java's rule allows only whitespace there."
+      "note": "A comment between IDENTIFIED and BY does not hide the credential clause (D23). OTel Java's rule allows only whitespace there. SET is reduced (D63); the stop inside the reduced part still makes it STOPPED (D43)."
     },
     {
       "id": "credentials.identified_by.comment_before_glued_by.postgresql",
@@ -2402,12 +2681,12 @@
       "dialect": "sqlite",
       "input": "PRAGMA foreign_keys = ON",
       "expected": {
-        "text": "PRAGMA foreign_keys = ON",
+        "text": "PRAGMA foreign_keys ?",
         "summary": "PRAGMA foreign_keys",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": ""
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
     },
     {
       "id": "shape.pragma_value.sqlite",
@@ -2415,12 +2694,12 @@
       "dialect": "sqlite",
       "input": "PRAGMA user_version = 3",
       "expected": {
-        "text": "PRAGMA user_version = ?",
+        "text": "PRAGMA user_version ?",
         "summary": "PRAGMA user_version",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": ""
+      "note": "Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
     },
     {
       "id": "shape.pragma_optimize.sqlite",
@@ -3673,12 +3952,12 @@
       "dialect": "sqlite",
       "input": "PRAGMA temp_store = MEMORY;",
       "expected": {
-        "text": "PRAGMA temp_store = MEMORY;",
+        "text": "PRAGMA temp_store ?;",
         "summary": "PRAGMA temp_store",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run."
+      "note": "Room-generated SQL (Room 2.x), written from memory, not captured from a run. Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
     },
     {
       "id": "workload.room.begin_immediate",
@@ -4190,12 +4469,12 @@
       "dialect": "mysql",
       "input": "SET NAMES utf8mb4",
       "expected": {
-        "text": "SET NAMES utf8mb4",
+        "text": "SET ?",
         "summary": "SET",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Handwritten MySQL, as sent through Connector/J. SET gives the operation only (step 11c)."
+      "note": "Handwritten MySQL, as sent through Connector/J. Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
     },
     {
       "id": "workload.mysql.call_procedure",
@@ -4415,12 +4694,11 @@
       "dialect": "sqlserver",
       "input": "SET NOCOUNT ON; SELECT [Id], [Payload] FROM [dbo].[Jobs] WHERE [State] = ?",
       "expected": {
-        "text": "SET NOCOUNT ON; SELECT [Id], [Payload] FROM [dbo].[Jobs] WHERE [State] = ?",
-        "summary": "SET; SELECT [dbo].[Jobs]",
+        "text": "SET ?; SELECT [Id], [Payload] FROM [dbo].[Jobs] WHERE [State] = ?",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "Handwritten T-SQL, as sent through mssql-jdbc. SET gives the operation only (step 11c)."
+      "note": "Handwritten T-SQL, as sent through mssql-jdbc. Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value. With a reduced statement the summary is null (D34)."
     },
     {
       "id": "workload.tooling.flyway_history.postgresql",
@@ -4495,12 +4773,12 @@
       "dialect": "postgresql",
       "input": "SET search_path TO app, public",
       "expected": {
-        "text": "SET search_path TO app, public",
+        "text": "SET ?",
         "summary": "SET",
         "status": "COMPLETE"
       },
       "source": "sentry",
-      "note": "HikariCP connectionInitSql. SET gives the operation only (step 11c)."
+      "note": "HikariCP connectionInitSql. Configuration reduction (D63): the statement keeps only its operation (for PRAGMA with the pragma name), followed by ?, because a bare word in a value position is a value."
     },
     {
       "id": "workload.tooling.spring_sample_insert.hsqldb",
@@ -7017,13 +7295,13 @@
       "dialect": "CONSERVATIVE",
       "input": "ALTER SYSTEM SET SECURE STORE BACKUP PASSWORD \"Password1\"",
       "expected": {
-        "text": "ALTER SYSTEM SET SECURE STORE BACKUP PASSWORD ?",
+        "text": "ALTER SYSTEM ?",
         "summary": "ALTER SYSTEM",
         "status": "STOPPED"
       },
       "secrets": ["Password1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[7]",
-      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23)."
+      "note": "PASSWORD in a CREATE/ALTER/DROP statement whose object kind is not TABLE, INDEX, VIEW or PROCEDURE stops the analyzer (D23). ALTER SYSTEM is reduced (D63); the stop inside it still makes it STOPPED (D43)."
     },
     {
       "id": "otel_java.sanitize_sensitive.008",

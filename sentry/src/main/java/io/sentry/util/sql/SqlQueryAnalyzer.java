@@ -15,13 +15,21 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SqlQueryAnalyzer {
 
+  /**
+   * Longest input that is analyzed, in characters (D66). The length limit only stops a scan whose
+   * output grows, so a single huge literal or comment would otherwise be read to its end on the
+   * caller's thread.
+   */
+  static final int MAX_INPUT_LENGTH = 1024 * 1024;
+
   private SqlQueryAnalyzer() {}
 
   /**
    * Analyzes a SQL statement.
    *
    * <p>Does not throw for any input: an internal failure gives a result with status {@link
-   * SqlQuery.Status#ERROR} and no text.
+   * SqlQuery.Status#ERROR} and no text. Input longer than 1 MiB is not analyzed: the result has
+   * status {@link SqlQuery.Status#SKIPPED} and no text.
    *
    * @param sql the statement as passed to the database driver, may be {@code null}
    * @param dialect how dialect-specific syntax is interpreted
@@ -33,6 +41,9 @@ public final class SqlQueryAnalyzer {
       final @Nullable String sql, final @NotNull SqlDialect dialect, final int maxQueryTextLength) {
     if (sql == null) {
       return SqlQuery.EMPTY;
+    }
+    if (sql.length() > MAX_INPUT_LENGTH) {
+      return SqlQuery.SKIPPED;
     }
     try {
       return SqlQueryPostProcessor.process(

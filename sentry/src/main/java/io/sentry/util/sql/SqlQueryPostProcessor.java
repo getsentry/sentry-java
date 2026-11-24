@@ -19,6 +19,9 @@ import org.jetbrains.annotations.Nullable;
  *       becomes {@code ?} and the rest is dropped.
  *   <li>D23: a DCL statement keeps only its operation, followed by {@code ?}. This keys on the
  *       statement start, so it also applies when the length limit cut off the credential clause.
+ *   <li>D63: a configuration statement ({@code SET}, {@code PRAGMA}, {@code ALTER SYSTEM}, {@code
+ *       ALTER SESSION}, {@code ATTACH}) is reduced the same way, because a bare word in a value
+ *       position is a value. {@code PRAGMA} keeps the pragma name.
  *   <li>D34: in multi-statement text with a reduced or stopped statement, the summary is {@code
  *       null}, because the grammar's summary entries cannot be matched to statements.
  *   <li>D15: where {@code "} may start a string, a double-quoted summary target becomes {@code "?"}
@@ -129,11 +132,11 @@ final class SqlQueryPostProcessor {
           stopped = true;
           break;
         }
-        final int operationEnd = dclOperationEnd(text, keyword, keywordEnd, end);
+        final int operationEnd = reducedOperationEnd(text, keyword, keywordEnd, end);
         if (operationEnd < 0) {
           out.append(text, first, end);
         } else {
-          // D23: the operation as written, then ? for everything up to the statement end.
+          // D23, D63: the operation as written, then ? for everything up to the statement end.
           out.append(text, first, operationEnd);
           if (skipWhitespace(text, operationEnd, end) < end) {
             out.append(" ?");
@@ -258,14 +261,21 @@ final class SqlQueryPostProcessor {
   }
 
   /**
-   * Returns the end of the DCL operation (D23) at the statement start, or -1: {@code GRANT}, {@code
-   * REVOKE}, {@code CREATE}/{@code ALTER}/{@code DROP} followed by {@code USER}, {@code LOGIN} or
-   * {@code ROLE}, and {@code SET PASSWORD}.
+   * Returns the end of the operation of a reduced statement at the statement start, or -1. DCL
+   * (D23): {@code GRANT}, {@code REVOKE}, {@code CREATE}/{@code ALTER}/{@code DROP} followed by
+   * {@code USER}, {@code LOGIN} or {@code ROLE}, and {@code SET PASSWORD}. Configuration (D63):
+   * {@code SET}, {@code ATTACH}, {@code ALTER SYSTEM}, {@code ALTER SESSION}, and {@code PRAGMA}
+   * with its name.
    */
-  private static int dclOperationEnd(
+  private static int reducedOperationEnd(
       final @NotNull String text, final int keyword, final int keywordEnd, final int end) {
-    if (isWord(text, keyword, keywordEnd, "GRANT") || isWord(text, keyword, keywordEnd, "REVOKE")) {
+    if (isWord(text, keyword, keywordEnd, "GRANT")
+        || isWord(text, keyword, keywordEnd, "REVOKE")
+        || isWord(text, keyword, keywordEnd, "ATTACH")) {
       return keywordEnd;
+    }
+    if (isWord(text, keyword, keywordEnd, "PRAGMA")) {
+      return pragmaNameEnd(text, keywordEnd, end);
     }
     final boolean ddl =
         isWord(text, keyword, keywordEnd, "CREATE")
@@ -277,7 +287,7 @@ final class SqlQueryPostProcessor {
     }
     final int second = skipWhitespace(text, keywordEnd, end);
     if (second == keywordEnd) {
-      return -1;
+      return set ? keywordEnd : -1;
     }
     final int secondEnd = wordEnd(text, second);
     if (ddl
@@ -286,7 +296,32 @@ final class SqlQueryPostProcessor {
             || isWord(text, second, secondEnd, "ROLE"))) {
       return secondEnd;
     }
-    return set && isWord(text, second, secondEnd, "PASSWORD") ? secondEnd : -1;
+    if (isWord(text, keyword, keywordEnd, "ALTER")
+        && (isWord(text, second, secondEnd, "SYSTEM")
+            || isWord(text, second, secondEnd, "SESSION"))) {
+      return secondEnd;
+    }
+    if (set) {
+      return isWord(text, second, secondEnd, "PASSWORD") ? secondEnd : keywordEnd;
+    }
+    return -1;
+  }
+
+  /**
+   * Returns the end of the (optionally schema-qualified) pragma name after {@code PRAGMA}, or the
+   * end of {@code PRAGMA} if no name follows.
+   */
+  private static int pragmaNameEnd(
+      final @NotNull String text, final int keywordEnd, final int end) {
+    final int name = skipWhitespace(text, keywordEnd, end);
+    if (name == keywordEnd) {
+      return keywordEnd;
+    }
+    int i = name;
+    while (i < end && (isWordChar(text.charAt(i)) || text.charAt(i) == '.')) {
+      i++;
+    }
+    return i == name ? keywordEnd : i;
   }
 
   private static boolean isWord(

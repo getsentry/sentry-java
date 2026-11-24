@@ -1669,6 +1669,13 @@ WHITESPACE           = [ \t\r\n]+
           if (isOverLimit()) return YYEOF;
       }
 
+  // Sentry: a bare CR (not followed by LF) after a line comment stops (D64). SQLite ends the
+  // comment at LF only, PostgreSQL also at CR, so either reading can put a value into the text.
+  {LINE_COMMENT} "\r" / [^\n] {
+          builder.append('?');
+          return YYEOF;
+      }
+
   {LINE_COMMENT} {
           // Sentry: where -- needs whitespace after it (MySQL), --x is two minus signs (D9). Reading on
           // after them would scan the line again at each --, so --x stops there (option 06 step 8).
@@ -1960,6 +1967,12 @@ WHITESPACE           = [ \t\r\n]+
 // Sentry: the rest of a # or // comment, dropped (R3); the opener has appended a space. The end of
 // input goes back to YYINITIAL too, so the scan completes (option 06 step 8).
 <LINE_COMMENT_BODY> {
+  // Sentry: a bare CR, as after -- (D64)
+  [^\r\n]* "\r" / [^\n] {
+          builder.append('?');
+          return YYEOF;
+      }
+
   [^\r\n]+ | [^] {
           yybegin(YYINITIAL);
       }

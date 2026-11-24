@@ -87,7 +87,8 @@ class SqlQueryAnalyzerPathologicalTest(
         },
         Input("1 MiB of statements", secrets = listOf("Zq9xK7")) {
           val statement = "SELECT a, b FROM t WHERE c = 'Zq9xK7' AND d IN (1, 2, 3) /* Zq9xK7 */; "
-          statement.repeat(KIB * KIB / statement.length + 1)
+          // Just under 1 MiB: longer input is not analyzed at all (D66).
+          statement.repeat(KIB * KIB / statement.length)
         },
         // After an allowlisted keyword, so the quotes reach the lexer (D12, D20). An even count
         // closes the literal (`''` is an escaped quote); an odd count leaves it unterminated.

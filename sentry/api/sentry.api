@@ -8341,6 +8341,7 @@ public final class io/sentry/util/sql/SqlQuery {
 public final class io/sentry/util/sql/SqlQuery$Status : java/lang/Enum {
 	public static final field COMPLETE Lio/sentry/util/sql/SqlQuery$Status;
 	public static final field ERROR Lio/sentry/util/sql/SqlQuery$Status;
+	public static final field SKIPPED Lio/sentry/util/sql/SqlQuery$Status;
 	public static final field STOPPED Lio/sentry/util/sql/SqlQuery$Status;
 	public static final field TRUNCATED Lio/sentry/util/sql/SqlQuery$Status;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/util/sql/SqlQuery$Status;

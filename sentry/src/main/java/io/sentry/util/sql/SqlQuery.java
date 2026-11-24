@@ -20,11 +20,19 @@ public final class SqlQuery {
      */
     STOPPED,
     /** Analysis failed internally; the text is {@code null}. */
-    ERROR
+    ERROR,
+    /**
+     * The input was longer than the analyzer accepts and was not analyzed; the text is {@code
+     * null}.
+     */
+    SKIPPED
   }
 
   /** Result for {@code null} input: there was nothing to scan. */
   static final @NotNull SqlQuery EMPTY = new SqlQuery(null, null, null, Status.COMPLETE);
+
+  /** Result for input over the analyzer's input limit. */
+  static final @NotNull SqlQuery SKIPPED = new SqlQuery(null, null, null, Status.SKIPPED);
 
   /** Result after an internal error. */
   static final @NotNull SqlQuery FAILED = new SqlQuery(null, null, null, Status.ERROR);
@@ -46,8 +54,8 @@ public final class SqlQuery {
   }
 
   /**
-   * Returns the sanitized statement, or {@code null} if the input was {@code null} or analysis
-   * failed internally.
+   * Returns the sanitized statement, or {@code null} if the input was {@code null}, too long to
+   * analyze, or analysis failed internally.
    *
    * <p>If the analyzer stopped early, for example at an unterminated literal, the text is the
    * sanitized part up to that point followed by {@code ?}.
