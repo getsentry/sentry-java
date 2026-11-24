@@ -39,8 +39,8 @@ dependencyResolutionManagement {
         mavenLocal()
     }
     versionCatalogs {
-        create("nav3Libs") {
-            from(files("gradle/nav3.versions.toml"))
+        create("matrixLibs") {
+            from(files("gradle/dependency-matrix.versions.toml"))
         }
     }
 }

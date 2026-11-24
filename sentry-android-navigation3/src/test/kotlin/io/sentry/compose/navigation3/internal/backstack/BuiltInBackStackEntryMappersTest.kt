@@ -180,11 +180,12 @@ class BuiltInBackStackEntryMappersTest {
   // MIN_KOTLINX_SERIALIZATION_VERSION
 
   @Test
-  fun `MIN_KOTLINX_SERIALIZATION_VERSION matches kotlinxSerializationFloor in nav3 versions catalog`() {
+  fun `MIN_KOTLINX_SERIALIZATION_VERSION matches kotlinxSerialization-floor in the dependency matrix catalog`() {
     val floor =
       checkNotNull(System.getProperty(KOTLINX_SERIALIZATION_FLOOR_PROPERTY)) {
         "System property $KOTLINX_SERIALIZATION_FLOOR_PROPERTY is missing. Run this test through " +
-          "Gradle, which sets it from kotlinxSerializationFloor in gradle/nav3.versions.toml."
+          "Gradle, which sets it from kotlinxSerialization-floor in " +
+          "gradle/dependency-matrix.versions.toml."
       }
 
     assertThat(MIN_KOTLINX_SERIALIZATION_VERSION).isEqualTo(floor)
@@ -436,7 +437,7 @@ class BuiltInBackStackEntryMappersTest {
 
     const val CREATION_FAILED = "Nav3 built-in mapper creation failed."
 
-    /** Set by the module's Gradle build from `kotlinxSerializationFloor`. */
+    /** Set by the module's Gradle build from `kotlinxSerialization-floor`. */
     const val KOTLINX_SERIALIZATION_FLOOR_PROPERTY = "nav3.kotlinxSerializationFloor"
   }
 }

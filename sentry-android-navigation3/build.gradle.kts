@@ -16,7 +16,7 @@ plugins {
   id("io.sentry.robolectric")
 }
 
-val kotlinxSerializationFloor = nav3Libs.versions.kotlinxSerializationFloor.get()
+val kotlinxSerializationFloor = matrixLibs.versions.kotlinxSerialization.floor.get()
 val updateEncoderContract = providers.gradleProperty("nav3UpdateEncoderContract").orNull.toBoolean()
 val encoderContractDir = file("src/test/resources/kotlinx-encoder-contract").absolutePath
 
@@ -87,8 +87,9 @@ android {
 kotlin { explicitApi() }
 
 // Unit tests run against the kotlinx.serialization floor by default. CI also runs them against the
-// latest version (-Pnav3TestKotlinxVersion=<version>), as apps may ship a newer
-// kotlinx.serialization dependency than sentry-android-navigation3 compiles against.
+// latest stable release and any newer release candidate (-Pnav3TestKotlinxVersion=<version>), as
+// apps may ship a newer kotlinx.serialization dependency than sentry-android-navigation3 compiles
+// against.
 val testKotlinxVersion =
   providers.gradleProperty("nav3TestKotlinxVersion").orNull ?: kotlinxSerializationFloor
 
@@ -104,7 +105,7 @@ dependencies {
   // kotlinx.serialization. With a mere minimum, a bump of one of those could silently raise the
   // version we compile against, and the same source could then compile to calls that the floor
   // version's runtime lacks. verifyKotlinxSerializationCompileVersion checks the result.
-  compileOnly(nav3Libs.kotlinx.serialization.core) {
+  compileOnly(matrixLibs.kotlinxSerialization.core) {
     version { strictly(kotlinxSerializationFloor) }
   }
 
@@ -119,7 +120,7 @@ dependencies {
   testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
-  testImplementation(nav3Libs.kotlinx.serialization.core) {
+  testImplementation(matrixLibs.kotlinxSerialization.core) {
     // Avoid using whatever version test deps happen to pull in transitively.
     version { strictly(testKotlinxVersion) }
   }
@@ -171,8 +172,8 @@ val verifyKotlinxSerializationCompileVersion by tasks.registering {
     val unexpected = resolved.filterNot { it.endsWith(":$floor") }
     check(resolved.isNotEmpty() && unexpected.isEmpty()) {
       "sentry-android-navigation3 must compile against kotlinx.serialization $floor (the " +
-        "kotlinxSerializationFloor in gradle/nav3.versions.toml), but releaseCompileClasspath " +
-        "resolved ${resolved.ifEmpty { "no kotlinx-serialization-core" }}."
+        "kotlinxSerialization-floor in gradle/dependency-matrix.versions.toml), but " +
+        "releaseCompileClasspath resolved ${resolved.ifEmpty { "no kotlinx-serialization-core" }}."
     }
   }
 }

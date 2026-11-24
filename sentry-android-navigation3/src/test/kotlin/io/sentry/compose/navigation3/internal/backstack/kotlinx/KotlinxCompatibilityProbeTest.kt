@@ -10,7 +10,8 @@ import org.junit.Test
 
 /**
  * Runs the default probe against the kotlinx.serialization version on the test classpath, which CI
- * also sets to the latest version with `-Pnav3TestKotlinxVersion`.
+ * also sets to the latest stable release and any newer release candidate with
+ * `-Pnav3TestKotlinxVersion`.
  */
 class KotlinxCompatibilityProbeTest {
 

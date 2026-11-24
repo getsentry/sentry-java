@@ -509,7 +509,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
     /**
      * The oldest kotlinx.serialization version [KotlinxBackStackEntryMapper] supports.
      *
-     * Must match `kotlinxSerializationFloor` in `gradle/nav3.versions.toml`.
+     * Must match `kotlinxSerialization-floor` in `gradle/dependency-matrix.versions.toml`.
      */
     const val MIN_KOTLINX_SERIALIZATION_VERSION: String = "1.7.3"
 

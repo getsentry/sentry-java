@@ -51,7 +51,7 @@ dependencyResolutionManagement {
       // gradle.properties links to the SDK build's, so versionName is the SDK version.
       version("sentry", providers.gradleProperty("versionName").get())
     }
-    create("nav3Libs") { from(files("../gradle/nav3.versions.toml")) }
+    create("matrixLibs") { from(files("../gradle/dependency-matrix.versions.toml")) }
   }
 }
 

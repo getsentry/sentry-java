@@ -29,7 +29,7 @@ In addition, the `.kotlinx` subpackage may ***not*** depend on Android framework
 
 ## Version floor
 
-The floor (`kotlinxSerializationFloor` in `gradle/nav3.versions.toml`) is the oldest kotlinx.serialization version our built-in mappers
+The floor (`kotlinxSerialization-floor` in `gradle/dependency-matrix.versions.toml`) is the oldest kotlinx.serialization version our built-in mappers
 support. It's the version that the oldest Nav3 release we support depends on (1.7.3 for `navigation3-runtime` 1.0.0), because every Nav3
 app runs at least that version. A higher floor would leave the mappers falling back to `/unknown` in Nav3 apps that never upgraded
 kotlinx.serialization.
@@ -66,5 +66,12 @@ We also don't ship rules for `@Serializable` classes with named companion object
 named-companion class names in every host app.
 
 `nav3-backstack-entry-mapper-r8-check` verifies our built-in `SerialName` and `SerialNameAndProperties` mappers behave
-correctly despite R8 minification. It does so against the kotlinx.serialization version we use for compilation, along with newer versions,
-and in both R8 full and compat modes. See its README for more details.
+correctly despite R8 minification. It does so against the kotlinx.serialization version we use for compilation, the latest stable
+release, and any newer release candidate, and in both R8 full and compat modes. See its README for more details.
+
+## Newer versions
+
+CI also runs the module's unit tests, and `nav3-backstack-entry-mapper-r8-check`, against the latest stable release
+(`kotlinxSerialization-stable`, bumped by Dependabot) and any newer release candidate (`kotlinxSerialization-preview`, bumped by a
+weekly job in `update-deps.yml`). Release candidate failures only block the PR that bumps it. If a bump fails, see "When a
+kotlinx.serialization bump fails" in that check's README.
