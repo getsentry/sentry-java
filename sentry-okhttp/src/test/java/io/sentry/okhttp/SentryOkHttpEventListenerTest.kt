@@ -76,7 +76,7 @@ class SentryOkHttpEventListenerTest {
           .setBody("responseBody")
           .addHeader("myResponseHeader", "myValue")
           .setSocketPolicy(SocketPolicy.KEEP_OPEN)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       val builder = OkHttpClient.Builder()

@@ -60,9 +60,9 @@ and server. The `io.sentry.otel-agent-tests` plugin in `build-logic` gives the S
 an `agentFixture` source set with the app, the `integrationTestOtelAgent` suite and the built agent
 jar; each module adds only the dependencies of its Spring Boot line. `AgentApp` starts the app once
 per test JVM in a child process, with `ChildJvmApp` and the agent jar passed through
-`ChildJvmTestArguments`. The suite's task runs with the agent initializing Sentry, and
-`integrationTestOtelAgentWithoutAutoInit` runs the same tests with the Spring Boot starter doing
-it. Gradle runs the two in parallel. `otelAgentTests()` in a `springBootMatrix` block registers
+`ChildJvmTestArguments`. The suite's task runs with the agent initializing Sentry, and its second
+target, `integrationTestOtelAgentWithoutAutoInit`, runs the same tests with the Spring Boot starter
+doing it. Gradle runs the two in parallel. `otelAgentTests()` in a `springBootMatrix` block registers
 both on each version.
 
 ## Running them

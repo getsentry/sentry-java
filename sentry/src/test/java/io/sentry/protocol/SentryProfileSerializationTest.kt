@@ -73,7 +73,7 @@ class SentryProfileSerializationTest {
               SentryThreadMetadata().apply {
                 name = "http-nio-8080-Acceptor"
                 priority = 0
-              }
+              },
           )
       }
   }

@@ -156,13 +156,11 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
   private static void updatePropagationContext(
       IScopes scopes, PropagationContext propagationContext) {
-    scopes.configureScope(
-        scope -> {
-          scope.withPropagationContext(
-              oldPropagationContext -> {
-                scope.setPropagationContext(propagationContext);
-              });
-        });
+    scopes.configureScope(scope -> {
+      scope.withPropagationContext(oldPropagationContext -> {
+        scope.setPropagationContext(propagationContext);
+      });
+    });
   }
 
   @Override

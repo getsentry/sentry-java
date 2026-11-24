@@ -688,7 +688,7 @@ class ComposeGestureTargetLocatorTest {
                 config.set(SemanticsPropertyKey("TestTag") { s: String?, _: String? -> s }, tag)
                 return config
               }
-          }
+          },
         )
       return modifierInfo
     }
@@ -706,7 +706,7 @@ class ComposeGestureTargetLocatorTest {
                 }
                 return config
               }
-          }
+          },
         )
       return modifierInfo
     }
@@ -718,7 +718,7 @@ class ComposeGestureTargetLocatorTest {
             Class.forName(className)
           } catch (_: ClassNotFoundException) {
             Modifier::class.java
-          }
+          },
         ) as Modifier
       val modifierInfo = Mockito.mock(ModifierInfo::class.java)
       whenever(modifierInfo.modifier).thenReturn(modifierWithClassName)

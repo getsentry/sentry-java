@@ -389,7 +389,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertTrue(
       AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -403,7 +403,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertFalse(
       AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -416,7 +416,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertTrue(
       AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
 
     sut.close()
@@ -424,7 +424,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertFalse(
       AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -436,9 +436,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     Thread {
-        sut.close()
-        latch.countDown()
-      }
+      sut.close()
+      latch.countDown()
+    }
       .start()
 
     latch.await()
@@ -449,7 +449,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertFalse(
       AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
-      }
+      },
     )
   }
 
@@ -520,9 +520,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertNotNull(sut.receiver)
 
     Thread {
-        sut.close()
-        latch.countDown()
-      }
+      sut.close()
+      latch.countDown()
+    }
       .start()
 
     latch.await()

@@ -167,7 +167,7 @@ constructor(
           options.replayController.stop()
           options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
         }
-      }
+      },
     )
   }
 
@@ -217,7 +217,7 @@ constructor(
             currentConfig.bitRate,
           )
         onSegmentCreated(segment)
-      }
+      },
     )
   }
 }

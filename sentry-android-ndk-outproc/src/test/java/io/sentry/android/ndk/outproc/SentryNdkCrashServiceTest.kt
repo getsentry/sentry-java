@@ -380,7 +380,7 @@ class SentryNdkCrashServiceTest {
           .setReason(reason)
           .setTimestamp(timestamp)
           .setTraceInputStream(trace)
-          .build()
+          .build(),
       )
   }
 

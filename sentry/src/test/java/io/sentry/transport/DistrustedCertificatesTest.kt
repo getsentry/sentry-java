@@ -66,7 +66,7 @@ class DistrustedCertificatesTest {
   @Test
   fun `accepts a chain without distrusted CAs`() {
     DistrustedCertificates.check(
-      arrayOf(leafIssuedBy(trustedCa).certificate, trustedCa.certificate)
+      arrayOf(leafIssuedBy(trustedCa).certificate, trustedCa.certificate),
     )
   }
 

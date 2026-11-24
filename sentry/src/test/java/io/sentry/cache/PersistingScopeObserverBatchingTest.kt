@@ -97,7 +97,7 @@ class PersistingScopeObserverBatchingTest {
       SerializerHook(options.serializer) {
         sut.setBreadcrumbs(emptyList())
         sut.addBreadcrumb(Breadcrumb().apply { message = "kept" })
-      }
+      },
     )
     sut = getSut(executor)
 

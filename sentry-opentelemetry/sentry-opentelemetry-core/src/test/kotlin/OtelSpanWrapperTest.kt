@@ -31,7 +31,7 @@ class OtelSpanWrapperTest {
           "cedf5b7571cb4972",
           TraceFlags.getSampled(),
           TraceState.getDefault(),
-        )
+        ),
       )
     whenever(otelSpan.name).thenReturn("parent")
 

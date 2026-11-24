@@ -33,6 +33,7 @@ public final class HttpUtils {
           "X-CSRFTOKEN",
           "X-XSRF-TOKEN");
 
+  // Keep these terms lowercase so sensitive-key checks only normalize the input key.
   private static final List<String> SENSITIVE_DATA_KEYS =
       Arrays.asList(
           "auth",
@@ -80,7 +81,7 @@ public final class HttpUtils {
       final int separator = param.indexOf('=');
       final @NotNull String name = separator < 0 ? param : param.substring(0, separator);
       final @NotNull String decodedName = decodeQueryParamName(name);
-      final boolean sensitive = containsTerm(decodedName, SENSITIVE_DATA_KEYS);
+      final boolean sensitive = containsSensitiveDataKey(decodedName);
       final boolean matchesTerm = containsTerm(decodedName, behavior.getTerms());
       final boolean shouldFilter =
           sensitive
@@ -108,7 +109,7 @@ public final class HttpUtils {
     for (final Map.Entry<String, String> header : headers.entrySet()) {
       final @NotNull String name = header.getKey();
       final boolean sensitive =
-          containsTerm(name, SENSITIVE_DATA_KEYS)
+          containsSensitiveDataKey(name)
               || "Cookie".equalsIgnoreCase(name)
               || "Set-Cookie".equalsIgnoreCase(name);
       if (sensitive) {
@@ -136,7 +137,13 @@ public final class HttpUtils {
   }
 
   static boolean containsSensitiveDataKey(final @NotNull String key) {
-    return containsTerm(key, SENSITIVE_DATA_KEYS);
+    final @NotNull String normalizedKey = key.toLowerCase(Locale.ROOT);
+    for (final String term : SENSITIVE_DATA_KEYS) {
+      if (normalizedKey.contains(term)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static boolean containsTerm(final @NotNull String key, final @NotNull List<String> terms) {

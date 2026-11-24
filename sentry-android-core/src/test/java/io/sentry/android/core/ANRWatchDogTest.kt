@@ -60,7 +60,7 @@ class ANRWatchDogTest {
       es.submit { sut.run() }
 
       assertTrue(
-        latch.await(10L, TimeUnit.SECONDS)
+        latch.await(10L, TimeUnit.SECONDS),
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
@@ -159,7 +159,7 @@ class ANRWatchDogTest {
       es.submit { sut.run() }
 
       assertTrue(
-        latch.await(10L, TimeUnit.SECONDS)
+        latch.await(10L, TimeUnit.SECONDS),
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
@@ -215,7 +215,7 @@ class ANRWatchDogTest {
       es.submit { sut.run() }
 
       assertTrue(
-        latch.await(10L, TimeUnit.SECONDS)
+        latch.await(10L, TimeUnit.SECONDS),
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {

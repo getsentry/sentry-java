@@ -65,8 +65,8 @@ resolves the per-module test task, including integration test suites, for you.
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
 
-# Build the Android sample, a separate Gradle build that includes this one
-./gradlew -p sentry-samples/sentry-samples-android assembleDebug
+# Build the Android sample, in the same separate Gradle build as the UI tests
+./gradlew -p sentry-android-integration-tests :sentry-samples-android:assembleDebug
 
 # Build the JVM samples, another separate Gradle build that includes this one
 ./gradlew -p sentry-samples assemble
@@ -80,8 +80,9 @@ resolves the per-module test task, including integration test suites, for you.
 3. **Use todo tracking**: Work through todo items, marking them as complete as you go
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
-6. **Format and regenerate**: Once done, format code and regenerate .api files: `make format api`
-7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
+6. **Don't code for impossible states**: Before you add state tracking or heuristics around a framework object, find out its real lifecycle.
+7. **Format and regenerate**: Once done, format code and regenerate .api files: `make format api`
+8. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
 
@@ -116,7 +117,7 @@ The repository is organized into multiple modules:
 
 ### Utility Modules
 - **`sentry-test-support`** - Shared test utilities, including `MockSentryServer` and envelope matchers
-- **`sentry-samples`** - Example applications, in two separate Gradle builds that include this one: `sentry-samples` (JVM) and `sentry-samples/sentry-samples-android`. Root tasks such as `check` and `spotlessApply` don't reach them, and `sentry-android-integration-tests` is a separate build too
+- **`sentry-samples`** - Example applications, in two separate Gradle builds that include this one: `sentry-samples` (JVM) and `sentry-android-integration-tests` (the Android sample, next to the Android UI tests, benchmark and size test). Root tasks such as `check` and `spotlessApply` don't reach them
 - **`sentry-bom`** - Bill of Materials for dependency management
 
 ### Key Architectural Patterns
@@ -132,6 +133,21 @@ The repository is organized into multiple modules:
 - **Languages**: Java 8+ and Kotlin
 - **Formatting**: Enforced via Spotless
 - **API Compatibility**: Binary compatibility is enforced. `.api` files are generated, never hand-edited
+
+### Comments
+
+The default is no comment. Add one only when it gives a reason that the code, the names, and the
+class Javadoc don't, in one short sentence: a rationale, a gotcha, the meaning of a magic number,
+why an empty catch is safe, or a comment this file requires (for example on a broad catch).
+
+- Don't describe what the next line does, in production code or in tests.
+- Don't repeat what a method Javadoc already describes.
+- Existing narrating comments are not a pattern to copy.
+
+**Javadoc of an interface, callback, or model class describes only the type itself**, in general
+terms. Requirements on the implementer are fine ("Must be fast, no I/O."). Don't name who calls it,
+when, or on which thread: a type can't promise how others use it. A thread contract belongs on the
+methods of the component that owns the thread.
 
 ### Exception Handling
 
@@ -281,7 +297,13 @@ gh pr view --json url -q '.url'
 
 User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. The
 `create-java-pr` skill is the source of truth for the full changelog and PR workflow, including
-subsection selection and the rebase caveat when a release renames `## Unreleased`.
+subsection selection and the rebase and merge caveat when a release renames `## Unreleased`.
+
+### After Merging `main` or Resolving Conflicts
+
+Before you commit the merge, format and regenerate (workflow rule 7) and check the changelog entry
+(the `create-java-pr` rebase and merge caveat). Then compile and run the tests of the modules you
+changed: `main` adds build checks over time, so code that passed before the merge can fail after it.
 
 ## Useful Resources
 

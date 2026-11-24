@@ -29,7 +29,7 @@ class ApacheHttpClientTransportFactoryTest {
         SentryOptions().apply {
           this.connectionTimeoutMillis = 1500
           this.readTimeoutMillis = 2500
-        }
+        },
       )
     val requestConfig = transport.getClient().getRequestConfig()
     assertEquals(1500, requestConfig.connectTimeout.toMilliseconds())

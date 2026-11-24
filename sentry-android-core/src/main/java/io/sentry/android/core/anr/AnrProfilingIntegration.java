@@ -132,18 +132,17 @@ public final class AnrProfilingIntegration
     if (opts != null) {
       try {
         opts.getExecutorService()
-            .submit(
-                () -> {
-                  if (pm == null) {
-                    return;
-                  }
+            .submit(() -> {
+              if (pm == null) {
+                return;
+              }
 
-                  try {
-                    pm.close();
-                  } catch (IOException e) {
-                    logger.log(SentryLevel.WARNING, "Failed to close AnrProfileManager");
-                  }
-                });
+              try {
+                pm.close();
+              } catch (IOException e) {
+                logger.log(SentryLevel.WARNING, "Failed to close AnrProfileManager");
+              }
+            });
       } catch (Throwable e) {
         logger.log(SentryLevel.WARNING, "Failed to submit AnrProfileManager close");
       }

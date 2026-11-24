@@ -18,7 +18,7 @@ import org.springframework.test.context.TestPropertySource
 @EmbeddedKafka(topics = [KAFKA_TOPIC], bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 @TestPropertySource(
   properties =
-    ["sentry.enable-queue-tracing=true", "spring.kafka.consumer.auto-offset-reset=earliest"]
+    ["sentry.enable-queue-tracing=true", "spring.kafka.consumer.auto-offset-reset=earliest"],
 )
 class KafkaOtelCoexistenceIntegrationTest : IntegrationTest() {
 

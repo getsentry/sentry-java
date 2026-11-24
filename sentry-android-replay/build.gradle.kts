@@ -14,6 +14,7 @@ plugins {
   id("io.sentry.publish")
   id("io.sentry.api-validation")
   id("io.sentry.robolectric")
+  id("io.sentry.dependency-matrix")
 }
 
 android {
@@ -100,6 +101,23 @@ dependencies {
   testImplementation(libs.androidx.compose.foundation.layout)
   testImplementation(libs.androidx.compose.material3)
   testImplementation(libs.coil.compose)
+}
+
+// Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
+// .github/workflows/compose-ui-matrix.yml runs each version's task. The oldest entry pins material3
+// to a version that runs on that Compose UI, because the catalog's material3 needs a newer one.
+dependencyMatrix {
+  matrix(
+    name = "composeUi",
+    groups =
+      listOf(
+        "androidx.compose.ui",
+        "androidx.compose.foundation",
+        "androidx.compose.animation",
+        "androidx.compose.runtime",
+      ),
+    versionsFile = "compose-ui-versions.json",
+  )
 }
 
 tasks.withType<Detekt>().configureEach {

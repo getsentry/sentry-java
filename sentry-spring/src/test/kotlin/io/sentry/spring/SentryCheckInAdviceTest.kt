@@ -54,7 +54,7 @@ import org.springframework.util.StringValueResolver
       "my.cron.schedule = 0 30 2 * * *",
       "my.cron.zone = America/New_York",
       "my.cron.empty.zone = ",
-    ]
+    ],
 )
 class SentryCheckInAdviceTest {
 

@@ -39,16 +39,15 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                if (user == null) {
-                  // remove user if its null
-                  nativeScope.removeUser();
-                } else {
-                  nativeScope.setUser(
-                      user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
-                }
-              });
+          .submit(() -> {
+            if (user == null) {
+              // remove user if its null
+              nativeScope.removeUser();
+            } else {
+              nativeScope.setUser(
+                  user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
+            }
+          });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setUser has an error.");
     }
@@ -68,34 +67,26 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                String level = null;
-                if (crumb.getLevel() != null) {
-                  level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
-                }
-                final String timestamp = DateUtils.getTimestamp(crumb.getTimestamp());
+          .submit(() -> {
+            String level = null;
+            if (crumb.getLevel() != null) {
+              level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
+            }
+            final String timestamp = DateUtils.getTimestamp(crumb.getTimestamp());
 
-                String data = null;
-                try {
-                  final Map<String, Object> dataRef = crumb.getData();
-                  if (!dataRef.isEmpty()) {
-                    data = options.getSerializer().serialize(dataRef);
-                  }
-                } catch (Throwable e) {
-                  options
-                      .getLogger()
-                      .log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
-                }
+            String data = null;
+            try {
+              final Map<String, Object> dataRef = crumb.getData();
+              if (!dataRef.isEmpty()) {
+                data = options.getSerializer().serialize(dataRef);
+              }
+            } catch (Throwable e) {
+              options.getLogger().log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
+            }
 
-                nativeScope.addBreadcrumb(
-                    level,
-                    crumb.getMessage(),
-                    crumb.getCategory(),
-                    crumb.getType(),
-                    timestamp,
-                    data);
-              });
+            nativeScope.addBreadcrumb(
+                level, crumb.getMessage(), crumb.getCategory(), crumb.getType(), timestamp, data);
+          });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addBreadcrumb has an error.");
     }
@@ -148,10 +139,9 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     try {
       options
           .getExecutorService()
-          .submit(
-              () ->
-                  nativeScope.setTrace(
-                      spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
+          .submit(() ->
+              nativeScope.setTrace(
+                  spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTrace failed.");
     }

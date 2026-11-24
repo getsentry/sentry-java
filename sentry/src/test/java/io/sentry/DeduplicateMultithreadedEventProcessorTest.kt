@@ -24,7 +24,7 @@ class DeduplicateMultithreadedEventProcessorTest {
                 this.type = type
                 this.threadId = tid
                 mechanism = Mechanism().apply { this.isHandled = isHandled }
-              }
+              },
             )
         }
       return event

@@ -163,7 +163,7 @@ class SentryAndroidTest {
                 (no managed stack frames)
               """
                 .trimIndent()
-                .byteInputStream()
+                .byteInputStream(),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)
@@ -251,7 +251,7 @@ class SentryAndroidTest {
         SystemEventsBreadcrumbsIntegration(
           ApplicationProvider.getApplicationContext(),
           CustomHandler(Looper.getMainLooper()),
-        )
+        ),
       )
       refOptions = it
     }
@@ -454,7 +454,7 @@ class SentryAndroidTest {
     }
     await
       .withAlias(
-        "Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout"
+        "Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout",
       )
       .untilTrue(asserted)
 

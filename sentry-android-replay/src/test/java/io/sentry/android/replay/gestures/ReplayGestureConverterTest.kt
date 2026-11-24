@@ -31,7 +31,7 @@ class ReplayGestureConverterTest {
     }
 
     fun getSut(
-      dateProvider: ICurrentDateProvider = ICurrentDateProvider { now }
+      dateProvider: ICurrentDateProvider = ICurrentDateProvider { now },
     ): ReplayGestureConverter = ReplayGestureConverter(dateProvider, ticker)
   }
 

@@ -432,7 +432,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         override fun onAvailable(network: Network) {
           stall.block(Unit)
         }
-      }
+      },
     )
     val notification = fixture.startOnCallerThread { networkCallback.onAvailable(fixture.network) }
     stall.awaitEntered()
@@ -464,7 +464,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         override fun onAvailable(network: Network) {
           stall.block(Unit)
         }
-      }
+      },
     )
     val childNetworkCallback = mock<NetworkCallback>()
     fixture.addChildNetworkCallback(childNetworkCallback)
@@ -491,7 +491,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         override fun onAvailable(network: Network) {
           AndroidConnectionStatusProvider.removeNetworkCallback(this)
         }
-      }
+      },
     )
     val otherChildNetworkCallback = mock<NetworkCallback>()
     fixture.addChildNetworkCallback(otherChildNetworkCallback)

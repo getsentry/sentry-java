@@ -119,12 +119,11 @@ public final class SentryUserFeedbackButton extends Button {
   @Override
   public void setOnClickListener(final @Nullable OnClickListener listener) {
     delegate = listener;
-    super.setOnClickListener(
-        v -> {
-          new SentryUserFeedbackForm.Builder(getContext()).create().show();
-          if (delegate != null) {
-            delegate.onClick(v);
-          }
-        });
+    super.setOnClickListener(v -> {
+      new SentryUserFeedbackForm.Builder(getContext()).create().show();
+      if (delegate != null) {
+        delegate.onClick(v);
+      }
+    });
   }
 }

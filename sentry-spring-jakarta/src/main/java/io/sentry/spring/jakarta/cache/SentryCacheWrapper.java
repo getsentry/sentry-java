@@ -128,17 +128,16 @@ public final class SentryCacheWrapper implements Cache {
       span.finish();
       return null;
     }
-    return result.whenComplete(
-        (value, throwable) -> {
-          if (throwable != null) {
-            span.setStatus(SpanStatus.INTERNAL_ERROR);
-            span.setThrowable(throwable);
-          } else {
-            span.setData(SpanDataConvention.CACHE_HIT, value != null);
-            span.setStatus(SpanStatus.OK);
-          }
-          span.finish();
-        });
+    return result.whenComplete((value, throwable) -> {
+      if (throwable != null) {
+        span.setStatus(SpanStatus.INTERNAL_ERROR);
+        span.setThrowable(throwable);
+      } else {
+        span.setData(SpanDataConvention.CACHE_HIT, value != null);
+        span.setStatus(SpanStatus.OK);
+      }
+      span.finish();
+    });
   }
 
   @Override
@@ -164,18 +163,17 @@ public final class SentryCacheWrapper implements Cache {
       span.finish();
       throw e;
     }
-    return result.whenComplete(
-        (value, throwable) -> {
-          if (throwable != null) {
-            span.setStatus(SpanStatus.INTERNAL_ERROR);
-            span.setThrowable(throwable);
-          } else {
-            span.setData(SpanDataConvention.CACHE_HIT, !loaderInvoked.get());
-            span.setData(SpanDataConvention.CACHE_WRITE, loaderInvoked.get());
-            span.setStatus(SpanStatus.OK);
-          }
-          span.finish();
-        });
+    return result.whenComplete((value, throwable) -> {
+      if (throwable != null) {
+        span.setStatus(SpanStatus.INTERNAL_ERROR);
+        span.setThrowable(throwable);
+      } else {
+        span.setData(SpanDataConvention.CACHE_HIT, !loaderInvoked.get());
+        span.setData(SpanDataConvention.CACHE_WRITE, loaderInvoked.get());
+        span.setStatus(SpanStatus.OK);
+      }
+      span.finish();
+    });
   }
 
   @Override

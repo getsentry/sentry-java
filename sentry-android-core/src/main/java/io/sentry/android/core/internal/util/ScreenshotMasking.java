@@ -79,14 +79,13 @@ public final class ScreenshotMasking {
     final CountDownLatch latch = new CountDownLatch(1);
 
     try {
-      activity.runOnUiThread(
-          () -> {
-            try {
-              result.set(buildViewHierarchy(activity, screenshotOptions, logger));
-            } finally {
-              latch.countDown();
-            }
-          });
+      activity.runOnUiThread(() -> {
+        try {
+          result.set(buildViewHierarchy(activity, screenshotOptions, logger));
+        } finally {
+          latch.countDown();
+        }
+      });
 
       if (!latch.await(MASKING_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
         logger.log(

@@ -286,30 +286,26 @@ public final class FeedbackShakeIntegration
               || Boolean.TRUE.equals(inBackground)) {
             return;
           }
-          active.runOnUiThread(
-              () -> {
-                // Re-check on the main thread: shake-to-report may have been disabled, or an
-                // earlier queued shake may have shown a dialog in the meantime (the dialog reports
-                // itself synchronously in onStart).
-                if (!enabled
-                    || hasDialogOn(active)
-                    || active.isFinishing()
-                    || active.isDestroyed()) {
-                  return;
-                }
-                @Nullable Dialog dialog = null;
-                try {
-                  dialog = dialogFactory.create(active);
-                  dialog.show();
-                } catch (Throwable e) {
-                  if (dialog != null) {
-                    onDialogGone(dialog);
-                  }
-                  options
-                      .getLogger()
-                      .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
-                }
-              });
+          active.runOnUiThread(() -> {
+            // Re-check on the main thread: shake-to-report may have been disabled, or an
+            // earlier queued shake may have shown a dialog in the meantime (the dialog reports
+            // itself synchronously in onStart).
+            if (!enabled || hasDialogOn(active) || active.isFinishing() || active.isDestroyed()) {
+              return;
+            }
+            @Nullable Dialog dialog = null;
+            try {
+              dialog = dialogFactory.create(active);
+              dialog.show();
+            } catch (Throwable e) {
+              if (dialog != null) {
+                onDialogGone(dialog);
+              }
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
+            }
+          });
         });
   }
 

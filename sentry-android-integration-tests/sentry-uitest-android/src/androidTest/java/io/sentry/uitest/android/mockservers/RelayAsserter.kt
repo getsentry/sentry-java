@@ -37,7 +37,7 @@ class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>)
       throw AssertionError(
         "No envelope request found with specified filter.\n" +
           "There was a total of ${originalUnassertedEnvelopes.size} envelopes: " +
-          originalUnassertedEnvelopes.joinToString { it.envelope!!.describeForTest() }
+          originalUnassertedEnvelopes.joinToString { it.envelope!!.describeForTest() },
       )
     }
     return unassertedEnvelopes.removeAt(relayResponseIndex)
@@ -48,7 +48,7 @@ class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>)
     if (unassertedEnvelopes.isNotEmpty()) {
       throw AssertionError(
         "There was a total of ${originalUnassertedEnvelopes.size} envelopes: " +
-          originalUnassertedEnvelopes.joinToString { it.envelope!!.describeForTest() }
+          originalUnassertedEnvelopes.joinToString { it.envelope!!.describeForTest() },
       )
     }
   }

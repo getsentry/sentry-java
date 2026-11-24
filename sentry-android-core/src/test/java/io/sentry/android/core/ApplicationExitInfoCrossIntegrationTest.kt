@@ -105,7 +105,7 @@ class ApplicationExitInfoCrossIntegrationTest {
                 at android.os.Looper.loop(Looper.java:313)
               """
                 .trimIndent()
-                .byteInputStream()
+                .byteInputStream(),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)
@@ -121,8 +121,8 @@ class ApplicationExitInfoCrossIntegrationTest {
           whenever(mock.traceInputStream)
             .thenReturn(
               GZIPInputStream(
-                TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz")
-              )
+                TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz"),
+              ),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)
@@ -169,11 +169,7 @@ class ApplicationExitInfoCrossIntegrationTest {
       }
     val buildInfoProvider = mock<BuildInfoProvider>()
     whenever(buildInfoProvider.sdkInfoVersion).thenReturn(37)
-    MemoryLimiterIntegration(
-        fixture.context,
-        io.sentry.transport.CurrentDateProvider.getInstance(),
-        buildInfoProvider,
-      )
+    MemoryLimiterIntegration(fixture.context, buildInfoProvider)
       .register(memoryLimiterScopes, memoryLimiterOptions)
 
     verify(memoryLimiterScopes)
@@ -224,11 +220,7 @@ class ApplicationExitInfoCrossIntegrationTest {
       }
     val buildInfoProvider = mock<BuildInfoProvider>()
     whenever(buildInfoProvider.sdkInfoVersion).thenReturn(37)
-    MemoryLimiterIntegration(
-        fixture.context,
-        io.sentry.transport.CurrentDateProvider.getInstance(),
-        buildInfoProvider,
-      )
+    MemoryLimiterIntegration(fixture.context, buildInfoProvider)
       .register(memoryLimiterScopes, memoryLimiterOptions)
 
     verify(memoryLimiterScopes)

@@ -64,7 +64,7 @@ class ExceptionReporterTest {
             GraphqlErrorException.newErrorException()
               .message("exception message")
               .errorClassification(ErrorType.ValidationError)
-              .build()
+              .build(),
           )
           .build()
       val executionInput =

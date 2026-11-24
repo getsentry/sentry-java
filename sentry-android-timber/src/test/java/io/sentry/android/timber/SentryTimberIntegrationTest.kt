@@ -110,7 +110,7 @@ class SentryTimberIntegrationTest {
     assertTrue(
       fixture.options.sdkVersion!!.packageSet.any {
         it.name == "maven:io.sentry:sentry-android-timber" && it.version == BuildConfig.VERSION_NAME
-      }
+      },
     )
   }
 
@@ -147,7 +147,7 @@ class SentryTimberIntegrationTest {
         SentryLevel.ERROR,
         SentryLevel.INFO,
         SentryLogLevel.INFO,
-      )
+      ),
     )
 
     try {

@@ -299,28 +299,25 @@ public final class SentryWebViewTracing {
       final @NotNull ILogger logger) {
     final long replacementsSeen = replacementsOf(webView);
     new Handler(webViewLooper(webView))
-        .post(
-            () -> {
-              if (replacementsOf(webView) != replacementsSeen) {
-                return;
-              }
-              // Runs outside of any app call, so only fatal errors may escape: for example, the
-              // WebView may have been destroyed since.
-              try {
-                installer.removeInstalledScript(webView);
-              } catch (LinkageError e) {
-                logger.log(
-                    SentryLevel.WARNING,
-                    "androidx.webkit is too old for WebView trace propagation, skipping.",
-                    e);
-              } catch (Throwable e) {
-                ExceptionUtils.rethrowIfFatal(e);
-                logger.log(
-                    SentryLevel.WARNING,
-                    "Failed to remove the WebView trace propagation script.",
-                    e);
-              }
-            });
+        .post(() -> {
+          if (replacementsOf(webView) != replacementsSeen) {
+            return;
+          }
+          // Runs outside of any app call, so only fatal errors may escape: for example, the
+          // WebView may have been destroyed since.
+          try {
+            installer.removeInstalledScript(webView);
+          } catch (LinkageError e) {
+            logger.log(
+                SentryLevel.WARNING,
+                "androidx.webkit is too old for WebView trace propagation, skipping.",
+                e);
+          } catch (Throwable e) {
+            ExceptionUtils.rethrowIfFatal(e);
+            logger.log(
+                SentryLevel.WARNING, "Failed to remove the WebView trace propagation script.", e);
+          }
+        });
   }
 
   private static long replacementsOf(final @NotNull WebView webView) {

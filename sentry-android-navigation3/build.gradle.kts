@@ -40,7 +40,12 @@ android {
   }
 
   testOptions {
-    unitTests.isReturnDefaultValues = true
+    unitTests.apply {
+      isReturnDefaultValues = true
+      // AGP 9.5 can't create the Compose Preview task without it, which breaks any
+      // build that creates every task, such as an LSP's Gradle import.
+      isIncludeAndroidResources = true
+    }
   }
 
   lint {
@@ -69,7 +74,7 @@ kotlin { explicitApi() }
 
 dependencies {
   implementation(projects.sentry)
-  implementation(libs.androidx.lifecycle.runtime.compose)
+  compileOnly(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
   compileOnly(libs.androidx.compose.ui)
@@ -82,6 +87,7 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)

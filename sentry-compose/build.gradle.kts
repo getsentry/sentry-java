@@ -142,9 +142,9 @@ tasks.withType<DokkaTask>().configureEach {
   // suppress unattached source sets for docs
   dokkaSourceSets {
     matching {
-        it.name.contains("androidandroid", ignoreCase = true) ||
-          it.name.contains("testfixtures", ignoreCase = true)
-      }
+      it.name.contains("androidandroid", ignoreCase = true) ||
+        it.name.contains("testfixtures", ignoreCase = true)
+    }
       .configureEach { suppress.set(true) }
   }
 }
