@@ -2526,6 +2526,7 @@ class ActivityLifecycleIntegrationTest {
     val timer = ManualTimerExecutorService()
     val sut = fixture.getSut {
       it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = false
       it.timerExecutorService = timer
     }
     var nowMillis = START_MILLIS
