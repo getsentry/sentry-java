@@ -17,6 +17,7 @@ import io.sentry.android.core.hang.HangRecordingListener
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.hints.AbnormalExit
 import io.sentry.protocol.SentryId
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.HintUtils
 import io.sentry.util.Random
 import io.sentry.util.SentryRandom
@@ -275,6 +276,43 @@ class NonFatalAnrIntegrationTest {
     hint.markFlushed()
 
     assertThat(marker.exists()).isFalse()
+  }
+
+  @Test
+  fun `next hang deletes the marker of this process`() {
+    options.executorService = ImmediateExecutorService()
+    val listener = subscribed()
+    listener.onHangRecorded(record(durationMs = 5_000))
+    capturedHint().markFlushed()
+    assertThat(marker.exists()).isTrue()
+
+    listener.onHangStarted()
+
+    assertThat(marker.exists()).isFalse()
+  }
+
+  @Test
+  fun `unsampled next hang also deletes the marker of this process`() {
+    options.executorService = ImmediateExecutorService()
+    val listener = subscribed()
+    listener.onHangRecorded(record(durationMs = 5_000))
+    capturedHint().markFlushed()
+    options.nonFatalAnrSampleRate = null
+
+    assertThat(listener.onHangStarted()).isNull()
+
+    assertThat(marker.exists()).isFalse()
+  }
+
+  @Test
+  fun `next hang keeps the marker of the previous process`() {
+    options.executorService = ImmediateExecutorService()
+    val listener = subscribed()
+    NonFatalAnrMarker.write(options, 1, 1_000, 2_000)
+
+    listener.onHangStarted()
+
+    assertThat(marker.exists()).isTrue()
   }
 
   @Test
