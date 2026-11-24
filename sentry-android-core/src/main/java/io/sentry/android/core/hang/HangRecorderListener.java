@@ -8,17 +8,13 @@ import org.jetbrains.annotations.Nullable;
 public interface HangRecorderListener {
 
   /**
-   * Called on the recorder thread when a hang starts, once for each subscriber. Must be fast, no
-   * IO.
+   * A hang started. Must be fast, no IO.
    *
-   * @return what this subscriber needs from the recording of this hang, or null for nothing
+   * @return what this listener needs from the recording of this hang, or null for nothing
    */
   @Nullable
   HangRecordingRequest onHangStarted();
 
-  /**
-   * Called on the SDK executor, only if the request of this subscriber for the hang records and the
-   * subscriber is still subscribed when the hang ends.
-   */
+  /** The record of a hang for which this listener asked for a record. */
   void onHangRecorded(@NotNull HangRecord record);
 }
