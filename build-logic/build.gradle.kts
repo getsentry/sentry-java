@@ -46,6 +46,10 @@ gradlePlugin {
       id = "io.sentry.spring-boot-matrix"
       implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
     }
+    register("sentryDependencyMatrix") {
+      id = "io.sentry.dependency-matrix"
+      implementationClass = "io.sentry.gradle.DependencyMatrixPlugin"
+    }
     register("sentryOtelAgentTests") {
       id = "io.sentry.otel-agent-tests"
       implementationClass = "io.sentry.gradle.OtelAgentTestsPlugin"

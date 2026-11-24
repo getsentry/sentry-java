@@ -15,6 +15,7 @@ import io.sentry.Breadcrumb
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.hamcrest.CoreMatchers.`is`
@@ -31,7 +32,8 @@ class UserInteractionTests : BaseUiTest() {
 
   @Test
   fun composableClickGeneratesMatchingBreadcrumb() {
-    val breadcrumbs = mutableListOf<Breadcrumb>()
+    // beforeBreadcrumb runs on whichever thread adds the breadcrumb
+    val breadcrumbs = CopyOnWriteArrayList<Breadcrumb>()
     initSentryAndCollectBreadcrumbs(breadcrumbs)
 
     val activity = launchActivity<ComposeActivity>()
@@ -65,7 +67,8 @@ class UserInteractionTests : BaseUiTest() {
 
   @Test
   fun composableSwipeGeneratesMatchingBreadcrumb() {
-    val breadcrumbs = mutableListOf<Breadcrumb>()
+    // beforeBreadcrumb runs on whichever thread adds the breadcrumb
+    val breadcrumbs = CopyOnWriteArrayList<Breadcrumb>()
     initSentryAndCollectBreadcrumbs(breadcrumbs)
 
     val activity = launchActivity<ComposeActivity>()

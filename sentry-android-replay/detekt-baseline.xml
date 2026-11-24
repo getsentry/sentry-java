@@ -116,7 +116,7 @@
     <ID>ReturnCount:ReplayGestureConverter.kt$ReplayGestureConverter$fun convert( event: MotionEvent, recorderConfig: ScreenshotRecorderConfig, ): List&lt;RRWebIncrementalSnapshotEvent>?</ID>
     <ID>ReturnCount:ReplayIntegration.kt$ReplayIntegration$override fun captureReplay(isTerminating: Boolean?): SentryId</ID>
     <ID>ReturnCount:ScreenshotRecorder.kt$ScreenshotRecorder$fun capture()</ID>
-    <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$@Suppress("UNCHECKED_CAST") fun getChildren(node: LayoutNode): List&lt;LayoutNode></ID>
+    <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$@JvmStatic @Suppress("UNCHECKED_CAST") fun getChildren(node: LayoutNode): List&lt;LayoutNode></ID>
     <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$fun isTransparent(node: LayoutNode): Boolean</ID>
     <ID>ReturnCount:ViewHierarchyNode.kt$ViewHierarchyNode.Companion$@JvmStatic fun fromView( view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryMaskingOptions, ): ViewHierarchyNode</ID>
     <ID>ReturnCount:ViewHierarchyNode.kt$ViewHierarchyNode.Companion$private fun View.shouldMask(options: SentryMaskingOptions): Boolean</ID>

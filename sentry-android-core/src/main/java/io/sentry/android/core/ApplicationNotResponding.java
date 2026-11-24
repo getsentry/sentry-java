@@ -1,8 +1,12 @@
+// Adapted from ANR-WatchDog.
+// Copyright (c) 2016 Salomon BRYS.
+// Licensed under the MIT License.
 // https://github.com/SalomonBrys/ANR-WatchDog/blob/1969075f75f5980e9000eaffbaa13b0daf282dcb/anr-watchdog/src/main/java/com/github/anrwatchdog/ANRError.java
-// Based on the class above. The API unnecessary here was removed.
+// The API unnecessary here was removed.
 package io.sentry.android.core;
 
 import io.sentry.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,14 +18,15 @@ import org.jetbrains.annotations.Nullable;
  * really the cause of the exception. Each "Caused by" is the stack trace of a running thread. Note
  * that the main thread always comes first.
  */
-final class ApplicationNotResponding extends RuntimeException {
+@ApiStatus.Internal
+public final class ApplicationNotResponding extends RuntimeException {
   private static final long serialVersionUID = 252541144579117016L;
 
   // temp fix for JDK 21: Never serialized.
   @SuppressWarnings("serial")
   private final @Nullable Thread thread;
 
-  ApplicationNotResponding(final @Nullable String message) {
+  public ApplicationNotResponding(final @Nullable String message) {
     super(message);
     this.thread = null;
   }

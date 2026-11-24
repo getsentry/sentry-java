@@ -111,7 +111,8 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable SentryDate timestamp = params.getTimestamp();
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
-      final @NotNull String messageToUse = maybeFormatMessage(message, args);
+      final @NotNull String messageToUse =
+          params.isMessageAlreadyFormatted() ? message : maybeFormatMessage(message, args);
 
       final @NotNull IScope combinedScope = scopes.getCombinedScopeView();
       final @NotNull PropagationContext propagationContext = combinedScope.getPropagationContext();

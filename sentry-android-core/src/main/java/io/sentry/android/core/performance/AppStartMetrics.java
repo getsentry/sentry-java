@@ -87,7 +87,12 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private boolean isCallbackRegistered = false;
   private volatile boolean shouldSendStartMeasurements = true;
+  // Set when the app moves to the background, so a relaunch in the same process is timed from its
+  // own activity rather than from the process start.
+  private volatile boolean isWarmRelaunchPending = false;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
+  // Main thread only. Set in onActivityPreCreated, consumed by the onActivityCreated that follows.
+  private long activityPreCreatedUptimeMs = -1;
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartListenerInvoked = new AtomicBoolean(false);
@@ -410,8 +415,10 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appLaunchedInForeground = null;
     isCallbackRegistered = false;
     shouldSendStartMeasurements = true;
+    isWarmRelaunchPending = false;
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
+    activityPreCreatedUptimeMs = -1;
     firstIdle = -1;
     headlessAppStartCheckPending.set(false);
     headlessAppStartListenerInvoked.set(false);
@@ -650,8 +657,19 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   @Override
+  public void onActivityPreCreated(
+      @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    // ActivityLifecycleIntegration starts the activity.load span here, so a warm app start must not
+    // start any later than that. Classification stays in onActivityCreated, which also runs when
+    // the SDK is initialized inside Activity.onCreate, after this callback was dispatched.
+    activityPreCreatedUptimeMs = SystemClock.uptimeMillis();
+  }
+
+  @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    final long activityCreatedUptimeMillis = SystemClock.uptimeMillis();
+    final long activityCreatedUptimeMillis =
+        activityPreCreatedUptimeMs != -1 ? activityPreCreatedUptimeMs : SystemClock.uptimeMillis();
+    activityPreCreatedUptimeMs = -1;
     CurrentActivityHolder.getInstance().setActivity(activity);
 
     // the first activity determines the app start type
@@ -666,8 +684,10 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       // the extended vital measure from the activity while the eager app.start transaction stays
       // anchored at process start.
       if ((!isAppLaunchedInForeground()
+              || isWarmRelaunchPending
               || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1))
           && !appStartExtension.isActive()) {
+        isWarmRelaunchPending = false;
         appStartType = AppStartType.WARM;
         shouldSendStartMeasurements = true;
         appStartSpan.reset();
@@ -734,6 +754,7 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       appStartType = AppStartType.WARM;
       appLaunchedInForeground = true;
       shouldSendStartMeasurements = true;
+      isWarmRelaunchPending = true;
       firstDrawDone.set(false);
     }
   }

@@ -82,7 +82,7 @@ public final class ContextUtils {
       return isSplitApks;
     }
 
-    public @Nullable String[] getSplitNames() {
+    public String @Nullable [] getSplitNames() {
       return splitNames;
     }
   }

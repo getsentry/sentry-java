@@ -15,4 +15,6 @@ plugins {
   alias(libs.plugins.detekt) apply false
   alias(libs.plugins.gradle.versions) apply false
   alias(libs.plugins.sentry) apply false
+  alias(libs.plugins.ksp) apply false
+  alias(libs.plugins.sqldelight) apply false
 }
