@@ -6,6 +6,7 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.os.Process;
 import io.sentry.Attachment;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
@@ -80,15 +81,13 @@ public final class AnrV2Integration implements Integration, Closeable {
         final @NotNull ApplicationExitInfoHistoryDispatcher dispatcher =
             new ApplicationExitInfoHistoryDispatcher(
                 context, scopes, androidOptions, new AnrV2Policy(androidOptions));
-        // This process writes its marker only from a later task on this executor, so this never
-        // deletes it.
         options
             .getExecutorService()
             .submit(() -> {
               try {
                 dispatcher.run();
               } finally {
-                NonFatalAnrMarker.delete(androidOptions);
+                deletePreviousProcessMarker(androidOptions);
               }
             });
       } catch (Throwable e) {
@@ -104,6 +103,20 @@ public final class AnrV2Integration implements Integration, Closeable {
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration removed.");
     }
+  }
+
+  /**
+   * Deletes the marker of the previous process. A marker of this process stays, so a second init in
+   * this process does not delete it.
+   */
+  private static void deletePreviousProcessMarker(final @NotNull SentryAndroidOptions options) {
+    final @Nullable NonFatalAnrMarker marker = NonFatalAnrMarker.read(options);
+    // A new process gets the pid of the previous one only after the pid counter went around all of
+    // pid_max, which is highly unlikely between an ANR kill and the next launch.
+    if (marker != null && marker.getPid() == Process.myPid()) {
+      return;
+    }
+    NonFatalAnrMarker.delete(options);
   }
 
   private static final class AnrV2Policy

@@ -335,6 +335,18 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
   }
 
   @Test
+  fun `marker of this process is kept after the check`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    val ownPid = android.os.Process.myPid()
+    NonFatalAnrMarker.write(fixture.options, ownPid, newTimestamp - 8_000, newTimestamp - 3_000)
+    fixture.addAnrExitInfo(timestamp = newTimestamp, pid = PID)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    assertThat(NonFatalAnrMarker.read(fixture.options)!!.pid).isEqualTo(ownPid)
+  }
+
+  @Test
   fun `historical ANRs are not affected`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
     val historicalTimestamp = newTimestamp - TimeUnit.DAYS.toMillis(1)
