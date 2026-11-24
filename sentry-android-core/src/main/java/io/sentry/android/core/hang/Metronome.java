@@ -11,11 +11,17 @@ public interface Metronome {
 
   void removeTickListener(@NotNull TickListener listener);
 
+  /**
+   * The current time of this metronome, as a monotonic time in milliseconds with an arbitrary
+   * origin. It has the same origin as the time of each tick. Can be called from any thread.
+   */
+  long nowMs();
+
   interface TickListener {
     /**
      * Must be fast, it delays the metronome and the other listeners.
      *
-     * @param nowMs a monotonic time in milliseconds, with an arbitrary origin
+     * @param nowMs the time of this tick, see {@link Metronome#nowMs()}
      */
     void onMetronomeTick(long nowMs);
   }
