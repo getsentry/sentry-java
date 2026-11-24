@@ -55,48 +55,20 @@ public final class HangRecord {
   /** Builds a {@link HangRecord}. */
   public static final class Builder {
     private long durationMs;
-    private long startTimeMs;
     private long startTimestampMs;
     private final @NotNull List<AnrStackTrace> stackTraces = new ArrayList<>();
     private final @NotNull List<RuntimeStatsSnapshot> runtimeStats = new ArrayList<>();
     private boolean endedAtMaxRecordingTime;
-    private boolean shouldPersist;
-    private int sampleCount;
 
     public @NotNull Builder setDurationMs(final long durationMs) {
       this.durationMs = durationMs;
       return this;
     }
 
-    /** The start of the hang, as a monotonic time in milliseconds. */
-    public @NotNull Builder setStartTimeMs(final long startTimeMs) {
-      this.startTimeMs = startTimeMs;
-      return this;
-    }
-
-    public long getStartTimeMs() {
-      return startTimeMs;
-    }
-
     /** The start of the hang, as Unix time in milliseconds. */
     public @NotNull Builder setStartTimestampMs(final long startTimestampMs) {
       this.startTimestampMs = startTimestampMs;
       return this;
-    }
-
-    /** Whether the values of this hang also go to the stores. */
-    public @NotNull Builder setShouldPersist(final boolean shouldPersist) {
-      this.shouldPersist = shouldPersist;
-      return this;
-    }
-
-    public boolean isShouldPersist() {
-      return shouldPersist;
-    }
-
-    /** Counts one sampling tick and returns the new count. */
-    public int increaseSamplingCount() {
-      return ++sampleCount;
     }
 
     public @NotNull Builder addStackTrace(final @NotNull AnrStackTrace stackTrace) {

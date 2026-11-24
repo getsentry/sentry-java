@@ -38,7 +38,8 @@ import io.sentry.android.core.anr.AnrProfileStore;
 import io.sentry.android.core.anr.AnrProfilingIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.hang.HandlerThreadPoster;
-import io.sentry.android.core.hang.HangRecorder;
+import io.sentry.android.core.hang.HangCollectorSetup;
+import io.sentry.android.core.hang.HangManager;
 import io.sentry.android.core.hang.RuntimeStatsCollector;
 import io.sentry.android.core.hang.RuntimeStatsSource;
 import io.sentry.android.core.hang.ThreadHangSignal;
@@ -279,7 +280,7 @@ final class AndroidOptionsInitializer {
       debugManager = new AndroidDebugManager();
       options.setDebugManager(debugManager);
     }
-    setupHangRecorder(options, debugManager, buildInfoProvider);
+    setupHangManager(options, debugManager, buildInfoProvider);
     if (options.getSocketTagger() instanceof NoOpSocketTagger) {
       options.setSocketTagger(AndroidSocketTagger.getInstance());
     }
@@ -539,11 +540,11 @@ final class AndroidOptionsInitializer {
         .setFormHandler(new SentryAndroidOptions.AndroidUserFeedbackFormHandler());
   }
 
-  private static void setupHangRecorder(
+  private static void setupHangManager(
       final @NotNull SentryAndroidOptions options,
       final @NotNull IDebugManager debugManager,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (options.getCacheDirPath() == null || options.getHangRecorder() != null) {
+    if (options.getCacheDirPath() == null || options.getHangManager() != null) {
       return;
     }
     final @NotNull Looper mainLooper = Looper.getMainLooper();
@@ -551,9 +552,9 @@ final class AndroidOptionsInitializer {
     // options.getMonotonicTicker() counts device sleep, which would read as a hang.
     final @NotNull MonotonicTicker ticker = JavaMonotonicTicker.getInstance();
     final @NotNull EpochClock epochClock = options.getEpochClock();
-    final @NotNull List<HangRecorder.CollectorSetup<?>> collectors = new ArrayList<>();
+    final @NotNull List<HangCollectorSetup<?>> collectors = new ArrayList<>();
     collectors.add(
-        new HangRecorder.CollectorSetup<>(
+        new HangCollectorSetup<>(
             new ThreadSampleCollector(epochClock, mainLooper.getThread()),
             (stackTrace, record) -> record.addStackTrace(stackTrace),
             new AnrProfileStore(options)));
@@ -561,21 +562,21 @@ final class AndroidOptionsInitializer {
         createRuntimeStatsSource(buildInfoProvider, options.getLogger());
     if (runtimeStatsSource != null) {
       collectors.add(
-          new HangRecorder.CollectorSetup<>(
+          new HangCollectorSetup<>(
               new RuntimeStatsCollector(runtimeStatsSource),
               (sample, record) -> record.addRuntimeStats(sample),
               null));
     }
-    final @NotNull HangRecorder recorder =
-        new HangRecorder(
+    final @NotNull HangManager manager =
+        new HangManager(
             options,
             AppState.getInstance(),
             ticker,
             epochClock,
-            HangRecorder.DEFAULT_POLLING_INTERVAL_MS,
-            HangRecorder.DEFAULT_MAX_RECORDING_TIME_MS,
+            HangManager.DEFAULT_POLLING_INTERVAL_MS,
+            HangManager.DEFAULT_MAX_RECORDING_TIME_MS,
             AnrProfileManager.MAX_NUM_STACKTRACES,
-            HangRecorder.DEFAULT_EXECUTOR_FACTORY,
+            HangManager.DEFAULT_EXECUTOR_FACTORY,
             metronome ->
                 Collections.singletonList(
                     new ThreadHangSignal(
@@ -583,9 +584,9 @@ final class AndroidOptionsInitializer {
                         ticker,
                         debugManager,
                         mainThreadPoster,
-                        HangRecorder.DEFAULT_SUSPICIOUS_THRESHOLD_MS)),
+                        HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)),
             collectors);
-    options.setHangRecorder(recorder);
+    options.setHangManager(manager);
   }
 
   static @Nullable RuntimeStatsSource createRuntimeStatsSource(

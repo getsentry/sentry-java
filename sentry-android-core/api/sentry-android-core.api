@@ -464,7 +464,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
-	public fun getHangRecorder ()Lio/sentry/android/core/hang/HangRecorder;
+	public fun getHangManager ()Lio/sentry/android/core/hang/HangManager;
 	public fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkAppHangTimeoutIntervalMillis ()J
@@ -537,7 +537,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
-	public fun setHangRecorder (Lio/sentry/android/core/hang/HangRecorder;)V
+	public fun setHangManager (Lio/sentry/android/core/hang/HangManager;)V
 	public fun setMemoryLimiterEnabled (Z)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
@@ -859,8 +859,35 @@ public final class io/sentry/android/core/hang/HandlerThreadPoster : io/sentry/a
 	public fun remove (Ljava/lang/Runnable;)V
 }
 
+public final class io/sentry/android/core/hang/HangCollectorSetup {
+	public fun <init> (Lio/sentry/android/core/hang/HangDataCollector;Lio/sentry/android/core/hang/HangRecordWriter;Lio/sentry/android/core/hang/HangSampleStore;)V
+}
+
 public abstract interface class io/sentry/android/core/hang/HangDataCollector {
 	public abstract fun sample ()Ljava/lang/Object;
+}
+
+public final class io/sentry/android/core/hang/HangManager : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome, java/io/Closeable {
+	public static final field DEFAULT_EXECUTOR_FACTORY Lio/sentry/android/core/hang/HangManager$ExecutorFactory;
+	public static final field DEFAULT_MAX_RECORDING_TIME_MS J
+	public static final field DEFAULT_POLLING_INTERVAL_MS J
+	public static final field DEFAULT_SUSPICIOUS_THRESHOLD_MS J
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJILio/sentry/android/core/hang/HangManager$ExecutorFactory;Lio/sentry/android/core/hang/HangManager$SignalFactory;Ljava/util/List;)V
+	public fun addTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
+	public fun close ()V
+	public fun onBackground ()V
+	public fun onForeground ()V
+	public fun removeTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
+	public fun subscribe (Lio/sentry/android/core/hang/HangRecordingListener;)V
+	public fun unsubscribe (Lio/sentry/android/core/hang/HangRecordingListener;)V
+}
+
+public abstract interface class io/sentry/android/core/hang/HangManager$ExecutorFactory {
+	public abstract fun create ()Ljava/util/concurrent/ScheduledExecutorService;
+}
+
+public abstract interface class io/sentry/android/core/hang/HangManager$SignalFactory {
+	public abstract fun create (Lio/sentry/android/core/hang/Metronome;)Ljava/util/List;
 }
 
 public final class io/sentry/android/core/hang/HangRecord {
@@ -876,49 +903,16 @@ public final class io/sentry/android/core/hang/HangRecord$Builder {
 	public fun addRuntimeStats (Lio/sentry/android/core/hang/RuntimeStatsSnapshot;)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun addStackTrace (Lio/sentry/android/core/anr/AnrStackTrace;)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun build ()Lio/sentry/android/core/hang/HangRecord;
-	public fun getStartTimeMs ()J
-	public fun increaseSamplingCount ()I
-	public fun isShouldPersist ()Z
 	public fun setDurationMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setEndedAtMaxRecordingTime (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
-	public fun setShouldPersist (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
-	public fun setStartTimeMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setStartTimestampMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 }
 
-public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome, java/io/Closeable {
-	public static final field DEFAULT_EXECUTOR_FACTORY Lio/sentry/android/core/hang/HangRecorder$ExecutorFactory;
-	public static final field DEFAULT_MAX_RECORDING_TIME_MS J
-	public static final field DEFAULT_POLLING_INTERVAL_MS J
-	public static final field DEFAULT_SUSPICIOUS_THRESHOLD_MS J
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJILio/sentry/android/core/hang/HangRecorder$ExecutorFactory;Lio/sentry/android/core/hang/HangRecorder$SignalFactory;Ljava/util/List;)V
-	public fun addTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
-	public fun close ()V
-	public fun onBackground ()V
-	public fun onForeground ()V
-	public fun removeTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
-	public fun subscribe (Lio/sentry/android/core/hang/HangRecorderListener;)V
-	public fun unsubscribe (Lio/sentry/android/core/hang/HangRecorderListener;)V
-}
-
-public final class io/sentry/android/core/hang/HangRecorder$CollectorSetup {
-	public fun <init> (Lio/sentry/android/core/hang/HangDataCollector;Lio/sentry/android/core/hang/HangRecorder$RecordWriter;Lio/sentry/android/core/hang/HangSampleStore;)V
-	public fun sample (Lio/sentry/android/core/hang/HangRecord$Builder;)V
-}
-
-public abstract interface class io/sentry/android/core/hang/HangRecorder$ExecutorFactory {
-	public abstract fun create ()Ljava/util/concurrent/ScheduledExecutorService;
-}
-
-public abstract interface class io/sentry/android/core/hang/HangRecorder$RecordWriter {
+public abstract interface class io/sentry/android/core/hang/HangRecordWriter {
 	public abstract fun write (Ljava/lang/Object;Lio/sentry/android/core/hang/HangRecord$Builder;)V
 }
 
-public abstract interface class io/sentry/android/core/hang/HangRecorder$SignalFactory {
-	public abstract fun create (Lio/sentry/android/core/hang/Metronome;)Ljava/util/List;
-}
-
-public abstract interface class io/sentry/android/core/hang/HangRecorderListener {
+public abstract interface class io/sentry/android/core/hang/HangRecordingListener {
 	public abstract fun onHangRecorded (Lio/sentry/android/core/hang/HangRecord;)V
 	public abstract fun onHangStarted ()Lio/sentry/android/core/hang/HangRecordingRequest;
 }
