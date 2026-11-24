@@ -976,6 +976,7 @@ class AndroidConnectionStatusProviderTest {
   @Test
   fun `registerNetworkCallback with a custom handlers calls connectivityManager with it`() {
     val customHandler = object : Handler(Looper.getMainLooper()) {}
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
     whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
     AndroidConnectionStatusProvider.registerNetworkCallback(
       contextMock,
@@ -987,5 +988,26 @@ class AndroidConnectionStatusProviderTest {
 
     verify(connectivityManager)
       .registerDefaultNetworkCallback(any<NetworkCallback>(), argThat { this == customHandler })
+  }
+
+  @Test
+  fun `registerNetworkCallback with a custom handler below API 26 registers without it`() {
+    val customHandler = object : Handler(Looper.getMainLooper()) {}
+    val callback = mock<NetworkCallback>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N_MR1)
+    whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+    val registered =
+      AndroidConnectionStatusProvider.registerNetworkCallback(
+        contextMock,
+        logger,
+        buildInfo,
+        customHandler,
+        callback,
+      )
+
+    assertThat(registered).isTrue()
+    verify(connectivityManager).registerDefaultNetworkCallback(callback)
+    verify(connectivityManager, never())
+      .registerDefaultNetworkCallback(eq(callback), any<Handler>())
   }
 }

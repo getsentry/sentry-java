@@ -881,7 +881,8 @@ public final class AndroidConnectionStatusProvider
       return false;
     }
     try {
-      if (handler != null) {
+      // The Handler overload is API 26+. Below that, fall back to the default callback thread.
+      if (handler != null && buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
         connectivityManager.registerDefaultNetworkCallback(networkCallback, handler);
       } else {
         connectivityManager.registerDefaultNetworkCallback(networkCallback);

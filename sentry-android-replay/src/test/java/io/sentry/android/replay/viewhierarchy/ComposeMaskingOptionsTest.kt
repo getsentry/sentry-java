@@ -3,11 +3,15 @@
 package io.sentry.android.replay.viewhierarchy
 
 import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
+import com.google.common.truth.Truth.assertThat
 import io.sentry.NoOpLogger
 import io.sentry.SentryOptions
 import io.sentry.android.replay.maskAllImages
@@ -39,6 +44,7 @@ import io.sentry.android.replay.maskAllText
 import io.sentry.android.replay.sentryReplayMask
 import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.android.replay.util.ComposeTextLayout
+import io.sentry.android.replay.util.MaskRenderer
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
@@ -287,6 +293,74 @@ class ComposeMaskingOptionsTest {
     assertTrue(genericNodes.none { it.shouldMask })
   }
 
+  @Test
+  fun `when walking the Compose tree throws a LinkageError, the whole Compose view is masked`() {
+    assertComposeViewFullyMaskedWhenGetChildrenThrows(NoSuchMethodError())
+  }
+
+  @Test
+  fun `when walking the Compose tree throws a RuntimeException, the whole Compose view is masked`() {
+    assertComposeViewFullyMaskedWhenGetChildrenThrows(IllegalStateException())
+  }
+
+  @Test
+  fun `when a Compose view has no Owner, the whole view is masked`() {
+    val activity = buildActivity(ComponentActivity::class.java).setup()
+    val composeView = AndroidComposeViewWithoutOwner(activity.get())
+    activity.get().setContentView(composeView)
+    shadowOf(Looper.getMainLooper()).idle()
+    val options =
+      SentryOptions().apply {
+        sessionReplay.maskAllText = false
+        sessionReplay.maskAllImages = false
+      }
+    val composeViewNode = ViewHierarchyNode.fromView(composeView, null, 0, options.sessionReplay)
+
+    val handled =
+      ComposeViewHierarchyNode.fromView(
+        composeView,
+        composeViewNode,
+        options.sessionReplay,
+        NoOpLogger.getInstance(),
+      )
+
+    assertTrue(handled)
+    assertThat(composeViewNode.renderMasks()).containsExactly(composeViewNode.visibleRect)
+  }
+
+  private fun assertComposeViewFullyMaskedWhenGetChildrenThrows(error: Throwable) {
+    val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val options =
+      SentryOptions().apply {
+        sessionReplay.maskAllText = false
+        sessionReplay.maskAllImages = false
+      }
+    val composeView = assertNotNull(activity.get().window.decorView.lookupComposeView())
+    val composeViewNode = ViewHierarchyNode.fromView(composeView, null, 0, options.sessionReplay)
+
+    val handled =
+      Mockito.mockStatic(SentryLayoutNodeHelper.javaClass).use {
+        mock: MockedStatic<SentryLayoutNodeHelper> ->
+        mock.`when`<Any> { SentryLayoutNodeHelper.getChildren(any<LayoutNode>()) }.thenThrow(error)
+
+        ComposeViewHierarchyNode.fromView(
+          composeView,
+          composeViewNode,
+          options.sessionReplay,
+          NoOpLogger.getInstance(),
+        )
+      }
+
+    assertTrue(handled)
+    assertThat(composeViewNode.renderMasks()).containsExactly(composeViewNode.visibleRect)
+  }
+
+  private fun ViewHierarchyNode.renderMasks(): List<Rect> {
+    val bitmap = Bitmap.createBitmap(1000, 2000, Bitmap.Config.ARGB_8888)
+    return MaskRenderer().use { it.renderMasks(bitmap, this) }
+  }
+
   private inline fun <reified T> Activity.collectNodesOfType(options: SentryOptions): List<T> {
     val root = window.decorView
     val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
@@ -318,6 +392,8 @@ class ComposeMaskingOptionsTest {
     return null
   }
 }
+
+private class AndroidComposeViewWithoutOwner(context: Context) : FrameLayout(context)
 
 private class ComposeMaskingOptionsActivity : ComponentActivity() {
   companion object {

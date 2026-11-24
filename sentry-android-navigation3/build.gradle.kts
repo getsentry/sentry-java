@@ -70,7 +70,7 @@ kotlin { explicitApi() }
 
 dependencies {
   implementation(projects.sentry)
-  implementation(libs.androidx.lifecycle.runtime.compose)
+  compileOnly(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
   compileOnly(libs.androidx.compose.ui)

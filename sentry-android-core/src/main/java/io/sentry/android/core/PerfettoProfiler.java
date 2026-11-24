@@ -57,15 +57,11 @@ public final class PerfettoProfiler {
 
   private volatile @Nullable ChunkRecord chunkRecord = null;
 
-  @SuppressLint("WrongConstant")
   public PerfettoProfiler(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull ISentryExecutorService executorService) {
-    this(
-        logger,
-        executorService,
-        (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE));
+    this(logger, executorService, getProfilingManager(context, logger));
   }
 
   PerfettoProfiler(
@@ -75,6 +71,30 @@ public final class PerfettoProfiler {
     this.logger = logger;
     this.executorService = executorService;
     this.profilingManager = profilingManager;
+  }
+
+  /**
+   * Returns null when the device can't provide ProfilingManager, which makes {@link #start} fail,
+   * so the device records no profiles.
+   */
+  @SuppressLint("WrongConstant")
+  private static @Nullable ProfilingManager getProfilingManager(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    try {
+      return (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE);
+    } catch (LinkageError e) {
+      // Some devices report API 35+ but ship a framework whose ProfilingManager can't be loaded
+      // (NoClassDefFoundError) or initialized (ExceptionInInitializerError). Caught before the
+      // broad catch below, because rethrowIfFatal rethrows every LinkageError.
+      logger.log(SentryLevel.WARNING, "ProfilingManager can't be loaded on this device.", e);
+      return null;
+    } catch (Throwable t) {
+      // Broad on purpose: getSystemService is a system-service boundary, and OEM frameworks can
+      // throw anything from it.
+      ExceptionUtils.rethrowIfFatal(t);
+      logger.log(SentryLevel.WARNING, "ProfilingManager is not available on this device.", t);
+      return null;
+    }
   }
 
   /**

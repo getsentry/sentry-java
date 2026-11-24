@@ -115,16 +115,6 @@
 ### Features
 
 - Add policy-controlled URL query parameters and fragments to Ktor HTTP client spans ([#6433](https://github.com/getsentry/sentry-java/pull/6433))
-- Session Replay: Add `Sentry.replay().pauseTouchTracking()` and `resumeTouchTracking()` to stop recording touches on sensitive screens, such as a custom PIN pad, while the screen recording continues. Touch tracking stays paused until `resumeTouchTracking()` is called, also for new replays and after `resume()` ([#6546](https://github.com/getsentry/sentry-java/pull/6546))
-
-### Performance
-
-- Most SDK log calls no longer allocate when `debug` is off ([#6600](https://github.com/getsentry/sentry-java/pull/6600))
-
-### Behavioral Changes
-
-- Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#6482](https://github.com/getsentry/sentry-java/pull/6482))
-- Nav3: `ui.load` transactions are bound to `IScope` in preference to Nav3 transactions when transitioning between Activities, matching Nav2 behavior (API 29+) ([#6484](https://github.com/getsentry/sentry-java/pull/6484))
 
 ### Improvements
 
@@ -139,14 +129,53 @@
 
 ### Fixes
 
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
+- Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 - Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
 - Preserve independent Netty read and write timeout events when exception singletons are reused. These exceptions now bypass event deduplication by default, so applications with multiple capture integrations may report the same timeout more than once. Use `SentryOptions.setIgnoredErrorsForDeduplication(...)` or `ignored-errors-for-deduplication` to customize or clear the default exclusions. ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
 - Prevent changes to reused tracing options from affecting spans and transactions after creation ([#6417](https://github.com/getsentry/sentry-java/pull/6417))
+- Avoid duplicate serialization debug logs when calculating serialized object sizes ([#6255](https://github.com/getsentry/sentry-java/pull/6255))
+- `Contexts.setProfile(null)` now removes the profile context instead of throwing ([#6684](https://github.com/getsentry/sentry-java/pull/6684))
+
+### Internal
+
+- Measure the 30 second performance-collection budget on a monotonic ticker, so that a device time change no longer ends collection early or extends it past the budget ([#6101](https://github.com/getsentry/sentry-java/pull/6101))
+
+## 8.65.1
+
+### Fixes
+
+- Prevent Logback, Log4j2, and JUL log arguments containing percent format sequences from being formatted a second time, which could corrupt messages or exhaust memory ([#6737](https://github.com/getsentry/sentry-java/pull/6737))
+- Nav3: Drop an entry’s arguments with `duplicate_key` when distinct map keys stringify to the same key, instead of silently overwriting a value ([#6714](https://github.com/getsentry/sentry-java/pull/6714))
+- Nav3: Serialize `NaN` and infinite navigation arguments as strings so they cannot prevent the containing error report or transaction from being serialized ([#6713](https://github.com/getsentry/sentry-java/pull/6713))
+- Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
+- Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
+- Android app start: Reopening the app within a minute of process start is now reported as a warm start timed from the reopened screen, instead of reusing the cold start's timing. In standalone app start mode, this no longer sends the cold start a second time, as a warm start ([#6687](https://github.com/getsentry/sentry-java/pull/6687))
+- Android app start: On Android 10+, a warm start now begins when the screen starts being created, matching its `activity.load` span ([#6719](https://github.com/getsentry/sentry-java/pull/6719))
+
+## 8.65.0
+
+### Features
+
+- Session Replay: Add `Sentry.replay().pauseTouchTracking()` and `resumeTouchTracking()` to stop recording touches on sensitive screens, such as a custom PIN pad, while the screen recording continues. Touch tracking stays paused until `resumeTouchTracking()` is called, also for new replays and after `resume()` ([#6546](https://github.com/getsentry/sentry-java/pull/6546))
+
+### Performance
+
+- Most SDK log calls no longer allocate when `debug` is off ([#6600](https://github.com/getsentry/sentry-java/pull/6600))
+
+### Behavioral Changes
+
+- Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#6482](https://github.com/getsentry/sentry-java/pull/6482))
+- Nav3: `ui.load` transactions are bound to `IScope` in preference to Nav3 transactions when transitioning between Activities, matching Nav2 behavior (API 29+) ([#6484](https://github.com/getsentry/sentry-java/pull/6484))
+
+### Fixes
+
+- Session Replay: Fix Compose masking for Jetpack Compose 1.13. If the SDK can't walk the Compose tree of a screen, it now masks the whole Compose view instead of recording it unmasked ([#6626](https://github.com/getsentry/sentry-java/pull/6626))
 - Session Replay: Send Ktor client network request start and end times in milliseconds, so the requests line up with the replay ([#6619](https://github.com/getsentry/sentry-java/pull/6619))
 - Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
-- Avoid duplicate serialization debug logs when calculating serialized object sizes ([#6255](https://github.com/getsentry/sentry-java/pull/6255))
-- `Contexts.setProfile(null)` now removes the profile context instead of throwing ([#6684](https://github.com/getsentry/sentry-java/pull/6684))
+- Android: Mark transactions and spans that finish after their deadline as `deadline_exceeded`, so `ui.load` transactions with TTID, TTFD or app start values that are hours long after a device sleep no longer report `ok` ([#6599](https://github.com/getsentry/sentry-java/pull/6599))
+- Android: Register network callbacks on API 24–25 when `AndroidConnectionStatusProvider` is created with a custom `Handler`, instead of failing because the `Handler` overload needs API 26 ([#6634](https://github.com/getsentry/sentry-java/pull/6634))
 
 ### Dependencies
 
@@ -157,11 +186,7 @@
   - OpenTelemetry Semantic Conventions to 1.44.0 (was 1.42.0)
   - OpenTelemetry Semantic Conventions Alpha to 1.44.0-alpha (was 1.42.0-alpha)
   - OpenTelemetry 1.67 creates no-op spans when no `SpanProcessor` is configured. If you construct the OpenTelemetry SDK manually while using `sentry-opentelemetry-otlp` classes directly, configure a span processor. Without one, Sentry cannot inspect outgoing request URLs and may inject `sentry-trace` and `baggage` headers into destinations excluded by `tracePropagationTargets`. Standard OTLP exporter, Sentry Java agent, and agentless setups already configure one.
-- Bump `androidx.lifecycle:lifecycle-runtime-compose`, which `sentry-android-navigation3` brings in transitively, from 2.8.3 to 2.10.0. Navigation 3 1.0.0 already requires 2.10.0, so apps that use it resolve the same version as before ([#6664](https://github.com/getsentry/sentry-java/pull/6664))
 
-### Internal
-
-- Measure the 30 second performance-collection budget on a monotonic ticker, so that a device time change no longer ends collection early or extends it past the budget ([#6101](https://github.com/getsentry/sentry-java/pull/6101))
 ## 8.64.0
 
 ### Breaking Changes
