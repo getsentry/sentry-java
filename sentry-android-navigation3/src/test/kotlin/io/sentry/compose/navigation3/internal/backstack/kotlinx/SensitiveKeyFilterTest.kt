@@ -5,7 +5,6 @@ import io.sentry.compose.navigation3.internal.backstack.ArgumentBudget
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
-import io.sentry.compose.navigation3.internal.backstack.budgetWithValuesRemaining
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.SensitiveKeyFilter
 import io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE
 import kotlin.test.assertFailsWith
@@ -19,7 +18,7 @@ class SensitiveKeyFilterTest {
   // Keys, values, maps, and lists under non-sensitive keys
 
   @Test
-  fun `passes keys, scalars, maps, and lists under non-sensitive keys to the sink`() {
+  fun `key() - passes non-sensitive keys and the scalars, maps, and lists under them to the sink`() {
     filter.key("query")
     filter.scalar("shoes")
     filter.key("filters")
@@ -34,6 +33,151 @@ class SensitiveKeyFilterTest {
 
     assertThat(arguments)
       .isEqualTo(mapOf("query" to "shoes", "filters" to mapOf("brands" to listOf("a"))))
+  }
+
+  // Whether the next value is sensitive
+
+  @Test
+  fun `isNextValueSensitive - is false before any key is written`() {
+    assertThat(filter.isNextValueSensitive).isFalse()
+  }
+
+  @Test
+  fun `isNextValueSensitive - is true after a sensitive key is written`() {
+    filter.key("password")
+
+    assertThat(filter.isNextValueSensitive).isTrue()
+  }
+
+  @Test
+  fun `isNextValueSensitive - is false after a non-sensitive key that follows a sensitive key`() {
+    filter.key("password")
+    filter.key("query")
+
+    assertThat(filter.isNextValueSensitive).isFalse()
+  }
+
+  @Test
+  fun `isNextValueSensitive - is false once the scalar under a sensitive key is written`() {
+    filter.key("password")
+    filter.scalar("hunter2")
+
+    assertThat(filter.isNextValueSensitive).isFalse()
+  }
+
+  @Test
+  fun `isNextValueSensitive - is false once a map under a sensitive key is begun`() {
+    filter.key("credentials")
+    filter.beginMap()
+
+    assertThat(filter.isNextValueSensitive).isFalse()
+  }
+
+  @Test
+  fun `isNextValueSensitive - is false once a list under a sensitive key is begun`() {
+    filter.key("refreshTokens")
+    filter.beginList()
+
+    assertThat(filter.isNextValueSensitive).isFalse()
+  }
+
+  // Values marked sensitive
+
+  @Test
+  fun `markNextValueSensitive() - reports the next value as sensitive under a non-sensitive key`() {
+    filter.key("header")
+
+    filter.markNextValueSensitive()
+
+    assertThat(filter.isNextValueSensitive).isTrue()
+  }
+
+  @Test
+  fun `markNextValueSensitive() - writes the substitute in place of the next scalar under a non-sensitive key`() {
+    filter.key("header")
+    filter.markNextValueSensitive()
+    filter.scalar("Bearer abc123")
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("header" to SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `markNextValueSensitive() - writes the substitute in place of the next map, discarding its contents`() {
+    filter.key("header")
+    filter.markNextValueSensitive()
+    filter.beginMap()
+    filter.key("user")
+    filter.scalar("alice")
+    filter.end()
+    filter.key("page")
+    filter.scalar(2)
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("header" to SENSITIVE_DATA_SUBSTITUTE, "page" to 2))
+  }
+
+  @Test
+  fun `markNextValueSensitive() - writes the substitute in place of the next list, discarding its elements`() {
+    filter.key("header")
+    filter.markNextValueSensitive()
+    filter.beginList()
+    filter.scalar("t-1")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("header" to SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `markNextValueSensitive() - filters only the next value, writing the one after it as-is`() {
+    filter.key("rows")
+    filter.beginList()
+    filter.markNextValueSensitive()
+    filter.scalar("secret")
+    filter.scalar("plain")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("rows" to listOf(SENSITIVE_DATA_SUBSTITUTE, "plain")))
+  }
+
+  @Test
+  fun `markNextValueSensitive() - has no effect inside a discarded map, so the list element after it is written`() {
+    filter.key("rows")
+    filter.beginList()
+    filter.beginMap()
+    filter.key("token")
+    filter.beginMap()
+    filter.markNextValueSensitive()
+    filter.scalar("t-1")
+    filter.end()
+    filter.end()
+    filter.scalar("plain")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments)
+      .isEqualTo(mapOf("rows" to listOf(mapOf("token" to SENSITIVE_DATA_SUBSTITUTE), "plain")))
+  }
+
+  @Test
+  fun `markNextValueSensitive() - has no effect inside a discarded map, so the next key's value is written`() {
+    filter.key("credentials")
+    filter.beginMap()
+    filter.markNextValueSensitive()
+    filter.end()
+    filter.key("page")
+    filter.scalar(2)
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE, "page" to 2))
   }
 
   // Scalars
@@ -96,102 +240,10 @@ class SensitiveKeyFilterTest {
       )
   }
 
-  // Computed scalars
-
-  @Test
-  fun `computedScalar() - writes the computed value under a non-sensitive key`() {
-    filter.key("query")
-    filter.computedScalar { "shoes" }
-
-    val arguments = sink.argumentsOrThrow()
-
-    assertThat(arguments).isEqualTo(mapOf("query" to "shoes"))
-  }
-
-  @Test
-  fun `computedScalar() - writes the substitute under a sensitive key without computing the value`() {
-    var computed = false
-
-    filter.key("password")
-    filter.computedScalar {
-      computed = true
-      "hunter2"
-    }
-
-    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("password" to SENSITIVE_DATA_SUBSTITUTE))
-    assertThat(computed).isFalse()
-  }
-
-  @Test
-  fun `computedScalar() - writes nothing and doesn't compute the value in a map under a sensitive key`() {
-    var computed = false
-
-    filter.key("credentials")
-    filter.beginMap()
-    filter.key("user")
-    filter.computedScalar {
-      computed = true
-      "alice"
-    }
-    filter.end()
-
-    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE))
-    assertThat(computed).isFalse()
-  }
-
-  @Test
-  fun `computedScalar() - resets sensitivity for the next value after writing a filtered value`() {
-    filter.key("rows")
-    filter.beginList()
-    filter.beginMap()
-    filter.key("jwt")
-    filter.computedScalar { "t-1" }
-    filter.end()
-    filter.computedScalar { "plain" }
-    filter.end()
-
-    val arguments = sink.argumentsOrThrow()
-
-    assertThat(arguments)
-      .isEqualTo(mapOf("rows" to listOf(mapOf("jwt" to SENSITIVE_DATA_SUBSTITUTE), "plain")))
-  }
-
-  @Test
-  fun `computedScalar() - throws the sink's broken limit without computing the value`() {
-    val limitedSink = TreeArgumentWriter(budgetWithValuesRemaining(0))
-    val limitedFilter = SensitiveKeyFilter(limitedSink)
-    var computed = false
-    limitedFilter.key("query")
-
-    val thrown =
-      assertFailsWith<DropArguments> {
-        limitedFilter.computedScalar {
-          computed = true
-          "shoes"
-        }
-      }
-
-    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
-    assertThat(computed).isFalse()
-  }
-
   // Maps
 
   @Test
-  fun `beginMap() - writes the substitute in place of a map under a sensitive key`() {
-    filter.key("credentials")
-    filter.beginMap()
-    filter.key("user")
-    filter.scalar("alice")
-    filter.end()
-
-    val arguments = sink.argumentsOrThrow()
-
-    assertThat(arguments).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE))
-  }
-
-  @Test
-  fun `beginMap() - discards the nested maps, lists, and keys of a map under a sensitive key`() {
+  fun `beginMap() - writes the substitute in place of a map under a sensitive key, discarding its nested maps, lists, and keys`() {
     filter.key("credentials")
     filter.beginMap()
     filter.key("history")

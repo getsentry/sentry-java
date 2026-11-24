@@ -2,15 +2,11 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
-import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import java.math.BigInteger
 import kotlin.jvm.JvmInline
-import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Transient
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
@@ -40,17 +36,23 @@ class KotlinxPropertiesEncoderTest {
 
   @Serializable data class WithCollections(val names: List<String?>, val tags: Set<String>)
 
-  @Serializable
-  enum class Sort {
-    @SerialName("price_asc") PRICE_ASC,
-    NEWEST,
-  }
-
-  @Serializable data class WithEnums(val primary: Sort, val secondary: Sort)
+  @Serializable internal data class WithEnums(val primary: Sort, val secondary: Sort)
 
   @Serializable @JvmInline value class ProductId(val value: String)
 
   @Serializable data class WithValueClass(val productId: ProductId)
+
+  @Serializable @JvmInline value class Price(val cents: Int)
+
+  @Serializable data class WithNullablePrice(val price: Price?)
+
+  @Serializable @JvmInline value class MaybeId(val value: String?)
+
+  @Serializable data class WithMaybeId(val maybeId: MaybeId)
+
+  @Serializable @JvmInline value class Rank(val value: UInt)
+
+  @Serializable data class WithRank(val rank: Rank)
 
   @Serializable data class WithDefault(val query: String, val page: Int = 1)
 
@@ -90,13 +92,31 @@ class KotlinxPropertiesEncoderTest {
 
   @Serializable data class WithULong(val uLong: ULong)
 
+  @Serializable data class WithULongList(val uLongs: List<ULong>)
+
   @Serializable
   data class WithSignedNumbers(val byte: Byte, val short: Short, val int: Int, val long: Long)
+
+  @Serializable data class WithFloatingPointNumbers(val float: Float, val double: Double)
+
+  @Serializable
+  data class WithNonFiniteNumbers(
+    val floatNaN: Float,
+    val floatInfinity: Float,
+    val doubleNegativeInfinity: Double,
+  )
 
   @Serializable data class WithIntMapKeys(val counts: Map<Int, Long>)
 
   @Serializable
-  data class WithEncodedMapKeys(val bySort: Map<Sort, Int>, val byRank: Map<UInt, Int>)
+  data class WithUnsignedMapKeys(
+    val byUByte: Map<UByte, Int>,
+    val byUShort: Map<UShort, Int>,
+    val byULong: Map<ULong, Int>,
+  )
+
+  @Serializable
+  internal data class WithEncodedMapKeys(val bySort: Map<Sort, Int>, val byRank: Map<UInt, Int>)
 
   @Serializable data class WithNullableMapKeys(val counts: Map<String?, Int>)
 
@@ -124,25 +144,28 @@ class KotlinxPropertiesEncoderTest {
 
   @Serializable data class WithVersionedNameMapKeys(val byName: Map<VersionedName, Int>)
 
-  @Serializable data class Point(val x: Int)
+  /** The Kotlin compiler plugin gives `CharSequence` properties an open polymorphic serializer. */
+  @Serializable data class WithLabel(val label: CharSequence)
 
-  @Serializable data class WithPointMapKeys(val byPoint: Map<Point, Int>)
+  @Serializable data class WithNullableLabel(val label: CharSequence?)
 
-  @Serializable @JvmInline value class PointRef(val point: Point)
+  @Serializable data class WithLabelList(val labels: List<CharSequence>)
 
-  @Serializable data class WithPointRefMapKeys(val byPointRef: Map<PointRef, Int>)
+  @Serializable data class WithLabelMapKeys(val countsByLabel: Map<CharSequence, Int>)
 
-  @Serializable data class WithListMapKeys(val byList: Map<List<String>, Int>)
+  @Serializable data class WithNullableLabelMapKeys(val countsByLabel: Map<CharSequence?, Int>)
 
-  @Serializable data class WithMapMapKeys(val byMap: Map<Map<String, Int>, Int>)
+  /** A `CharSequence` that isn't a `String`. */
+  class Label(private val text: String) : CharSequence by text {
+    override fun toString(): String = text
+  }
 
-  @Serializable data class WithOriginMapKeys(val byOrigin: Map<Origin, Int>)
-
-  @Serializable data class WithNestedPointMapKeys(val groups: List<Map<Point, Int>>)
-
-  interface OpenOrigin
-
-  @Serializable data class WithOpenPolymorphic(val id: String, @Polymorphic val origin: OpenOrigin)
+  /** A `CharSequence` whose class is `@Serializable`, so it has a serializer of its own. */
+  @Serializable
+  @SerialName("slug")
+  class Slug(val text: String) : CharSequence by text {
+    override fun toString(): String = text
+  }
 
   // Encoded shapes
 
@@ -210,6 +233,34 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
+  fun `encode() - encodes a nullable value class property holding a value by its underlying value`() {
+    val encoded = encodeToMap(WithNullablePrice.serializer(), WithNullablePrice(Price(999)))
+
+    assertThat(encoded).isEqualTo(mapOf("price" to 999))
+  }
+
+  @Test
+  fun `encode() - encodes a null value class property as null`() {
+    val encoded = encodeToMap(WithNullablePrice.serializer(), WithNullablePrice(null))
+
+    assertThat(encoded).isEqualTo(mapOf("price" to null))
+  }
+
+  @Test
+  fun `encode() - encodes a value class wrapping a nullable value that's present by its underlying value`() {
+    val encoded = encodeToMap(WithMaybeId.serializer(), WithMaybeId(MaybeId("p-1")))
+
+    assertThat(encoded).isEqualTo(mapOf("maybeId" to "p-1"))
+  }
+
+  @Test
+  fun `encode() - encodes a value class wrapping a null value as null`() {
+    val encoded = encodeToMap(WithMaybeId.serializer(), WithMaybeId(MaybeId(null)))
+
+    assertThat(encoded).isEqualTo(mapOf("maybeId" to null))
+  }
+
+  @Test
   fun `encode() - encodes properties that have their default values`() {
     val encoded = encodeToMap(WithDefault.serializer(), WithDefault(query = "shoes"))
 
@@ -252,14 +303,14 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
-  fun `encode() - wraps a top-level value that doesn't encode to a structure under the value key`() {
+  fun `encode() - encodes a top-level value that doesn't encode to a structure under the value key`() {
     val encoded = encodeToMap(CustomSerializer, CustomSerialized("abc"))
 
     assertThat(encoded).isEqualTo(mapOf(KotlinxPropertiesEncoder.VALUE_KEY to "abc"))
   }
 
   @Test
-  fun `encode() - wraps a top-level list under the value key`() {
+  fun `encode() - encodes a top-level list under the value key`() {
     val encoded = encodeToMap(ListSerializer(String.serializer()), listOf("a", "b"))
 
     assertThat(encoded).isEqualTo(mapOf(KotlinxPropertiesEncoder.VALUE_KEY to listOf("a", "b")))
@@ -274,14 +325,14 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
-  fun `encode() - wraps a top-level value class's underlying value under the value key`() {
+  fun `encode() - encodes a top-level value class's underlying value under the value key`() {
     val encoded = encodeToMap(ProductId.serializer(), ProductId("p-1"))
 
     assertThat(encoded).isEqualTo(mapOf(KotlinxPropertiesEncoder.VALUE_KEY to "p-1"))
   }
 
   @Test
-  fun `encode() - wraps a top-level enum's serial name under the value key`() {
+  fun `encode() - encodes a top-level enum's serial name under the value key`() {
     val encoded = encodeToMap(Sort.serializer(), Sort.PRICE_ASC)
 
     assertThat(encoded).isEqualTo(mapOf(KotlinxPropertiesEncoder.VALUE_KEY to "price_asc"))
@@ -292,6 +343,73 @@ class KotlinxPropertiesEncoderTest {
     val encoded = encodeToMap(Origin.serializer(), Origin.Search("shoes"))
 
     assertThat(encoded).isEqualTo(mapOf("type" to "search", "value" to mapOf("query" to "shoes")))
+  }
+
+  // CharSequences
+
+  @Test
+  fun `encode() - encodes a CharSequence property as a string of its text`() {
+    val encoded = encodeToMap(WithLabel.serializer(), WithLabel(StringBuilder("shoes")))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
+  fun `encode() - encodes a CharSequence property holding a @Serializable CharSequence as a string of its text`() {
+    val encoded = encodeToMap(WithLabel.serializer(), WithLabel(Slug("shoes")))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
+  fun `encode() - encodes a nullable CharSequence property holding a value as a string of its text`() {
+    val encoded =
+      encodeToMap(WithNullableLabel.serializer(), WithNullableLabel(StringBuilder("shoes")))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
+  fun `encode() - encodes a null CharSequence property as null`() {
+    val encoded = encodeToMap(WithNullableLabel.serializer(), WithNullableLabel(null))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to null))
+  }
+
+  @Test
+  fun `encode() - encodes CharSequence list elements as strings`() {
+    val entry = WithLabelList(listOf("shoes", StringBuilder("hats"), Label("socks")))
+
+    val encoded = encodeToMap(WithLabelList.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("labels" to listOf("shoes", "hats", "socks")))
+  }
+
+  @Test
+  fun `encode() - encodes CharSequence map keys as strings`() {
+    val entry =
+      WithLabelMapKeys(mapOf("shoes" to 1, StringBuilder("hats") to 2, Label("socks") to 3))
+
+    val encoded = encodeToMap(WithLabelMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("countsByLabel" to mapOf("shoes" to 1, "hats" to 2, "socks" to 3)))
+  }
+
+  @Test
+  fun `encode() - encodes nullable CharSequence map keys as strings, with null as the string null`() {
+    val entry = WithNullableLabelMapKeys(mapOf(StringBuilder("shoes") to 1, null to 2))
+
+    val encoded = encodeToMap(WithNullableLabelMapKeys.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("countsByLabel" to mapOf("shoes" to 1, "null" to 2)))
+  }
+
+  @Test
+  fun `encode() - encodes a top-level CharSequence's text under the value key`() {
+    val encoded = encodeToMap(charSequenceSerializer, StringBuilder("shoes"))
+
+    assertThat(encoded).isEqualTo(mapOf(KotlinxPropertiesEncoder.VALUE_KEY to "shoes"))
   }
 
   // Numbers
@@ -323,7 +441,7 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
-  fun `encode() - wraps a top-level unsigned number's unsigned value under the value key`() {
+  fun `encode() - encodes a top-level unsigned number's unsigned value under the value key`() {
     val encoded = encodeToMap(UInt.serializer(), UInt.MAX_VALUE)
 
     val uIntMax: Long = 4_294_967_295L
@@ -338,6 +456,22 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
+  fun `encode() - encodes a ULong list element above Long MAX_VALUE as a BigInteger`() {
+    val encoded =
+      encodeToMap(WithULongList.serializer(), WithULongList(listOf(1uL, ULong.MAX_VALUE)))
+
+    assertThat(encoded).isEqualTo(mapOf("uLongs" to listOf(1L, BigInteger("18446744073709551615"))))
+  }
+
+  @Test
+  fun `encode() - encodes a value class wrapping an unsigned number by its unsigned value`() {
+    val encoded = encodeToMap(WithRank.serializer(), WithRank(Rank(UInt.MAX_VALUE)))
+
+    val uIntMax: Long = 4_294_967_295L
+    assertThat(encoded).isEqualTo(mapOf("rank" to uIntMax))
+  }
+
+  @Test
   fun `encode() - encodes negative signed numbers as-is`() {
     val entry = WithSignedNumbers(byte = -1, short = -1, int = -1, long = -1L)
 
@@ -349,17 +483,48 @@ class KotlinxPropertiesEncoderTest {
       )
   }
 
+  @Test
+  fun `encode() - encodes Float and Double properties as-is`() {
+    val entry = WithFloatingPointNumbers(float = 0.5f, double = -2.25)
+
+    val encoded = encodeToMap(WithFloatingPointNumbers.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("float" to 0.5f, "double" to -2.25))
+  }
+
+  /** JSON has no NaN or infinity, so the sink records them as text. */
+  @Test
+  fun `encode() - encodes NaN and infinite Float and Double properties as strings`() {
+    val entry =
+      WithNonFiniteNumbers(
+        floatNaN = Float.NaN,
+        floatInfinity = Float.POSITIVE_INFINITY,
+        doubleNegativeInfinity = Double.NEGATIVE_INFINITY,
+      )
+
+    val encoded = encodeToMap(WithNonFiniteNumbers.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "floatNaN" to "NaN",
+          "floatInfinity" to "Infinity",
+          "doubleNegativeInfinity" to "-Infinity",
+        ),
+      )
+  }
+
   // Map keys
 
   @Test
-  fun `encode() - converts map keys to strings`() {
+  fun `encode() - encodes map keys as strings`() {
     val encoded = encodeToMap(WithIntMapKeys.serializer(), WithIntMapKeys(mapOf(1 to 2L)))
 
     assertThat(encoded).isEqualTo(mapOf("counts" to mapOf("1" to 2L)))
   }
 
   @Test
-  fun `encode() - converts enum and unsigned map keys to strings of their encoded values`() {
+  fun `encode() - encodes enum and unsigned map keys as strings of their encoded values`() {
     val entry =
       WithEncodedMapKeys(bySort = mapOf(Sort.PRICE_ASC to 1), byRank = mapOf(UInt.MAX_VALUE to 2))
 
@@ -372,7 +537,28 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
-  fun `encode() - converts a null map key to the string null`() {
+  fun `encode() - encodes UByte, UShort, and ULong map keys as strings of their unsigned values`() {
+    val entry =
+      WithUnsignedMapKeys(
+        byUByte = mapOf(UByte.MAX_VALUE to 1),
+        byUShort = mapOf(UShort.MAX_VALUE to 2),
+        byULong = mapOf(ULong.MAX_VALUE to 3),
+      )
+
+    val encoded = encodeToMap(WithUnsignedMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "byUByte" to mapOf("255" to 1),
+          "byUShort" to mapOf("65535" to 2),
+          "byULong" to mapOf("18446744073709551615" to 3),
+        ),
+      )
+  }
+
+  @Test
+  fun `encode() - encodes a null map key as the string null`() {
     val encoded =
       encodeToMap(WithNullableMapKeys.serializer(), WithNullableMapKeys(mapOf(null to 1)))
 
@@ -380,7 +566,7 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
-  fun `encode() - converts value class and custom serializer map keys to strings`() {
+  fun `encode() - encodes value class and custom serializer map keys as strings`() {
     val entry =
       WithWrappedMapKeys(
         byProduct = mapOf(ProductId("p-1") to 1),
@@ -397,12 +583,9 @@ class KotlinxPropertiesEncoderTest {
   fun `encode() - drops the arguments for a duplicate key when a null map key and the string null are both keys`() {
     val entry = WithNullableMapKeys(mapOf(null to 1, "null" to 2))
 
-    val exception =
-      assertFailsWith<DropArguments> {
-        encodeToMap(WithNullableMapKeys.serializer(), entry)
-      }
-
-    assertThat(exception.reason).isEqualTo(ArgumentDropReason.DUPLICATE_KEY)
+    assertDropsArguments(ArgumentDropReason.DUPLICATE_KEY) {
+      encodeToMap(WithNullableMapKeys.serializer(), entry)
+    }
   }
 
   @Test
@@ -410,99 +593,8 @@ class KotlinxPropertiesEncoderTest {
     val entry =
       WithVersionedNameMapKeys(mapOf(VersionedName("home", 1) to 1, VersionedName("home", 2) to 2))
 
-    val exception =
-      assertFailsWith<DropArguments> {
-        encodeToMap(WithVersionedNameMapKeys.serializer(), entry)
-      }
-
-    assertThat(exception.reason).isEqualTo(ArgumentDropReason.DUPLICATE_KEY)
-  }
-
-  @Test
-  fun `encode() - throws for a class map key`() {
-    val entry = WithPointMapKeys(mapOf(Point(1) to 2))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithPointMapKeys.serializer(), entry)
+    assertDropsArguments(ArgumentDropReason.DUPLICATE_KEY) {
+      encodeToMap(WithVersionedNameMapKeys.serializer(), entry)
     }
-  }
-
-  @Test
-  fun `encode() - throws for a value class map key that wraps a class`() {
-    val entry = WithPointRefMapKeys(mapOf(PointRef(Point(1)) to 2))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithPointRefMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a list map key`() {
-    // Converting this key to a string would copy the one 16 KiB string 4,000 times (~64 MiB).
-    val longString = "a".repeat(16 * 1024)
-    val entry = WithListMapKeys(mapOf(List(4_000) { longString } to 1))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithListMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a map map key`() {
-    val entry = WithMapMapKeys(mapOf(mapOf("a" to 1) to 2))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithMapMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a polymorphic map key`() {
-    val entry = WithOriginMapKeys(mapOf(Origin.Search("shoes") to 1))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithOriginMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a class map key in a map nested in a list`() {
-    val entry = WithNestedPointMapKeys(listOf(mapOf(Point(1) to 2)))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithNestedPointMapKeys.serializer(), entry)
-    }
-  }
-
-  // Unsupported properties
-
-  @Test
-  fun `encode() - throws for a contextual property without a registered serializer`() {
-    val entry = WithContextual("1", Unregistered("2"))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithContextual.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for an open polymorphic property without a registered serializer`() {
-    val entry = WithOpenPolymorphic("1", object : OpenOrigin {})
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithOpenPolymorphic.serializer(), entry)
-    }
-  }
-
-  // Serializer failures
-
-  @Test
-  fun `encode() - propagates a serializer's exception unchanged`() {
-    val error = IllegalStateException("boom")
-    val serializer = RecordingSerializer(Detail.serializer()).apply { this.error = error }
-
-    val thrown = assertFailsWith<IllegalStateException> { encodeToMap(serializer, Detail("1")) }
-
-    assertThat(thrown).isSameInstanceAs(error)
   }
 }

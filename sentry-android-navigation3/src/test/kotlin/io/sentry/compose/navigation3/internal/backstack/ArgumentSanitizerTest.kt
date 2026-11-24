@@ -265,6 +265,34 @@ class ArgumentSanitizerTest {
     assertThat(sanitized).isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.MAX_COUNT))
   }
 
+  @Test
+  fun `an entry dropped for a duplicate map key doesn't spend the value budget of later entries`() {
+    // A list and its elements, which leave three values: two for the duplicate entry's nested map
+    // and its first value, and one for the later entry's value.
+    sanitizer.sanitizeEntry(mapOf("values" to List(MAX_ARGUMENT_VALUES - 4) { it }))
+
+    val duplicate = sanitizer.sanitizeEntry(mapOf("nested" to mapOf(1 to "a", "1" to "b")))
+    val later = sanitizer.sanitizeEntry(mapOf("one" to 1))
+
+    assertThat(duplicate)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.DUPLICATE_KEY))
+    assertThat(later).isEqualTo(SanitizedArguments(mapOf("one" to 1)))
+  }
+
+  @Test
+  fun `a duplicate map key with no values left drops only that entry, for the duplicate key`() {
+    // A list and its elements, which leave two values, for the duplicate entry's nested map and its
+    // first value.
+    sanitizer.sanitizeEntry(mapOf("values" to List(MAX_ARGUMENT_VALUES - 3) { it }))
+
+    val duplicate = sanitizer.sanitizeEntry(mapOf("nested" to mapOf(1 to "a", "1" to "b")))
+    val later = sanitizer.sanitizeEntry(emptyMap())
+
+    assertThat(duplicate)
+      .isEqualTo(SanitizedArguments(emptyMap(), ArgumentDropReason.DUPLICATE_KEY))
+    assertThat(later).isEqualTo(SanitizedArguments(emptyMap(), dropReason = null))
+  }
+
   // Failures
 
   @Test

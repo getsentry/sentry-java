@@ -100,6 +100,8 @@ class KotlinxArgumentSourceTest {
   }
 
   private val failures = mutableListOf<Throwable>()
+  private var unencodableValueCount = 0
+  private val onUnencodableValue: () -> Unit = { unencodableValueCount++ }
 
   private val detailSerializer = RecordingSerializer(Detail.serializer())
   private val mutableDetailSerializer = RecordingSerializer(MutableDetail.serializer())
@@ -139,6 +141,16 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
+  fun `encodes the entry when its arguments are first read through equals()`() {
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
+
+    val isEqual = source.equals(mapOf("id" to "1"))
+
+    assertThat(isEqual).isTrue()
+    assertThat(detailSerializer.serialized).containsExactly(Detail("1"))
+  }
+
+  @Test
   fun `encodes the entry once across repeated reads`() {
     val source = argumentSourceOf(detailSerializer, Detail("1"))
 
@@ -166,6 +178,19 @@ class KotlinxArgumentSourceTest {
 
     assertThat(source).isNotEqualTo(mapOf("id" to "2"))
     assertThat(mapOf("id" to "2")).isNotEqualTo(source)
+  }
+
+  @Test
+  fun `reads unencodable values as the Unencodable substitute and reports them to onUnencodableValue`() {
+    val source =
+      argumentSourceOf(WithContextual.serializer(), WithContextual("1", Unregistered("2")))
+
+    val read = source.toMap()
+
+    assertThat(read)
+      .isEqualTo(mapOf("id" to "1", "other" to KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE))
+    assertThat(unencodableValueCount).isEqualTo(1)
+    assertThat(failures).isEmpty()
   }
 
   @Test
@@ -340,6 +365,19 @@ class KotlinxArgumentSourceTest {
     argumentSourceOf(detailSerializer, Detail("1")).writeTo(sink)
 
     assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "1"))
+  }
+
+  @Test
+  fun `writeTo() - writes unencodable values as the Unencodable substitute and reports them to onUnencodableValue`() {
+    val sink = TreeArgumentWriter(ArgumentBudget())
+
+    argumentSourceOf(WithContextual.serializer(), WithContextual("1", Unregistered("2")))
+      .writeTo(sink)
+
+    assertThat(sink.argumentsOrThrow())
+      .isEqualTo(mapOf("id" to "1", "other" to KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE))
+    assertThat(unencodableValueCount).isEqualTo(1)
+    assertThat(failures).isEmpty()
   }
 
   @Test
@@ -524,7 +562,7 @@ class KotlinxArgumentSourceTest {
   // writeTo() after the arguments are read
 
   @Test
-  fun `writeTo() - writes the copy read as a map rather than the entry's current properties`() {
+  fun `writeTo() - encodes the entry's current properties after its arguments are read`() {
     val entry = MutableDetail("1")
     val source = argumentSourceOf(mutableDetailSerializer, entry)
     source.size
@@ -533,18 +571,30 @@ class KotlinxArgumentSourceTest {
 
     source.writeTo(sink)
 
-    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "1"))
+    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("id" to "2"))
   }
 
   @Test
-  fun `writeTo() - doesn't encode the entry again after its arguments are read`() {
+  fun `writeTo() - encodes the entry again after its arguments are read`() {
     val source = argumentSourceOf(mutableDetailSerializer, MutableDetail("1"))
     source.size
 
     source.writeTo(TreeArgumentWriter(ArgumentBudget()))
+
+    assertThat(mutableDetailSerializer.serialized).hasSize(2)
+  }
+
+  @Test
+  fun `writeTo() - doesn't change the arguments read as a map`() {
+    val entry = MutableDetail("1")
+    val source = argumentSourceOf(mutableDetailSerializer, entry)
+    source.size
+    entry.id = "2"
     source.writeTo(TreeArgumentWriter(ArgumentBudget()))
 
-    assertThat(mutableDetailSerializer.serialized).hasSize(1)
+    val read = source.toMap()
+
+    assertThat(read).isEqualTo(mapOf("id" to "1"))
   }
 
   @Test
@@ -560,7 +610,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `reads a copy encoded separately from what writeTo() wrote`() {
+  fun `writeTo() - doesn't cache what it writes for later reads`() {
     val entry = MutableDetail("1")
     val source = argumentSourceOf(mutableDetailSerializer, entry)
     source.writeTo(TreeArgumentWriter(ArgumentBudget()))
@@ -573,7 +623,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `writeTo() - spends the sink's value budget when writing the copy read`() {
+  fun `writeTo() - spends the sink's value budget after the entry's arguments are read`() {
     // The entry has 151 values, which fit in its own budget but not in the 100 the sink has left.
     val source = argumentSourceOf(Values.serializer(), Values(List(150) { it }))
     source.size
@@ -587,7 +637,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `writeTo() - spends the sink's character budget when writing the copy read`() {
+  fun `writeTo() - spends the sink's character budget after the entry's arguments are read`() {
     val source = argumentSourceOf(detailSerializer, Detail("123"))
     source.size
     val sink = TreeArgumentWriter(budgetWithCharactersRemaining(4))
@@ -600,7 +650,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `writeTo() - encodes again and drops the arguments for the sink's limit when the copy read broke a limit`() {
+  fun `writeTo() - drops the arguments for the sink's limit after reading the arguments broke a limit`() {
     val source = argumentSourceOf(detailSerializer, Detail(overLimitId))
     source.size
     val sink = TreeArgumentWriter(ArgumentBudget())
@@ -616,7 +666,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `writeTo() - encodes the entry again and reports a serializer's exception again when the copy read failed`() {
+  fun `writeTo() - reports a serializer's exception again after reading the arguments failed`() {
     val error = IllegalStateException("boom")
     detailSerializer.error = error
     val source = argumentSourceOf(detailSerializer, Detail("1"))
@@ -635,9 +685,9 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `writeTo() - drops the arguments for the sink's limit that encoding again breaks when the copy read failed`() {
-    // The entry's 151 values fit in the copy's own budget, so the copy failed only once its
-    // serializer threw. Encoding again overflows the 100 values the sink has left first.
+  fun `writeTo() - drops the arguments for the sink's limit after reading the arguments failed`() {
+    // The entry's 151 values fit in the read's own budget, so reading failed only once the
+    // serializer threw. Writing overflows the 100 values the sink has left first.
     val serializer = ThrowsAfterEncodingSerializer(Values.serializer())
     val source = argumentSourceOf(serializer, Values(List(150) { it }))
     source.size
@@ -651,7 +701,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `writeTo() - writes the entry's properties when encoding again succeeds after the copy read failed`() {
+  fun `writeTo() - writes the entry's properties when encoding succeeds after reading the arguments failed`() {
     detailSerializer.error = IllegalStateException("boom")
     detailSerializer.failsFor = { detailSerializer.serialized.size == 1 }
     val source = argumentSourceOf(detailSerializer, Detail("1"))
@@ -664,7 +714,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `reads as only the drop reason of the copy read after writeTo() encodes the entry again`() {
+  fun `writeTo() - doesn't change the arguments read as a map when reading them failed`() {
     detailSerializer.error = IllegalStateException("boom")
     detailSerializer.failsFor = { detailSerializer.serialized.size == 1 }
     val source = argumentSourceOf(detailSerializer, Detail("1"))
@@ -712,7 +762,13 @@ class KotlinxArgumentSourceTest {
     serializer: KSerializer<T>,
     entry: T,
   ): KotlinxArgumentSource =
-    KotlinxArgumentSource(entry, serializer as KSerializer<Any>) { failures += it }
+    KotlinxArgumentSource(
+      entry,
+      serializer as KSerializer<Any>,
+      onUnencodableValue = onUnencodableValue,
+    ) {
+      failures += it
+    }
 
   private companion object {
     /** Bounds every wait, so that a deadlock fails the test rather than hanging it. */

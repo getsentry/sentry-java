@@ -1,0 +1,6 @@
+encodeSerializableValue(WithOpenPolymorphic, CLASS)
+  beginStructure(WithOpenPolymorphic, CLASS)
+    encodeSerializableElement(WithOpenPolymorphic, CLASS, 0=referrer, kotlinx.serialization.Polymorphic<Referrer>, OPEN)
+      encodeElement(WithOpenPolymorphic, CLASS, 0=referrer)
+      encodeSerializableValue(kotlinx.serialization.Polymorphic<Referrer>, OPEN)
+threw SerializationException

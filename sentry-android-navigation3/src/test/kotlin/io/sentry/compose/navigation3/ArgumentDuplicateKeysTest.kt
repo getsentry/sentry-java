@@ -28,7 +28,8 @@ class ArgumentDuplicateKeysTest {
       .log(
         eq(WARNING),
         eq(
-          "Nav3 map keys stringify to the same string. Dropping this entry's arguments.",
+          "A Nav3 map key (String) stringifies to the same string as another key (Int). " +
+            "Dropping this entry's arguments.",
         ),
       )
 

@@ -173,8 +173,8 @@ internal class BackStackConverter<T : Any>(
         return SanitizedArguments(emptyMap(), reason)
       }
 
-      // Use the raw inputs' own source implementation when available; otherwise, provide them with
-      // an adapter.
+      // Built-in mappers' arguments are their own ArgumentSource, which encodes them straight into
+      // the shared budget (see KotlinxArgumentSource). Other maps are read through an adapter.
       val source =
         raw as? ArgumentSource
           ?: HostArgumentSource(raw) { warningState.logUnsupportedValueWarning(it, logger) }
@@ -326,6 +326,12 @@ internal enum class ArgumentDropReason(
   CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
   DUPLICATE_KEY("duplicate_key"),
   ENCODING_FAILED("encoding_failed"),
+  /**
+   * The app's kotlinx.serialization version can't run the built-in mapper's properties encoder, so
+   * no entry's properties are recorded. Kept apart from [ENCODING_FAILED], which is specific to an
+   * entry, so that developers can tell a version problem from a problem with one route type.
+   */
+  INCOMPATIBLE_KOTLINX_SERIALIZATION("incompatible_kotlinx_serialization"),
   INVALID_STRUCTURE("invalid_structure"),
   MAPPING_FAILED("mapping_failed"),
   MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),

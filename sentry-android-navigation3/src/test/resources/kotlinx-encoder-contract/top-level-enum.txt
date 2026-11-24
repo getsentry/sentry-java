@@ -1,0 +1,3 @@
+encodeSerializableValue(Sort, ENUM)
+  encodeEnum(Sort, ENUM, 1=NEWEST)
+    encodeValue(Int 1)

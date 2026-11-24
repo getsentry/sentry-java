@@ -2,12 +2,18 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.FakeCompatibilityProbe.Inconclusive
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxBackStackEntryMapper.Companion.NAME_LOOKUP_CAPABILITY
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.PROBE_SERIALIZER_NOT_FOUND
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.PROBE_THREW
 import kotlin.test.assertFailsWith
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
@@ -23,10 +29,20 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 /** How [KotlinxBackStackEntryMapper] acts on what its [KotlinxCompatibilityProbe] finds. */
 class KotlinxBackStackEntryMapperProbeTest {
 
+  @Before
+  fun clearIntegrations() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+  }
+
+  @After
+  fun clearIntegrationsAfterTest() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+  }
+
   // Name lookup check
 
   @Test
-  fun `logs nothing when created for a kotlinx version the name lookup check finds compatible`() {
+  fun `logs nothing when created for a kotlinx serialization version the name lookup check finds compatible`() {
     val fixture = KotlinxMapperFixture.create(probe = FakeCompatibilityProbe())
 
     fixture.mapper
@@ -35,7 +51,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `throws the probe's LinkageError when created for a kotlinx version that can't support name lookups`() {
+  fun `throws the probe's LinkageError when created for a kotlinx serialization version that can't support name lookups`() {
     val error = NoSuchMethodError("serializerOrNull")
     val probe = FakeCompatibilityProbe(nameLookupError = error)
 
@@ -48,7 +64,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `doesn't log when created for a kotlinx version that can't support name lookups`() {
+  fun `doesn't log when created for a kotlinx serialization version that can't support name lookups`() {
     // BuiltInBackStackEntryMappers logs the error it catches, so the mapper doesn't log it too.
     val logger = mock<ILogger>()
     val probe = FakeCompatibilityProbe(nameLookupError = NoSuchMethodError())
@@ -58,6 +74,23 @@ class KotlinxBackStackEntryMapperProbeTest {
     }
 
     verifyNoInteractions(logger)
+  }
+
+  @Test
+  fun `doesn't check the properties encoder or add the property encoding disabled integration when the name lookup check fails`() {
+    val probe =
+      FakeCompatibilityProbe(
+        nameLookupError = NoSuchMethodError(),
+        encoderError = NoSuchMethodError(),
+      )
+
+    assertFailsWith<NoSuchMethodError> {
+      KotlinxBackStackEntryMapper(includeProperties = true, logger = { mock() }, probe = probe)
+    }
+
+    assertThat(probe.encodingChecks).isEqualTo(0)
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
   }
 
   @Test
@@ -110,7 +143,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   // Property encoding check
 
   @Test
-  fun `logs nothing when created with properties included for a kotlinx version the probe finds compatible`() {
+  fun `logs nothing when created with properties included for a kotlinx serialization version the probe finds compatible`() {
     val fixture =
       KotlinxMapperFixture.create(includeProperties = true, probe = FakeCompatibilityProbe())
 
@@ -131,7 +164,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `never checks the properties encoder when properties are excluded`() {
+  fun `doesn't check the properties encoder when properties are excluded`() {
     // No incompatible check is logged, as the check isn't run when properties are excluded.
     val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
     val fixture = KotlinxMapperFixture.create(includeProperties = false, probe = probe)
@@ -145,7 +178,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `keeps the name and records only the encoding failure when the properties encoder is incompatible`() {
+  fun `keeps the name and records only the kotlinx serialization incompatibility when the properties encoder is incompatible`() {
     val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
     val mapper = fixture.mapper
@@ -154,32 +187,16 @@ class KotlinxBackStackEntryMapperProbeTest {
 
     assertThat(mapped)
       .containsExactly(
-        SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)),
-        SentryBackStackEntry("Search", droppedBy(ArgumentDropReason.ENCODING_FAILED)),
+        SentryBackStackEntry(
+          "Detail",
+          droppedBy(ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION),
+        ),
+        SentryBackStackEntry(
+          "Search",
+          droppedBy(ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION),
+        ),
       )
       .inOrder()
-  }
-
-  @Test
-  fun `keeps the name and records only the encoding failure when the properties encoder can't link`() {
-    // Runs the LinkageError through the real probe's failure handling instead of returning it.
-    val probe =
-      object : KotlinxCompatibilityProbe {
-        override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? =
-          null
-
-        override fun encoderIncompatibility(): Throwable? =
-          KotlinxCompatibilityProbe.encoderFailureOf {
-            throw NoSuchMethodError()
-          }
-      }
-    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(Detail("1"))
-
-    assertThat(mapped)
-      .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
   }
 
   @Test
@@ -213,12 +230,37 @@ class KotlinxBackStackEntryMapperProbeTest {
 
     val message = argumentCaptor<String>()
     verify(fixture.logger, times(1)).log(eq(SentryLevel.WARNING), message.capture(), eq(error))
-    assertThat(message.firstValue)
-      .startsWith(
-        "Nav3 SerialNameAndProperties is incompatible with this app's kotlinx.serialization " +
-          "version.",
-      )
+    assertThat(message.firstValue).startsWith(INCOMPATIBLE_ENCODER)
     assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
+  }
+
+  @Test
+  fun `adds the property encoding disabled integration when the properties encoder is incompatible`() {
+    val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
+
+    KotlinxMapperFixture.create(includeProperties = true, probe = probe)
+
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
+  }
+
+  @Test
+  fun `doesn't add the property encoding disabled integration when the properties encoder is compatible`() {
+    KotlinxMapperFixture.create(includeProperties = true, probe = FakeCompatibilityProbe())
+
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
+  }
+
+  @Test
+  fun `doesn't add the property encoding disabled integration when properties are excluded`() {
+    // The encoder check isn't run when properties are excluded, so its failure goes unnoticed.
+    val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
+
+    KotlinxMapperFixture.create(includeProperties = false, probe = probe)
+
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
   }
 
   @Test
@@ -238,91 +280,20 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `keeps the name and records only the encoding failure when the encoder fails without a LinkageError`() {
-    val probe = FakeCompatibilityProbe(encoderError = NullPointerException())
-    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(Detail("1"))
-
-    assertThat(mapped)
-      .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
-  }
-
-  @Test
-  fun `records no arguments for objects when the encoder fails without a LinkageError`() {
-    val probe = FakeCompatibilityProbe(encoderError = NullPointerException())
-    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(Home)
-
-    assertThat(mapped).isEqualTo(SentryBackStackEntry("Home", arguments = null))
-  }
-
-  @Test
-  fun `doesn't encode properties when the encoder fails without a LinkageError`() {
-    val probe = FakeCompatibilityProbe(encoderError = NullPointerException())
-    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
-    val mapper = fixture.mapper
-
-    mapper.mapAndReadArguments(Detail("1"))
-    mapper.mapAndWriteArguments(Detail("2"))
-
-    assertThat(fixture.detailSerializer.serialized).isEmpty()
-  }
-
-  @Test
-  fun `logs a warning with the error and compatibility advice when the encoder fails without a LinkageError`() {
-    val error = NullPointerException("encodeStructure")
-    val probe = FakeCompatibilityProbe(encoderError = error)
-    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
-
-    val message = argumentCaptor<String>()
-    verify(fixture.logger, times(1)).log(eq(SentryLevel.WARNING), message.capture(), eq(error))
-    assertThat(message.firstValue)
-      .startsWith(
-        "Nav3 SerialNameAndProperties is incompatible with this app's kotlinx.serialization " +
-          "version.",
-      )
-    assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
-  }
-
-  @Test
-  fun `keeps the name and records only the encoding failure when the encoder produces unexpected output`() {
-    val probe = FakeCompatibilityProbe(encoderError = EncoderProducedUnexpectedOutput())
-    val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(Detail("1"))
-
-    assertThat(mapped)
-      .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
-  }
-
-  @Test
-  fun `logs a warning with the mismatch error and compatibility advice when the encoder produces unexpected output`() {
+  fun `attaches the probe's error to the incompatible properties encoder warning even if it isn't a LinkageError`() {
     val error = EncoderProducedUnexpectedOutput()
     val probe = FakeCompatibilityProbe(encoderError = error)
     val fixture = KotlinxMapperFixture.create(includeProperties = true, probe = probe)
 
     val message = argumentCaptor<String>()
     verify(fixture.logger, times(1)).log(eq(SentryLevel.WARNING), message.capture(), eq(error))
-    assertThat(message.firstValue)
-      .startsWith(
-        "Nav3 SerialNameAndProperties is incompatible with this app's kotlinx.serialization " +
-          "version.",
-      )
-    assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
+    assertThat(message.firstValue).startsWith(INCOMPATIBLE_ENCODER)
   }
 
   private companion object {
-    const val NAME_LOOKUP_CAPABILITY = "name lookups"
-
     const val INCONCLUSIVE_PROBE = "Nav3 couldn't verify kotlinx.serialization support for %s"
 
-    const val PROBE_THREW = "the compatibility probe threw (see the attached error)"
-
-    const val PROBE_SERIALIZER_NOT_FOUND = "a probe serializer wasn't found"
+    const val INCOMPATIBLE_ENCODER =
+      "Nav3 SerialNameAndProperties is incompatible with this app's kotlinx.serialization version."
   }
 }

@@ -413,7 +413,7 @@ class HostArgumentSourceTest {
       events += BeginList(identity)
     }
 
-    override fun key(name: String) {
+    override fun key(name: String, describeDuplicate: (() -> String)?) {
       if (name == failOnKey && keyFailure != null) throw keyFailure
       events += Key(name)
     }

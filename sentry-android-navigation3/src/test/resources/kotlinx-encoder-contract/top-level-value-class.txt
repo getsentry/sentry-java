@@ -1,0 +1,4 @@
+encodeSerializableValue(Price, CLASS, inline)
+  encodeInline(Price, CLASS, inline)
+  encodeInt(999)
+    encodeValue(Int 999)

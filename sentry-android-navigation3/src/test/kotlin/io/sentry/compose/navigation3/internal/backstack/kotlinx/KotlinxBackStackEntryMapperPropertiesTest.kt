@@ -5,17 +5,23 @@ import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.ArgumentBudget
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.ArgumentSource
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING
 import kotlin.test.assertFailsWith
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -36,6 +42,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
+@Suppress("LargeClass")
 class KotlinxBackStackEntryMapperPropertiesTest {
 
   @Serializable @SerialName("PropertyLess") class PropertyLess
@@ -54,14 +61,17 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     override fun deserialize(decoder: Decoder): Code = Code(decoder.decodeString())
   }
 
-  /** Serializes [PropertyLess] with its own descriptor, except that reading its `kind` throws. */
+  /**
+   * Serializes [PropertyLess] with its own descriptor, except that reading its `kind` throws
+   * [kindError].
+   */
   @OptIn(ExperimentalSerializationApi::class)
-  object KindThrowingPropertyLessSerializer : KSerializer<PropertyLess> {
+  class KindThrowingPropertyLessSerializer(kindError: Throwable) : KSerializer<PropertyLess> {
     private val delegate = PropertyLess.serializer().descriptor
 
     override val descriptor: SerialDescriptor =
       Mockito.mock(SerialDescriptor::class.java, delegatesTo<Any>(delegate)).apply {
-        doThrow(IllegalStateException("no kind")).whenever(this).kind
+        doThrow(kindError).whenever(this).kind
       }
 
     override fun serialize(encoder: Encoder, value: PropertyLess) {
@@ -70,6 +80,93 @@ class KotlinxBackStackEntryMapperPropertiesTest {
 
     override fun deserialize(decoder: Decoder): PropertyLess = throw UnsupportedOperationException()
   }
+
+  interface OpenOrigin
+
+  /** Can't be encoded as an [OpenOrigin] without a module. */
+  class SearchOrigin : OpenOrigin
+
+  @Serializable
+  @SerialName("WithOpenPolymorphic")
+  data class WithOpenPolymorphic(val id: String, @Polymorphic val origin: OpenOrigin)
+
+  /** Encodes to `"partial"`, and then, if it [fails], throws, so it's written partway. */
+  @Serializable(with = FragileSerializer::class) class Fragile(val fails: Boolean)
+
+  object FragileSerializer : KSerializer<Fragile> {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("Fragile", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Fragile) {
+      encoder.encodeString("partial")
+      if (value.fails) throw SerializationException("failed partway")
+    }
+
+    override fun deserialize(decoder: Decoder): Fragile = throw UnsupportedOperationException()
+  }
+
+  /** Has a contextual property, and a property that fails the whole entry when [Fragile.fails]. */
+  @Serializable
+  @SerialName("WithContextualAndFragile")
+  internal data class WithContextualAndFragile(
+    @Contextual val other: Unregistered?,
+    val fragile: Fragile,
+  )
+
+  @Serializable
+  @SerialName("TabWithBodies")
+  enum class TabWithBodies {
+    FEED {
+      override val icon = "feed"
+    },
+    @SerialName("tab.search")
+    SEARCH {
+      override val icon = "search"
+    };
+
+    abstract val icon: String
+  }
+
+  /** Can't be encoded: its serializer throws an exception that names its [id]. */
+  @Serializable(with = RejectingSerializer::class) class Rejecting(val id: String)
+
+  object RejectingSerializer : KSerializer<Rejecting> {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("Rejecting", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Rejecting) {
+      throw IllegalArgumentException("Invalid ${value.id}", IllegalStateException(value.id))
+    }
+
+    override fun deserialize(decoder: Decoder): Rejecting = throw UnsupportedOperationException()
+  }
+
+  @Serializable
+  @SerialName("WithRejecting")
+  data class WithRejecting(val id: String, val rejecting: Rejecting)
+
+  @Serializable data class Point(val x: Int)
+
+  @Serializable
+  @SerialName("WithPointMapKeys")
+  data class WithPointMapKeys(val id: String, val byPoint: Map<Point, Int>, val page: Int)
+
+  @Serializable @SerialName("WithValues") data class WithValues(val values: List<Int>)
+
+  @Serializable
+  @SerialName("WithNullableMapKeys")
+  data class WithNullableMapKeys(val byName: Map<String?, Int>)
+
+  /** Serializers of this suite's own types, which tests add to the fixture's lookup. */
+  private val otherSerializers: Map<Class<*>, KSerializer<*>> =
+    mapOf(
+      WithOpenPolymorphic::class.java to WithOpenPolymorphic.serializer(),
+      WithContextualAndFragile::class.java to WithContextualAndFragile.serializer(),
+      WithPointMapKeys::class.java to WithPointMapKeys.serializer(),
+      WithRejecting::class.java to WithRejecting.serializer(),
+      WithValues::class.java to WithValues.serializer(),
+      WithNullableMapKeys::class.java to WithNullableMapKeys.serializer(),
+    )
 
   /** An id over the argument character limit. */
   private val overLimitId = "x".repeat(MAX_ARGUMENT_CHARACTERS + 1)
@@ -135,6 +232,20 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
+  fun `records the constant of an enum constant that has a body using its enum's serializer`() {
+    // The constant's class is an anonymous subclass of the enum, which isn't @Serializable itself.
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { if (it == TabWithBodies::class.java) TabWithBodies.serializer() else null }
+    val mapper = fixture.mapper
+
+    val mapped = mapper.map(TabWithBodies.SEARCH)
+
+    assertThat(mapped)
+      .isEqualTo(SentryBackStackEntry("TabWithBodies", mapOf("value" to "tab.search")))
+    assertThat(fixture.lookedUpTypes).containsExactly(TabWithBodies::class.java)
+  }
+
+  @Test
   fun `doesn't encode properties of entries that can't be named`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.lookUp = { null }
@@ -160,23 +271,91 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     assertThat(mapped).isEqualTo(SentryBackStackEntry("Search", mapOf("query" to "shoes")))
   }
 
-  // Properties that can't be encoded
+  // Property values that can't be encoded
 
   @Test
-  fun `keeps the name and records only the encoding failure when a type's properties can't be encoded`() {
+  fun `records a map with class keys as the Unencodable substitute beside the other arguments`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
     val mapper = fixture.mapper
 
-    val mapped = mapper.map(WithContextual("1", Unregistered("2")))
+    val mapped = mapper.map(WithPointMapKeys("1", mapOf(Point(1) to 2), page = 3))
 
     assertThat(mapped)
       .isEqualTo(
-        SentryBackStackEntry("WithContextual", droppedBy(ArgumentDropReason.ENCODING_FAILED)),
+        SentryBackStackEntry(
+          "WithPointMapKeys",
+          mapOf("id" to "1", "byPoint" to "[Unencodable]", "page" to 3),
+        ),
       )
+    verifyWarningLoggedOnce(fixture, UNENCODABLE_VALUES, WithPointMapKeys::class.java)
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   @Test
-  fun `keeps encoding a type's properties after they couldn't be encoded once`() {
+  fun `logs only an unencodable-values warning, once per type, for values recorded as the Unencodable substitute`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    repeat(3) {
+      mapper.mapAndReadArguments(WithContextual("$it", Unregistered("$it")))
+      mapper.mapAndReadArguments(WithOpenPolymorphic("$it", SearchOrigin()))
+    }
+
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNENCODABLE_VALUES) },
+        eq(WithContextual::class.java.name),
+      )
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNENCODABLE_VALUES) },
+        eq(WithOpenPolymorphic::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `doesn't log that values were recorded as the Unencodable substitute until the arguments are read`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    val mapper = fixture.mapper
+
+    mapper.map(WithContextual("1", Unregistered("2")))
+
+    verifyNoInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `logs the unencodable-values warning separately from the unsupported-properties warning for the same type`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+    mapper.mapAndReadArguments(WithContextualAndFragile(Unregistered("1"), Fragile(fails = false)))
+
+    mapper.mapAndReadArguments(WithContextualAndFragile(null, Fragile(fails = true)))
+
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNENCODABLE_VALUES) },
+        eq(WithContextualAndFragile::class.java.name),
+      )
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(UNSUPPORTED_PROPERTIES) },
+        eq(WithContextualAndFragile::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  // Properties that can't be encoded
+
+  @Test
+  fun `keeps encoding a type's properties after their encoding throws once`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.detailSerializer.error = SerializationException("unencodable")
     val mapper = fixture.mapper
@@ -266,6 +445,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
         any<String>(),
         eq(Detail::class.java.name),
         eq(ArgumentDropReason.CHARACTER_LIMIT.serializedValue),
+        any<String>(),
       )
     verify(fixture.logger, times(1))
       .log(
@@ -273,6 +453,100 @@ class KotlinxBackStackEntryMapperPropertiesTest {
         any<String>(),
         eq(Search::class.java.name),
         eq(ArgumentDropReason.CHARACTER_LIMIT.serializedValue),
+        any<String>(),
+      )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `logs a warning for each different argument limit that entries of the same type break`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(WithNullableMapKeys(mapOf(overLimitId to 1)))
+    mapper.mapAndReadArguments(WithNullableMapKeys(mapOf(null to 1, "null" to 2)))
+
+    assertThat(
+        overLimitsWarningLimit(
+          fixture,
+          WithNullableMapKeys::class.java,
+          ArgumentDropReason.CHARACTER_LIMIT,
+        ),
+      )
+      .isEqualTo("its keys and text exceed $MAX_ARGUMENT_CHARACTERS characters")
+    assertThat(
+        overLimitsWarningLimit(
+          fixture,
+          WithNullableMapKeys::class.java,
+          ArgumentDropReason.DUPLICATE_KEY,
+        ),
+      )
+      .isEqualTo("a map has two keys that are recorded as the same text")
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `describes the value limit in the warning for an entry with too many values`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(WithValues(List(MAX_ARGUMENT_VALUES + 1) { it }))
+
+    assertThat(
+        overLimitsWarningLimit(fixture, WithValues::class.java, ArgumentDropReason.MAX_COUNT),
+      )
+      .isEqualTo("it has more than $MAX_ARGUMENT_VALUES values")
+  }
+
+  @Test
+  fun `describes the character limit in the warning for an entry with too many characters`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail(overLimitId))
+
+    assertThat(
+        overLimitsWarningLimit(fixture, Detail::class.java, ArgumentDropReason.CHARACTER_LIMIT),
+      )
+      .isEqualTo("its keys and text exceed $MAX_ARGUMENT_CHARACTERS characters")
+  }
+
+  @Test
+  fun `describes the duplicate keys in the warning for an entry with map keys recorded as the same text`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(WithNullableMapKeys(mapOf(null to 1, "null" to 2)))
+
+    assertThat(
+        overLimitsWarningLimit(
+          fixture,
+          WithNullableMapKeys::class.java,
+          ArgumentDropReason.DUPLICATE_KEY,
+        ),
+      )
+      .isEqualTo("a map has two keys that are recorded as the same text")
+  }
+
+  @Test
+  fun `describes the nesting limits in the warning for an entry that nests values too deep`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    val (boxSerializer, entry) =
+      boxed(depth = MAX_ARGUMENT_DEPTH + 1, value = "leaf", String.serializer())
+    fixture.lookUp = { if (it == Box::class.java) boxSerializer else null }
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(entry)
+
+    assertThat(
+        overLimitsWarningLimit(fixture, Box::class.java, ArgumentDropReason.INVALID_STRUCTURE),
+      )
+      .isEqualTo(
+        "it nests values more than $MAX_ARGUMENT_DEPTH levels deep, or serializers or value " +
+          "classes more than $MAX_SERIALIZER_NESTING deep",
       )
   }
 
@@ -291,6 +565,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
         any<String>(),
         eq(Detail::class.java.name),
         eq(ArgumentDropReason.CHARACTER_LIMIT.serializedValue),
+        any<String>(),
       )
     verify(fixture.logger, times(1))
       .log(
@@ -298,6 +573,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
         argThat<String> { contains(UNSUPPORTED_PROPERTIES) },
         eq(Detail::class.java.name),
       )
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   @Test
@@ -357,9 +633,19 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     assertThat(fixture.searchSerializer.serialized)
       .containsExactly(Search("0"), Search("1"), Search("2"))
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(Detail::class.java.name))
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(error),
+        any<String>(),
+        eq(Detail::class.java.name),
+      )
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(Search::class.java.name))
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(error),
+        any<String>(),
+        eq(Search::class.java.name),
+      )
     verifyNoMoreInteractions(fixture.logger)
   }
 
@@ -385,10 +671,14 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `attaches the LinkageError to the warning for a type whose property encoding throws it`() {
-    // Unlike serializer exceptions, a LinkageError names the classes and members that couldn't be
-    // linked or initialized, not route data.
-    val error = NoClassDefFoundError("kotlinx/serialization/internal/Missing")
+  fun `attaches the LinkageError itself to the warning for a type whose property encoding throws it`() {
+    // Unlike serializer exceptions, a LinkageError comes from linking or initializing a class,
+    // which
+    // never sees the entry being encoded, so it's attached as is, message and cause included.
+    val error =
+      NoClassDefFoundError("Could not initialize class com.example.Config").apply {
+        initCause(ExceptionInInitializerError(IllegalStateException("config init failed")))
+      }
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.detailSerializer.error = error
     val mapper = fixture.mapper
@@ -399,6 +689,14 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     verify(fixture.logger)
       .log(eq(SentryLevel.WARNING), logged.capture(), any<String>(), eq(Detail::class.java.name))
     assertThat(logged.firstValue).isSameInstanceAs(error)
+    assertThat(logged.firstValue)
+      .hasMessageThat()
+      .isEqualTo("Could not initialize class com.example.Config")
+    assertThat(logged.firstValue)
+      .hasCauseThat()
+      .hasCauseThat()
+      .hasMessageThat()
+      .isEqualTo("config init failed")
   }
 
   // Property encoding that throws other exceptions
@@ -413,19 +711,6 @@ class KotlinxBackStackEntryMapperPropertiesTest {
 
     assertThat(mapped)
       .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
-  }
-
-  @Test
-  fun `keeps encoding a type's properties after its property encoding throws an exception once`() {
-    val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    fixture.detailSerializer.error = IllegalArgumentException("invalid id")
-    val mapper = fixture.mapper
-    mapper.mapAndReadArguments(Detail("1"))
-    fixture.detailSerializer.error = null
-
-    val mapped = mapper.map(Detail("2"))
-
-    assertThat(mapped).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "2")))
   }
 
   @Test
@@ -477,24 +762,6 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `keeps route data from serializer exception messages and causes out of warnings`() {
-    val detail = Detail("private-route-id")
-    val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    fixture.detailSerializer.error =
-      IllegalArgumentException("Invalid ID ${detail.id}", IllegalStateException(detail.id))
-    val mapper = fixture.mapper
-
-    mapper.mapAndReadArguments(detail)
-
-    val message = argumentCaptor<String>()
-    verify(fixture.logger)
-      .log(eq(SentryLevel.WARNING), message.capture(), eq(Detail::class.java.name))
-    assertThat(message.firstValue).contains(SERIALIZER_THREW)
-    assertThat(message.firstValue).doesNotContain(detail.id)
-    verifyNoMoreInteractions(fixture.logger)
-  }
-
-  @Test
   fun `logs the serializer-threw warning separately from the LinkageError warning for the same type`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     val mapper = fixture.mapper
@@ -534,6 +801,67 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     assertThat(thrown).isSameInstanceAs(error)
   }
 
+  // Route data in property encoding warnings
+  //
+  // Serializer exceptions can contain route data in their messages and causes, so warnings for
+  // them carry neither, nor the exception itself.
+
+  @Test
+  fun `keeps route data out of the serializer-threw warning`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.detailSerializer.error =
+      IllegalArgumentException("Invalid ID $ROUTE_ID", IllegalStateException(ROUTE_ID))
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail(ROUTE_ID))
+
+    verifyWarningLoggedOnce(fixture, SERIALIZER_THREW, Detail::class.java)
+    verifyNoRouteDataOrErrorLogged(fixture)
+  }
+
+  @Test
+  fun `keeps route data out of the unsupported-properties warning`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.detailSerializer.error =
+      SerializationException("Invalid ID $ROUTE_ID", IllegalStateException(ROUTE_ID))
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail(ROUTE_ID))
+
+    verifyWarningLoggedOnce(fixture, UNSUPPORTED_PROPERTIES, Detail::class.java)
+    verifyNoRouteDataOrErrorLogged(fixture)
+  }
+
+  @Test
+  fun `keeps route data out of the unencodable-values warning`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(WithRejecting("1", Rejecting(ROUTE_ID)))
+
+    verifyWarningLoggedOnce(fixture, UNENCODABLE_VALUES, WithRejecting::class.java)
+    verifyNoRouteDataOrErrorLogged(fixture)
+  }
+
+  @Test
+  fun `keeps route data out of the over-limits warning`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail(ROUTE_ID + overLimitId))
+
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(OVER_LIMITS) },
+        eq(Detail::class.java.name),
+        eq(ArgumentDropReason.CHARACTER_LIMIT.serializedValue),
+        any<String>(),
+      )
+    verifyNoRouteDataOrErrorLogged(fixture)
+  }
+
   // Serializer descriptors whose shape throws
 
   @Test
@@ -565,7 +893,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   fun `keeps the name and records only the encoding failure when a property-less entry's descriptor's kind throws`() {
     // Without properties, whether the entry may still have arguments depends on its kind.
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    fixture.lookUp = { KindThrowingPropertyLessSerializer }
+    fixture.lookUp = { KindThrowingPropertyLessSerializer(IllegalStateException("no kind")) }
     val mapper = fixture.mapper
 
     val mapped = mapper.map(PropertyLess())
@@ -577,7 +905,33 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `logs a warning once for a type whose descriptor's kind throws`() {
+  fun `keeps the name and records only the encoding failure when a property-less entry's descriptor's kind throws a LinkageError`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { KindThrowingPropertyLessSerializer(NoClassDefFoundError()) }
+    val mapper = fixture.mapper
+
+    val mapped = mapper.map(PropertyLess())
+
+    assertThat(mapped)
+      .isEqualTo(
+        SentryBackStackEntry("PropertyLess", droppedBy(ArgumentDropReason.ENCODING_FAILED)),
+      )
+  }
+
+  @Test
+  fun `propagates fatal errors thrown by a property-less entry's descriptor's kind`() {
+    val error = OutOfMemoryError()
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { KindThrowingPropertyLessSerializer(error) }
+    val mapper = fixture.mapper
+
+    val thrown = assertFailsWith<OutOfMemoryError> { mapper.map(PropertyLess()) }
+
+    assertThat(thrown).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `logs a serializer-threw warning once for a type whose descriptor's kind throws`() {
     val error = IllegalStateException("no kind")
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.lookUp = { ShapeThrowingDetailSerializer(kindError = error) }
@@ -586,7 +940,12 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     repeat(3) { mapper.mapAndReadArguments(Detail("$it")) }
 
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), any<String>(), eq(Detail::class.java.name))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(SERIALIZER_THREW) },
+        eq(Detail::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   @Test
@@ -624,9 +983,58 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     assertThat(thrown).isSameInstanceAs(error)
   }
 
+  private fun verifyWarningLoggedOnce(
+    fixture: KotlinxMapperFixture,
+    warning: String,
+    type: Class<*>,
+  ) {
+    verify(fixture.logger, times(1))
+      .log(eq(SentryLevel.WARNING), argThat<String> { contains(warning) }, eq(type.name))
+  }
+
+  /**
+   * Verifies that the over-limits warning was logged once for [type] and [reason], and returns its
+   * description of the broken limit.
+   */
+  private fun overLimitsWarningLimit(
+    fixture: KotlinxMapperFixture,
+    type: Class<*>,
+    reason: ArgumentDropReason,
+  ): String {
+    val limit = argumentCaptor<String>()
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(OVER_LIMITS) },
+        eq(type.name),
+        eq(reason.serializedValue),
+        limit.capture(),
+      )
+    return limit.firstValue
+  }
+
+  /**
+   * Checks every call to the fixture's logger, through any of its overloads, for [ROUTE_ID] and
+   * attached errors.
+   */
+  private fun verifyNoRouteDataOrErrorLogged(fixture: KotlinxMapperFixture) {
+    val logged =
+      Mockito.mockingDetails(fixture.logger).invocations.flatMap { it.arguments.asList() }
+
+    assertThat(logged).isNotEmpty()
+    assertThat(logged.filter { it.toString().contains(ROUTE_ID) }).isEmpty()
+    assertThat(logged.filterIsInstance<Throwable>()).isEmpty()
+  }
+
   private companion object {
-    const val UNSUPPORTED_PROPERTIES =
-      "Contextual and open polymorphic properties and structured map keys aren't supported"
+    /** Identifies a route, so it must not appear in logs. */
+    const val ROUTE_ID = "private-route-id"
+
+    const val OVER_LIMITS = "Nav3 dropped arguments for type %s"
+
+    const val UNSUPPORTED_PROPERTIES = "values whose serializers fail partway aren't supported"
+
+    const val UNENCODABLE_VALUES = "Recording them as [Unencodable]"
 
     const val SERIALIZER_THREW = "because a serializer threw"
   }

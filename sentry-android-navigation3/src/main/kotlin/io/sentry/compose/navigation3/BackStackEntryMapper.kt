@@ -172,7 +172,12 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * - looking up the entry's serializer fails, e.g., because a custom serializer throws, R8
      *   removed what the lookup needs, or the app's kotlinx.serialization version is incompatible
-     *   with this SDK.
+     *   with this SDK. In particular, if the app is minified by R8 and uses a kotlinx.serialization
+     *   version below 1.10.0, an entry class with a named companion object (e.g., `companion object
+     *   Factory`) may be named in unminified debug builds but not in minified release builds,
+     *   depending on the kotlinx.serialization version and R8 mode. To fix this, upgrade
+     *   kotlinx.serialization to 1.10.0 or later, or add the keep rules from Troubleshooting
+     *   (linked below).
      *
      * The first entry of each class that can't be named logs a warning explaining why, visible when
      * the SDK's `debug` option is enabled. For fixes, see
@@ -191,8 +196,14 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * To tell such entries apart, define a custom [BackStackEntryMapper], e.g., one that names enum
      * constants after [Enum.name].
+     *
+     * **One-time setup**
+     *
+     * Reading this mapper (e.g., to pass it to [SentryNavEffect]) does no work. Its first [map]
+     * call does a one-time setup, which checks the app's kotlinx.serialization version, so that
+     * call takes longer than later ones. [SentryNavEffect] makes that call when it first records
+     * the back stack, after composition. The same applies to [SerialNameAndProperties].
      */
-    @get:ApiStatus.Experimental
     public val SerialName: BackStackEntryMapper<Any>
       get() = BuiltInBackStackEntryMappers.serialName
 
@@ -245,7 +256,9 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * `@SerialName` if they have one, or else the property's name) contains a term from
      * [Sentry's sensitive denylist](https://develop.sentry.dev/sdk/foundations/client/data-collection/#sensitive-denylist)
      * (ignoring case). This filters secrets like `authToken`, but leaves PII like `userEmail`
-     * unchanged.
+     * unchanged. Map keys and value classes' underlying property names are checked too, and a map
+     * whose keys are value classes with sensitive underlying property names is recorded as
+     * `"[Filtered]"` as a whole.
      *
      * Matching follows the same rule Sentry SDKs use for HTTP headers, cookies, and query
      * parameters, meaning it may filter harmless properties like `insideCart` (`sid`) or `keyword`
@@ -253,13 +266,36 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * **Encoding and encoding failures**
      *
-     * Properties are encoded on the first argument read, including by `equals` or `hashCode`.
+     * Properties are encoded, which runs the entry's serializers, when its arguments are first
+     * read, including by the arguments map's `equals`, `hashCode`, or `toString`. Properties with
+     * default values are recorded too, although Nav3's saved state omits them. `CharSequence`
+     * properties are recorded as strings.
      *
-     * Failures preserve the entry's name and replace its arguments with a drop reason, e.g.,
+     * Sentry encodes the properties again when it records an entry this mapper returned, so if an
+     * entry's properties can change, or its serializers return different values each time, the
+     * recorded values can differ from ones read earlier. If a custom mapper checks argument values
+     * to decide what to send, it should return a copy (`SentryBackStackEntry(entry.name,
+     * entry.arguments?.toMap())`), so Sentry records the values it checked.
+     *
+     * Maps are recorded as maps with their keys converted to text. A map whose keys are classes,
+     * objects, collections, or polymorphic values is recorded as `"[Unencodable]"`, as its keys
+     * can't be recorded as text.
+     *
+     * A value of a sealed type is recorded as `{"type": <serial name>, "value": <properties>}`.
+     *
+     * Some values can't be encoded, e.g., contextual properties and values of open polymorphic
+     * types (e.g., a non-sealed interface or a `Parcelable` property), since their serializers
+     * require a `SerializersModule` or saved state encoder this mapper doesn't have. Each such
+     * property value, list element, or map value is recorded as `"[Unencodable]"`, and the entry's
+     * other arguments are kept.
+     *
+     * Other failures preserve the entry's name and replace its arguments with a drop reason, e.g.,
      * `{"dropped_by_sentry": "encoding_failed"}`. Encoding errors are logged once per entry type
-     * when `debug` is enabled.
+     * when `debug` is enabled. If the app's kotlinx.serialization version can't encode properties
+     * at all, every entry with properties records `{"dropped_by_sentry":
+     * "incompatible_kotlinx_serialization"}` instead, and events list the
+     * `ComposeNavigation3PropertyEncodingDisabled` integration in their SDK info.
      */
-    @get:ApiStatus.Experimental
     public val SerialNameAndProperties: BackStackEntryMapper<Any>
       get() = BuiltInBackStackEntryMappers.serialNameAndProperties
   }

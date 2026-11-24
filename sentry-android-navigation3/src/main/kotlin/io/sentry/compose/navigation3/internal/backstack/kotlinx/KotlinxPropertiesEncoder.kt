@@ -3,6 +3,7 @@
 package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.ArgumentSink
@@ -12,8 +13,10 @@ import io.sentry.util.UrlUtils
 import java.math.BigInteger
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.AbstractEncoder
@@ -33,18 +36,46 @@ import kotlinx.serialization.modules.SerializersModule
  *
  * - Classes and objects become property maps. Objects without properties record no arguments.
  *
- * - Lists and sets become lists. Maps use stringified scalar keys, such as strings, numbers, or
- *   enums. Structured map keys are rejected, matching kotlinx-serialization-json's defaults.
+ * - Lists and sets become lists.
+ *
+ * - Maps whose keys are scalars, such as strings, numbers, enums, or value classes wrapping them,
+ *   become maps with stringified keys.
+ *
+ * - Maps whose keys are structures (classes, objects, lists, maps, or polymorphic values) become
+ *   [UNENCODABLE_SUBSTITUTE], as such a key can't be recorded as text. Whether a map's keys are
+ *   structures is decided by the key type's descriptor, before the map is encoded.
  *
  * - Enums use their serial names. Value classes use their underlying values.
  *
+ * - `CharSequence` properties become strings, as in Nav3's saved state on Android. Their declared
+ *   type is open polymorphic, but their values aren't `@Serializable`.
+ *
  * - Unsigned numbers (`UByte`, `UShort`, `UInt`, `ULong`) retain their unsigned values.
  *
- * - Polymorphic properties become `{"type": <serial name>, "value": <value>}`.
+ * - Sealed properties become `{"type": <serial name>, "value": <value>}`. Open polymorphic values,
+ *   other than `CharSequence`s, become [UNENCODABLE_SUBSTITUTE]; see "Unencodable values" below.
  *
  * - Entries encoded as scalars, such as by a custom string serializer, become `{"value": <value>}`.
  *
- * - Properties marked `@Transient` are omitted.
+ * - Properties marked `@Transient` are omitted. Properties whose values equal their defaults are
+ *   recorded, unlike in Nav3's saved state, which omits them by default.
+ *
+ * - A property, list element, or map value whose serializer can't encode it with this encoder
+ *   becomes [UNENCODABLE_SUBSTITUTE]. See "Unencodable values" below.
+ *
+ * **Unencodable values**
+ *
+ * Some values that the app's own saved state can store can't be encoded here: contextual values and
+ * open polymorphic values (e.g., a non-sealed interface or a `Parcelable` property) need
+ * serializers registered in a `SerializersModule` we don't have, and some serializers only work
+ * with a specific encoder. Their serializers throw an [IllegalArgumentException] (which includes
+ * [SerializationException]), as may a `CharSequence` value's `toString()`. Rather than dropping all
+ * of the entry's arguments, the encoder records such a value as [UNENCODABLE_SUBSTITUTE] and
+ * continues with the next one.
+ *
+ * Substitution requires that the serializer failed before writing any part of the value, because
+ * sinks can't undo writes. Partial writes, failures of the entry's own serializer, and failures of
+ * scalar map keys propagate instead, as replacing a key could create duplicate keys.
  *
  * **Argument limits**
  *
@@ -60,10 +91,12 @@ import kotlinx.serialization.modules.SerializersModule
  * Values under property names or map keys matching Sentry's
  * [sensitive denylist](https://develop.sentry.dev/sdk/foundations/client/data-collection/#sensitive-denylist)
  * are replaced with [UrlUtils.SENSITIVE_DATA_SUBSTITUTE] without invoking their serializers.
+ * [SensitiveKeyFilter] checks every key written to the output, and the encoders ask it whether a
+ * value will be filtered before encoding it.
  *
  * [ValueEncoder.encodeInline] also checks value classes' underlying property names, which aren't
- * written as keys. [SensitiveKeyFilter] checks every output key as a safeguard against missed
- * encoder checks.
+ * written as keys. A map whose key type is such a value class is recorded as
+ * [UrlUtils.SENSITIVE_DATA_SUBSTITUTE] as a whole, as its keys would have no text left.
  *
  * The denylist originates from filtering HTTP headers, cookies, and query parameters. This encoder
  * applies it to navigation arguments as a baseline for sensitive-data filtering.
@@ -73,30 +106,111 @@ internal object KotlinxPropertiesEncoder {
   /** Key for top-level values encoded without a map, such as by a custom serializer. */
   const val VALUE_KEY: String = "value"
 
+  /** Recorded in place of a value whose serializer can't encode it with this encoder. */
+  const val UNENCODABLE_SUBSTITUTE: String = "[Unencodable]"
+
   /**
    * Encodes [value] with [serializer], writing its top-level properties to [sink]'s root map.
    *
-   * Throws [SerializationException] when a value cannot be encoded, such as when a contextual or
-   * open polymorphic property has no registered serializer. Throws [DropArguments] when an argument
-   * limit is exceeded.
+   * Propagates serializer failures for the entry itself, scalar map keys, or partially written
+   * values. Eligible values that fail before being written are recorded as [UNENCODABLE_SUBSTITUTE]
+   * instead, and reported to [onUnencodableValue]. Throws [DropArguments] when an argument limit is
+   * exceeded.
    *
    * Limit failures, including [MAX_SERIALIZER_NESTING], are recorded in [ArgumentSink.failure]. A
    * serializer can catch [DropArguments] and then throw a different exception or return normally.
    * Callers must check [ArgumentSink.failure] to determine whether to drop the arguments.
    */
-  fun encode(serializer: KSerializer<Any>, value: Any, sink: ArgumentSink) {
+  fun encode(
+    serializer: KSerializer<Any>,
+    value: Any,
+    sink: ArgumentSink,
+    onUnencodableValue: () -> Unit = {},
+  ) {
     val filteredSink = SensitiveKeyFilter(sink)
-    RootEncoder(filteredSink, SerializerNesting(filteredSink))
-      .encodeSerializableValue(serializer, value)
+    val context = EncodingContext(SerializerNesting(filteredSink), onUnencodableValue)
+    RootEncoder(WriteCountingSink(filteredSink), context).encodeSerializableValue(serializer, value)
   }
 
+  /** State shared by all the encoders that encode one entry. */
+  private class EncodingContext(
+    val nesting: SerializerNesting,
+    val onUnencodableValue: () -> Unit,
+  )
+
   /** Encodes a single value and writes it to [sink]. Structures are delegated to child encoders. */
+  // Nearly all of its functions override AbstractEncoder's, whose API sets their number.
+  @Suppress("TooManyFunctions")
   private open class ValueEncoder(
-    protected val sink: ArgumentSink,
-    protected val nesting: SerializerNesting,
+    protected val sink: WriteCountingSink,
+    protected val context: EncodingContext,
   ) : AbstractEncoder() {
 
+    protected val nesting: SerializerNesting
+      get() = context.nesting
+
     override val serializersModule: SerializersModule = EmptySerializersModule()
+
+    /**
+     * Whether an element of the structure this encodes can be recorded as [UNENCODABLE_SUBSTITUTE]
+     * if its serializer fails.
+     */
+    protected open val canSubstituteElement: Boolean
+      get() = true
+
+    override fun <T> encodeSerializableElement(
+      descriptor: SerialDescriptor,
+      index: Int,
+      serializer: SerializationStrategy<T>,
+      value: T,
+    ) {
+      if (encodeElement(descriptor, index)) {
+        substitutingUnencodable { encodeSerializableValue(serializer, value) }
+      }
+    }
+
+    override fun <T : Any> encodeNullableSerializableElement(
+      descriptor: SerialDescriptor,
+      index: Int,
+      serializer: SerializationStrategy<T>,
+      value: T?,
+    ) {
+      if (encodeElement(descriptor, index)) {
+        substitutingUnencodable { encodeNullableSerializableValue(serializer, value) }
+      }
+    }
+
+    /**
+     * Runs [encodeValue], recording [UNENCODABLE_SUBSTITUTE] instead if it throws an
+     * [IllegalArgumentException] before writing anything. See "Unencodable values" in
+     * [KotlinxPropertiesEncoder].
+     */
+    private inline fun substitutingUnencodable(encodeValue: () -> Unit) {
+      val writesBefore = sink.writes
+      try {
+        encodeValue()
+      } catch (e: IllegalArgumentException) {
+        // Broad within IllegalArgumentException because the value's serializer is host app or
+        // library code: kotlinx.serialization throws SerializationException (a subclass) for
+        // missing contextual and polymorphic serializers, and savedstate's serializers throw a
+        // plain IllegalArgumentException when used with any encoder but its own. Other exceptions
+        // and partially written values still drop the entry's arguments.
+        //
+        // A serializer may catch a limit violation and throw its own exception. The sink's
+        // recorded failure takes precedence, as it decides whether older entries keep arguments.
+        sink.failure?.let { throw it }
+        if (!canSubstituteElement || sink.writes != writesBefore) {
+          throw e
+        }
+        context.onUnencodableValue()
+        putUnencodable()
+      }
+    }
+
+    /** Records [UNENCODABLE_SUBSTITUTE] in place of an element whose serializer failed. */
+    private fun putUnencodable() {
+      put(UNENCODABLE_SUBSTITUTE)
+    }
 
     protected open fun put(value: Any?) {
       sink.scalar(value)
@@ -107,9 +221,27 @@ internal object KotlinxPropertiesEncoder {
       put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
     }
 
+    /**
+     * Returns whether the value under the key just written should be encoded, for [encodeElement].
+     * If the sink will filter that value, records the substitute and returns `false` instead, so
+     * that the value's own serializers don't run.
+     */
+    protected fun encodesValue(): Boolean {
+      if (sink.isNextValueSensitive) {
+        put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
+        return false
+      }
+      return true
+    }
+
     override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
       nesting.enter()
       try {
+        if (serializer.isCharSequenceSerializer() && value is CharSequence) {
+          // The sink records text as a String.
+          put(value)
+          return
+        }
         serializer.serialize(this, value)
       } finally {
         nesting.exit()
@@ -146,15 +278,29 @@ internal object KotlinxPropertiesEncoder {
       when (descriptor.kind) {
         StructureKind.LIST -> {
           sink.beginList()
-          ListEncoder(sink, nesting)
+          ListEncoder(sink, context)
         }
-        StructureKind.MAP -> {
-          sink.beginMap()
-          MapEncoder(sink, nesting)
-        }
+        // Substitutes are recorded before the map writes anything, so they replace the whole map
+        // rather than dropping the entry's arguments.
+        StructureKind.MAP ->
+          when (descriptor.mapKeys()) {
+            MapKeys.TEXT -> {
+              sink.beginMap()
+              MapEncoder(sink, context)
+            }
+            MapKeys.SENSITIVE -> {
+              put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
+              DiscardingEncoder
+            }
+            MapKeys.STRUCTURED -> {
+              context.onUnencodableValue()
+              put(UNENCODABLE_SUBSTITUTE)
+              DiscardingEncoder
+            }
+          }
         else -> {
           sink.beginMap()
-          ClassEncoder(sink, nesting)
+          ClassEncoder(sink, context)
         }
       }
   }
@@ -164,8 +310,8 @@ internal object KotlinxPropertiesEncoder {
    * root map. Anything else (e.g., a custom serializer that encodes to a string) is written under
    * [VALUE_KEY].
    */
-  private class RootEncoder(sink: ArgumentSink, nesting: SerializerNesting) :
-    ValueEncoder(sink, nesting) {
+  private class RootEncoder(sink: WriteCountingSink, context: EncodingContext) :
+    ValueEncoder(sink, context) {
 
     override fun put(value: Any?) {
       sink.key(VALUE_KEY)
@@ -173,13 +319,17 @@ internal object KotlinxPropertiesEncoder {
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder =
-      when (descriptor.kind) {
-        StructureKind.LIST -> {
+      when {
+        // Lists can't be the root map, so they go under VALUE_KEY.
+        descriptor.kind == StructureKind.LIST -> {
           sink.key(VALUE_KEY)
           super.beginStructure(descriptor)
         }
-        StructureKind.MAP -> MapEncoder(sink, nesting, isRoot = true)
-        else -> ClassEncoder(sink, nesting, isRoot = true)
+        // Recorded as a substitute under VALUE_KEY, through put().
+        descriptor.kind == StructureKind.MAP && descriptor.mapKeys() != MapKeys.TEXT ->
+          super.beginStructure(descriptor)
+        descriptor.kind == StructureKind.MAP -> MapEncoder(sink, context, isRoot = true)
+        else -> ClassEncoder(sink, context, isRoot = true)
       }
   }
 
@@ -189,20 +339,14 @@ internal object KotlinxPropertiesEncoder {
    * If [isRoot] is true, uses the sink's already-open root map.
    */
   private class ClassEncoder(
-    sink: ArgumentSink,
-    nesting: SerializerNesting,
+    sink: WriteCountingSink,
+    context: EncodingContext,
     private val isRoot: Boolean = false,
-  ) : ValueEncoder(sink, nesting) {
+  ) : ValueEncoder(sink, context) {
 
     override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
-      val name = descriptor.getElementName(index)
-      sink.key(name)
-      if (isSensitive(name)) {
-        // Skipping the element keeps a sensitive value's own serializers from running.
-        put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
-        return false
-      }
-      return true
+      sink.key(descriptor.getElementName(index))
+      return encodesValue()
     }
 
     override fun endStructure(descriptor: SerialDescriptor) {
@@ -213,8 +357,8 @@ internal object KotlinxPropertiesEncoder {
   }
 
   /** Writes the elements of a list or set. */
-  private class ListEncoder(sink: ArgumentSink, nesting: SerializerNesting) :
-    ValueEncoder(sink, nesting) {
+  private class ListEncoder(sink: WriteCountingSink, context: EncodingContext) :
+    ValueEncoder(sink, context) {
 
     override fun endStructure(descriptor: SerialDescriptor) {
       sink.end()
@@ -225,29 +369,32 @@ internal object KotlinxPropertiesEncoder {
    * Writes alternating map keys and values. If [isRoot] is true, uses the sink's already-open root
    * map.
    *
-   * Keys must be scalars and are recorded as strings, matching kotlinx-serialization-json's
-   * defaults. Stringifying structured keys could exhaust memory before the sink checks their size.
+   * Keys must be scalars and are recorded as strings. Maps whose key type is a structure, or a
+   * value class with a sensitive underlying property, are recorded as a substitute instead (see
+   * [MapKeys]). A key that begins a structure anyway (e.g., a custom serializer whose descriptor
+   * claims a scalar) is rejected rather than stringified, which could exhaust memory before the
+   * sink checks its size.
    *
    * Sensitive key text causes the value to be filtered. If the key itself was filtered because of a
    * sensitive value-class property, its original text is unavailable, so the value is filtered too.
    */
   private class MapEncoder(
-    sink: ArgumentSink,
-    nesting: SerializerNesting,
+    sink: WriteCountingSink,
+    context: EncodingContext,
     private val isRoot: Boolean = false,
-  ) : ValueEncoder(sink, nesting) {
+  ) : ValueEncoder(sink, context) {
 
     private var isKey = true
-    private var isCurrentValueSensitive = false
+
+    /** Only values: a map can't be recorded without its keys. */
+    override val canSubstituteElement: Boolean
+      get() = !isKey
 
     override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
       isKey = index % 2 == 0
-      // Each key is encoded before its value, so isCurrentValueSensitive already applies to it.
-      if (!isKey && isCurrentValueSensitive) {
-        put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
-        return false
-      }
-      return true
+      // Each key is written to the sink before its value is encoded, so the sink already knows
+      // whether the value is sensitive.
+      return isKey || encodesValue()
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
@@ -262,10 +409,13 @@ internal object KotlinxPropertiesEncoder {
 
     override fun put(value: Any?) {
       if (isKey) {
-        val key = value.toString()
-        // Let the sink reject oversized keys before the denylist scan allocates a lowercase copy.
-        sink.key(key)
-        isCurrentValueSensitive = isSensitive(key)
+        if (value is CharSequence && value.length > MAX_ARGUMENT_CHARACTERS) {
+          // The sink checks a key's length only once it's text, so we reject a CharSequence key
+          // that can't fit in any budget before copying it.
+          sink.reject(ArgumentDropReason.CHARACTER_LIMIT, DropArguments.MAX_CHARACTER_WARNING)
+        }
+        // The sink rejects oversized keys before the denylist scan allocates a lowercase copy.
+        sink.key(value.toString())
       } else {
         sink.scalar(value)
       }
@@ -273,8 +423,12 @@ internal object KotlinxPropertiesEncoder {
 
     override fun putFiltered() {
       if (isKey) {
+        // Maps whose key type is filtered are replaced before they're encoded, so this is only
+        // reached for a custom key serializer whose descriptor doesn't describe what it encodes.
+        // A second such key in the map is a duplicate key.
         sink.key(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
-        isCurrentValueSensitive = true
+        // The key's text is gone, so the sink can't tell whether its value is sensitive.
+        sink.markNextValueSensitive()
       } else {
         super.putFiltered()
       }
@@ -302,6 +456,79 @@ internal object KotlinxPropertiesEncoder {
    */
   private val UNSIGNED_SERIAL_NAMES =
     setOf("kotlin.UByte", "kotlin.UShort", "kotlin.UInt", "kotlin.ULong")
+
+  /** How a map's keys are recorded, decided by the key type's descriptor. See [mapKeys]. */
+  private enum class MapKeys {
+    /** As text, by [MapEncoder]. */
+    TEXT,
+
+    /**
+     * Not at all: the key type is a value class whose underlying property's name (or that of a
+     * value class it wraps) is sensitive, so each key would be recorded as
+     * [UrlUtils.SENSITIVE_DATA_SUBSTITUTE] and two keys would collide. The whole map is recorded as
+     * [UrlUtils.SENSITIVE_DATA_SUBSTITUTE] instead, which reveals no more about it.
+     */
+    SENSITIVE,
+
+    /**
+     * Not at all: the key type is a structure (a class, object, list, map, or polymorphic value),
+     * which can't be recorded as text. The whole map is recorded as [UNENCODABLE_SUBSTITUTE].
+     */
+    STRUCTURED,
+  }
+
+  /**
+   * Returns how this map descriptor's keys are recorded.
+   *
+   * Value classes are judged by their underlying type, as they're encoded as their underlying
+   * value, and are checked for sensitive underlying property names as [ValueEncoder.encodeInline]
+   * checks them. Contextual keys count as scalars: their serializers are unknown here, and fail
+   * anyway without a registered serializer.
+   *
+   * A custom descriptor can claim to wrap itself, or descriptors can wrap each other in a cycle, so
+   * a key type that wraps more than [MAX_SERIALIZER_NESTING] value classes counts as a structure
+   * instead of being unwrapped further. Encoding a key nested that deeply would exceed the same
+   * limit on nested serializer calls anyway.
+   */
+  private fun SerialDescriptor.mapKeys(): MapKeys {
+    var keyDescriptor = getElementDescriptor(0)
+    var unwrapped = 0
+    while (keyDescriptor.isInline && keyDescriptor.elementsCount == 1) {
+      if (keyDescriptor.hasSensitiveUnderlyingProperty()) {
+        return MapKeys.SENSITIVE
+      }
+      if (++unwrapped > MAX_SERIALIZER_NESTING) {
+        return MapKeys.STRUCTURED
+      }
+      keyDescriptor = keyDescriptor.getElementDescriptor(0)
+    }
+    return when {
+      // CharSequence keys are encoded as text, like strings.
+      keyDescriptor.isCharSequenceDescriptor() -> MapKeys.TEXT
+      keyDescriptor.kind is StructureKind || keyDescriptor.kind is PolymorphicKind ->
+        MapKeys.STRUCTURED
+      else -> MapKeys.TEXT
+    }
+  }
+
+  /**
+   * The descriptor of kotlinx.serialization's serializer for `CharSequence` properties, which only
+   * works with a `SerializersModule` that registers the values' classes. Nav3 apps don't need one,
+   * as saved state encodes `CharSequence` values itself on Android.
+   */
+  private val CHAR_SEQUENCE_DESCRIPTOR: SerialDescriptor =
+    PolymorphicSerializer(CharSequence::class).descriptor
+
+  /**
+   * Whether this is [CHAR_SEQUENCE_DESCRIPTOR], or its nullable form, whose serial name has a `?`
+   * suffix and which isn't equal to it.
+   */
+  private fun SerialDescriptor.isCharSequenceDescriptor(): Boolean =
+    kind == PolymorphicKind.OPEN &&
+      serialName.removeSuffix("?") == CHAR_SEQUENCE_DESCRIPTOR.serialName
+
+  private fun SerializationStrategy<*>.isCharSequenceSerializer(): Boolean =
+    this is PolymorphicSerializer<*> && baseClass == CharSequence::class
 
   /** Whether this describes a value class whose underlying property's name is sensitive. */
   private fun SerialDescriptor.hasSensitiveUnderlyingProperty(): Boolean =
@@ -350,6 +577,61 @@ internal object KotlinxPropertiesEncoder {
   }
 
   /**
+   * Forwards to [sink], counting the values, keys, and structure boundaries written, so that an
+   * encoder can tell whether a failing serializer wrote part of its value.
+   *
+   * Scalars are counted only once [sink] accepts them. A sink adds nothing for a scalar whose
+   * conversion fails (e.g., a `CharSequence` whose `toString()` throws), so the encoder can still
+   * record [UNENCODABLE_SUBSTITUTE] in its place. The failed scalar still counts towards the
+   * entry's value limit.
+   */
+  private class WriteCountingSink(private val sink: SensitiveKeyFilter) : ArgumentSink {
+
+    var writes: Long = 0
+      private set
+
+    override val failure: DropArguments?
+      get() = sink.failure
+
+    override fun beginMap(identity: Any?) {
+      writes++
+      sink.beginMap(identity)
+    }
+
+    override fun beginList(identity: Any?) {
+      writes++
+      sink.beginList(identity)
+    }
+
+    override fun key(name: String, describeDuplicate: (() -> String)?) {
+      writes++
+      sink.key(name, describeDuplicate)
+    }
+
+    /** As for [SensitiveKeyFilter.isNextValueSensitive]. */
+    val isNextValueSensitive: Boolean
+      get() = sink.isNextValueSensitive
+
+    /** As for [SensitiveKeyFilter.markNextValueSensitive]. Not a write, so it isn't counted. */
+    fun markNextValueSensitive() {
+      sink.markNextValueSensitive()
+    }
+
+    override fun scalar(value: Any?) {
+      sink.scalar(value)
+      writes++
+    }
+
+    override fun end() {
+      writes++
+      sink.end()
+    }
+
+    override fun reject(reason: ArgumentDropReason, warning: String): Nothing =
+      sink.reject(reason, warning)
+  }
+
+  /**
    * Limits nested [Encoder.encodeSerializableValue] calls for one entry, rejecting it through
    * [sink] when nesting exceeds [MAX_SERIALIZER_NESTING].
    *
@@ -376,15 +658,33 @@ internal object KotlinxPropertiesEncoder {
    * Replaces values under sensitive keys with [UrlUtils.SENSITIVE_DATA_SUBSTITUTE] before
    * forwarding them to [sink]. Nested maps and lists under those keys are discarded.
    *
-   * All encoders write through this filter to keep sensitive values out of the output. They also
-   * check keys before invoking serializers, avoiding work and potential failures for values that
-   * will be filtered.
+   * This is the only place that checks keys against the denylist. All encoders write through it, so
+   * no sensitive value reaches the output even if an encoder writes one. Encoders also read
+   * [isNextValueSensitive] after writing a key, so that they can record the substitute without
+   * running the value's serializers, which saves work and avoids their failures.
    */
   internal class SensitiveKeyFilter(private val sink: ArgumentSink) : ArgumentSink {
 
     /** The number of open maps and lists being discarded, or 0 if none. */
     private var discardDepth = 0
-    private var isNextValueSensitive = false
+
+    /**
+     * Whether the next value will be replaced with [UrlUtils.SENSITIVE_DATA_SUBSTITUTE], because
+     * the key just written is on the denylist or [markNextValueSensitive] was called. Cleared once
+     * that value is written.
+     */
+    var isNextValueSensitive: Boolean = false
+      private set
+
+    /**
+     * Makes the next value be filtered even though its key isn't on the denylist. For a value whose
+     * key had no text to check because the key itself was filtered.
+     */
+    fun markNextValueSensitive() {
+      if (discardDepth == 0) {
+        isNextValueSensitive = true
+      }
+    }
 
     override val failure: DropArguments?
       get() = sink.failure
@@ -397,11 +697,11 @@ internal object KotlinxPropertiesEncoder {
       begin { sink.beginList(identity) }
     }
 
-    override fun key(name: String) {
+    override fun key(name: String, describeDuplicate: (() -> String)?) {
       if (discardDepth > 0) {
         return
       }
-      sink.key(name)
+      sink.key(name, describeDuplicate)
       isNextValueSensitive = isSensitive(name)
     }
 
@@ -410,20 +710,6 @@ internal object KotlinxPropertiesEncoder {
         return
       }
       sink.scalar(if (isNextValueSensitive) UrlUtils.SENSITIVE_DATA_SUBSTITUTE else value)
-      isNextValueSensitive = false
-    }
-
-    /**
-     * Delegates [compute] to [sink] so limits are checked before computing the value.
-     *
-     * Skips computation for filtered or discarded values.
-     */
-    override fun computedScalar(compute: () -> Any?) {
-      if (discardDepth > 0) {
-        return
-      }
-      val isSensitive = isNextValueSensitive
-      sink.computedScalar { if (isSensitive) UrlUtils.SENSITIVE_DATA_SUBSTITUTE else compute() }
       isNextValueSensitive = false
     }
 

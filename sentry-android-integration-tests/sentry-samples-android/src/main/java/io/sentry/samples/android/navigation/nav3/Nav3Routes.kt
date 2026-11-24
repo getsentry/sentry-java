@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.samples.android.navigation.common.NavArgs
 import io.sentry.samples.android.navigation.common.RouteNames
 import io.sentry.samples.android.navigation.common.RouteSpec
@@ -19,8 +18,7 @@ import kotlinx.serialization.Serializable
 
 internal fun Nav3Route.displayRoute(): String =
   when (this) {
-    // Built without the back stack entry mappers, whose cost the performance scenario measures
-    // only through SentryNavEffect.
+    // Shows the index and generation that tell the performance scenario's routes apart.
     is Nav3Route.Performance -> "/$previewName"
     else -> routeSpec().displayRoute(arguments)
   }
@@ -241,26 +239,29 @@ internal fun SnapshotStateList<Nav3Route>.replacePerformanceTop(generation: Int)
 
 /**
  * The sample's back stack keys. Each is `@Serializable`, so
- * `BackStackEntryMapper.SerialNameAndProperties` can map it: the route's `@SerialName` becomes its
+ * [BackStackEntryMapper.SerialNameAndProperties] can map it: the route's `@SerialName` becomes its
  * Sentry name, and each property's `@SerialName` an argument name. Both match the Nav2 sample's
  * [RouteNames] and [NavArgs], so the two samples send the same data. Every other member is a
  * getter, so it isn't recorded as an argument.
+ *
+ * Screens, tags, and transaction checks use [routeName] and [arguments], which repeat what the
+ * mapper records from the same constants, instead of calling the mapper. Only `SentryNavEffect`
+ * runs the mapper, so its one-time setup and any diagnostics stay out of composition, and a route
+ * the mapper can't name is recorded as `/unknown` rather than breaking the screen that shows it.
  */
 internal sealed interface Nav3Route {
   /**
-   * The route's name as Sentry records it, without the leading `/`. Read from the same mapper
-   * `SentryNavEffect` uses, so screens, tags, and transaction checks can't drift from it.
+   * The route's name as Sentry records it, without the leading `/`. Each route returns the constant
+   * it passes to `@SerialName`.
    */
   val routeName: String
-    get() =
-      checkNotNull(BackStackEntryMapper.SerialName.map(this)) {
-          "${this::class.simpleName} can't be named by BackStackEntryMapper.SerialName."
-        }
-        .name
 
-  /** The route's arguments as Sentry records them, read from the same mapper as [routeName]. */
+  /**
+   * The route's arguments as Sentry records them: each property under the constant it passes to
+   * `@SerialName`, with properties that Sentry omits (e.g., a `null` campaign) left out.
+   */
   val arguments: Map<String, Any?>
-    get() = BackStackEntryMapper.SerialNameAndProperties.map(this)?.arguments.orEmpty()
+    get() = emptyMap()
 
   val previewName: String
     get() = routeName
@@ -268,23 +269,76 @@ internal sealed interface Nav3Route {
   val performanceSeed: Int
     get() = hashCode()
 
-  @Serializable @SerialName(RouteNames.LANDING) data object Landing : Nav3Route
+  @Serializable
+  @SerialName(RouteNames.LANDING)
+  data object Landing : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.LANDING
+  }
 
-  @Serializable @SerialName(RouteNames.HOME) data object SingleStack : Nav3Route
+  @Serializable
+  @SerialName(RouteNames.HOME)
+  data object SingleStack : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.HOME
+  }
 
-  @Serializable @SerialName(RouteNames.CUSTOM) data object Custom : Nav3Route
+  @Serializable
+  @SerialName(RouteNames.CUSTOM)
+  data object Custom : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.CUSTOM
+  }
 
-  @Serializable @SerialName("MultiActivity") data object MultiActivity : Nav3Route
+  @Serializable
+  @SerialName(MultiActivity.NAME)
+  data object MultiActivity : Nav3Route {
+    const val NAME = "MultiActivity"
 
-  @Serializable @SerialName("MultiFragment") data object MultiFragment : Nav3Route
+    override val routeName: String
+      get() = NAME
+  }
 
-  @Serializable @SerialName("FragmentOverlay") data object FragmentOverlay : Nav3Route
+  @Serializable
+  @SerialName(MultiFragment.NAME)
+  data object MultiFragment : Nav3Route {
+    const val NAME = "MultiFragment"
 
-  @Serializable @SerialName("ViewPager2") data object ViewPager2 : Nav3Route
+    override val routeName: String
+      get() = NAME
+  }
 
-  @Serializable @SerialName(RouteNames.DEEP_LINK) data object DeepLink : Nav3Route
+  @Serializable
+  @SerialName(FragmentOverlay.NAME)
+  data object FragmentOverlay : Nav3Route {
+    const val NAME = "FragmentOverlay"
 
-  @Serializable @SerialName(RouteNames.PRODUCT_LIST) data object ProductList : Nav3Route
+    override val routeName: String
+      get() = NAME
+  }
+
+  @Serializable
+  @SerialName(ViewPager2.NAME)
+  data object ViewPager2 : Nav3Route {
+    const val NAME = "ViewPager2"
+
+    override val routeName: String
+      get() = NAME
+  }
+
+  @Serializable
+  @SerialName(RouteNames.DEEP_LINK)
+  data object DeepLink : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.DEEP_LINK
+  }
+
+  @Serializable
+  @SerialName(RouteNames.PRODUCT_LIST)
+  data object ProductList : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.PRODUCT_LIST
+  }
 
   @OptIn(ExperimentalSerializationApi::class)
   @Serializable
@@ -297,6 +351,16 @@ internal sealed interface Nav3Route {
     @SerialName(NavArgs.CAMPAIGN)
     val campaign: String? = null,
   ) : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.PRODUCT_DETAIL
+
+    override val arguments: Map<String, Any?>
+      get() = buildMap {
+        put(NavArgs.PRODUCT_ID, productId)
+        put(NavArgs.SOURCE, source)
+        campaign?.let { put(NavArgs.CAMPAIGN, it) }
+      }
+
     override val previewName: String
       get() = "ProductDetail($productId)"
   }
@@ -304,6 +368,12 @@ internal sealed interface Nav3Route {
   @Serializable
   @SerialName(RouteNames.CHECKOUT)
   data class Checkout(@SerialName(NavArgs.PRODUCT_ID) val productId: String) : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.CHECKOUT
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.PRODUCT_ID to productId)
+
     override val previewName: String
       get() = "Checkout($productId)"
   }
@@ -311,6 +381,12 @@ internal sealed interface Nav3Route {
   @Serializable
   @SerialName(RouteNames.CONFIRMATION)
   data class Confirmation(@SerialName(NavArgs.ORDER_ID) val orderId: String) : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.CONFIRMATION
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.ORDER_ID to orderId)
+
     override val previewName: String
       get() = "Confirmation($orderId)"
   }
@@ -318,6 +394,12 @@ internal sealed interface Nav3Route {
   @Serializable
   @SerialName(RouteNames.PROMO_DIALOG)
   data class PromoDialog(@SerialName(NavArgs.PROMO_ID) val promoId: String) : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.PROMO_DIALOG
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.PROMO_ID to promoId)
+
     override val previewName: String
       get() = "PromoDialog($promoId)"
   }
@@ -325,6 +407,12 @@ internal sealed interface Nav3Route {
   @Serializable
   @SerialName(RouteNames.SHARE_SHEET)
   data class ShareSheet(@SerialName(NavArgs.PRODUCT_ID) val productId: String) : Nav3Route {
+    override val routeName: String
+      get() = RouteNames.SHARE_SHEET
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.PRODUCT_ID to productId)
+
     override val previewName: String
       get() = "ShareSheet($productId)"
   }
@@ -332,12 +420,11 @@ internal sealed interface Nav3Route {
   @Serializable
   @SerialName(Performance.NAME)
   data class Performance(val index: Int, val generation: Int) : Nav3Route {
-    /**
-     * A constant rather than the mapper's result, so screens and tags don't run the mapper outside
-     * the performance scenario's timed extraction, e.g. in its disabled baseline.
-     */
     override val routeName: String
       get() = NAME
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf("index" to index, "generation" to generation)
 
     override val previewName: String
       get() = "Performance($index:$generation)"

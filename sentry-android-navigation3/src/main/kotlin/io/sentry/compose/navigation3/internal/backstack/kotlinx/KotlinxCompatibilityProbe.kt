@@ -5,9 +5,12 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import io.sentry.compose.navigation3.internal.backstack.ArgumentBudget
 import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
 import io.sentry.util.ExceptionUtils
+import io.sentry.util.UrlUtils
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /**
  * Checks whether the app's kotlinx.serialization version successfully links against the APIs used
@@ -58,14 +61,24 @@ internal interface KotlinxCompatibilityProbe {
   /** Probes the app's kotlinx.serialization version using [ProbeClass] and [ProbeObject]. */
   companion object : KotlinxCompatibilityProbe {
 
-    override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? {
+    override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? =
+      nameLookupLinkageError(::reflectiveSerializerOrNull, onInconclusive)
+
+    /**
+     * Like [nameLookupLinkageError], but looks up the probe types' serializers with
+     * [lookUpSerializer], so tests can make the lookup fail.
+     */
+    internal fun nameLookupLinkageError(
+      lookUpSerializer: (Class<*>) -> KSerializer<*>?,
+      onInconclusive: (Throwable?) -> Unit,
+    ): LinkageError? {
       var isSerializerMissing = false
 
       val error =
         probe(onInconclusive) {
           val descriptors =
             listOf(ProbeClass::class.java, ProbeObject::class.java).map { type ->
-              reflectiveSerializerOrNull(type)?.descriptor
+              lookUpSerializer(type)?.descriptor
             }
           for (descriptor in descriptors.filterNotNull()) {
             descriptor.serialName
@@ -84,23 +97,32 @@ internal interface KotlinxCompatibilityProbe {
       return error
     }
 
-    override fun encoderIncompatibility(): Throwable? = encoderFailureOf {
-      val writer = TreeArgumentWriter(ArgumentBudget())
+    override fun encoderIncompatibility(): Throwable? = encoderIncompatibility { writer ->
       @Suppress("UNCHECKED_CAST")
       KotlinxPropertiesEncoder.encode(
         ProbeClass.serializer() as KSerializer<Any>,
         ProbeClass(),
         writer,
       )
-      // An incompatible kotlinx.serialization version can link and run yet mis-encode properties
-      // under R8 without throwing. Verifying the fixture's output disables such a silently
-      // corrupting encoder instead of letting wrong arguments reach Sentry.
-      if (writer.argumentsOrThrow() == EXPECTED_PROBE_ENCODING) {
-        null
-      } else {
-        EncoderProducedUnexpectedOutput()
-      }
     }
+
+    /**
+     * Like [encoderIncompatibility], but encodes [ProbeClass] to the writer with [encode], so tests
+     * can make the encoder fail or produce unexpected output.
+     */
+    internal fun encoderIncompatibility(encode: (TreeArgumentWriter) -> Unit): Throwable? =
+      encoderFailureOf {
+        val writer = TreeArgumentWriter(ArgumentBudget())
+        encode(writer)
+        // An incompatible kotlinx.serialization version can link and run yet mis-encode properties
+        // under R8 without throwing. Verifying the fixture's output disables such a silently
+        // corrupting encoder instead of letting wrong arguments reach Sentry.
+        if (writer.argumentsOrThrow() == EXPECTED_PROBE_ENCODING) {
+          null
+        } else {
+          EncoderProducedUnexpectedOutput()
+        }
+      }
 
     /**
      * Runs [check], returning the failure it reports or throws, or `null` if it reports none.
@@ -150,8 +172,12 @@ internal interface KotlinxCompatibilityProbe {
 
     /**
      * A known serializable type used to test whether the app's kotlinx.serialization version
-     * supports serializer lookup and property encoding. Its scalar, list, and map properties
-     * exercise common encoding paths without running host app code.
+     * supports serializer lookup and property encoding, without running host app code.
+     *
+     * Covers primitives, unsigned numbers, value classes, renamed enums, collections, maps, nested
+     * classes, sealed polymorphism, nulls, and transient properties, plus sensitive property names
+     * and map keys. Changes to these serializers may change the expected output, letting the probe
+     * detect incompatibilities on versions CI hasn't tested.
      *
      * Internal visibility lets the probe look up its serializer the same way
      * [KotlinxBackStackEntryMapper] looks up serializers for the host app's public back stack entry
@@ -160,18 +186,69 @@ internal interface KotlinxCompatibilityProbe {
     @Serializable
     internal data class ProbeClass(
       val name: String = "probe",
+      val count: Int = 1,
+      val quantity: UInt = UInt.MAX_VALUE,
+      val authToken: String = "secret",
+      val price: ProbePrice = ProbePrice(1),
+      val login: ProbeLogin = ProbeLogin("secret"),
+      val sort: ProbeSort = ProbeSort.ASCENDING,
       val values: List<Int> = listOf(1),
-      val counts: Map<String, Int> = mapOf("count" to 1),
+      val sizes: Set<Int> = setOf(1, 2),
+      val counts: Map<String, Int> = mapOf("count" to 1, "apiKey" to 2),
+      val filter: ProbeFilter = ProbeFilter(),
+      val filters: List<ProbeFilter> = listOf(ProbeFilter()),
+      val origin: ProbeOrigin = ProbeOrigin.Search("query"),
+      val fallbackOrigin: ProbeOrigin = ProbeOrigin.DeepLink,
+      val note: String? = null,
+      @Transient val cache: String = "not encoded",
     )
+
+    /** A value class, which [KotlinxPropertiesEncoder] records as its underlying value. */
+    @Serializable @JvmInline internal value class ProbePrice(val cents: Int)
+
+    /** A value class whose underlying property's name is sensitive, so its value is filtered. */
+    @Serializable @JvmInline internal value class ProbeLogin(val password: String)
+
+    @Serializable
+    internal enum class ProbeSort {
+      @SerialName("ascending") ASCENDING,
+    }
+
+    @Serializable
+    internal data class ProbeFilter(val sessionId: String = "secret", val query: String = "query")
+
+    @Serializable
+    internal sealed interface ProbeOrigin {
+      @Serializable @SerialName("search") data class Search(val term: String) : ProbeOrigin
+
+      @Serializable @SerialName("deeplink") data object DeepLink : ProbeOrigin
+    }
 
     /**
      * [ProbeClass]'s expected encoding.
      *
      * A kotlinx.serialization version that encodes it to anything else mis-encodes properties and
-     * must not be used. None of the keys are on the sensitive denylist, so none are filtered.
+     * must not be used.
      */
     private val EXPECTED_PROBE_ENCODING: Map<String, Any?> =
-      mapOf("name" to "probe", "values" to listOf(1), "counts" to mapOf("count" to 1))
+      mapOf(
+        "name" to "probe",
+        "count" to 1,
+        "quantity" to 4_294_967_295L,
+        "authToken" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+        "price" to 1,
+        "login" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+        "sort" to "ascending",
+        "values" to listOf(1),
+        "sizes" to listOf(1, 2),
+        "counts" to mapOf("count" to 1, "apiKey" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
+        "filter" to mapOf("sessionId" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE, "query" to "query"),
+        "filters" to
+          listOf(mapOf("sessionId" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE, "query" to "query")),
+        "origin" to mapOf("type" to "search", "value" to mapOf("term" to "query")),
+        "fallbackOrigin" to mapOf("type" to "deeplink", "value" to emptyMap<String, Any?>()),
+        "note" to null,
+      )
 
     /**
      * A known serializable object used to test serializer lookup for the host app's object-based

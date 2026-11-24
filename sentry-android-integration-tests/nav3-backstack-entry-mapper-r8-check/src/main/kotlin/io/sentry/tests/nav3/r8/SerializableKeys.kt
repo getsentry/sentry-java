@@ -1,8 +1,14 @@
 package io.sentry.tests.nav3.r8
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 @Serializable data object PublicObject
 
@@ -45,6 +51,44 @@ sealed interface Origin {
 }
 
 /**
+ * An open polymorphic type, whose values the properties mapper records as `[Unencodable]`, even if
+ * their runtime classes are `@Serializable`, as it doesn't have the app's `SerializersModule`.
+ */
+interface Referrer
+
+@Serializable @SerialName("campaign") data class Campaign(val name: String) : Referrer
+
+/**
+ * Named and encoded by its custom serializer, which the plugin's companion `serializer()` returns.
+ */
+@Serializable(with = SlugSerializer::class) class Slug(val value: String)
+
+object SlugSerializer : KSerializer<Slug> {
+  override val descriptor: SerialDescriptor =
+    PrimitiveSerialDescriptor("slug", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: Slug) = encoder.encodeString(value.value)
+
+  override fun deserialize(decoder: Decoder): Slug = Slug(decoder.decodeString())
+}
+
+/**
+ * An enum whose constant has a body, so the constant is an instance of an anonymous subclass that
+ * isn't `@Serializable` itself. The mappers look up the declaring enum instead.
+ */
+@Serializable
+enum class TabWithBody {
+  HOME {
+    override fun icon(): String = "house"
+  };
+
+  abstract fun icon(): String
+}
+
+/** A value class used as a back stack key itself, which is boxed when passed as `Any`. */
+@Serializable @JvmInline value class TabId(val id: String)
+
+/**
  * Has a named companion object but no named-companion R8 rules of the app's own.
  * kotlinx.serialization 1.10.0+'s own rules keep what its reflective serializer lookup needs, so
  * the mappers must name it. Before 1.10.0, minification may strip that (e.g., always with 1.7.3,
@@ -85,7 +129,9 @@ data class ArgumentsKey(
   val filters: List<Filter>,
   val origin: Origin,
   val fallbackOrigin: Origin,
+  val referrer: Referrer,
   val note: String?,
+  val label: CharSequence,
   @Transient val cache: String = "not encoded",
 )
 
@@ -130,7 +176,9 @@ private val argumentsKey =
     filters = listOf(Filter(sessionId = "secret", query = "hats")),
     origin = Origin.Search("shoes"),
     fallbackOrigin = Origin.DeepLink,
+    referrer = Campaign("spring"),
     note = null,
+    label = StringBuilder("sale"),
   )
 
 private val argumentsKeyArguments =
@@ -147,7 +195,9 @@ private val argumentsKeyArguments =
     "filters" to listOf(mapOf("sessionId" to "[Filtered]", "query" to "hats")),
     "origin" to mapOf("type" to "search", "value" to mapOf("term" to "shoes")),
     "fallbackOrigin" to mapOf("type" to "deeplink", "value" to emptyMap<String, Any?>()),
+    "referrer" to "[Unencodable]",
     "note" to null,
+    "label" to "sale",
   )
 
 fun serializableExpectations(): List<Expectation> =
@@ -172,6 +222,14 @@ fun serializableExpectations(): List<Expectation> =
       ID_ARGUMENTS,
     ),
     Expectation("arguments key", argumentsKey, "$PKG.ArgumentsKey", argumentsKeyArguments),
+    Expectation("class with a custom serializer", Slug("shoes"), "slug", mapOf("value" to "shoes")),
+    Expectation(
+      "enum constant with a body",
+      TabWithBody.HOME,
+      "$PKG.TabWithBody",
+      mapOf("value" to "HOME"),
+    ),
+    Expectation("value class", TabId("feed"), "$PKG.TabId", mapOf("value" to "feed")),
     Expectation(
       "named companion without rules",
       NamedCompanionKey.of("1"),
@@ -187,14 +245,14 @@ fun serializableExpectations(): List<Expectation> =
     ),
   ) + Holder.keys()
 
-fun minificationChecks(): List<MinificationCheck> =
+fun minificationChecks(): List<Check> =
   listOf(
-    MinificationCheck(
+    Check(
       "PublicObject was renamed (runtime class ${PublicObject::class.java.name})",
       PublicObject::class.java.name != "$PKG.PublicObject",
     ),
     // Argument names come from serializer descriptors, so they survive R8 renaming fields.
-    MinificationCheck(
+    Check(
       "ArgumentsKey fields were renamed " +
         "(fields ${ArgumentsKey::class.java.declaredFields.map { it.name }})",
       ArgumentsKey::class.java.declaredFields.none { it.name == "productId" },

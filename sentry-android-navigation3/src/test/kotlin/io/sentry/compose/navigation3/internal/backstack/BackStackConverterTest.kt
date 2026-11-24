@@ -10,6 +10,7 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
@@ -406,6 +407,23 @@ class BackStackConverterTest {
 
     assertThat(sut.convert(HomeScreen()).arguments)
       .isEqualTo(mapOf("mode" to "PRIVATE", "ids" to listOf(1, 2)))
+  }
+
+  @Test
+  fun `convert drops the arguments for the character limit without converting mapper text that's too long`() {
+    val text = CountingText(length = MAX_ARGUMENT_CHARACTERS + 1, text = "short")
+    val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("title" to text)) })
+
+    val route = sut.convert(HomeScreen())
+
+    assertThat(route)
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          "/HomeScreen",
+          argumentDropReason = ArgumentDropReason.CHARACTER_LIMIT,
+        ),
+      )
+    assertThat(text.toStringCalls).isEqualTo(0)
   }
 
   @Test

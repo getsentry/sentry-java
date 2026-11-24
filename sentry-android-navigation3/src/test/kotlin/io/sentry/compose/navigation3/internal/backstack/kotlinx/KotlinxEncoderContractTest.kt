@@ -1,0 +1,660 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
+package io.sentry.compose.navigation3.internal.backstack.kotlinx
+
+import com.google.common.truth.Truth.assertWithMessage
+import java.io.File
+import kotlin.jvm.JvmInline
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.Transient
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.AbstractEncoder
+import kotlinx.serialization.encoding.CompositeEncoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import org.junit.Test
+
+/**
+ * Pins the serializer calls that [KotlinxPropertiesEncoder] relies on, using a recording encoder
+ * and baselines in `src/test/resources/kotlinx-encoder-contract/`.
+ *
+ * The encoder subclasses the experimental [AbstractEncoder] and derives names, map-key positions,
+ * and unsigned values from its calls. Changed calls could silently produce wrong arguments.
+ * Generated serializers come from the Kotlin compiler plugin; built-in serializers and encoder
+ * routing come from the runtime jar. CI checks the same baselines against the floor, latest stable
+ * release, and any newer release candidate (`-Pnav3TestKotlinxVersion=<version>`).
+ *
+ * The encoder has no `SerializersModule` of its own. The open polymorphic baseline pins that,
+ * without one, such a value's serializer throws before writing any part of it, so the encoder can
+ * substitute it. `CharSequence` fixtures register `String`, as the encoder recognizes their
+ * serializer and encodes their text itself.
+ *
+ * **When a test fails**
+ * 1. Review the tested release's changelog for changes to serializer calls.
+ * 2. Verify the encoder's output for the changed shape in a `KotlinxPropertiesEncoder*Test`. Fix
+ *    the encoder if needed, preserving support for the floor and newer versions.
+ * 3. Only then regenerate the baselines and review the diff:
+ *    ```
+ *    ./gradlew :sentry-android-navigation3:testReleaseUnitTest --tests '*EncoderContract*' \
+ *      -Pnav3UpdateEncoderContract=true [-Pnav3TestKotlinxVersion=<version>]
+ *    ```
+ */
+class KotlinxEncoderContractTest {
+
+  @Serializable
+  data class Primitives(
+    val boolean: Boolean,
+    val byte: Byte,
+    val short: Short,
+    val int: Int,
+    val long: Long,
+    val float: Float,
+    val double: Double,
+    val char: Char,
+    val string: String,
+  )
+
+  @Serializable data class Filter(val sessionId: String, val query: String)
+
+  @Serializable data class WithNestedClass(val filter: Filter, val filters: List<Filter>)
+
+  @Serializable
+  data class WithNullables(
+    val presentNote: String?,
+    val absentNote: String?,
+    val presentFilter: Filter?,
+    val absentFilter: Filter?,
+    val names: List<String?>,
+  )
+
+  @Serializable
+  enum class Sort {
+    @SerialName("price_asc") PRICE_ASC,
+    NEWEST,
+  }
+
+  @Serializable
+  data class WithCollections(
+    val tags: List<String>,
+    val emptyTags: List<String>,
+    val sizes: Set<Int>,
+    val counts: Map<String, Int>,
+    val bySort: Map<Sort, Int>,
+    val byRank: Map<Int, String>,
+  )
+
+  @Serializable data class WithEnums(val named: Sort, val unnamed: Sort)
+
+  @Serializable @JvmInline value class Price(val cents: Int)
+
+  @Serializable @JvmInline value class MaybeId(val id: String?)
+
+  @Serializable @JvmInline value class FilterRef(val filter: Filter)
+
+  @Serializable
+  data class WithValueClasses(
+    val price: Price,
+    val presentPrice: Price?,
+    val absentPrice: Price?,
+    val presentId: MaybeId,
+    val absentId: MaybeId,
+    val filterRef: FilterRef,
+  )
+
+  @Serializable
+  data class WithUnsignedNumbers(
+    val uByte: UByte,
+    val uShort: UShort,
+    val uInt: UInt,
+    val uLong: ULong,
+  )
+
+  @Serializable
+  sealed interface Origin {
+    @Serializable @SerialName("search") data class Search(val term: String) : Origin
+
+    @Serializable @SerialName("deeplink") data object DeepLink : Origin
+  }
+
+  @Serializable data class WithSealed(val origin: Origin, val fallbackOrigin: Origin)
+
+  interface Referrer
+
+  @Serializable @SerialName("campaign") data class Campaign(val name: String) : Referrer
+
+  @Serializable data class WithOpenPolymorphic(val referrer: Referrer)
+
+  @Serializable
+  data class WithCharSequences(
+    val label: CharSequence,
+    val labels: List<CharSequence>,
+    val countsByLabel: Map<CharSequence, Int>,
+  )
+
+  @Serializable data object Home
+
+  @Serializable data class WithDefaults(val query: String, val page: Int = 1, val size: Int = 20)
+
+  @Serializable
+  data class WithRenamedAndTransient(
+    @SerialName("product_id") val productId: String,
+    @Transient val cache: String = "not encoded",
+  )
+
+  @Serializable(with = CustomSerializer::class) data class CustomSerialized(val id: String)
+
+  object CustomSerializer : KSerializer<CustomSerialized> {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("custom.Name", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: CustomSerialized) {
+      encoder.encodeString(value.id)
+    }
+
+    override fun deserialize(decoder: Decoder): CustomSerialized =
+      CustomSerialized(decoder.decodeString())
+  }
+
+  @Serializable data class WithCustomSerializer(val custom: CustomSerialized)
+
+  @Serializable data class Generic<T>(val value: T)
+
+  /**
+   * Mirrors `ArgumentsKey` in the nav3-backstack-entry-mapper-r8-check module, except for its open
+   * polymorphic referrer.
+   */
+  @Serializable
+  data class ArgumentsKey(
+    val productId: Int,
+    val quantity: UInt,
+    val authToken: String,
+    val price: Price,
+    val sort: Sort,
+    val tags: List<String>,
+    val sizes: Set<Int>,
+    val counts: Map<String, Int>,
+    val filter: Filter,
+    val filters: List<Filter>,
+    val origin: Origin,
+    val fallbackOrigin: Origin,
+    val note: String?,
+    val label: CharSequence,
+    @Transient val cache: String = "not encoded",
+  )
+
+  // Classes
+
+  @Test
+  fun `a class with every primitive kind encodes each property as a typed element`() {
+    val value =
+      Primitives(
+        boolean = true,
+        byte = 1,
+        short = 2,
+        int = 3,
+        long = 4L,
+        float = 5.5f,
+        double = 6.5,
+        char = 'c',
+        string = "s",
+      )
+
+    assertMatchesBaseline("primitives", Primitives.serializer(), value)
+  }
+
+  @Test
+  fun `a class with nested classes encodes them as nested structures`() {
+    val value =
+      WithNestedClass(filter = Filter("a", "shoes"), filters = listOf(Filter("b", "hats")))
+
+    assertMatchesBaseline("nested-class", WithNestedClass.serializer(), value)
+  }
+
+  @Test
+  fun `a class with nullable properties encodes present and absent values`() {
+    val value =
+      WithNullables(
+        presentNote = "note",
+        absentNote = null,
+        presentFilter = Filter("a", "shoes"),
+        absentFilter = null,
+        names = listOf("a", null),
+      )
+
+    assertMatchesBaseline("nullables", WithNullables.serializer(), value)
+  }
+
+  @Test
+  fun `a class with default values encodes defaults and non-defaults`() {
+    val value = WithDefaults(query = "shoes", size = 50)
+
+    assertMatchesBaseline("defaults", WithDefaults.serializer(), value)
+  }
+
+  @Test
+  fun `a class with a renamed and a transient property encodes only the renamed property`() {
+    val value = WithRenamedAndTransient(productId = "42")
+
+    assertMatchesBaseline("renamed-and-transient", WithRenamedAndTransient.serializer(), value)
+  }
+
+  @Test
+  fun `a generic class encodes its value with the type argument's serializer`() {
+    val serializer = Generic.serializer(Filter.serializer())
+
+    assertMatchesBaseline("generic", serializer, Generic(Filter("a", "shoes")))
+  }
+
+  @Test
+  fun `an object encodes an empty structure`() {
+    assertMatchesBaseline("object", Home.serializer(), Home)
+  }
+
+  // Collections and maps
+
+  @Test
+  fun `lists, sets, and maps encode as collections with their sizes and alternating map entries`() {
+    val value =
+      WithCollections(
+        tags = listOf("a", "b"),
+        emptyTags = emptyList(),
+        sizes = setOf(1, 2),
+        counts = mapOf("views" to 1),
+        bySort = mapOf(Sort.NEWEST to 2),
+        byRank = mapOf(3 to "third"),
+      )
+
+    assertMatchesBaseline("collections", WithCollections.serializer(), value)
+  }
+
+  @Test
+  fun `a top-level list encodes as a collection`() {
+    val serializer = ListSerializer(String.serializer())
+
+    assertMatchesBaseline("top-level-list", serializer, listOf("a", "b"))
+  }
+
+  @Test
+  fun `a top-level map encodes as a collection with alternating entries`() {
+    val serializer = MapSerializer(String.serializer(), Int.serializer())
+
+    assertMatchesBaseline("top-level-map", serializer, mapOf("views" to 1, "likes" to 2))
+  }
+
+  // Enums, value classes, and unsigned numbers
+
+  @Test
+  fun `enums encode by element index with and without a serial name`() {
+    val value = WithEnums(named = Sort.PRICE_ASC, unnamed = Sort.NEWEST)
+
+    assertMatchesBaseline("enums", WithEnums.serializer(), value)
+  }
+
+  @Test
+  fun `a top-level enum encodes by element index`() {
+    assertMatchesBaseline("top-level-enum", Sort.serializer(), Sort.NEWEST)
+  }
+
+  @Test
+  fun `value classes encode inline as their underlying values`() {
+    val value =
+      WithValueClasses(
+        price = Price(999),
+        presentPrice = Price(1),
+        absentPrice = null,
+        presentId = MaybeId("id"),
+        absentId = MaybeId(null),
+        filterRef = FilterRef(Filter("a", "shoes")),
+      )
+
+    assertMatchesBaseline("value-classes", WithValueClasses.serializer(), value)
+  }
+
+  @Test
+  fun `a top-level value class encodes inline as its underlying value`() {
+    assertMatchesBaseline("top-level-value-class", Price.serializer(), Price(999))
+  }
+
+  @Test
+  fun `unsigned numbers encode inline as their signed storage values`() {
+    val value =
+      WithUnsignedNumbers(
+        uByte = UByte.MAX_VALUE,
+        uShort = UShort.MAX_VALUE,
+        uInt = UInt.MAX_VALUE,
+        uLong = ULong.MAX_VALUE,
+      )
+
+    assertMatchesBaseline("unsigned-numbers", WithUnsignedNumbers.serializer(), value)
+  }
+
+  // Polymorphism
+
+  @Test
+  fun `sealed properties encode as a structure of the serial name and value`() {
+    val value = WithSealed(origin = Origin.Search("shoes"), fallbackOrigin = Origin.DeepLink)
+
+    assertMatchesBaseline("sealed", WithSealed.serializer(), value)
+  }
+
+  @Test
+  fun `a top-level sealed value encodes as a structure of the serial name and value`() {
+    assertMatchesBaseline("top-level-sealed", Origin.serializer(), Origin.Search("shoes"))
+  }
+
+  /**
+   * [KotlinxPropertiesEncoder] substitutes a value only if its serializer throws before writing any
+   * part of it, as the serializer does here, even though the runtime class is `@Serializable`.
+   */
+  @Test
+  fun `open polymorphic properties throw before writing their value without a registering module`() {
+    val value = WithOpenPolymorphic(Campaign("spring"))
+
+    assertMatchesBaseline("open-polymorphic", WithOpenPolymorphic.serializer(), value)
+  }
+
+  /**
+   * [KotlinxPropertiesEncoder] identifies these properties by their polymorphic `CharSequence`
+   * serializer, and map keys by its descriptor. The module registers `String`, as without one the
+   * polymorphic serializer fails.
+   */
+  @Test
+  fun `CharSequence properties, elements, and map keys encode with the polymorphic CharSequence serializer`() {
+    val module = SerializersModule {
+      polymorphic(CharSequence::class) { subclass(String::class, String.serializer()) }
+    }
+    val value =
+      WithCharSequences(
+        label = "shoes",
+        labels = listOf("hats"),
+        countsByLabel = mapOf("socks" to 1),
+      )
+
+    assertMatchesBaseline("char-sequences", WithCharSequences.serializer(), value, module)
+  }
+
+  // Custom serializers
+
+  @Test
+  fun `a custom serializer property encodes the custom serializer's primitive`() {
+    val value = WithCustomSerializer(CustomSerialized("42"))
+
+    assertMatchesBaseline("custom-serializer", WithCustomSerializer.serializer(), value)
+  }
+
+  @Test
+  fun `a top-level custom serializer encodes its primitive`() {
+    assertMatchesBaseline("top-level-custom-serializer", CustomSerializer, CustomSerialized("42"))
+  }
+
+  // Combined
+
+  /**
+   * Mirrors the R8 check's value, except that it leaves out the open polymorphic referrer, whose
+   * serializer throws as the open polymorphic test pins, and the label is a `String` rather than a
+   * `StringBuilder`, as the module must register the label's class. The module registers
+   * `CharSequence` values as the test above does.
+   */
+  @Test
+  fun `the R8 check's arguments key encodes every rule it covers`() {
+    val module = SerializersModule {
+      polymorphic(CharSequence::class) { subclass(String::class, String.serializer()) }
+    }
+    val value =
+      ArgumentsKey(
+        productId = 42,
+        quantity = UInt.MAX_VALUE,
+        authToken = "secret",
+        price = Price(999),
+        sort = Sort.PRICE_ASC,
+        tags = listOf("a", "b"),
+        sizes = setOf(1, 2),
+        counts = mapOf("apiKey" to 1, "views" to 2),
+        filter = Filter(sessionId = "secret", query = "shoes"),
+        filters = listOf(Filter(sessionId = "secret", query = "hats")),
+        origin = Origin.Search("shoes"),
+        fallbackOrigin = Origin.DeepLink,
+        note = null,
+        label = "sale",
+      )
+
+    assertMatchesBaseline("arguments-key", ArgumentsKey.serializer(), value, module)
+  }
+
+  private fun <T> assertMatchesBaseline(
+    name: String,
+    serializer: SerializationStrategy<T>,
+    value: T,
+    serializersModule: SerializersModule = EmptySerializersModule(),
+  ) {
+    val encoder = RecordingEncoder(serializersModule)
+    try {
+      encoder.encodeSerializableValue(serializer, value)
+    } catch (e: SerializationException) {
+      // Recorded rather than thrown, so that a baseline can pin which calls precede the exception.
+      encoder.calls += "threw ${e::class.simpleName}"
+    }
+    val calls = encoder.calls
+
+    val fileName = "$name.txt"
+    if (System.getProperty(UPDATE_PROPERTY).toBoolean()) {
+      val dir = File(checkNotNull(System.getProperty(DIR_PROPERTY)) { "$DIR_PROPERTY is not set" })
+      dir.mkdirs()
+      File(dir, fileName).writeText(calls.joinToString(separator = "\n", postfix = "\n"))
+      return
+    }
+    val baseline =
+      checkNotNull(javaClass.classLoader?.getResource("$BASELINE_DIR/$fileName")) {
+          "Missing baseline $BASELINE_DIR/$fileName. Regenerate it as described in " +
+            "KotlinxEncoderContractTest's KDoc."
+        }
+        .readText()
+        .lines()
+        .filter { it.isNotEmpty() }
+
+    assertWithMessage(
+        "Encoder calls for '$name' differ from $BASELINE_DIR/$fileName. See " +
+          "KotlinxEncoderContractTest's KDoc before regenerating it.",
+      )
+      .that(calls)
+      .containsExactlyElementsIn(baseline)
+      .inOrder()
+  }
+
+  /**
+   * Records each call it receives as an indented line. Calls made from within another call, such as
+   * [encodeValue] from [encodeString], and the calls between [beginStructure] and [endStructure]
+   * are indented one level deeper.
+   */
+  private class RecordingEncoder(override val serializersModule: SerializersModule) :
+    AbstractEncoder() {
+
+    val calls = mutableListOf<String>()
+    private var depth = 0
+
+    private fun record(call: String) {
+      calls += "  ".repeat(depth) + call
+    }
+
+    private inline fun <R> recordAround(call: String, block: () -> R): R {
+      record(call)
+      depth++
+      try {
+        return block()
+      } finally {
+        depth--
+      }
+    }
+
+    override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
+      record("encodeElement(${describe(descriptor)}, ${element(descriptor, index)})")
+      return true
+    }
+
+    override fun shouldEncodeElementDefault(descriptor: SerialDescriptor, index: Int): Boolean =
+      recordAround(
+        "shouldEncodeElementDefault(${describe(descriptor)}, ${element(descriptor, index)})",
+      ) {
+        super.shouldEncodeElementDefault(descriptor, index)
+      }
+
+    override fun <T> encodeSerializableElement(
+      descriptor: SerialDescriptor,
+      index: Int,
+      serializer: SerializationStrategy<T>,
+      value: T,
+    ) {
+      recordAround(
+        "encodeSerializableElement(${describe(descriptor)}, ${element(descriptor, index)}, " +
+          "${describe(serializer.descriptor)})",
+      ) {
+        super.encodeSerializableElement(descriptor, index, serializer, value)
+      }
+    }
+
+    override fun <T : Any> encodeNullableSerializableElement(
+      descriptor: SerialDescriptor,
+      index: Int,
+      serializer: SerializationStrategy<T>,
+      value: T?,
+    ) {
+      recordAround(
+        "encodeNullableSerializableElement(${describe(descriptor)}, " +
+          "${element(descriptor, index)}, ${describe(serializer.descriptor)})",
+      ) {
+        super.encodeNullableSerializableElement(descriptor, index, serializer, value)
+      }
+    }
+
+    override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
+      recordAround("encodeSerializableValue(${describe(serializer.descriptor)})") {
+        super.encodeSerializableValue(serializer, value)
+      }
+    }
+
+    override fun <T : Any> encodeNullableSerializableValue(
+      serializer: SerializationStrategy<T>,
+      value: T?,
+    ) {
+      recordAround("encodeNullableSerializableValue(${describe(serializer.descriptor)})") {
+        super.encodeNullableSerializableValue(serializer, value)
+      }
+    }
+
+    override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
+      record("beginStructure(${describe(descriptor)})")
+      depth++
+      return this
+    }
+
+    override fun beginCollection(
+      descriptor: SerialDescriptor,
+      collectionSize: Int,
+    ): CompositeEncoder =
+      recordAround("beginCollection(${describe(descriptor)}, size=$collectionSize)") {
+        super.beginCollection(descriptor, collectionSize)
+      }
+
+    override fun endStructure(descriptor: SerialDescriptor) {
+      depth--
+      record("endStructure(${describe(descriptor)})")
+    }
+
+    override fun encodeInline(descriptor: SerialDescriptor): Encoder {
+      record("encodeInline(${describe(descriptor)})")
+      return super.encodeInline(descriptor)
+    }
+
+    override fun encodeNotNullMark() {
+      record("encodeNotNullMark")
+    }
+
+    override fun encodeNull() {
+      record("encodeNull")
+    }
+
+    override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
+      recordAround("encodeEnum(${describe(enumDescriptor)}, ${element(enumDescriptor, index)})") {
+        super.encodeEnum(enumDescriptor, index)
+      }
+    }
+
+    override fun encodeBoolean(value: Boolean) {
+      recordAround("encodeBoolean($value)") { super.encodeBoolean(value) }
+    }
+
+    override fun encodeByte(value: Byte) {
+      recordAround("encodeByte($value)") { super.encodeByte(value) }
+    }
+
+    override fun encodeShort(value: Short) {
+      recordAround("encodeShort($value)") { super.encodeShort(value) }
+    }
+
+    override fun encodeInt(value: Int) {
+      recordAround("encodeInt($value)") { super.encodeInt(value) }
+    }
+
+    override fun encodeLong(value: Long) {
+      recordAround("encodeLong($value)") { super.encodeLong(value) }
+    }
+
+    override fun encodeFloat(value: Float) {
+      recordAround("encodeFloat($value)") { super.encodeFloat(value) }
+    }
+
+    override fun encodeDouble(value: Double) {
+      recordAround("encodeDouble($value)") { super.encodeDouble(value) }
+    }
+
+    override fun encodeChar(value: Char) {
+      recordAround("encodeChar('$value')") { super.encodeChar(value) }
+    }
+
+    override fun encodeString(value: String) {
+      recordAround("encodeString(\"$value\")") { super.encodeString(value) }
+    }
+
+    override fun encodeValue(value: Any) {
+      val rendered =
+        when (value) {
+          is String -> "\"$value\""
+          is Char -> "'$value'"
+          else -> value.toString()
+        }
+      record("encodeValue(${value::class.simpleName} $rendered)")
+    }
+
+    /** Describes [descriptor] by its serial name, without this test's package prefix, and kind. */
+    private fun describe(descriptor: SerialDescriptor): String {
+      val flags = buildString {
+        if (descriptor.isInline) append(", inline")
+        if (descriptor.isNullable) append(", nullable")
+      }
+      return "${descriptor.serialName.removePrefix(TYPE_PREFIX)}, ${descriptor.kind}$flags"
+    }
+
+    private fun element(descriptor: SerialDescriptor, index: Int): String =
+      "$index=${descriptor.getElementName(index)}"
+  }
+
+  private companion object {
+    const val BASELINE_DIR = "kotlinx-encoder-contract"
+    const val DIR_PROPERTY = "nav3.encoderContractDir"
+    const val UPDATE_PROPERTY = "nav3.updateEncoderContract"
+    val TYPE_PREFIX = "${KotlinxEncoderContractTest::class.java.name}."
+  }
+}

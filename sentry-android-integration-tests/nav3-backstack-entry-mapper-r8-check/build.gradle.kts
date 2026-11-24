@@ -11,17 +11,21 @@ plugins {
 val sentryVersion = libs.versions.sentry.get()
 
 // Defaults to the min version sentry-android-navigation3 supports, whose R8 rules are the most
-// limited. Override with -Pnav3CheckKotlinxVersion=<version>.
+// limited. scripts/test-nav3-backstack-entry-mapper-r8.sh overrides it with
+// -Pnav3CheckKotlinxVersion=<version> for the latest stable release and any newer release
+// candidate.
 val kotlinxVersionOverride = providers.gradleProperty("nav3CheckKotlinxVersion").orNull
-val kotlinxVersion = kotlinxVersionOverride ?: nav3Libs.versions.kotlinxSerializationFloor.get()
+val kotlinxVersion = kotlinxVersionOverride ?: matrixLibs.versions.kotlinxSerialization.floor.get()
 
 // kotlinx.serialization's own R8 rules keep what its lookup of named companion objects needs from
 // 1.10.0 on. With older versions, whether the lookup survives without the app's own rules depends
 // on the version and R8 (e.g., 1.9.x's succeeds in R8 compat mode only), so either outcome is
 // accepted.
 val kotlinxKeepsNamedCompanions =
-  kotlinxVersion.split(".").let { (major, minor) ->
-    major.toInt() > 1 || (major.toInt() == 1 && minor.toInt() >= 10)
+  kotlinxVersion.split('.', '-').let { parts ->
+    val major = parts[0].toInt()
+    val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
+    major > 1 || (major == 1 && minor >= 10)
   }
 
 android {
@@ -69,13 +73,12 @@ android {
 
 dependencies {
   implementation("io.sentry:sentry-android-navigation3:$sentryVersion")
+  // Lets the check read the integrations the SDK reports, which sentry-android-navigation3 only
+  // has as a runtime dependency.
+  implementation("io.sentry:sentry:$sentryVersion")
   // compileOnly in sentry-android-navigation3; always available for apps that use Nav3.
   implementation(libs.androidx.compose.runtime)
 
-  implementation(nav3Libs.kotlinx.serialization.core) {
-    version {
-      require(kotlinxVersion)
-      kotlinxVersionOverride?.let { strictly(it) }
-    }
-  }
+  // Strict, so that no other dependency can raise the version the check runs against.
+  implementation(matrixLibs.kotlinxSerialization.core) { version { strictly(kotlinxVersion) } }
 }

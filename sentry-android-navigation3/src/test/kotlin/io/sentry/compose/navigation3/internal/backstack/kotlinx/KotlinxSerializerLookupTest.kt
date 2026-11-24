@@ -12,10 +12,6 @@ import org.junit.Test
 
 class KotlinxSerializerLookupTest {
 
-  @Serializable @SerialName("Detail") data class Detail(val id: String)
-
-  @Serializable @SerialName("Home") data object Home
-
   @Serializable
   @SerialName("Route")
   sealed interface Route {
@@ -121,6 +117,46 @@ class KotlinxSerializerLookupTest {
       PrimitiveSerialDescriptor("fatal", PrimitiveKind.STRING)
   }
 
+  @Serializable(with = PublicFatallyUninitializableSerializer::class)
+  internal class FatallyUninitializable
+
+  internal object PublicFatallyUninitializableSerializer :
+    NamingOnlySerializer<FatallyUninitializable>() {
+    init {
+      if (System.nanoTime() != 0L) throw OutOfMemoryError("class serializer init failed fatally")
+    }
+
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("fatal.class", PrimitiveKind.STRING)
+  }
+
+  // A serializer class, unlike an object, is constructed by the type's serializer() method, so an
+  // exception its constructor throws reaches reflection without an ExceptionInInitializerError.
+
+  @Serializable(with = FailingConstructionSerializer::class) internal class FailingConstruction
+
+  internal class FailingConstructionSerializer : NamingOnlySerializer<FailingConstruction>() {
+    init {
+      if (System.nanoTime() != 0L) error("serializer construction failed")
+    }
+
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("failingConstruction", PrimitiveKind.STRING)
+  }
+
+  @Serializable(with = InterruptedConstructionSerializer::class)
+  internal class InterruptedConstruction
+
+  internal class InterruptedConstructionSerializer :
+    NamingOnlySerializer<InterruptedConstruction>() {
+    init {
+      if (System.nanoTime() != 0L) throw InterruptedException("serializer construction interrupted")
+    }
+
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("interruptedConstruction", PrimitiveKind.STRING)
+  }
+
   // @Serializable types
 
   @Test
@@ -172,7 +208,7 @@ class KotlinxSerializerLookupTest {
     assertThat(serializer?.descriptor?.serialName).isEqualTo("PrivateClass")
   }
 
-  // Types that aren't @Serializable but that kotlinx serialization can serialize
+  // Types that aren't @Serializable but that kotlinx.serialization can serialize
 
   @Test
   fun `returns kotlinx serialization's serializers for built-in types`() {
@@ -265,14 +301,49 @@ class KotlinxSerializerLookupTest {
   }
 
   @Test
-  fun `throws a private object's fatal serializer initializer error wrapped in an InvocationTargetException`() {
+  fun `throws an exception from a class's serializer construction wrapped in an InvocationTargetException`() {
     val thrown =
       assertThrows(InvocationTargetException::class.java) {
+        reflectiveSerializerOrNull(FailingConstruction::class.java)
+      }
+
+    assertThat(thrown).hasCauseThat().isInstanceOf(IllegalStateException::class.java)
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("serializer construction failed")
+  }
+
+  @Test
+  fun `restores the interrupt status when a class's serializer construction is interrupted`() {
+    try {
+      val thrown =
+        assertThrows(InvocationTargetException::class.java) {
+          reflectiveSerializerOrNull(InterruptedConstruction::class.java)
+        }
+
+      assertThat(thrown).hasCauseThat().isInstanceOf(InterruptedException::class.java)
+      assertThat(Thread.currentThread().isInterrupted).isTrue()
+    } finally {
+      Thread.interrupted()
+    }
+  }
+
+  @Test
+  fun `propagates a class's fatal serializer initializer error unwrapped`() {
+    val thrown =
+      assertThrows(OutOfMemoryError::class.java) {
+        reflectiveSerializerOrNull(FatallyUninitializable::class.java)
+      }
+
+    assertThat(thrown).hasMessageThat().isEqualTo("class serializer init failed fatally")
+  }
+
+  @Test
+  fun `propagates a private object's fatal serializer initializer error unwrapped`() {
+    val thrown =
+      assertThrows(OutOfMemoryError::class.java) {
         reflectiveSerializerOrNull(PrivateFatal::class.java)
       }
 
-    assertThat(thrown).hasCauseThat().isInstanceOf(OutOfMemoryError::class.java)
-    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("serializer init failed fatally")
+    assertThat(thrown).hasMessageThat().isEqualTo("serializer init failed fatally")
   }
 
   // Private object lookups that fail

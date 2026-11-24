@@ -1,0 +1,6 @@
+encodeSerializableValue(WithRenamedAndTransient, CLASS)
+  beginStructure(WithRenamedAndTransient, CLASS)
+    encodeElement(WithRenamedAndTransient, CLASS, 0=product_id)
+    encodeString("42")
+      encodeValue(String "42")
+  endStructure(WithRenamedAndTransient, CLASS)

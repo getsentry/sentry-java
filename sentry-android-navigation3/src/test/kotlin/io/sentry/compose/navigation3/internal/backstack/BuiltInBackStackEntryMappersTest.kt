@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.internal.backstack
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.Sentry
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
@@ -12,11 +13,14 @@ import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDia
 import io.sentry.test.initForTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
@@ -25,6 +29,10 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 
+/**
+ * The built-in mappers are singletons whose caches and warning history persist across tests. Tests
+ * that assert logs must use `create()` or a fresh class loader to isolate that state.
+ */
 class BuiltInBackStackEntryMappersTest {
 
   @Serializable @SerialName("Home") data object Home
@@ -35,6 +43,16 @@ class BuiltInBackStackEntryMappersTest {
 
   private val kotlinxMapper = BackStackEntryMapper<Any> { SentryBackStackEntry("Kotlinx") }
   private val logger = mock<ILogger>()
+
+  @Before
+  fun clearIntegrations() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+  }
+
+  @After
+  fun clearIntegrationsAfterTest() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+  }
 
   // serialName and serialNameAndProperties
 
@@ -89,27 +107,53 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName maps entries to null when the kotlinx mapper can't be loaded`() {
+  fun `reading BackStackEntryMapper SerialName doesn't create the kotlinx mapper`() {
+    val classLoader = KotlinxMapperHidingClassLoader()
+
+    classLoader.companionMapper("getSerialName")
+
+    assertThat(classLoader.wasKotlinxMapperRequested).isFalse()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
+  }
+
+  @Test
+  fun `reading BackStackEntryMapper SerialNameAndProperties doesn't create the kotlinx mapper`() {
+    val classLoader = KotlinxMapperHidingClassLoader()
+
+    classLoader.companionMapper("getSerialNameAndProperties")
+
+    assertThat(classLoader.wasKotlinxMapperRequested).isFalse()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
+  }
+
+  @Test
+  fun `BackStackEntryMapper SerialName maps entries to null and adds the mappers unavailable integration when the kotlinx mapper can't be loaded`() {
     val classLoader = KotlinxMapperHidingClassLoader()
 
     val mapper = classLoader.companionMapper("getSerialName")
 
     assertThat(mapper.map(Home)).isNull()
     assertThat(classLoader.wasKotlinxMapperRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test
-  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null when the kotlinx mapper can't be loaded`() {
+  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null and adds the mappers unavailable integration when the kotlinx mapper can't be loaded`() {
     val classLoader = KotlinxMapperHidingClassLoader()
 
     val mapper = classLoader.companionMapper("getSerialNameAndProperties")
 
     assertThat(mapper.map(Detail("1"))).isNull()
     assertThat(classLoader.wasKotlinxMapperRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName maps entries to null when kotlinx serialization is missing`() {
+  fun `BackStackEntryMapper SerialName maps entries to null and adds the mappers unavailable integration when kotlinx serialization is missing`() {
     val classLoader = KotlinxMapperHidingClassLoader(hidesKotlinx = true)
     val entry = classLoader.notSerializableEntry("1")
 
@@ -118,10 +162,12 @@ class BuiltInBackStackEntryMappersTest {
     assertThat(mapper.map("home")).isNull()
     assertThat(mapper.map(entry)).isNull()
     assertThat(classLoader.wasKotlinxRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test
-  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null when kotlinx serialization is missing`() {
+  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null and adds the mappers unavailable integration when kotlinx serialization is missing`() {
     val classLoader = KotlinxMapperHidingClassLoader(hidesKotlinx = true)
     val entry = classLoader.notSerializableEntry("1")
 
@@ -130,48 +176,49 @@ class BuiltInBackStackEntryMappersTest {
     assertThat(mapper.map("home")).isNull()
     assertThat(mapper.map(entry)).isNull()
     assertThat(classLoader.wasKotlinxRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
-  // First access from several threads
+  // First mapping from several threads
 
   @Test
-  fun `BackStackEntryMapper SerialName holds no lock while creating the mapper logs`() {
-    val race = raceOnFirstAccess("getSerialName")
+  fun `BackStackEntryMapper SerialName holds no lock while creating the mapper logs on first mapping`() {
+    val race = raceOnFirstMapping("getSerialName")
 
     assertThat(race.otherThreadLoggerGotAppLock).isTrue()
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName returns the mapper published first to racing threads`() {
-    val race = raceOnFirstAccess("getSerialName")
+  fun `BackStackEntryMapper SerialName uses the mapper published first for racing and later mappings`() {
+    val race = raceOnFirstMapping("getSerialName")
 
-    assertThat(race.otherThreadMapper).isSameInstanceAs(race.thisThreadMapper)
-    assertThat(race.laterMapper).isSameInstanceAs(race.thisThreadMapper)
+    assertThat(race.unavailableTypeWarnings).isEqualTo(1)
   }
 
   @Test
-  fun `BackStackEntryMapper SerialNameAndProperties holds no lock while creating the mapper logs`() {
-    val race = raceOnFirstAccess("getSerialNameAndProperties")
+  fun `BackStackEntryMapper SerialNameAndProperties holds no lock while creating the mapper logs on first mapping`() {
+    val race = raceOnFirstMapping("getSerialNameAndProperties")
 
     assertThat(race.otherThreadLoggerGotAppLock).isTrue()
   }
 
   @Test
-  fun `BackStackEntryMapper SerialNameAndProperties returns the mapper published first to racing threads`() {
-    val race = raceOnFirstAccess("getSerialNameAndProperties")
+  fun `BackStackEntryMapper SerialNameAndProperties uses the mapper published first for racing and later mappings`() {
+    val race = raceOnFirstMapping("getSerialNameAndProperties")
 
-    assertThat(race.otherThreadMapper).isSameInstanceAs(race.thisThreadMapper)
-    assertThat(race.laterMapper).isSameInstanceAs(race.thisThreadMapper)
+    assertThat(race.unavailableTypeWarnings).isEqualTo(1)
   }
 
   // MIN_KOTLINX_SERIALIZATION_VERSION
 
   @Test
-  fun `MIN_KOTLINX_SERIALIZATION_VERSION matches kotlinxSerializationFloor in nav3 versions catalog`() {
+  fun `MIN_KOTLINX_SERIALIZATION_VERSION matches kotlinxSerialization-floor in the dependency matrix catalog`() {
     val floor =
       checkNotNull(System.getProperty(KOTLINX_SERIALIZATION_FLOOR_PROPERTY)) {
         "System property $KOTLINX_SERIALIZATION_FLOOR_PROPERTY is missing. Run this test through " +
-          "Gradle, which sets it from kotlinxSerializationFloor in gradle/nav3.versions.toml."
+          "Gradle, which sets it from kotlinxSerialization-floor in " +
+          "gradle/dependency-matrix.versions.toml."
       }
 
     assertThat(MIN_KOTLINX_SERIALIZATION_VERSION).isEqualTo(floor)
@@ -180,20 +227,16 @@ class BuiltInBackStackEntryMappersTest {
   // create()
 
   @Test
-  fun `create() - returns the kotlinx mapper when it can be created`() {
+  fun `create() - returns the kotlinx mapper without logging or adding the mappers unavailable integration when it can be created`() {
     val mapper =
       BuiltInBackStackEntryMappers.create(logger = { logger }) {
         kotlinxMapper
       }
 
     assertThat(mapper).isSameInstanceAs(kotlinxMapper)
-  }
-
-  @Test
-  fun `create() - doesn't log when the kotlinx mapper can be created`() {
-    BuiltInBackStackEntryMappers.create(logger = { logger }) { kotlinxMapper }
-
     verifyNoInteractions(logger)
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test
@@ -228,7 +271,17 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `create() - propagates an exception that is not a linkage error from creating the kotlinx mapper`() {
+  fun `create() - adds the mappers unavailable integration when creating the kotlinx mapper throws a LinkageError`() {
+    BuiltInBackStackEntryMappers.create(logger = { logger }) {
+      throw NoClassDefFoundError("kotlinx/serialization/KSerializer")
+    }
+
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
+  }
+
+  @Test
+  fun `create() - propagates an exception that isn't a LinkageError from creating the kotlinx mapper`() {
     val exception = IllegalStateException("mapper bug")
 
     val thrown =
@@ -242,16 +295,17 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   /**
-   * Races two threads on the first access of a fresh copy of the companion mapper [getterName], in
-   * the shape of a deadlock: this thread holds a lock of the app's while it accesses the mapper,
-   * and the other thread's creation of the mapper, which is already logging that the kotlinx mapper
-   * can't be loaded, waits for that lock in the app's logger.
+   * Races the first mappings of [Home] by the mapper of [getterName] to detect lock inversion: this
+   * thread holds an app lock while mapping, and the other thread's mapper creation logs through a
+   * logger that needs the same lock. Holding a lazy-initialization lock while logging would
+   * deadlock. Then maps [Home] once more.
    *
-   * Every wait is bounded, so a deadlock makes the logger give up on the lock rather than hang. The
-   * assertions inside are precondition guards that the race ran as intended, not the contracts
-   * under test.
+   * Both threads create an [UnavailableBackStackEntryMapper], which warns once per entry type, so a
+   * single warning shows that every mapping used the one mapper published first.
+   *
+   * Bounded waits prevent a hang. Assertions inside the helper verify the race's preconditions.
    */
-  private fun raceOnFirstAccess(getterName: String): FirstAccessRace {
+  private fun raceOnFirstMapping(getterName: String): FirstMappingRace {
     val appLock = ReentrantLock()
     val logger = LockingLogger(appLock, thisThread = Thread.currentThread())
     initForTest(
@@ -263,54 +317,51 @@ class BuiltInBackStackEntryMappersTest {
       true,
     )
     try {
-      val classLoader = KotlinxMapperHidingClassLoader()
+      val mapper = KotlinxMapperHidingClassLoader().companionMapper(getterName)
       appLock.lock()
-      var otherThreadMapper: Any? = null
-      val otherThread =
-        thread(name = "other-mapper-user") {
-          otherThreadMapper = classLoader.companionMapper(getterName).delegate
-        }
+      val otherThread = thread(name = "other-mapper-user") { mapper.map(Home) }
       assertThat(logger.otherThreadLogging.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
 
-      val thisThreadMapper =
-        try {
-          classLoader.companionMapper(getterName).delegate
-        } finally {
-          appLock.unlock()
-        }
+      try {
+        mapper.map(Home)
+      } finally {
+        appLock.unlock()
+      }
       otherThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS * 2))
       assertThat(otherThread.isAlive).isFalse()
+      mapper.map(Home)
 
-      return FirstAccessRace(
+      return FirstMappingRace(
         otherThreadLoggerGotAppLock = logger.otherThreadGotLock,
-        otherThreadMapper = otherThreadMapper,
-        thisThreadMapper = thisThreadMapper,
-        laterMapper = classLoader.companionMapper(getterName).delegate,
+        unavailableTypeWarnings = logger.unavailableTypeWarnings.get(),
       )
     } finally {
       Sentry.close()
     }
   }
 
-  private class FirstAccessRace(
+  private class FirstMappingRace(
     val otherThreadLoggerGotAppLock: Boolean,
-    val otherThreadMapper: Any?,
-    val thisThreadMapper: Any,
-    val laterMapper: Any,
+    /** How many times the racing and later mappings warned that [Home]'s mapper is unavailable. */
+    val unavailableTypeWarnings: Int,
   )
 
   /**
    * An app's logger that takes [appLock] to log that the built-in mappers couldn't be created, as
    * an app's logger might, giving up after a timeout. Records whether a thread other than
-   * [thisThread] got the lock.
+   * [thisThread] got the lock, and counts warnings that an entry type's mapper is unavailable.
    */
   private class LockingLogger(private val appLock: ReentrantLock, private val thisThread: Thread) :
     ILogger {
     val otherThreadLogging = CountDownLatch(1)
 
+    val unavailableTypeWarnings = AtomicInteger()
+
     @Volatile var otherThreadGotLock = false
 
-    override fun log(level: SentryLevel, message: String, vararg args: Any?) = Unit
+    override fun log(level: SentryLevel, message: String, vararg args: Any?) {
+      if (message.startsWith(MAPPER_UNAVAILABLE)) unavailableTypeWarnings.incrementAndGet()
+    }
 
     override fun log(level: SentryLevel, message: String, throwable: Throwable?) {
       if (!message.startsWith(CREATION_FAILED)) return
@@ -405,7 +456,9 @@ class BuiltInBackStackEntryMappersTest {
 
     const val CREATION_FAILED = "Nav3 built-in mapper creation failed."
 
-    /** Set by the module's Gradle build from `kotlinxSerializationFloor`. */
+    const val MAPPER_UNAVAILABLE = "Nav3 mapper unavailable for type"
+
+    /** Set by the module's Gradle build from `kotlinxSerialization-floor`. */
     const val KOTLINX_SERIALIZATION_FLOOR_PROPERTY = "nav3.kotlinxSerializationFloor"
   }
 }

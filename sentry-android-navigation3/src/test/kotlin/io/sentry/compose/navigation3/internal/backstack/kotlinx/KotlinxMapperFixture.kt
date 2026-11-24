@@ -20,23 +20,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 /**
- * Delegates to [delegate], recording each serialized value and throwing [error], if set, for the
- * values [failsFor] accepts.
- */
-internal class RecordingSerializer<T>(private val delegate: KSerializer<T>) :
-  KSerializer<T> by delegate {
-  val serialized = mutableListOf<T>()
-  var error: Throwable? = null
-  var failsFor: (T) -> Boolean = { true }
-
-  override fun serialize(encoder: Encoder, value: T) {
-    serialized += value
-    error?.takeIf { failsFor(value) }?.let { throw it }
-    delegate.serialize(encoder, value)
-  }
-}
-
-/**
  * Serializes [Detail] with a descriptor whose shape, its `elementsCount` and `kind`, throws
  * [elementsCountError] and [kindError] when set. Counts every read of the shape in [shapeReads].
  * Encoding reads the descriptor's `kind`, so it throws [kindError] too.
@@ -76,11 +59,9 @@ internal class ShapeThrowingDetailSerializer(
 }
 
 /**
- * A [KotlinxCompatibilityProbe] that finds the app's kotlinx.serialization version compatible
- * unless [nameLookupError] or [encoderError] is set, so that mapper tests don't depend on the real
- * probe. Reports the name check inconclusive with [nameLookupInconclusive], if set. Any
- * [encoderError], whether a [LinkageError] or not, makes the properties encoder unusable and
- * disables property encoding. Counts the checks of the properties encoder in [encodingChecks].
+ * A controllable [KotlinxCompatibilityProbe] that reports compatibility by default. Set
+ * [nameLookupError] or [encoderError] to fail a check, or [nameLookupInconclusive] to report an
+ * inconclusive name check. Counts encoder checks in [encodingChecks].
  */
 internal class FakeCompatibilityProbe(
   private val nameLookupError: LinkageError? = null,
@@ -112,13 +93,15 @@ internal class FakeCompatibilityProbe(
  * [probe] finds the app's kotlinx.serialization version compatible by default.
  *
  * With `useDefaultLookUp = true`, the mapper uses its real serializer lookup, so [lookUp] and
- * [lookedUpTypes] are unused.
+ * [lookedUpTypes] are unused. With an `isAnnotatedSerializable` check, the mapper uses it instead
+ * of reading each type's `@Serializable` annotation.
  */
 internal class KotlinxMapperFixture
 private constructor(
   includeProperties: Boolean,
   useDefaultLookUp: Boolean,
   val probe: KotlinxCompatibilityProbe,
+  isAnnotatedSerializable: ((Class<*>) -> Boolean)?,
 ) {
   val logger = mock<ILogger>()
 
@@ -135,27 +118,39 @@ private constructor(
   val lookedUpTypes = mutableListOf<Class<*>>()
   var lookUp: (Class<*>) -> KSerializer<*>? = { serializers[it] }
 
-  val mapper =
-    if (useDefaultLookUp) {
-      KotlinxBackStackEntryMapper(includeProperties, logger = { logger }, probe = probe)
-    } else {
-      KotlinxBackStackEntryMapper(
-        includeProperties,
-        lookUpSerializer = {
+  val mapper: KotlinxBackStackEntryMapper
+
+  init {
+    val lookUpSerializer: (Class<*>) -> KSerializer<*>? =
+      if (useDefaultLookUp) {
+        ::reflectiveSerializerOrNull
+      } else {
+        {
           lookedUpTypes += it
           lookUp(it)
-        },
-        logger = { logger },
-        probe = probe,
-      )
-    }
+        }
+      }
+    mapper =
+      if (isAnnotatedSerializable == null) {
+        KotlinxBackStackEntryMapper(includeProperties, lookUpSerializer, { logger }, probe)
+      } else {
+        KotlinxBackStackEntryMapper(
+          includeProperties,
+          lookUpSerializer,
+          { logger },
+          probe,
+          isAnnotatedSerializable,
+        )
+      }
+  }
 
   companion object {
     fun create(
       includeProperties: Boolean = false,
       useDefaultLookUp: Boolean = false,
       probe: KotlinxCompatibilityProbe = FakeCompatibilityProbe(),
-    ) = KotlinxMapperFixture(includeProperties, useDefaultLookUp, probe)
+      isAnnotatedSerializable: ((Class<*>) -> Boolean)? = null,
+    ) = KotlinxMapperFixture(includeProperties, useDefaultLookUp, probe, isAnnotatedSerializable)
   }
 }
 

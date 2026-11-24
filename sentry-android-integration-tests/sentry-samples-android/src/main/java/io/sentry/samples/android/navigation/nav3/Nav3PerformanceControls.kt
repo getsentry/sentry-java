@@ -890,6 +890,8 @@ internal fun Nav3PerformancePanel(
 
     if (showExtractorControls) {
       PerfCard(title = "Extractor Inputs") {
+        val customExtractorControlsEnabled =
+          !state.performanceRunActive && state.mapperMode == Nav3PerformanceMapperMode.CUSTOM
         PerfModeRow(
           label = "Mapper",
           selectedLabel = state.mapperMode.label,
@@ -902,7 +904,7 @@ internal fun Nav3PerformancePanel(
         PerfModeRow(
           label = "Extractor cost",
           selectedLabel = state.extractorMode.label,
-          enabled = !state.performanceRunActive,
+          enabled = customExtractorControlsEnabled,
           options =
             Nav3PerformanceExtractorMode.entries.map { mode ->
               mode.label to { state.extractorMode = mode }
@@ -911,7 +913,7 @@ internal fun Nav3PerformancePanel(
         PerfModeRow(
           label = "Argument shape",
           selectedLabel = state.argumentMode.label,
-          enabled = !state.performanceRunActive,
+          enabled = customExtractorControlsEnabled,
           options =
             Nav3PerformanceArgumentMode.entries.map { mode ->
               mode.label to { state.argumentMode = mode }

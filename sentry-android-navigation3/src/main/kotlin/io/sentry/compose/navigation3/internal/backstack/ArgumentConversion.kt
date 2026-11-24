@@ -3,7 +3,6 @@ package io.sentry.compose.navigation3.internal.backstack
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
-import io.sentry.util.UrlUtils
 import java.util.IdentityHashMap
 
 /**
@@ -94,10 +93,13 @@ internal interface ArgumentSink {
 
   /**
    * Names the next value in the current map. If the map already has a value named [name], writing
-   * the next value throws [DropArguments], as recording only one of them would show Sentry a
-   * partial map as if it were complete.
+   * the next value throws [DropArguments].
+   *
+   * [describeDuplicate], if provided, returns the warning to log in that case instead of
+   * [DropArguments.DUPLICATE_KEY_WARNING]. It's only called for a duplicate, so it may do work that
+   * would be wasteful for every key, e.g., finding the key that [name] collides with.
    */
-  fun key(name: String)
+  fun key(name: String, describeDuplicate: (() -> String)? = null)
 
   /**
    * Writes [value] as the next value. Supports `null`, [Boolean], [Number], [CharSequence], and
@@ -106,10 +108,13 @@ internal interface ArgumentSink {
   fun scalar(value: Any?)
 
   /**
-   * Writes the value [compute] returns as the next value, as for [scalar]. A sink that enforces
-   * limits checks that the value can be written before calling [compute], so that host app code
-   * (e.g., a `toString()`) doesn't run for a value that won't be recorded, and can't replace the
-   * limit's drop reason with its own failure.
+   * Writes the value [compute] returns as the next value, as for [scalar].
+   *
+   * By default, computes the value first and then writes it through [scalar], so nothing is checked
+   * before [compute] runs. [TreeArgumentWriter] overrides this to check that the value can be
+   * written before calling [compute], so that host app code (e.g., a `toString()`) doesn't run for
+   * a value that won't be recorded, and can't replace the limit's drop reason with its own failure.
+   * A sink that wraps another must forward this method to keep that check.
    */
   fun computedScalar(compute: () -> Any?) {
     scalar(compute())
@@ -128,7 +133,7 @@ internal interface ArgumentSink {
 }
 
 /**
- * Something that can write info about a back stack entry's properties to an [ArgumentSink].
+ * Writes a back stack entry's arguments to an [ArgumentSink].
  *
  * Sources decide which data to expose and whether to filter sensitive values. The sink applies size
  * and structural limits without performing sensitive-data filtering.
@@ -153,12 +158,6 @@ internal interface ArgumentSource {
  *
  * [rootIdentity] identifies the source object represented by this entry's root argument map,
  * allowing references back to that object to be detected as cycles.
- *
- * **Key duplication**
- *
- * Duplicate keys are allowed only when both the key and the old and new values are
- * [UrlUtils.SENSITIVE_DATA_SUBSTITUTE], since replacing one redacted value with another loses no
- * information.
  */
 @Suppress("TooManyFunctions")
 internal class TreeArgumentWriter(
@@ -175,15 +174,25 @@ internal class TreeArgumentWriter(
     IdentityHashMap<Any, Unit>().apply { rootIdentity?.let { put(it, Unit) } }
 
   private var pendingKey: String? = null
+  private var describePendingDuplicate: (() -> String)? = null
 
   override var failure: DropArguments? = null
     private set
 
-  override fun beginMap(identity: Any?) = guarded { begin(LinkedHashMap<String, Any?>(), identity) }
+  override fun beginMap(identity: Any?) = guarded {
+    val map = LinkedHashMap<String, Any?>()
+    begin(map, map, identity)
+  }
 
-  override fun beginList(identity: Any?) = guarded { begin(ArrayList<Any?>(), identity) }
+  override fun beginList(identity: Any?) = guarded {
+    val list = ArrayList<Any?>()
+    begin(list, list, identity)
+  }
 
-  override fun key(name: String) = guarded { pendingKey = budget.spendText(name) }
+  override fun key(name: String, describeDuplicate: (() -> String)?) = guarded {
+    pendingKey = budget.spendText(name)
+    describePendingDuplicate = describeDuplicate
+  }
 
   override fun scalar(value: Any?) = writeScalar { value }
 
@@ -212,33 +221,31 @@ internal class TreeArgumentWriter(
     return root
   }
 
-  private fun begin(container: Any, identity: Any?) {
+  private fun begin(container: Any, value: Any, identity: Any?) {
     visitValue()
     if (identity != null && activeIdentities.put(identity, Unit) != null) {
       throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, DropArguments.STRUCTURE_WARNING)
     }
-    add(container)
+    add(value)
     containers += container
     identities += identity
   }
 
   /**
-   * Enforces the depth limit, spends one value for the value about to be added, and rejects a key
-   * that's already taken, before the value is computed.
+   * Checks the value about to be added before it's computed: enforces the depth limit, rejects a
+   * key that's already taken, and then spends one value from [budget].
    */
   private fun visitValue() {
     // A value added while n containers are open has a depth of n.
     if (containers.size > MAX_ARGUMENT_DEPTH) {
       throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, DropArguments.STRUCTURE_WARNING)
     }
-    budget.spendValue()
-    // A substitute key may still be written again with a substitute value, which add() decides
-    // once the value is known.
     val key = pendingKey
-    val isKeyTaken = key != null && (containers.last() as? Map<*, *>)?.containsKey(key) == true
-    if (isKeyTaken && !key.isSubstitute()) {
-      throw DropArguments(ArgumentDropReason.DUPLICATE_KEY, DropArguments.DUPLICATE_KEY_WARNING)
+    val map = containers.last() as? LinkedHashMap<*, *>
+    if (key != null && map != null && map.containsKey(key)) {
+      throw duplicateKey()
     }
+    budget.spendValue()
   }
 
   @Suppress("UNCHECKED_CAST")
@@ -247,17 +254,18 @@ internal class TreeArgumentWriter(
       is ArrayList<*> -> (parent as ArrayList<Any?>) += value
       else -> {
         val key = checkNotNull(pendingKey) { "A map value was written without a key." }
-        val map = parent as LinkedHashMap<String, Any?>
-        val replacesSubstituteWithSubstitute =
-          key.isSubstitute() && map[key].isSubstitute() && value.isSubstitute()
-        if (map.containsKey(key) && !replacesSubstituteWithSubstitute) {
-          throw DropArguments(ArgumentDropReason.DUPLICATE_KEY, DropArguments.DUPLICATE_KEY_WARNING)
-        }
-        map[key] = value
+        (parent as LinkedHashMap<String, Any?>)[key] = value
         pendingKey = null
+        describePendingDuplicate = null
       }
     }
   }
+
+  private fun duplicateKey(): DropArguments =
+    DropArguments(
+      ArgumentDropReason.DUPLICATE_KEY,
+      describePendingDuplicate?.invoke() ?: DropArguments.DUPLICATE_KEY_WARNING,
+    )
 
   private inline fun writeScalar(compute: () -> Any?) = guarded {
     visitValue()
@@ -268,7 +276,7 @@ internal class TreeArgumentWriter(
         // JSON has no NaN or infinity, and Sentry's JSON writer throws for them, which would drop
         // the whole event these arguments are attached to. We record them as strings instead.
         is Number -> if (value.isNonFinite()) budget.spendText(value.toString()) else value
-        is CharSequence,
+        is CharSequence -> budget.spendText(value)
         is Char -> budget.spendText(value.toString())
         else ->
           throw IllegalArgumentException("Unsupported scalar of type ${value.javaClass.name}.")
@@ -307,9 +315,21 @@ internal class HostArgumentSource(
 
   private fun writeEntries(map: Map<*, *>, sink: ArgumentSink) {
     for ((key, value) in map) {
-      sink.key(key.toString())
+      val name = key.toString()
+      sink.key(name) { duplicateKeyWarning(map, key, name) }
       write(value, sink)
     }
+  }
+
+  /**
+   * Names only the colliding keys' types, as the keys themselves may contain host data. Collisions
+   * are rare, so we re-scan [map] instead of tracking the original keys of every map.
+   */
+  private fun duplicateKeyWarning(map: Map<*, *>, key: Any?, name: String): String {
+    val otherKey = map.keys.firstOrNull { it !== key && it.toString() == name }
+    return "A Nav3 map key (${key?.let { it::class.simpleName }}) stringifies to the same " +
+      "string as another key (${otherKey?.let { it::class.simpleName }}). Dropping this " +
+      "entry's arguments."
   }
 
   private fun write(value: Any?, sink: ArgumentSink) {
@@ -368,8 +388,8 @@ private fun Any.asCollectionOrNull(): Collection<*>? =
  * Control-flow signal to drop an entry's arguments. Overrides [fillInStackTrace] to skip
  * stack-trace capture.
  *
- * [warning] is logged when the arguments are dropped, or no-ops if `null` (e.g., because the source
- * logged its own).
+ * [warning] is logged when the arguments are dropped. Use `null` if no warning is needed, for
+ * example when the source already logged the failure.
  */
 internal class DropArguments(
   val reason: ArgumentDropReason,
@@ -415,15 +435,28 @@ internal class ArgumentBudget {
 
   /** Returns [text] after spending its characters. */
   fun spendText(text: String): String {
-    if (text.length > remainingCharacters) {
-      throw DropArguments(ArgumentDropReason.CHARACTER_LIMIT, DropArguments.MAX_CHARACTER_WARNING)
-    }
+    checkFits(text.length)
     remainingCharacters -= text.length
     return text
   }
-}
 
-private fun Any?.isSubstitute(): Boolean = this == UrlUtils.SENSITIVE_DATA_SUBSTITUTE
+  /**
+   * Returns [text] as a [String] after spending its characters.
+   *
+   * Checks [text]'s length before converting it, so that host app text that doesn't fit isn't
+   * copied, and again after, in case a custom [CharSequence]'s length doesn't match its text.
+   */
+  fun spendText(text: CharSequence): String {
+    checkFits(text.length)
+    return spendText(text.toString())
+  }
+
+  private fun checkFits(characters: Int) {
+    if (characters > remainingCharacters) {
+      throw DropArguments(ArgumentDropReason.CHARACTER_LIMIT, DropArguments.MAX_CHARACTER_WARNING)
+    }
+  }
+}
 
 /** Whether this is a NaN or infinite `Double` or `Float`. */
 private fun Number.isNonFinite(): Boolean =

@@ -8,6 +8,7 @@ import io.sentry.util.UrlUtils
 import kotlin.test.assertFailsWith
 import org.junit.Test
 
+@Suppress("LargeClass")
 class TreeArgumentWriterTest {
 
   private val budget = ArgumentBudget()
@@ -112,6 +113,52 @@ class TreeArgumentWriterTest {
     val drop = assertFailsWith<DropArguments> { limitedSink.scalar(StringBuilder("ab")) }
 
     assertThat(drop.signal).isEqualTo(characterLimitDrop)
+  }
+
+  @Test
+  fun `scalar() - drops for the character limit without converting a CharSequence that's too long`() {
+    val limitedSink = TreeArgumentWriter(budgetWithCharactersRemaining(1))
+    limitedSink.key("")
+    val text = CountingText(length = 2, text = "ab")
+
+    val drop = assertFailsWith<DropArguments> { limitedSink.scalar(text) }
+
+    assertThat(drop.signal).isEqualTo(characterLimitDrop)
+    assertThat(text.toStringCalls).isEqualTo(0)
+  }
+
+  @Test
+  fun `scalar() - drops for the character limit when a CharSequence is longer than its reported length`() {
+    val limitedSink = TreeArgumentWriter(budgetWithCharactersRemaining(1))
+    limitedSink.key("")
+
+    val drop =
+      assertFailsWith<DropArguments> { limitedSink.scalar(CountingText(length = 1, text = "ab")) }
+
+    assertThat(drop.signal).isEqualTo(characterLimitDrop)
+  }
+
+  @Test
+  fun `scalar() - propagates the exception a CharSequence's toString() throws`() {
+    val error = IllegalArgumentException("unreadable")
+    sink.key("text")
+
+    val thrown = assertFailsWith<IllegalArgumentException> { sink.scalar(FailingText(error)) }
+
+    assertThat(thrown).isSameInstanceAs(error)
+    assertThat(sink.failure).isNull()
+  }
+
+  @Test
+  fun `scalar() - adds nothing for a CharSequence whose toString() throws, so its key can take a value`() {
+    sink.key("text")
+    assertFailsWith<IllegalArgumentException> {
+      sink.scalar(FailingText(IllegalArgumentException("unreadable")))
+    }
+
+    sink.scalar("replacement")
+
+    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf("text" to "replacement"))
   }
 
   @Test
@@ -482,6 +529,31 @@ class TreeArgumentWriterTest {
   }
 
   @Test
+  fun `a duplicate key drops the arguments with the warning its describeDuplicate returns`() {
+    sink.key("id")
+    sink.scalar(1)
+    sink.key("id") { "described duplicate" }
+
+    val drop = assertFailsWith<DropArguments> { sink.scalar(2) }
+
+    assertThat(drop.signal).isEqualTo(ArgumentDropReason.DUPLICATE_KEY to "described duplicate")
+  }
+
+  @Test
+  fun `key() - doesn't call describeDuplicate for a key that isn't taken`() {
+    var calls = 0
+    sink.key("id") {
+      calls++
+      "described duplicate"
+    }
+    sink.scalar(1)
+    sink.key("other")
+    sink.scalar(2)
+
+    assertThat(calls).isEqualTo(0)
+  }
+
+  @Test
   fun `a map under a key already in its map drops the arguments for a duplicate key when the map begins`() {
     sink.key("filters")
     sink.scalar(null)
@@ -537,43 +609,22 @@ class TreeArgumentWriterTest {
   }
 
   @Test
-  fun `a substitute value under a substitute key already holding the substitute is written once`() {
-    sink.key(SUBSTITUTE)
-    sink.scalar(SUBSTITUTE)
-    sink.key(SUBSTITUTE)
+  fun `a scalar equal to the one already under its key drops the arguments for a duplicate key`() {
+    sink.key("id")
+    sink.scalar('1')
+    sink.key("id")
 
-    sink.scalar(SUBSTITUTE)
-
-    assertThat(sink.argumentsOrThrow()).isEqualTo(mapOf(SUBSTITUTE to SUBSTITUTE))
-  }
-
-  @Test
-  fun `a substitute value under a substitute key holding another value drops the arguments for a duplicate key`() {
-    sink.key(SUBSTITUTE)
-    sink.scalar("secret")
-    sink.key(SUBSTITUTE)
-
-    val drop = assertFailsWith<DropArguments> { sink.scalar(SUBSTITUTE) }
+    val drop = assertFailsWith<DropArguments> { sink.scalar("1") }
 
     assertThat(drop.signal).isEqualTo(duplicateKeyDrop)
   }
 
   @Test
-  fun `another value under a substitute key holding the substitute drops the arguments for a duplicate key`() {
+  fun `a duplicate key drops the arguments for a duplicate key before spending the value budget`() {
+    val sink = TreeArgumentWriter(budgetWithValuesRemaining(1))
     sink.key(SUBSTITUTE)
     sink.scalar(SUBSTITUTE)
     sink.key(SUBSTITUTE)
-
-    val drop = assertFailsWith<DropArguments> { sink.scalar("secret") }
-
-    assertThat(drop.signal).isEqualTo(duplicateKeyDrop)
-  }
-
-  @Test
-  fun `a substitute value under another key holding the substitute drops the arguments for a duplicate key`() {
-    sink.key("token")
-    sink.scalar(SUBSTITUTE)
-    sink.key("token")
 
     val drop = assertFailsWith<DropArguments> { sink.scalar(SUBSTITUTE) }
 
@@ -620,6 +671,46 @@ class TreeArgumentWriterTest {
     val drop = assertFailsWith<DropArguments> { second.scalar("z") }
 
     assertThat(drop.signal).isEqualTo(characterLimitDrop)
+  }
+
+  @Test
+  fun `a duplicate key doesn't spend a value of the shared budget`() {
+    val sharedBudget = budgetWithValuesRemaining(2)
+    val first = TreeArgumentWriter(sharedBudget)
+    val second = TreeArgumentWriter(sharedBudget)
+    first.key("id")
+    first.scalar(1)
+    first.key("id")
+    assertFailsWith<DropArguments> { first.scalar(2) }
+    second.key("id")
+
+    second.scalar(3)
+
+    assertThat(second.argumentsOrThrow()).isEqualTo(mapOf("id" to 3))
+  }
+
+  @Test
+  fun `a duplicate key drops the arguments for a duplicate key when the shared budget has no values left`() {
+    val limitedSink = TreeArgumentWriter(budgetWithValuesRemaining(1))
+    limitedSink.key("id")
+    limitedSink.scalar(1)
+    limitedSink.key("id")
+
+    val drop = assertFailsWith<DropArguments> { limitedSink.scalar(2) }
+
+    assertThat(drop.signal).isEqualTo(duplicateKeyDrop)
+  }
+
+  @Test
+  fun `a duplicate key for a container drops the arguments for the duplicate key with no values left`() {
+    val limitedSink = TreeArgumentWriter(budgetWithValuesRemaining(1))
+    limitedSink.key("filters")
+    limitedSink.scalar(null)
+    limitedSink.key("filters")
+
+    val drop = assertFailsWith<DropArguments> { limitedSink.beginMap() }
+
+    assertThat(drop.signal).isEqualTo(duplicateKeyDrop)
   }
 
   // Sticky failure

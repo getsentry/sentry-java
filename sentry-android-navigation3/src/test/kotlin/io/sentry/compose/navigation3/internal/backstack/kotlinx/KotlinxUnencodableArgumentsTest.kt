@@ -12,24 +12,24 @@ import org.mockito.kotlin.verifyNoInteractions
 class KotlinxUnencodableArgumentsTest {
 
   @Test
-  fun `reads as only the encoding failure`() {
+  fun `reads as only the kotlinx serialization incompatibility drop reason`() {
     val arguments: Map<String, Any?> = KotlinxUnencodableArguments
 
     assertThat(arguments)
       .containsExactly(
         ArgumentDropReason.ARGUMENT_DROP_REASON_KEY,
-        ArgumentDropReason.ENCODING_FAILED.serializedValue,
+        ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION.serializedValue,
       )
   }
 
   @Test
-  fun `writeTo() - drops the arguments as an unlogged encoding failure without writing to the sink`() {
+  fun `writeTo() - drops the arguments for kotlinx serialization incompatibility without logging or writing to the sink`() {
     val sink = mock<ArgumentSink>()
 
     val thrown =
       assertThrows(DropArguments::class.java) { KotlinxUnencodableArguments.writeTo(sink) }
 
-    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.ENCODING_FAILED)
+    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION)
     assertThat(thrown.warning).isNull()
     verifyNoInteractions(sink)
   }
