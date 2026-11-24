@@ -9,6 +9,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 
 class UnavailableBackStackEntryMapperTest {
 
@@ -39,5 +40,6 @@ class UnavailableBackStackEntryMapperTest {
     verify(logger, times(1)).log(eq(SentryLevel.WARNING), any<String>(), eq(Home::class.java.name))
     verify(logger, times(1))
       .log(eq(SentryLevel.WARNING), any<String>(), eq(Detail::class.java.name))
+    verifyNoMoreInteractions(logger)
   }
 }

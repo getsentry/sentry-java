@@ -67,11 +67,13 @@ named-companion class names in every host app.
 
 `nav3-backstack-entry-mapper-r8-check` verifies our built-in `SerialName` and `SerialNameAndProperties` mappers behave
 correctly despite R8 minification. It does so against the kotlinx.serialization version we use for compilation, the latest stable
-release, and any newer release candidate, and in both R8 full and compat modes. See its README for more details.
+release, and any newer release candidate, in R8 full mode, and against the floor in R8 compat mode too. See its README for more
+details.
 
 ## Newer versions
 
-CI also runs the module's unit tests, and `nav3-backstack-entry-mapper-r8-check`, against the latest stable release
+CI also runs the module's unit tests that use kotlinx.serialization (`scripts/test-nav3-kotlinx-versions.sh`), and
+`nav3-backstack-entry-mapper-r8-check`, against the latest stable release
 (`kotlinxSerialization-stable`, bumped by Dependabot) and any newer release candidate (`kotlinxSerialization-preview`, bumped by a
 weekly job in `update-deps.yml`). Release candidate failures only block the PR that bumps it. If a bump fails, see "When a
 kotlinx.serialization bump fails" in that check's README.

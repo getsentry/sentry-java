@@ -4,6 +4,8 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.LOOK_UP_FAILED
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.SERIALIZER_NOT_FOUND
 import java.lang.annotation.AnnotationFormatError
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -169,15 +171,6 @@ class KotlinxBackStackEntryMapperNamingTest {
       get() = throw error
   }
 
-  @Serializable(with = DescriptorThrowsAbstractMethodErrorSerializer::class)
-  internal class DescriptorThrowsAbstractMethodError
-
-  internal object DescriptorThrowsAbstractMethodErrorSerializer :
-    NamingOnlySerializer<DescriptorThrowsAbstractMethodError>() {
-    override val descriptor: SerialDescriptor
-      get() = throw AbstractMethodError("descriptor not implemented")
-  }
-
   @Serializable(with = DescriptorThrowsNoClassDefFoundErrorSerializer::class)
   internal class DescriptorThrowsNoClassDefFoundError
 
@@ -214,23 +207,17 @@ class KotlinxBackStackEntryMapperNamingTest {
   }
 
   @Test
-  fun `names constants of @Serializable enums after their enum`() {
+  fun `names constants of @Serializable enums after their enum, ignoring the constants' @SerialName`() {
     val fixture = KotlinxMapperFixture.create(useDefaultLookUp = true)
     val mapper = fixture.mapper
 
-    val mapped = mapper.map(Tab.FEED)
+    val mapped = listOf(mapper.map(Tab.FEED), mapper.map(Tab.SEARCH))
 
-    assertThat(mapped).isEqualTo(SentryBackStackEntry("$TEST_CLASS.Tab"))
-  }
-
-  @Test
-  fun `names enum constants that have a @SerialName after their enum`() {
-    val fixture = KotlinxMapperFixture.create(useDefaultLookUp = true)
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(Tab.SEARCH)
-
-    assertThat(mapped).isEqualTo(SentryBackStackEntry("$TEST_CLASS.Tab"))
+    assertThat(mapped)
+      .containsExactly(
+        SentryBackStackEntry("$TEST_CLASS.Tab"),
+        SentryBackStackEntry("$TEST_CLASS.Tab"),
+      )
   }
 
   @Test
@@ -266,18 +253,8 @@ class KotlinxBackStackEntryMapperNamingTest {
   }
 
   @Test
-  fun `returns null for entries that aren't @Serializable`() {
-    val fixture = KotlinxMapperFixture.create()
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(NotSerializable("1"))
-
-    assertThat(mapped).isNull()
-  }
-
-  @Test
   fun `returns null for entries that aren't @Serializable even if the lookup has a serializer`() {
-    // kotlinx serialization has serializers for built-in types and enums that aren't @Serializable.
+    // kotlinx.serialization has serializers for built-in types and enums that aren't @Serializable.
     val fixture = KotlinxMapperFixture.create()
     fixture.lookUp = { String.serializer() }
     val mapper = fixture.mapper
@@ -321,7 +298,7 @@ class KotlinxBackStackEntryMapperNamingTest {
   }
 
   @Test
-  fun `never looks up types that aren't @Serializable`() {
+  fun `doesn't look up types that aren't @Serializable`() {
     val fixture = KotlinxMapperFixture.create()
     val mapper = fixture.mapper
 
@@ -436,14 +413,14 @@ class KotlinxBackStackEntryMapperNamingTest {
         eq(error),
         message.capture(),
         eq(Detail::class.java.name),
-        eq(LOOK_UP_ERROR),
+        eq(LOOK_UP_FAILED),
       )
     assertThat(message.firstValue).contains("See the attached error")
     assertThat(message.firstValue).doesNotContain(INCOMPATIBLE_KOTLINX_ADVICE)
   }
 
   @Test
-  fun `advises checking kotlinx compatibility when a type's name lookup throws a LinkageError`() {
+  fun `advises checking kotlinx serialization compatibility when a type's name lookup throws a LinkageError`() {
     val error = NoSuchMethodError()
     val fixture = KotlinxMapperFixture.create()
     fixture.lookUp = { throw error }
@@ -458,7 +435,7 @@ class KotlinxBackStackEntryMapperNamingTest {
         eq(error),
         message.capture(),
         eq(Detail::class.java.name),
-        eq(LOOK_UP_ERROR),
+        eq(LOOK_UP_FAILED),
       )
     assertThat(message.firstValue).contains("See the attached error")
     assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
@@ -482,7 +459,7 @@ class KotlinxBackStackEntryMapperNamingTest {
         eq(error),
         message.capture(),
         eq(Detail::class.java.name),
-        eq(LOOK_UP_ERROR),
+        eq(LOOK_UP_FAILED),
       )
     assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
     verifyNoMoreInteractions(fixture.logger)
@@ -504,7 +481,7 @@ class KotlinxBackStackEntryMapperNamingTest {
         eq(error),
         message.capture(),
         eq(Detail::class.java.name),
-        eq(LOOK_UP_ERROR),
+        eq(LOOK_UP_FAILED),
       )
     assertThat(message.firstValue).doesNotContain(INCOMPATIBLE_KOTLINX_ADVICE)
     verifyNoMoreInteractions(fixture.logger)
@@ -571,32 +548,6 @@ class KotlinxBackStackEntryMapperNamingTest {
   }
 
   @Test
-  fun `doesn't look up a type again after its name lookup throws a LinkageError`() {
-    val fixture = KotlinxMapperFixture.create()
-    fixture.lookUp = { throw NoSuchMethodError() }
-    val mapper = fixture.mapper
-
-    repeat(3) { mapper.map(Detail("$it")) }
-
-    assertThat(fixture.lookedUpTypes).containsExactly(Detail::class.java)
-  }
-
-  @Test
-  fun `keeps naming other types after a type's name lookup throws a LinkageError`() {
-    val fixture = KotlinxMapperFixture.create()
-    fixture.lookUp = {
-      if (it == Detail::class.java) throw NoSuchMethodError() else fixture.serializers[it]
-    }
-    val mapper = fixture.mapper
-
-    val mapped = listOf(mapper.map(Detail("1")), mapper.map(Home), mapper.map(Search("shoes")))
-
-    assertThat(mapped)
-      .containsExactly(null, SentryBackStackEntry("Home"), SentryBackStackEntry("Search"))
-      .inOrder()
-  }
-
-  @Test
   fun `returns null and logs the error once for a type whose name lookup throws ReflectiveOperationException`() {
     val error = NoSuchMethodException("serializer")
     val fixture = KotlinxMapperFixture.create()
@@ -623,9 +574,9 @@ class KotlinxBackStackEntryMapperNamingTest {
   }
 
   @Test
-  fun `doesn't look up a type again after its name lookup throws an unchecked exception`() {
+  fun `doesn't look up a type again after its name lookup throws`() {
     val fixture = KotlinxMapperFixture.create()
-    fixture.lookUp = { error("lookup failed") }
+    fixture.lookUp = { throw NoSuchMethodError() }
     val mapper = fixture.mapper
 
     repeat(3) { mapper.map(Detail("$it")) }
@@ -634,16 +585,18 @@ class KotlinxBackStackEntryMapperNamingTest {
   }
 
   @Test
-  fun `keeps naming other types after a type's name lookup throws an unchecked exception`() {
+  fun `keeps naming other types after a type's name lookup throws`() {
     val fixture = KotlinxMapperFixture.create()
     fixture.lookUp = {
-      if (it == Detail::class.java) error("lookup failed") else fixture.serializers[it]
+      if (it == Detail::class.java) throw NoSuchMethodError() else fixture.serializers[it]
     }
     val mapper = fixture.mapper
 
-    val mapped = listOf(mapper.map(Detail("1")), mapper.map(Home))
+    val mapped = listOf(mapper.map(Detail("1")), mapper.map(Home), mapper.map(Search("shoes")))
 
-    assertThat(mapped).containsExactly(null, SentryBackStackEntry("Home")).inOrder()
+    assertThat(mapped)
+      .containsExactly(null, SentryBackStackEntry("Home"), SentryBackStackEntry("Search"))
+      .inOrder()
   }
 
   @Test
@@ -690,7 +643,9 @@ class KotlinxBackStackEntryMapperNamingTest {
   }
 
   @Test
-  fun `returns null and logs the cause once when a name lookup throws a wrapped ExceptionInInitializerError`() {
+  fun `returns null and logs the cause once, with compatibility advice, for a type whose name lookup throws a wrapped LinkageError`() {
+    // An ExceptionInInitializerError, which a serializer object's failing initializer causes, is a
+    // LinkageError.
     val cause = ExceptionInInitializerError(IllegalStateException("serializer init failed"))
     val fixture = KotlinxMapperFixture.create()
     fixture.lookUp = { throw InvocationTargetException(cause) }
@@ -699,32 +654,6 @@ class KotlinxBackStackEntryMapperNamingTest {
     val mapped = List(3) { mapper.map(Detail("$it")) }
 
     assertThat(mapped).containsExactly(null, null, null)
-    verifyLookUpErrorLoggedOnce(fixture, cause)
-  }
-
-  @Test
-  fun `keeps naming other types after a type's name lookup throws a wrapped LinkageError`() {
-    val fixture = KotlinxMapperFixture.create()
-    fixture.lookUp = {
-      if (it == Detail::class.java) throw InvocationTargetException(NoSuchMethodError())
-      else fixture.serializers[it]
-    }
-    val mapper = fixture.mapper
-
-    val mapped = listOf(mapper.map(Detail("1")), mapper.map(Home))
-
-    assertThat(mapped).containsExactly(null, SentryBackStackEntry("Home")).inOrder()
-  }
-
-  @Test
-  fun `logs the cause of a wrapped LinkageError, with compatibility advice, when a name lookup throws one`() {
-    val cause = NoSuchMethodError("serializer")
-    val fixture = KotlinxMapperFixture.create()
-    fixture.lookUp = { throw InvocationTargetException(cause) }
-    val mapper = fixture.mapper
-
-    mapper.map(Detail("1"))
-
     val message = argumentCaptor<String>()
     verify(fixture.logger, times(1))
       .log(
@@ -732,7 +661,7 @@ class KotlinxBackStackEntryMapperNamingTest {
         eq(cause),
         message.capture(),
         eq(Detail::class.java.name),
-        eq(LOOK_UP_ERROR),
+        eq(LOOK_UP_FAILED),
       )
     assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
     verifyNoMoreInteractions(fixture.logger)
@@ -782,7 +711,7 @@ class KotlinxBackStackEntryMapperNamingTest {
   // Serializer descriptors that throw
 
   @Test
-  fun `returns null without looking up again for a type whose serializer's descriptor throws`() {
+  fun `returns null and logs the error once for a type whose serializer's descriptor throws an exception`() {
     val fixture = KotlinxMapperFixture.create()
     fixture.lookUp = { DescriptorThrowsIllegalStateSerializer }
     val mapper = fixture.mapper
@@ -790,39 +719,11 @@ class KotlinxBackStackEntryMapperNamingTest {
     val mapped = List(3) { mapper.map(DescriptorThrowsIllegalState()) }
 
     assertThat(mapped).containsExactly(null, null, null)
-    assertThat(fixture.lookedUpTypes).containsExactly(DescriptorThrowsIllegalState::class.java)
-  }
-
-  @Test
-  fun `logs the error once for a type whose serializer's descriptor throws`() {
-    val fixture = KotlinxMapperFixture.create()
-    fixture.lookUp = { DescriptorThrowsIllegalStateSerializer }
-    val mapper = fixture.mapper
-
-    repeat(3) { mapper.map(DescriptorThrowsIllegalState()) }
-
     verifyLookUpErrorLoggedOnce(
       fixture,
       DescriptorThrowsIllegalStateSerializer.error,
       DescriptorThrowsIllegalState::class.java,
     )
-  }
-
-  @Test
-  fun `keeps naming other types after a type's serializer's descriptor throws AbstractMethodError`() {
-    val fixture = KotlinxMapperFixture.create()
-    fixture.lookUp = {
-      if (it == DescriptorThrowsAbstractMethodError::class.java) {
-        DescriptorThrowsAbstractMethodErrorSerializer
-      } else {
-        fixture.serializers[it]
-      }
-    }
-    val mapper = fixture.mapper
-
-    val mapped = listOf(mapper.map(DescriptorThrowsAbstractMethodError()), mapper.map(Home))
-
-    assertThat(mapped).containsExactly(null, SentryBackStackEntry("Home")).inOrder()
   }
 
   @Test
@@ -907,7 +808,7 @@ class KotlinxBackStackEntryMapperNamingTest {
         logged.capture(),
         any<String>(),
         eq(UninitializableSerializedB::class.java.name),
-        eq(LOOK_UP_ERROR),
+        eq(LOOK_UP_FAILED),
       )
     assertThat(logged.firstValue).isInstanceOf(ExceptionInInitializerError::class.java)
     assertThat(logged.firstValue)
@@ -931,7 +832,7 @@ class KotlinxBackStackEntryMapperNamingTest {
         logged.capture(),
         any<String>(),
         eq(PrivateUninitializable::class.java.name),
-        eq(LOOK_UP_ERROR),
+        eq(LOOK_UP_FAILED),
       )
     assertThat(logged.firstValue).isInstanceOf(ExceptionInInitializerError::class.java)
     assertThat(logged.firstValue)
@@ -969,7 +870,7 @@ class KotlinxBackStackEntryMapperNamingTest {
     type: Class<*> = Detail::class.java,
   ) {
     verify(fixture.logger, times(1))
-      .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(type.name), eq(LOOK_UP_ERROR))
+      .log(eq(SentryLevel.WARNING), eq(error), any<String>(), eq(type.name), eq(LOOK_UP_FAILED))
   }
 
   private fun verifyNotSerializableLoggedOnce(fixture: KotlinxMapperFixture, type: Class<*>) {
@@ -985,10 +886,5 @@ class KotlinxBackStackEntryMapperNamingTest {
     val TEST_CLASS: String = KotlinxBackStackEntryMapperNamingTest::class.java.name
 
     const val NOT_SERIALIZABLE = "because the type is not @Serializable"
-
-    const val SERIALIZER_NOT_FOUND =
-      "no serializer was found (the type may be generic or require R8 keep rules)"
-
-    const val LOOK_UP_ERROR = "reading its annotations, serializer, or descriptor failed"
   }
 }

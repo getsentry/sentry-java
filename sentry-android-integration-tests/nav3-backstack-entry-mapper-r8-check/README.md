@@ -20,8 +20,11 @@ Run the tests against a booted emulator or device:
 The script tests the kotlinx.serialization versions in `gradle/dependency-matrix.versions.toml`: the floor
 (`kotlinxSerialization-floor`), the latest stable release (`kotlinxSerialization-stable`), and the latest release candidate
 (`kotlinxSerialization-preview`), but the release candidate only while it's newer than the stable release. It builds and runs an APK in
-R8 full and compat modes for each, so four or six APKs. It also builds and runs an APK from `nav3-no-kotlinx-r8-check`, which checks apps
-without kotlinx.serialization (see its README).
+R8 full mode for each, and one in R8 compat mode for the floor, so three or four APKs. Compat mode keeps more than full mode, and only
+changes the outcome for named companion objects before kotlinx.serialization 1.10.0. It also builds and runs an APK from
+`nav3-no-kotlinx-r8-check`, which checks apps without kotlinx.serialization (see its README).
+
+`scripts/test-nav3-kotlinx-versions.sh` runs the module's unit tests that use kotlinx.serialization against the same newer versions.
 
 Every APK must report `RESULT=PASS` in order to pass, except the release candidate's. Its build and run failures are warnings, unless
 `NAV3_PREVIEW_REQUIRED=true`. CI sets that on PRs that change `kotlinxSerialization-preview`, so a release candidate that breaks

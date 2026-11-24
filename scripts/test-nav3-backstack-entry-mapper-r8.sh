@@ -5,7 +5,8 @@
 #
 # The app is built against kotlinxSerialization-floor in gradle/dependency-matrix.versions.toml,
 # plus kotlinxSerialization-stable and, if it's newer, kotlinxSerialization-preview (or each version
-# in NAV3_EXTRA_KOTLINX_VERSIONS instead), each in R8 full and compat modes. Also builds
+# in NAV3_EXTRA_KOTLINX_VERSIONS instead), in R8 full mode, and against the floor in R8 compat mode
+# too. Also builds
 # nav3-no-kotlinx-r8-check once, which checks that an app without kotlinx.serialization builds and
 # runs.
 #
@@ -78,6 +79,11 @@ build() {
     echo "Building R8 $mode mode APK (kotlinx floor)..."
     ./gradlew -p sentry-android-integration-tests ":${module}:assembleRelease" "-Pandroid.enableR8.fullMode=${fullMode}"
     copyApk "${outDir}/${mode}.apk"
+
+    # Compat mode keeps more than full mode, so it's only tested with the floor, where it changes
+    # the outcome for named companion objects (kotlinx.serialization's own R8 rules only cover them
+    # from 1.10.0 on).
+    [[ "$mode" == "compat" ]] && continue
 
     # Apps may ship a newer kotlinx than our compile floor, so rebuild against each.
     for entry in ${extraKotlinxVersions[@]+"${extraKotlinxVersions[@]}"}; do

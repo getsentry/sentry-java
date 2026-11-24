@@ -4,6 +4,7 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -30,6 +31,28 @@ internal abstract class NamingOnlySerializer<T> : KSerializer<T> {
 
   override fun deserialize(decoder: Decoder): T = throw UnsupportedOperationException()
 }
+
+@Serializable
+internal enum class Sort {
+  @SerialName("price_asc") PRICE_ASC,
+  NEWEST,
+}
+
+/** Has a property whose name (`password`) is sensitive. */
+@Serializable internal data class Credentials(val user: String, val password: String)
+
+/** Fails the test if a value it should never see is encoded. */
+internal object ThrowingSerializer : KSerializer<String> {
+  override val descriptor: SerialDescriptor =
+    PrimitiveSerialDescriptor("test.Throwing", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: String): Unit = error("serializer ran")
+
+  override fun deserialize(decoder: Decoder): String = throw UnsupportedOperationException()
+}
+
+/** The serializer the Kotlin compiler plugin gives `CharSequence` properties. */
+internal val charSequenceSerializer = PolymorphicSerializer(CharSequence::class)
 
 @Serializable internal data class Box<T>(val value: T)
 

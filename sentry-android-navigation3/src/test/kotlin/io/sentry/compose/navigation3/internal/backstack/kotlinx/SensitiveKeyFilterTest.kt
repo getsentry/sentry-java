@@ -19,7 +19,7 @@ class SensitiveKeyFilterTest {
   // Keys, values, maps, and lists under non-sensitive keys
 
   @Test
-  fun `passes keys, scalars, maps, and lists under non-sensitive keys to the sink`() {
+  fun `key() - passes non-sensitive keys and the scalars, maps, and lists under them to the sink`() {
     filter.key("query")
     filter.scalar("shoes")
     filter.key("filters")
@@ -230,20 +230,7 @@ class SensitiveKeyFilterTest {
   // Maps
 
   @Test
-  fun `beginMap() - writes the substitute in place of a map under a sensitive key`() {
-    filter.key("credentials")
-    filter.beginMap()
-    filter.key("user")
-    filter.scalar("alice")
-    filter.end()
-
-    val arguments = sink.argumentsOrThrow()
-
-    assertThat(arguments).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE))
-  }
-
-  @Test
-  fun `beginMap() - discards the nested maps, lists, and keys of a map under a sensitive key`() {
+  fun `beginMap() - writes the substitute in place of a map under a sensitive key, discarding its nested maps, lists, and keys`() {
     filter.key("credentials")
     filter.beginMap()
     filter.key("history")

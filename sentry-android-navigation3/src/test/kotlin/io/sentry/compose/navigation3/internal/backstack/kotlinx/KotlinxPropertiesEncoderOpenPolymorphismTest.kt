@@ -1,9 +1,6 @@
 package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import com.google.common.truth.Truth.assertThat
-import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
-import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
-import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE
 import io.sentry.util.UrlUtils
 import java.util.concurrent.atomic.AtomicInteger
@@ -50,8 +47,6 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
   @Serializable @SerialName("referral") data class Referral(val from: Origin) : Origin
 
   @Serializable @SerialName("login") data class Login(val user: String, val token: String) : Origin
-
-  @Serializable @SerialName("tagged") data class Tagged(val tags: List<Int>) : Origin
 
   @Serializable
   @SerialName("withContextual")
@@ -197,7 +192,7 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
   }
 
   @Test
-  fun `encode() - uses the class name as the type of an open polymorphic value without a @SerialName`() {
+  fun `encode() - encodes an open polymorphic value without a @SerialName with its class name as the type`() {
     val entry = WithOrigin("1", Campaign("spring"), page = 2)
 
     val encoded = encodeToMap(WithOrigin.serializer(), entry)
@@ -369,6 +364,7 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
 
     assertThat(encoded["origin"]).isEqualTo(UNENCODABLE_SUBSTITUTE)
     assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues[0]).isInstanceOf(SerializationException::class.java)
   }
 
   @Test
@@ -377,6 +373,7 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
 
     assertThat(encoded).isEqualTo(mapOf("id" to "1", "extra" to UNENCODABLE_SUBSTITUTE))
     assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues[0]).isInstanceOf(SerializationException::class.java)
   }
 
   /** The constant's runtime class is an anonymous subclass, which isn't `@Serializable`. */
@@ -388,6 +385,7 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
 
     assertThat(encoded["origin"]).isEqualTo(UNENCODABLE_SUBSTITUTE)
     assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues[0]).isInstanceOf(SerializationException::class.java)
   }
 
   @Test
@@ -399,6 +397,7 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
     assertThat(encoded)
       .isEqualTo(mapOf("id" to "1", "origin" to UNENCODABLE_SUBSTITUTE, "page" to 2))
     assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues[0]).isInstanceOf(SerializationException::class.java)
   }
 
   @Test
@@ -422,6 +421,7 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
     assertThat(encoded)
       .isEqualTo(mapOf("id" to "1", "origin" to UNENCODABLE_SUBSTITUTE, "page" to 2))
     assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues[0]).isInstanceOf(SerializationException::class.java)
   }
 
   @Test
@@ -449,8 +449,10 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
     assertThat(unencodableValues).isEmpty()
   }
 
+  // Serializers that fail
+
   @Test
-  fun `encode() - substitutes only the unencodable property inside an open polymorphic value`() {
+  fun `encode() - records only the unencodable property of an open polymorphic value as the Unencodable substitute`() {
     val entry = WithOrigin("1", ContextualOrigin("2", Unregistered("3")), page = 2)
 
     val encoded = encodeToMap(WithOrigin.serializer(), entry, unencodableValues::add)
@@ -470,7 +472,7 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
    * substituted like any other, so the value keeps its type.
    */
   @Test
-  fun `encode() - records the value of an open polymorphic value whose found serializer fails as the Unencodable substitute, keeping its type`() {
+  fun `encode() - records an open polymorphic value's value as the Unencodable substitute, keeping its type, when its serializer fails`() {
     val entry = WithOrigin("1", FailingOrigin(), page = 2)
 
     val encoded = encodeToMap(WithOrigin.serializer(), entry, unencodableValues::add)
@@ -487,10 +489,10 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
     assertThat(unencodableValues[0]).hasMessageThat().isEqualTo("failing origin")
   }
 
-  // Sensitive data and limits
+  // Sensitive data
 
   @Test
-  fun `encode() - replaces sensitive properties of an open polymorphic value with the Filtered substitute`() {
+  fun `encode() - filters the sensitive properties of an open polymorphic value`() {
     val entry = WithOrigin("1", Login(user = "jane", token = "abc"), page = 2)
 
     val encoded = encodeToMap(WithOrigin.serializer(), entry)
@@ -502,14 +504,5 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
           "value" to mapOf("user" to "jane", "token" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
         ),
       )
-  }
-
-  @Test
-  fun `encode() - drops the arguments for count when an open polymorphic value has too many values`() {
-    val entry = WithOrigin("1", Tagged(List(MAX_ARGUMENT_VALUES) { it }), page = 2)
-
-    val exception = assertFailsWith<DropArguments> { encodeToMap(WithOrigin.serializer(), entry) }
-
-    assertThat(exception.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
   }
 }

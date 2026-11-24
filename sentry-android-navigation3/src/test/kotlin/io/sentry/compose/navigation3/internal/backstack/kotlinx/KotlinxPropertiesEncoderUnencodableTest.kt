@@ -12,7 +12,6 @@ import io.sentry.util.UrlUtils
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
@@ -53,6 +52,25 @@ class KotlinxPropertiesEncoderUnencodableTest {
 
   /** Places [value] between two properties that encode, so its neighbors on both sides show. */
   @Serializable data class Labeled<T>(val id: String, val value: T, val page: Int)
+
+  /** A map key whose descriptor claims a string, but whose serializer begins a structure. */
+  @Serializable(with = StructureWritingKeySerializer::class)
+  data class StructureWritingKey(val id: String)
+
+  object StructureWritingKeySerializer : KSerializer<StructureWritingKey> {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("custom.StructureWritingKey", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: StructureWritingKey) {
+      encoder.encodeSerializableValue(Detail.serializer(), Detail(value.id))
+    }
+
+    override fun deserialize(decoder: Decoder): StructureWritingKey =
+      throw UnsupportedOperationException()
+  }
+
+  @Serializable
+  internal data class WithStructureWritingMapKeys(val byCode: Map<StructureWritingKey, Int>)
 
   /** An encoder of another format, which [EncoderSpecificSerializer] requires. */
   private interface OtherFormatEncoder : Encoder
@@ -104,7 +122,6 @@ class KotlinxPropertiesEncoderUnencodableTest {
     }
   }
 
-  private val textSerializer = PolymorphicSerializer(CharSequence::class)
   private val unencodableValues = mutableListOf<IllegalArgumentException>()
 
   // Values recorded as the Unencodable substitute
@@ -196,7 +213,8 @@ class KotlinxPropertiesEncoderUnencodableTest {
   fun `encode() - records a CharSequence property whose toString() throws as the Unencodable substitute`() {
     val text = FailingText(IllegalArgumentException("unreadable"))
 
-    val encoded = encodeToMap(Labeled.serializer(textSerializer), Labeled("1", text, page = 2))
+    val encoded =
+      encodeToMap(Labeled.serializer(charSequenceSerializer), Labeled("1", text, page = 2))
 
     assertThat(encoded)
       .isEqualTo(mapOf("id" to "1", "value" to UNENCODABLE_SUBSTITUTE, "page" to 2))
@@ -228,7 +246,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
   // Reporting values recorded as the Unencodable substitute
 
   @Test
-  fun `encode() - passes the serializer's exception to onUnencodableValue for an unencodable value`() {
+  fun `encode() - reports the exception of a value's serializer that can't encode it to onUnencodableValue`() {
     val failing = FailingSerializer(IllegalArgumentException("unencodable"))
 
     encodeToMap(
@@ -241,11 +259,11 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
-  fun `encode() - passes the exception a CharSequence's toString() throws to onUnencodableValue`() {
+  fun `encode() - reports the exception a CharSequence's toString() throws to onUnencodableValue`() {
     val text = FailingText(IllegalArgumentException("unreadable"))
 
     encodeToMap(
-      Labeled.serializer(textSerializer),
+      Labeled.serializer(charSequenceSerializer),
       Labeled("1", text, page = 2),
       unencodableValues::add,
     )
@@ -265,7 +283,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
-  fun `encode() - doesn't call onUnencodableValue when every value encodes`() {
+  fun `encode() - reports nothing to onUnencodableValue when every value encodes`() {
     encodeToMap(Detail.serializer(), Detail("1"), unencodableValues::add)
 
     assertThat(unencodableValues).isEmpty()
@@ -298,7 +316,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
   // Failures that still throw
 
   @Test
-  fun `encode() - throws when a value's serializer throws after writing a scalar`() {
+  fun `encode() - propagates the exception a value's serializer throws after writing a scalar`() {
     val failing =
       FailingSerializer(IllegalArgumentException("after writing")) { it.encodeString("partial") }
 
@@ -316,7 +334,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
-  fun `encode() - throws when a value's serializer throws after beginning a structure`() {
+  fun `encode() - propagates the exception a value's serializer throws after beginning a structure`() {
     val failing =
       FailingSerializer(IllegalArgumentException("inside structure")) {
         it.beginStructure(Detail.serializer().descriptor)
@@ -336,7 +354,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
-  fun `encode() - throws rather than recording a partly written nested class as the Unencodable substitute`() {
+  fun `encode() - propagates a nested value's serializer exception rather than recording a partly written class as the Unencodable substitute`() {
     // The nested class wrote its id before its value's serializer failed after writing.
     val failing =
       FailingSerializer(IllegalArgumentException("after writing")) { it.encodeString("partial") }
@@ -351,32 +369,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
-  fun `encode() - throws when a map key's serializer can't encode it`() {
-    val entry = WithContextualMapKeys(mapOf(Unregistered("1") to 1))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithContextualMapKeys.serializer(), entry, unencodableValues::add)
-    }
-
-    assertThat(unencodableValues).isEmpty()
-  }
-
-  @Test
-  fun `encode() - throws when a CharSequence map key's toString() throws`() {
-    val text = FailingText(IllegalArgumentException("unreadable"))
-    val entry = WithTextMapKeys(mapOf(text to 1))
-
-    val thrown =
-      assertFailsWith<IllegalArgumentException> {
-        encodeToMap(WithTextMapKeys.serializer(), entry, unencodableValues::add)
-      }
-
-    assertThat(thrown).isSameInstanceAs(text.error)
-    assertThat(unencodableValues).isEmpty()
-  }
-
-  @Test
-  fun `encode() - throws when the entry's own serializer throws a SerializationException`() {
+  fun `encode() - propagates a SerializationException from the entry's own serializer`() {
     val error = SerializationException("entry unencodable")
     val serializer = RecordingSerializer(Detail.serializer()).apply { this.error = error }
 
@@ -390,7 +383,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
-  fun `encode() - throws when the entry's own serializer requires another encoder`() {
+  fun `encode() - propagates the exception of an entry's own serializer that requires another encoder`() {
     assertFailsWith<IllegalArgumentException> {
       encodeToMap(EncoderSpecificSerializer, "value", unencodableValues::add)
     }
@@ -422,7 +415,7 @@ class KotlinxPropertiesEncoderUnencodableTest {
     val thrown =
       assertFailsWith<IllegalStateException> {
         encodeToMap(
-          Labeled.serializer(textSerializer),
+          Labeled.serializer(charSequenceSerializer),
           Labeled("1", text, page = 2),
           unencodableValues::add,
         )
@@ -433,56 +426,93 @@ class KotlinxPropertiesEncoderUnencodableTest {
   }
 
   @Test
-  fun `encode() - counts a CharSequence whose toString() throws toward the value limit, besides its substitute`() {
+  fun `encode() - propagates the exception of a map key's serializer that can't encode it`() {
+    val entry = WithContextualMapKeys(mapOf(Unregistered("1") to 1))
+
+    assertFailsWith<SerializationException> {
+      encodeToMap(WithContextualMapKeys.serializer(), entry, unencodableValues::add)
+    }
+
+    assertThat(unencodableValues).isEmpty()
+  }
+
+  @Test
+  fun `encode() - propagates the exception a CharSequence map key's toString() throws`() {
+    val text = FailingText(IllegalArgumentException("unreadable"))
+    val entry = WithTextMapKeys(mapOf(text to 1))
+
+    val thrown =
+      assertFailsWith<IllegalArgumentException> {
+        encodeToMap(WithTextMapKeys.serializer(), entry, unencodableValues::add)
+      }
+
+    assertThat(thrown).isSameInstanceAs(text.error)
+    assertThat(unencodableValues).isEmpty()
+  }
+
+  @Test
+  fun `encode() - throws for a map key whose serializer begins a structure despite a scalar descriptor`() {
+    val entry = WithStructureWritingMapKeys(mapOf(StructureWritingKey("a") to 1))
+
+    val thrown =
+      assertFailsWith<SerializationException> {
+        encodeToMap(WithStructureWritingMapKeys.serializer(), entry, unencodableValues::add)
+      }
+
+    assertThat(thrown).hasMessageThat().contains("map key that's a structure (Detail)")
+    assertThat(unencodableValues).isEmpty()
+  }
+
+  // Argument limits
+
+  @Test
+  fun `encode() - drops the arguments for the value limit when a CharSequence whose toString() throws needs a value besides its substitute`() {
     // The id, the failed text, its substitute, and the page need four values.
     val sink = TreeArgumentWriter(budgetWithValuesRemaining(3))
     val text = FailingText(IllegalArgumentException("unreadable"))
 
-    val thrown =
-      assertFailsWith<DropArguments> {
-        encodeInto(Labeled.serializer(textSerializer), Labeled("1", text, page = 2), sink)
-      }
-
-    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.MAX_COUNT)
+    assertDropsArguments(ArgumentDropReason.MAX_COUNT) {
+      encodeInto(Labeled.serializer(charSequenceSerializer), Labeled("1", text, page = 2), sink)
+    }
   }
 
   @Test
-  fun `encode() - drops the arguments for the nesting limit a serializer rethrew as an IllegalArgumentException`() {
+  fun `encode() - drops the arguments for the nesting limit when a value's serializer rethrows the limit failure as an IllegalArgumentException`() {
     // The link chain writes nothing before the encoder's nesting limit rejects it.
     val serializer = Labeled.serializer(LimitReplacingSerializer(LinkSerializer))
     val entry = Labeled("1", linked(length = KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING), 2)
 
-    val thrown =
-      assertFailsWith<DropArguments> { encodeToMap(serializer, entry, unencodableValues::add) }
+    assertDropsArguments(ArgumentDropReason.INVALID_STRUCTURE) {
+      encodeToMap(serializer, entry, unencodableValues::add)
+    }
 
-    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
     assertThat(unencodableValues).isEmpty()
   }
 
   @Test
-  fun `encode() - drops the arguments for the character limit a serializer rethrew as an IllegalArgumentException`() {
+  fun `encode() - drops the arguments for the character limit when a value's serializer rethrows the limit failure as an IllegalArgumentException`() {
     val serializer = Labeled.serializer(LimitReplacingSerializer(String.serializer()))
     val entry = Labeled("1", "x".repeat(MAX_ARGUMENT_CHARACTERS + 1), page = 2)
 
-    val thrown =
-      assertFailsWith<DropArguments> { encodeToMap(serializer, entry, unencodableValues::add) }
+    assertDropsArguments(ArgumentDropReason.CHARACTER_LIMIT) {
+      encodeToMap(serializer, entry, unencodableValues::add)
+    }
 
-    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
     assertThat(unencodableValues).isEmpty()
   }
 
   @Test
-  fun `encode() - drops the arguments for the character limit a map key's serializer rethrew as an IllegalArgumentException`() {
+  fun `encode() - drops the arguments for the character limit when a map key's serializer rethrows the limit failure as an IllegalArgumentException`() {
     val serializer =
       Labeled.serializer(
         MapSerializer(LimitReplacingSerializer(String.serializer()), Int.serializer()),
       )
     val entry = Labeled("1", mapOf("k".repeat(MAX_ARGUMENT_CHARACTERS + 1) to 1), page = 2)
 
-    val thrown =
-      assertFailsWith<DropArguments> { encodeToMap(serializer, entry, unencodableValues::add) }
+    assertDropsArguments(ArgumentDropReason.CHARACTER_LIMIT) {
+      encodeToMap(serializer, entry, unencodableValues::add)
+    }
 
-    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
     assertThat(unencodableValues).isEmpty()
   }
 }

@@ -3,10 +3,8 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
-import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.util.UrlUtils
 import kotlin.jvm.JvmInline
-import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -20,14 +18,6 @@ import kotlinx.serialization.encoding.Encoder
 import org.junit.Test
 
 class KotlinxPropertiesEncoderFilteringTest {
-
-  @Serializable
-  enum class Sort {
-    @SerialName("price_asc") PRICE_ASC,
-    NEWEST,
-  }
-
-  @Serializable @JvmInline value class ProductId(val value: String)
 
   @Serializable data class WithSensitiveProperty(val query: String, val password: String)
 
@@ -83,15 +73,6 @@ class KotlinxPropertiesEncoderFilteringTest {
 
   @Serializable @JvmInline value class TokenRef(val token: String)
 
-  @Serializable
-  data class WithSensitiveValueClassPropertyName(
-    val productId: ProductId,
-    val sessionRef: ProductId,
-  )
-
-  @Serializable
-  data class WithSensitiveUnderlyingPropertyName(val productId: ProductId, val reference: TokenRef)
-
   @Serializable data class WithValueClassList(val references: List<TokenRef>)
 
   /**
@@ -108,11 +89,9 @@ class KotlinxPropertiesEncoderFilteringTest {
 
   @Serializable data class WithNullableTokenRefValue(val reference: NullableTokenRef)
 
-  @Serializable data class Credentials(val user: String)
+  @Serializable @JvmInline internal value class CredentialsRef(val credentials: Credentials)
 
-  @Serializable @JvmInline value class CredentialsRef(val credentials: Credentials)
-
-  @Serializable data class WithStructuredValueClass(val owner: CredentialsRef)
+  @Serializable internal data class WithStructuredValueClass(val owner: CredentialsRef)
 
   @Serializable data class WithLargeSecret(val id: String, val refreshTokens: List<String>)
 
@@ -137,15 +116,6 @@ class KotlinxPropertiesEncoderFilteringTest {
   )
 
   @Serializable data class WithUnencodableSecretRef(val id: String, val ref: UnencodableSecretRef)
-
-  object ThrowingSerializer : KSerializer<String> {
-    override val descriptor: SerialDescriptor =
-      PrimitiveSerialDescriptor("test.Throwing", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: String): Unit = error("serializer ran")
-
-    override fun deserialize(decoder: Decoder): String = decoder.decodeString()
-  }
 
   @Serializable data class WithSensitiveTextProperty(val id: String, val authToken: CharSequence)
 
@@ -184,7 +154,7 @@ class KotlinxPropertiesEncoderFilteringTest {
    * `CharSequence` and value class map keys are covered by their own tests.
    */
   @Serializable
-  data class SecretsEverywhere(
+  internal data class SecretsEverywhere(
     val query: String,
     val authToken: String,
     val password: String?,
@@ -204,10 +174,10 @@ class KotlinxPropertiesEncoderFilteringTest {
     val reference: TokenRef,
   )
 
-  // Sensitive values
+  // Sensitive property names and map keys
 
   @Test
-  fun `encode() - replaces the values of sensitive properties with the Filtered substitute`() {
+  fun `encode() - filters the values of sensitive properties`() {
     val entry = WithSensitiveProperty(query = "shoes", password = "secret")
 
     val encoded = encodeToMap(WithSensitiveProperty.serializer(), entry)
@@ -217,7 +187,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces a null sensitive property with the Filtered substitute`() {
+  fun `encode() - filters a null sensitive property`() {
     val entry = WithNullableSecret(id = "1", password = null)
 
     val encoded = encodeToMap(WithNullableSecret.serializer(), entry)
@@ -227,7 +197,17 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces the values of sensitive map keys with the Filtered substitute`() {
+  fun `encode() - filters the values of properties whose serial name is sensitive`() {
+    val entry = WithSerialNames(side = "left", label = "secret")
+
+    val encoded = encodeToMap(WithSerialNames.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("position" to "left", "apiKey" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `encode() - filters the values of sensitive map keys`() {
     val entry = WithSensitiveMapKey(mapOf("query" to "shoes", "authToken" to "secret"))
 
     val encoded = encodeToMap(WithSensitiveMapKey.serializer(), entry)
@@ -241,7 +221,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces the values of a top-level map's sensitive keys with the Filtered substitute`() {
+  fun `encode() - filters the values of a top-level map's sensitive keys`() {
     val serializer = MapSerializer(String.serializer(), String.serializer())
 
     val encoded = encodeToMap(serializer, mapOf("query" to "shoes", "password" to "secret"))
@@ -251,7 +231,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces the values of sensitive map keys in maps nested in lists with the Filtered substitute`() {
+  fun `encode() - filters the values of sensitive map keys in maps nested in lists`() {
     val entry =
       WithSensitiveKeysInList(
         nested = mapOf("items" to listOf(mapOf("authToken" to "secret", "query" to "shoes"))),
@@ -274,7 +254,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces the values of value class map keys whose text is sensitive with the Filtered substitute`() {
+  fun `encode() - filters the values of value class map keys whose text is sensitive`() {
     val entry =
       WithHeaderNameMapKeys(
         mapOf(HeaderName("Accept") to "json", HeaderName("Authorization") to "Bearer abc123"),
@@ -292,7 +272,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces the values of CharSequence map keys whose text is sensitive with the Filtered substitute`() {
+  fun `encode() - filters the values of CharSequence map keys whose text is sensitive`() {
     val entry =
       WithTextMapKeys(mapOf(StringBuilder("query") to "shoes", StringBuilder("token") to "secret"))
 
@@ -305,32 +285,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces map entries with the Filtered substitute if their key's underlying property is sensitive`() {
-    val entry =
-      WithSensitiveValueClassMapKeys(
-        mapOf(
-          SensitiveHeaderName("Authorization") to "Bearer LEAKED-SECRET-1",
-          SensitiveHeaderName("X-Api-Key") to "LEAKED-SECRET-2",
-          // Filtered by its underlying property name even though its text isn't sensitive.
-          SensitiveHeaderName("Accept") to "LEAKED-SECRET-3",
-        ),
-      )
-
-    val encoded = encodeToMap(WithSensitiveValueClassMapKeys.serializer(), entry)
-
-    // The filtered keys share one text, so they collapse to a single entry.
-    assertThat(encoded)
-      .isEqualTo(
-        mapOf(
-          "headers" to
-            mapOf(UrlUtils.SENSITIVE_DATA_SUBSTITUTE to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
-        ),
-      )
-    assertThat(leavesOf(encoded).values.filter { it.contains("LEAKED-SECRET") }).isEmpty()
-  }
-
-  @Test
-  fun `encode() - replaces a map value with the Filtered substitute based only on its own key`() {
+  fun `encode() - filters a map value based only on its own key`() {
     val entry =
       WithMixedHeaderMapKeys(
         mapOf(
@@ -366,61 +321,15 @@ class KotlinxPropertiesEncoderFilteringTest {
         ),
       )
 
-    val exception =
-      assertFailsWith<DropArguments> {
-        encodeToMap(WithMixedHeaderMapKeys.serializer(), entry)
-      }
-
-    assertThat(exception.reason).isEqualTo(ArgumentDropReason.DUPLICATE_KEY)
+    assertDropsArguments(ArgumentDropReason.DUPLICATE_KEY) {
+      encodeToMap(WithMixedHeaderMapKeys.serializer(), entry)
+    }
   }
 
-  @Test
-  fun `encode() - replaces map values with the Filtered substitute when their underlying property is sensitive`() {
-    val entry = WithSensitiveValueClassMapValues(mapOf("reference" to TokenRef("abc123")))
-
-    val encoded = encodeToMap(WithSensitiveValueClassMapValues.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(mapOf("params" to mapOf("reference" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE)))
-  }
+  // Value classes whose underlying property is sensitive
 
   @Test
-  fun `encode() - replaces the values of properties whose serial name is sensitive with the Filtered substitute`() {
-    val entry = WithSerialNames(side = "left", label = "secret")
-
-    val encoded = encodeToMap(WithSerialNames.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(mapOf("position" to "left", "apiKey" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
-  }
-
-  @Test
-  fun `encode() - replaces value class properties whose property name is sensitive with the Filtered substitute`() {
-    val entry =
-      WithSensitiveValueClassPropertyName(
-        productId = ProductId("p-1"),
-        sessionRef = ProductId("secret"),
-      )
-
-    val encoded = encodeToMap(WithSensitiveValueClassPropertyName.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(mapOf("productId" to "p-1", "sessionRef" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
-  }
-
-  @Test
-  fun `encode() - replaces properties with the Filtered substitute when their underlying property is sensitive`() {
-    val entry =
-      WithSensitiveUnderlyingPropertyName(productId = ProductId("p-1"), reference = TokenRef("abc"))
-
-    val encoded = encodeToMap(WithSensitiveUnderlyingPropertyName.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(mapOf("productId" to "p-1", "reference" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
-  }
-
-  @Test
-  fun `encode() - replaces a top-level value with the Filtered substitute when its underlying property is sensitive`() {
+  fun `encode() - filters a top-level value class whose underlying property is sensitive under the value key`() {
     val encoded = encodeToMap(TokenRef.serializer(), TokenRef("abc123"))
 
     assertThat(encoded)
@@ -428,7 +337,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces list elements with the Filtered substitute when their underlying property is sensitive`() {
+  fun `encode() - filters list elements whose underlying property is sensitive`() {
     val entry = WithValueClassList(listOf(TokenRef("abc"), TokenRef("def")))
 
     val encoded = encodeToMap(WithValueClassList.serializer(), entry)
@@ -443,8 +352,43 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces a wrapped structure with the Filtered substitute if its underlying property is sensitive`() {
-    val entry = WithStructuredValueClass(CredentialsRef(Credentials(user = "jane")))
+  fun `encode() - filters map values whose underlying property is sensitive`() {
+    val entry = WithSensitiveValueClassMapValues(mapOf("reference" to TokenRef("abc123")))
+
+    val encoded = encodeToMap(WithSensitiveValueClassMapValues.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("params" to mapOf("reference" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE)))
+  }
+
+  @Test
+  fun `encode() - filters both the key and the value of a map entry when the key's underlying property is sensitive`() {
+    val entry =
+      WithSensitiveValueClassMapKeys(
+        mapOf(
+          SensitiveHeaderName("Authorization") to "Bearer LEAKED-SECRET-1",
+          SensitiveHeaderName("X-Api-Key") to "LEAKED-SECRET-2",
+          // Filtered by its underlying property name even though its text isn't sensitive.
+          SensitiveHeaderName("Accept") to "LEAKED-SECRET-3",
+        ),
+      )
+
+    val encoded = encodeToMap(WithSensitiveValueClassMapKeys.serializer(), entry)
+
+    // The filtered keys share one text, so they collapse to a single entry.
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "headers" to
+            mapOf(UrlUtils.SENSITIVE_DATA_SUBSTITUTE to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
+        ),
+      )
+  }
+
+  @Test
+  fun `encode() - filters a value class wrapping a class when its underlying property is sensitive`() {
+    val entry =
+      WithStructuredValueClass(CredentialsRef(Credentials(user = "jane", password = "secret")))
 
     val encoded = encodeToMap(WithStructuredValueClass.serializer(), entry)
 
@@ -486,6 +430,8 @@ class KotlinxPropertiesEncoderFilteringTest {
     assertThat(encoded).isEqualTo(mapOf("reference" to null))
   }
 
+  // Work skipped for sensitive values
+
   @Test
   fun `encode() - counts a sensitive property as one value regardless of its size`() {
     val entry =
@@ -526,7 +472,7 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
-  fun `encode() - replaces a sensitive CharSequence property with the Filtered substitute without reading its text`() {
+  fun `encode() - filters a sensitive CharSequence property without reading its text`() {
     val entry = WithSensitiveTextProperty(id = "1", authToken = UnreadableText())
 
     val encoded = encodeToMap(WithSensitiveTextProperty.serializer(), entry)
@@ -553,6 +499,8 @@ class KotlinxPropertiesEncoderFilteringTest {
 
     assertThat(encoded).isEqualTo(mapOf("id" to "1", "ref" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
   }
+
+  // Sensitive keys anywhere in the encoded tree
 
   /**
    * Deliberately structure-agnostic: rather than asserting the encoded shape, this walks the whole

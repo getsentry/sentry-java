@@ -599,7 +599,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `reads a copy encoded separately from what writeTo() wrote`() {
+  fun `writeTo() - doesn't cache what it writes for later reads`() {
     val entry = MutableDetail("1")
     val source = argumentSourceOf(mutableDetailSerializer, entry)
     source.writeTo(TreeArgumentWriter(ArgumentBudget()))
@@ -703,7 +703,7 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
-  fun `reads as only the drop reason of the copy read after writeTo() encodes the entry again`() {
+  fun `writeTo() - doesn't replace the failed copy read when it encodes the entry again`() {
     detailSerializer.error = IllegalStateException("boom")
     detailSerializer.failsFor = { detailSerializer.serialized.size == 1 }
     val source = argumentSourceOf(detailSerializer, Detail("1"))

@@ -290,7 +290,8 @@ internal class KotlinxBackStackEntryMapper(
     const val PROPERTY_ENCODING_DISABLED_INTEGRATION: String =
       "ComposeNavigation3PropertyEncodingDisabled"
 
-    private const val NAME_LOOKUP_CAPABILITY = "name lookups"
+    /** The capability the name lookup check verifies, as its inconclusive log names it. */
+    const val NAME_LOOKUP_CAPABILITY: String = "name lookups"
     private val UNRESOLVED = CachedType(serializer = null, name = null)
 
     /** Returns whether a class is annotated with `@Serializable`. */
@@ -345,11 +346,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         "Nav3 couldn't verify kotlinx.serialization support for %s because %s. Handling " +
           "failures per entry type.",
         capability,
-        if (error != null) {
-          "the compatibility probe threw (see the attached error)"
-        } else {
-          "a probe serializer wasn't found"
-        },
+        if (error != null) PROBE_THREW else PROBE_SERIALIZER_NOT_FOUND,
       )
   }
 
@@ -372,12 +369,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
    * descriptor threw, or `null` if the serializer lookup found none without throwing.
    */
   fun unresolved(type: Class<*>, error: Throwable?) {
-    val reason =
-      if (error != null) {
-        "reading its annotations, serializer, or descriptor failed"
-      } else {
-        "no serializer was found (the type may be generic or require R8 keep rules)"
-      }
+    val reason = if (error != null) LOOK_UP_FAILED else SERIALIZER_NOT_FOUND
     val advice =
       if (error is LinkageError) {
         // The probe can miss an incompatible version, which then fails every type one at a time.
@@ -515,6 +507,19 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
   }
 
   companion object {
+
+    /** Why the compatibility probe was inconclusive, if it threw. */
+    const val PROBE_THREW: String = "the compatibility probe threw (see the attached error)"
+
+    /** Why the compatibility probe was inconclusive, if a probe type's serializer wasn't found. */
+    const val PROBE_SERIALIZER_NOT_FOUND: String = "a probe serializer wasn't found"
+
+    /** Why a type can't be named, if reading its annotations, serializer, or descriptor threw. */
+    const val LOOK_UP_FAILED: String = "reading its annotations, serializer, or descriptor failed"
+
+    /** Why a type can't be named, if its serializer lookup found none without throwing. */
+    const val SERIALIZER_NOT_FOUND: String =
+      "no serializer was found (the type may be generic or require R8 keep rules)"
 
     /**
      * The oldest kotlinx.serialization version [KotlinxBackStackEntryMapper] supports.

@@ -28,6 +28,13 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 
+/**
+ * Tests through [BuiltInBackStackEntryMappers.serialName] and
+ * [BuiltInBackStackEntryMappers.serialNameAndProperties], directly or via [BackStackEntryMapper]'s
+ * companion, share their lazily created mappers with every other test in the JVM. Those mappers'
+ * caches, including which types they already logged, persist across tests, so tests that assert
+ * logs must create their own mapper with `create()` or a fresh class loader.
+ */
 class BuiltInBackStackEntryMappersTest {
 
   @Serializable @SerialName("Home") data object Home
@@ -202,26 +209,14 @@ class BuiltInBackStackEntryMappersTest {
   // create()
 
   @Test
-  fun `create() - returns the kotlinx mapper when it can be created`() {
+  fun `create() - returns the kotlinx mapper without logging or adding the mappers unavailable integration when it can be created`() {
     val mapper =
       BuiltInBackStackEntryMappers.create(logger = { logger }) {
         kotlinxMapper
       }
 
     assertThat(mapper).isSameInstanceAs(kotlinxMapper)
-  }
-
-  @Test
-  fun `create() - doesn't log when the kotlinx mapper can be created`() {
-    BuiltInBackStackEntryMappers.create(logger = { logger }) { kotlinxMapper }
-
     verifyNoInteractions(logger)
-  }
-
-  @Test
-  fun `create() - doesn't add the mappers unavailable integration when the kotlinx mapper can be created`() {
-    BuiltInBackStackEntryMappers.create(logger = { logger }) { kotlinxMapper }
-
     assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
       .doesNotContain(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
@@ -268,7 +263,7 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `create() - propagates an exception that is not a linkage error from creating the kotlinx mapper`() {
+  fun `create() - propagates an exception that isn't a LinkageError from creating the kotlinx mapper`() {
     val exception = IllegalStateException("mapper bug")
 
     val thrown =

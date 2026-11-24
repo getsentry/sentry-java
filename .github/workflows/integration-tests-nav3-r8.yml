@@ -1,10 +1,11 @@
 name: Nav3 BackStackEntryMapper R8 Check
 
 # Verifies behavior of BackStackEntryMapper.SerialName and SerialNameAndProperties
-# from sentry-android-navigation3 in R8-minified builds on an emulator (full and compat mode,
-# with the compile floor, the latest stable release, and any newer release candidate of
-# kotlinx.serialization, from gradle/dependency-matrix.versions.toml). See
-# sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md.
+# from sentry-android-navigation3 in R8-minified builds on an emulator (R8 full mode with the
+# compile floor, the latest stable release, and any newer release candidate of
+# kotlinx.serialization, from gradle/dependency-matrix.versions.toml, and R8 compat mode with the
+# floor). Also runs the module's unit tests that use kotlinx.serialization against the newer
+# versions. See sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md.
 #
 # Release candidate failures are warnings, except on PRs that change kotlinxSerialization-preview,
 # such as the weekly updater's.
@@ -19,6 +20,7 @@ on:
       - "sentry-android-integration-tests/nav3-no-kotlinx-r8-check/**"
       - "sentry-android-integration-tests/*.gradle.kts"
       - "scripts/test-nav3-backstack-entry-mapper-r8.sh"
+      - "scripts/test-nav3-kotlinx-versions.sh"
       - "scripts/update-kotlinx-serialization-preview.sh"
       - "scripts/dependency-matrix.sh"
       - "scripts/nav3-r8-check-relevant.sh"
@@ -41,6 +43,7 @@ on:
       - "sentry-android-integration-tests/nav3-no-kotlinx-r8-check/**"
       - "sentry-android-integration-tests/*.gradle.kts"
       - "scripts/test-nav3-backstack-entry-mapper-r8.sh"
+      - "scripts/test-nav3-kotlinx-versions.sh"
       - "scripts/update-kotlinx-serialization-preview.sh"
       - "scripts/dependency-matrix.sh"
       - "scripts/nav3-r8-check-relevant.sh"
@@ -131,23 +134,8 @@ jobs:
       # workflow runs the unit tests against the floor.
       - name: Run unit tests against newer kotlinx.serialization versions
         env:
-          PREVIEW_REQUIRED: ${{ needs.relevance.outputs.preview-required }}
-        run: |
-          failed=0
-          versions="$(./scripts/dependency-matrix.sh extra-versions kotlinxSerialization)"
-          while read -r role version; do
-            echo "::group::Unit tests against kotlinx.serialization $version ($role)"
-            # Reads no stdin, so it can't consume the loop's remaining versions.
-            if ./gradlew :sentry-android-navigation3:testReleaseUnitTest -Pnav3TestKotlinxVersion="$version" < /dev/null; then
-              :
-            elif [[ "$role" == "preview" && "$PREVIEW_REQUIRED" != "true" ]]; then
-              echo "::warning::Unit tests failed against kotlinx.serialization release candidate $version."
-            else
-              failed=1
-            fi
-            echo "::endgroup::"
-          done <<< "$versions"
-          exit "$failed"
+          NAV3_PREVIEW_REQUIRED: ${{ needs.relevance.outputs.preview-required }}
+        run: ./scripts/test-nav3-kotlinx-versions.sh
 
   build:
     name: Build

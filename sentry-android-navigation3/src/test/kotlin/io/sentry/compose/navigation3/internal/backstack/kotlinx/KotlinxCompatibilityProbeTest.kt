@@ -3,7 +3,6 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeClass
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeObject
-import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
@@ -19,7 +18,7 @@ class KotlinxCompatibilityProbeTest {
   // nameLookupLinkageError()
 
   @Test
-  fun `nameLookupLinkageError() - returns null for a compatible kotlinx serialization version conclusively`() {
+  fun `nameLookupLinkageError() - returns null without an inconclusive result for a compatible kotlinx serialization version`() {
     val inconclusive = mutableListOf<Throwable?>()
 
     val error = KotlinxCompatibilityProbe.nameLookupLinkageError { inconclusive += it }
@@ -179,7 +178,7 @@ class KotlinxCompatibilityProbeTest {
   }
 
   @Test
-  fun `encoderFailureOf() - rethrows a fatal error the check throws that isn't a LinkageError`() {
+  fun `encoderFailureOf() - propagates a fatal error the check throws that isn't a LinkageError`() {
     val error = OutOfMemoryError()
 
     val thrown =
@@ -222,7 +221,9 @@ class KotlinxCompatibilityProbeTest {
   fun `the properties encoder encodes every property of the probe's class`() {
     // A probe type that failed to encode for another reason would make the check fail closed.
     // Spelled out independently of the probe's expected encoding, so a wrong expectation can't
-    // pass by matching itself.
+    // pass by matching itself. The exact match also proves that the transient `cache` property is
+    // omitted, and that `login` is filtered only by its value class's underlying property name,
+    // `password`, as `login` itself isn't a sensitive name.
     val encoded = encodeToMap(ProbeClass.serializer(), ProbeClass())
 
     assertThat(encoded)
@@ -245,24 +246,5 @@ class KotlinxCompatibilityProbeTest {
           "note" to null,
         ),
       )
-  }
-
-  @Test
-  fun `the properties encoder omits the transient property of the probe's class`() {
-    val encoded = encodeToMap(ProbeClass.serializer(), ProbeClass())
-
-    assertThat(ProbeClass().cache).isNotNull()
-    assertThat(encoded).doesNotContainKey("cache")
-  }
-
-  @Test
-  fun `the probe's class filters a value class property only by its underlying property name`() {
-    // The `login` property's own name isn't sensitive, so its filtered value proves the fixture
-    // exercises the encoder's rule for a value class's underlying property name.
-    val encoded = encodeToMap(ProbeClass.serializer(), ProbeClass())
-
-    assertThat(HttpUtils.containsSensitiveDataKey("login")).isFalse()
-    assertThat(HttpUtils.containsSensitiveDataKey("password")).isTrue()
-    assertThat(encoded).containsEntry("login", SENSITIVE_DATA_SUBSTITUTE)
   }
 }

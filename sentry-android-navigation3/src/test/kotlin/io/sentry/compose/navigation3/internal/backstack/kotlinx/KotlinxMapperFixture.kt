@@ -20,23 +20,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 /**
- * Delegates to [delegate], recording each serialized value and throwing [error], if set, for the
- * values [failsFor] accepts.
- */
-internal class RecordingSerializer<T>(private val delegate: KSerializer<T>) :
-  KSerializer<T> by delegate {
-  val serialized = mutableListOf<T>()
-  var error: Throwable? = null
-  var failsFor: (T) -> Boolean = { true }
-
-  override fun serialize(encoder: Encoder, value: T) {
-    serialized += value
-    error?.takeIf { failsFor(value) }?.let { throw it }
-    delegate.serialize(encoder, value)
-  }
-}
-
-/**
  * Serializes [Detail] with a descriptor whose shape, its `elementsCount` and `kind`, throws
  * [elementsCountError] and [kindError] when set. Counts every read of the shape in [shapeReads].
  * Encoding reads the descriptor's `kind`, so it throws [kindError] too.

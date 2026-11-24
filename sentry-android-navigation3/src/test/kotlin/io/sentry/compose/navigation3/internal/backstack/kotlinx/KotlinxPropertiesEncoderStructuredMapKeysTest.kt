@@ -3,7 +3,6 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
-import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.VALUE_KEY
 import io.sentry.util.UrlUtils
@@ -17,8 +16,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -52,8 +49,6 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   /** Isn't `@Serializable`, so it can't be encoded as an [OpenOrigin] without a module. */
   class SearchOrigin : OpenOrigin
 
-  @Serializable data class Credentials(val user: String, val password: String)
-
   @Serializable data class Session(val token: String)
 
   @Serializable data class WithPointMapKeys(val byPoint: Map<Point, Int>)
@@ -80,11 +75,12 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
 
   @Serializable data class WithPointMapKeysToLists(val byPoint: Map<Point, List<String>>)
 
-  @Serializable data class WithCredentialsMapKeys(val byUser: Map<Credentials, Int>)
+  @Serializable internal data class WithCredentialsMapKeys(val byUser: Map<Credentials, Int>)
 
   @Serializable data class WithSessionMapKeys(val byLogin: Map<Session, String>)
 
-  @Serializable data class WithPointMapKeysToCredentials(val byPoint: Map<Point, Credentials>)
+  @Serializable
+  internal data class WithPointMapKeysToCredentials(val byPoint: Map<Point, Credentials>)
 
   @Serializable data class WithOpenOriginMapKeys(val byOrigin: Map<@Polymorphic OpenOrigin, Int>)
 
@@ -118,16 +114,6 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
     val byOwner: Map<CredentialsRef, @Serializable(with = ThrowingSerializer::class) String>,
   )
 
-  /** Fails the test if a value it should never see is encoded. */
-  object ThrowingSerializer : KSerializer<String> {
-    override val descriptor: SerialDescriptor =
-      PrimitiveSerialDescriptor("test.Throwing", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: String): Unit = error("serializer ran")
-
-    override fun deserialize(decoder: Decoder): String = throw UnsupportedOperationException()
-  }
-
   /** A class key that encodes as a [CredentialsRef] when [isSecret], or else as a [Point]. */
   @Serializable(with = MixedOwnerSerializer::class)
   data class MixedOwner(val x: Int, val isSecret: Boolean)
@@ -153,17 +139,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   // Encoded shapes
 
   @Test
-  fun `encode() - records a map with class keys as a list of key and value entries`() {
-    val entry = WithPointMapKeys(mapOf(Point(1) to 2))
-
-    val encoded = encodeToMap(WithPointMapKeys.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(mapOf("byPoint" to listOf(mapOf("key" to mapOf("x" to 1), "value" to 2))))
-  }
-
-  @Test
-  fun `encode() - records the entries of a map with class keys in map order`() {
+  fun `encode() - encodes a map with class keys as a list of key and value entries in map order`() {
     val entry = WithPointMapKeysToLabels(mapOf(Point(2) to "b", Point(1) to "a", Point(3) to "c"))
 
     val encoded = encodeToMap(WithPointMapKeysToLabels.serializer(), entry)
@@ -182,7 +158,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a map with object keys as a list of key and value entries`() {
+  fun `encode() - encodes a map with object keys as a list of key and value entries`() {
     val entry = WithObjectMapKeys(mapOf(Everywhere to 1))
 
     val encoded = encodeToMap(WithObjectMapKeys.serializer(), entry)
@@ -194,7 +170,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a map with list keys as a list of key and value entries`() {
+  fun `encode() - encodes a map with list keys as a list of key and value entries`() {
     val entry = WithListMapKeys(mapOf(listOf("a", "b") to 1))
 
     val encoded = encodeToMap(WithListMapKeys.serializer(), entry)
@@ -204,7 +180,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a map with map keys as a list of key and value entries`() {
+  fun `encode() - encodes a map with map keys as a list of key and value entries`() {
     val entry = WithMapMapKeys(mapOf(mapOf("a" to 1) to 2))
 
     val encoded = encodeToMap(WithMapMapKeys.serializer(), entry)
@@ -214,7 +190,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a map with sealed keys as a list of entries with each key's serial name and value`() {
+  fun `encode() - encodes a map with sealed keys as a list of entries with each key's serial name and value`() {
     val entry = WithOriginMapKeys(mapOf(Origin.Search("shoes") to 1))
 
     val encoded = encodeToMap(WithOriginMapKeys.serializer(), entry)
@@ -234,7 +210,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a map with value class keys that wrap a class as entries of the underlying keys`() {
+  fun `encode() - encodes a map with value class keys that wrap a class as entries of the underlying keys`() {
     val entry = WithPointRefMapKeys(mapOf(PointRef(Point(1)) to 2))
 
     val encoded = encodeToMap(WithPointRefMapKeys.serializer(), entry)
@@ -244,7 +220,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a map with value class keys that wrap a value class wrapping a class as entries of the innermost keys`() {
+  fun `encode() - encodes a map with value class keys that wrap a value class wrapping a class as entries of the innermost keys`() {
     val entry = WithOuterPointRefMapKeys(mapOf(OuterPointRef(PointRef(Point(1))) to 2))
 
     val encoded = encodeToMap(WithOuterPointRefMapKeys.serializer(), entry)
@@ -254,7 +230,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a null key of a map with nullable class keys as null`() {
+  fun `encode() - encodes a null key of a map with nullable class keys as null`() {
     val entry = WithNullablePointMapKeys(mapOf(null to 1, Point(2) to 3))
 
     val encoded = encodeToMap(WithNullablePointMapKeys.serializer(), entry)
@@ -272,7 +248,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records structured values under class keys`() {
+  fun `encode() - encodes structured values under class keys`() {
     val entry = WithPointMapKeysToLists(mapOf(Point(1) to listOf("a", "b")))
 
     val encoded = encodeToMap(WithPointMapKeysToLists.serializer(), entry)
@@ -284,7 +260,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records a map with class keys nested in a list as a list of key and value entries`() {
+  fun `encode() - encodes a map with class keys nested in a list as a list of key and value entries`() {
     val entry = WithNestedPointMapKeys(listOf(mapOf(Point(1) to 2), emptyMap()))
 
     val encoded = encodeToMap(WithNestedPointMapKeys.serializer(), entry)
@@ -299,14 +275,14 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - records an empty map with class keys as an empty list`() {
+  fun `encode() - encodes an empty map with class keys as an empty list`() {
     val encoded = encodeToMap(WithPointMapKeys.serializer(), WithPointMapKeys(emptyMap()))
 
     assertThat(encoded).isEqualTo(mapOf("byPoint" to emptyList<Any?>()))
   }
 
   @Test
-  fun `encode() - wraps a top-level map with class keys under the value key`() {
+  fun `encode() - encodes a top-level map with class keys under the value key`() {
     val serializer = MapSerializer(Point.serializer(), Int.serializer())
 
     val encoded = encodeToMap(serializer, mapOf(Point(1) to 2))
@@ -331,74 +307,6 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
               mapOf(
                 "key" to mapOf("user" to "jane", "password" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
                 "value" to 1,
-              ),
-            ),
-        ),
-      )
-  }
-
-  @Test
-  fun `encode() - filters the value under a key that's filtered as a whole, without running its serializer`() {
-    val entry = WithCredentialsRefMapKeys(mapOf(CredentialsRef(Point(1)) to "LEAKED-SECRET"))
-
-    val encoded = encodeToMap(WithCredentialsRefMapKeys.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(
-        mapOf(
-          "byOwner" to
-            listOf(
-              mapOf(
-                "key" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
-                "value" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
-              ),
-            ),
-        ),
-      )
-  }
-
-  @Test
-  fun `encode() - filters only the value under a filtered key, not the values of the next entries`() {
-    val entry =
-      WithMixedOwnerMapKeys(
-        mapOf(
-          MixedOwner(1, isSecret = true) to "LEAKED-SECRET",
-          MixedOwner(2, isSecret = false) to "VISIBLE",
-        ),
-      )
-
-    val encoded = encodeToMap(WithMixedOwnerMapKeys.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(
-        mapOf(
-          "byOwner" to
-            listOf(
-              mapOf(
-                "key" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
-                "value" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
-              ),
-              mapOf("key" to mapOf("x" to 2), "value" to "VISIBLE"),
-            ),
-        ),
-      )
-  }
-
-  @Test
-  fun `encode() - doesn't filter a value under a class key based on the key's sensitive property names`() {
-    // There's no key text to check, so only the key's own sensitive property is filtered.
-    val entry = WithSessionMapKeys(mapOf(Session(token = "abc") to "VISIBLE"))
-
-    val encoded = encodeToMap(WithSessionMapKeys.serializer(), entry)
-
-    assertThat(encoded)
-      .isEqualTo(
-        mapOf(
-          "byLogin" to
-            listOf(
-              mapOf(
-                "key" to mapOf("token" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
-                "value" to "VISIBLE",
               ),
             ),
         ),
@@ -444,6 +352,74 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
       )
   }
 
+  @Test
+  fun `encode() - doesn't filter a value under a class key based on the key's sensitive property names`() {
+    // There's no key text to check, so only the key's own sensitive property is filtered.
+    val entry = WithSessionMapKeys(mapOf(Session(token = "abc") to "VISIBLE"))
+
+    val encoded = encodeToMap(WithSessionMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "byLogin" to
+            listOf(
+              mapOf(
+                "key" to mapOf("token" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
+                "value" to "VISIBLE",
+              ),
+            ),
+        ),
+      )
+  }
+
+  @Test
+  fun `encode() - filters the value under a class key that's filtered as a whole, without running the value's serializer`() {
+    val entry = WithCredentialsRefMapKeys(mapOf(CredentialsRef(Point(1)) to "LEAKED-SECRET"))
+
+    val encoded = encodeToMap(WithCredentialsRefMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "byOwner" to
+            listOf(
+              mapOf(
+                "key" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+                "value" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+              ),
+            ),
+        ),
+      )
+  }
+
+  @Test
+  fun `encode() - filters only the value under a filtered class key, not the values of the next entries`() {
+    val entry =
+      WithMixedOwnerMapKeys(
+        mapOf(
+          MixedOwner(1, isSecret = true) to "LEAKED-SECRET",
+          MixedOwner(2, isSecret = false) to "VISIBLE",
+        ),
+      )
+
+    val encoded = encodeToMap(WithMixedOwnerMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "byOwner" to
+            listOf(
+              mapOf(
+                "key" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+                "value" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+              ),
+              mapOf("key" to mapOf("x" to 2), "value" to "VISIBLE"),
+            ),
+        ),
+      )
+  }
+
   // Unencodable keys and values
 
   @Test
@@ -475,27 +451,29 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   }
 
   @Test
-  fun `encode() - throws when a structured key's serializer throws after beginning a structure`() {
+  fun `encode() - propagates a structured key's serializer exception thrown after beginning a structure`() {
     val entry = WithPartlyWrittenMapKeys(mapOf(Point(1) to 2))
 
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithPartlyWrittenMapKeys.serializer(), entry, unencodableValues::add)
-    }
+    val thrown =
+      assertFailsWith<SerializationException> {
+        encodeToMap(WithPartlyWrittenMapKeys.serializer(), entry, unencodableValues::add)
+      }
 
+    assertThat(thrown).hasMessageThat().isEqualTo("partway")
     assertThat(unencodableValues).isEmpty()
   }
 
   // Argument limits
 
   @Test
-  fun `encode() - drops the arguments for invalid structure when a structured key is nested past the maximum depth`() {
+  fun `encode() - drops the arguments for the depth limit when a structured key is nested past the maximum depth`() {
     val (keySerializer, key) =
       boxed(depth = MAX_ARGUMENT_DEPTH, value = "leaf", String.serializer())
     val serializer = Box.serializer(MapSerializer(keySerializer, Int.serializer()))
 
-    val exception = assertFailsWith<DropArguments> { encodeToMap(serializer, Box(mapOf(key to 1))) }
-
-    assertThat(exception.reason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
+    assertDropsArguments(ArgumentDropReason.INVALID_STRUCTURE) {
+      encodeToMap(serializer, Box(mapOf(key to 1)))
+    }
   }
 
   @Test
@@ -504,9 +482,8 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
     val longString = "a".repeat(16 * 1024)
     val entry = WithListMapKeys(mapOf(List(4_000) { longString } to 1))
 
-    val exception =
-      assertFailsWith<DropArguments> { encodeToMap(WithListMapKeys.serializer(), entry) }
-
-    assertThat(exception.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
+    assertDropsArguments(ArgumentDropReason.CHARACTER_LIMIT) {
+      encodeToMap(WithListMapKeys.serializer(), entry)
+    }
   }
 }

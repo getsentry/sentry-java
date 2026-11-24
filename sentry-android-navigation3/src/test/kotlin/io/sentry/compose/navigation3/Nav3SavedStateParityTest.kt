@@ -40,6 +40,11 @@ import org.robolectric.annotation.Config
  * Destinations are saved as Nav3 1.1's `rememberNavBackStack` overloads save them: with
  * `encodeToSavedState`, a [NavBackStackSerializer], and either [NavKeySerializer] with the default
  * configuration, or a polymorphic [NavKey] serializer with an app-provided configuration.
+ *
+ * [BackStackEntryMapper.SerialNameAndProperties] is a lazily created singleton shared with every
+ * other test in the JVM, and its caches, including which types it already logged, persist across
+ * tests. So these tests assert only mapped entries, not logs; a test that asserts logs must create
+ * its own mapper.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])

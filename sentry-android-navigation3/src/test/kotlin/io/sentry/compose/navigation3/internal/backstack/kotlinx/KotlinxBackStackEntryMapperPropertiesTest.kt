@@ -283,22 +283,6 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   // Property values that can't be encoded
 
   @Test
-  fun `records unencodable property values as the Unencodable substitute and keeps the other arguments`() {
-    val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(WithContextual("1", Unregistered("2")))
-
-    assertThat(mapped)
-      .isEqualTo(
-        SentryBackStackEntry(
-          "WithContextual",
-          mapOf("id" to "1", "other" to KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE),
-        ),
-      )
-  }
-
-  @Test
   fun `logs only an unencodable-values warning, once per type, for values recorded as the Unencodable substitute`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
@@ -361,24 +345,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   // Properties that can't be encoded
 
   @Test
-  fun `keeps the name and records only the encoding failure when a type's properties can't be encoded`() {
-    val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
-    val mapper = fixture.mapper
-
-    val mapped = mapper.map(WithContextualAndFragile(null, Fragile(fails = true)))
-
-    assertThat(mapped)
-      .isEqualTo(
-        SentryBackStackEntry(
-          "WithContextualAndFragile",
-          droppedBy(ArgumentDropReason.ENCODING_FAILED),
-        ),
-      )
-  }
-
-  @Test
-  fun `keeps encoding a type's properties after they couldn't be encoded once`() {
+  fun `keeps encoding a type's properties after their encoding throws once`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.detailSerializer.error = SerializationException("unencodable")
     val mapper = fixture.mapper
@@ -617,19 +584,6 @@ class KotlinxBackStackEntryMapperPropertiesTest {
 
     assertThat(mapped)
       .isEqualTo(SentryBackStackEntry("Detail", droppedBy(ArgumentDropReason.ENCODING_FAILED)))
-  }
-
-  @Test
-  fun `keeps encoding a type's properties after its property encoding throws an exception once`() {
-    val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    fixture.detailSerializer.error = IllegalArgumentException("invalid id")
-    val mapper = fixture.mapper
-    mapper.mapAndReadArguments(Detail("1"))
-    fixture.detailSerializer.error = null
-
-    val mapped = mapper.map(Detail("2"))
-
-    assertThat(mapped).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "2")))
   }
 
   @Test

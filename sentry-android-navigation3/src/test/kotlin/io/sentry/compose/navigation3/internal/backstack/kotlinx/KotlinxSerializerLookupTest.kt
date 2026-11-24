@@ -12,10 +12,6 @@ import org.junit.Test
 
 class KotlinxSerializerLookupTest {
 
-  @Serializable @SerialName("Detail") data class Detail(val id: String)
-
-  @Serializable @SerialName("Home") data object Home
-
   @Serializable
   @SerialName("Route")
   sealed interface Route {
@@ -212,7 +208,7 @@ class KotlinxSerializerLookupTest {
     assertThat(serializer?.descriptor?.serialName).isEqualTo("PrivateClass")
   }
 
-  // Types that aren't @Serializable but that kotlinx serialization can serialize
+  // Types that aren't @Serializable but that kotlinx.serialization can serialize
 
   @Test
   fun `returns kotlinx serialization's serializers for built-in types`() {
@@ -331,7 +327,7 @@ class KotlinxSerializerLookupTest {
   }
 
   @Test
-  fun `throws a class's fatal serializer initializer error unwrapped`() {
+  fun `propagates a class's fatal serializer initializer error unwrapped`() {
     val thrown =
       assertThrows(OutOfMemoryError::class.java) {
         reflectiveSerializerOrNull(FatallyUninitializable::class.java)
@@ -341,7 +337,7 @@ class KotlinxSerializerLookupTest {
   }
 
   @Test
-  fun `throws a private object's fatal serializer initializer error unwrapped`() {
+  fun `propagates a private object's fatal serializer initializer error unwrapped`() {
     val thrown =
       assertThrows(OutOfMemoryError::class.java) {
         reflectiveSerializerOrNull(PrivateFatal::class.java)
