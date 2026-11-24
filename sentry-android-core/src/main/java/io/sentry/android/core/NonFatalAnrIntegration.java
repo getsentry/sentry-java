@@ -19,9 +19,9 @@ import io.sentry.android.core.anr.AnrCulpritEventHelper;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
 import io.sentry.android.core.anr.AnrStackTrace;
 import io.sentry.android.core.anr.NonFatalAnrMarker;
+import io.sentry.android.core.hang.HangManager;
 import io.sentry.android.core.hang.HangRecord;
-import io.sentry.android.core.hang.HangRecorder;
-import io.sentry.android.core.hang.HangRecorderListener;
+import io.sentry.android.core.hang.HangRecordingListener;
 import io.sentry.android.core.hang.HangRecordingRequest;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.protocol.Mechanism;
@@ -45,7 +45,7 @@ import org.jetbrains.annotations.Nullable;
  * Reports main-thread hangs as non-fatal ANR events: hangs that recover, before or after Android
  * shows the ANR dialog, and hangs that still block the main thread after 8 s, which are cut there.
  *
- * <p>Subscribes to the {@link HangRecorder} of the options for the SDK lifetime, and draws the
+ * <p>Subscribes to the {@link HangManager} of the options for the SDK lifetime, and draws the
  * sample rate at each hang. Installed from Android 11 (API 30), where {@link AnrV2Integration}
  * skips the fatal ANRs that this integration already reported.
  *
@@ -61,8 +61,8 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
    */
   static final long MIN_FATAL_ANR_DURATION_MS = 5_000;
 
-  private final @NotNull AtomicReference<HangRecorder> subscribedRecorder = new AtomicReference<>();
-  private final @NotNull AtomicReference<HangRecorderListener> subscription =
+  private final @NotNull AtomicReference<HangManager> subscribedManager = new AtomicReference<>();
+  private final @NotNull AtomicReference<HangRecordingListener> subscription =
       new AtomicReference<>();
 
   @Override
@@ -75,30 +75,30 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       return;
     }
     final @NotNull ILogger logger = options.getLogger();
-    final @Nullable HangRecorder recorder = androidOptions.getHangRecorder();
-    if (recorder == null) {
-      logger.log(SentryLevel.WARNING, "Non-fatal ANR is enabled but there is no hang recorder");
+    final @Nullable HangManager manager = androidOptions.getHangManager();
+    if (manager == null) {
+      logger.log(SentryLevel.WARNING, "Non-fatal ANR is enabled but there is no hang manager");
       return;
     }
-    if (!subscribedRecorder.compareAndSet(null, recorder)) {
+    if (!subscribedManager.compareAndSet(null, manager)) {
       return;
     }
-    final @NotNull HangRecorderListener listener = new Reporter(scopes, androidOptions);
+    final @NotNull HangRecordingListener listener = new Reporter(scopes, androidOptions);
     subscription.set(listener);
-    recorder.subscribe(listener);
+    manager.subscribe(listener);
     addIntegrationToSdkVersion("NonFatalAnr");
   }
 
   @Override
   public void close() throws IOException {
-    final @Nullable HangRecorder recorder = subscribedRecorder.getAndSet(null);
-    final @Nullable HangRecorderListener listener = subscription.getAndSet(null);
-    if (recorder != null && listener != null) {
-      recorder.unsubscribe(listener);
+    final @Nullable HangManager manager = subscribedManager.getAndSet(null);
+    final @Nullable HangRecordingListener listener = subscription.getAndSet(null);
+    if (manager != null && listener != null) {
+      manager.unsubscribe(listener);
     }
   }
 
-  private static final class Reporter implements HangRecorderListener {
+  private static final class Reporter implements HangRecordingListener {
 
     private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;

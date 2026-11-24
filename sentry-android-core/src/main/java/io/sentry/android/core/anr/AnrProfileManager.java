@@ -4,7 +4,7 @@ import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.ILogger;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.hang.HangRecorder;
+import io.sentry.android.core.hang.HangManager;
 import io.sentry.cache.tape.ObjectQueue;
 import io.sentry.cache.tape.QueueFile;
 import io.sentry.util.Objects;
@@ -22,9 +22,9 @@ import org.jetbrains.annotations.Nullable;
 public final class AnrProfileManager implements AutoCloseable {
 
   /**
-   * One sample per {@link HangRecorder#DEFAULT_POLLING_INTERVAL_MS} tick for {@link
-   * HangRecorder#DEFAULT_MAX_RECORDING_TIME_MS}. The hang recorder stops sampling at this size,
-   * because a full file drops its oldest entry.
+   * One sample per {@link HangManager#DEFAULT_POLLING_INTERVAL_MS} tick for {@link
+   * HangManager#DEFAULT_MAX_RECORDING_TIME_MS}. The hang manager stops sampling a hang at this
+   * size, because a full file drops its oldest entry.
    */
   public static final int MAX_NUM_STACKTRACES = 120;
 

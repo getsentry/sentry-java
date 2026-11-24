@@ -11,9 +11,9 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.anr.NonFatalAnrMarker
+import io.sentry.android.core.hang.HangManager
 import io.sentry.android.core.hang.HangRecord
-import io.sentry.android.core.hang.HangRecorder
-import io.sentry.android.core.hang.HangRecorderListener
+import io.sentry.android.core.hang.HangRecordingListener
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.hints.AbnormalExit
 import io.sentry.protocol.SentryId
@@ -40,7 +40,7 @@ class NonFatalAnrIntegrationTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
   private val scopes = mock<IScopes>()
-  private val recorder = mock<HangRecorder>()
+  private val manager = mock<HangManager>()
   private lateinit var options: SentryAndroidOptions
   private val marker by lazy { File(tmpDir.root, "last_non_fatal_anr") }
   private var markerExistedAtCapture: Boolean? = null
@@ -52,7 +52,7 @@ class NonFatalAnrIntegrationTest {
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         nonFatalAnrSampleRate = 1.0
-        hangRecorder = recorder
+        hangManager = manager
       }
     whenever(scopes.captureEvent(any<SentryEvent>(), any<Hint>())).thenAnswer {
       markerExistedAtCapture = marker.exists()
@@ -83,11 +83,11 @@ class NonFatalAnrIntegrationTest {
       .apply { samples.forEach { addStackTrace(it) } }
       .build()
 
-  private fun subscribed(): HangRecorderListener {
+  private fun subscribed(): HangRecordingListener {
     val integration = NonFatalAnrIntegration()
     integration.register(scopes, options)
-    val captor = argumentCaptor<HangRecorderListener>()
-    verify(recorder).subscribe(captor.capture())
+    val captor = argumentCaptor<HangRecordingListener>()
+    verify(manager).subscribe(captor.capture())
     return captor.firstValue
   }
 
@@ -115,7 +115,7 @@ class NonFatalAnrIntegrationTest {
 
     NonFatalAnrIntegration().register(scopes, options)
 
-    verify(recorder).subscribe(any())
+    verify(manager).subscribe(any())
     assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("NonFatalAnr")
   }
 
@@ -125,7 +125,7 @@ class NonFatalAnrIntegrationTest {
 
     NonFatalAnrIntegration().register(scopes, options)
 
-    verify(recorder, never()).subscribe(any())
+    verify(manager, never()).subscribe(any())
   }
 
   @Test
@@ -134,12 +134,12 @@ class NonFatalAnrIntegrationTest {
 
     NonFatalAnrIntegration().register(scopes, options)
 
-    verify(recorder, never()).subscribe(any())
+    verify(manager, never()).subscribe(any())
   }
 
   @Test
-  fun `no recorder does not subscribe`() {
-    options.hangRecorder = null
+  fun `no hang manager does not subscribe`() {
+    options.hangManager = null
 
     NonFatalAnrIntegration().register(scopes, options)
     NonFatalAnrIntegration().close()
@@ -152,13 +152,13 @@ class NonFatalAnrIntegrationTest {
   fun `close unsubscribes the subscribed listener once`() {
     val integration = NonFatalAnrIntegration()
     integration.register(scopes, options)
-    val captor = argumentCaptor<HangRecorderListener>()
-    verify(recorder).subscribe(captor.capture())
+    val captor = argumentCaptor<HangRecordingListener>()
+    verify(manager).subscribe(captor.capture())
 
     integration.close()
     integration.close()
 
-    verify(recorder, times(1)).unsubscribe(captor.firstValue)
+    verify(manager, times(1)).unsubscribe(captor.firstValue)
   }
 
   @Test
@@ -172,7 +172,7 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `unsampled hang needs nothing from the recorder`() {
+  fun `unsampled hang needs nothing from the hang manager`() {
     options.nonFatalAnrSampleRate = Double.MIN_VALUE
     val listener = subscribed()
 
@@ -192,7 +192,7 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `hang after the sample rate became null needs nothing from the recorder`() {
+  fun `hang after the sample rate became null needs nothing from the hang manager`() {
     val listener = subscribed()
 
     options.nonFatalAnrSampleRate = null
