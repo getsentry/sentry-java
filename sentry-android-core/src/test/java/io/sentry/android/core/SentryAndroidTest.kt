@@ -203,17 +203,21 @@ class SentryAndroidTest {
   }
 
   @Test
-  fun `close closes the hang manager`() {
+  fun `close unsubscribes the ANR profiling integration from the hang manager`() {
     val manager = mock<HangManager>()
-    fixture.initSut { it.hangManager = manager }
+    fixture.initSut {
+      it.hangManager = manager
+      it.anrProfilingSampleRate = 1.0
+    }
+    verify(manager).subscribe(any())
 
     Sentry.close()
 
-    verify(manager).close()
+    verify(manager).unsubscribe(any())
   }
 
   @Test
-  fun `re-init closes the previous hang manager and creates a new one`() {
+  fun `re-init creates a new hang manager`() {
     val previous = mock<HangManager>()
     fixture.initSut { it.hangManager = previous }
     var options: SentryAndroidOptions? = null
@@ -223,7 +227,6 @@ class SentryAndroidTest {
       options = it
     }
 
-    verify(previous).close()
     assertThat(options!!.hangManager).isNotNull()
     assertThat(options!!.hangManager).isNotSameInstanceAs(previous)
   }

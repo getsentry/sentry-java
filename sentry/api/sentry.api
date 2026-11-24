@@ -3792,7 +3792,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun addOptionsObserver (Lio/sentry/IOptionsObserver;)V
 	public fun addPerformanceCollector (Lio/sentry/IPerformanceCollector;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
-	public fun close ()V
 	public static fun empty ()Lio/sentry/SentryOptions;
 	public fun findPersistingScopeObserver ()Lio/sentry/cache/PersistingScopeObserver;
 	public fun getAppStartExtender ()Lio/sentry/IAppStartExtender;

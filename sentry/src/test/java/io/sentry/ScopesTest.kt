@@ -22,7 +22,6 @@ import io.sentry.test.createTestScopes
 import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
-import java.io.Closeable
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -2045,49 +2044,6 @@ class ScopesTest {
     verify(profiler).close()
     verify(continuousProfiler).close(eq(true))
     verify(performanceCollector).close()
-  }
-
-  @Test
-  fun `Scopes closes the options after the integrations on close call`() {
-    val calls = mutableListOf<String>()
-    val sut = createScopesRecordingClose(calls)
-
-    sut.close()
-
-    assertEquals(listOf("integration", "options"), calls)
-  }
-
-  @Test
-  fun `Scopes closes the options after the integrations on restart`() {
-    val calls = mutableListOf<String>()
-    val sut = createScopesRecordingClose(calls)
-
-    sut.close(true)
-
-    assertEquals(listOf("integration", "options"), calls)
-  }
-
-  private fun createScopesRecordingClose(calls: MutableList<String>): Scopes {
-    val integration =
-      object : Integration, Closeable {
-        override fun register(scopes: IScopes, options: SentryOptions) = Unit
-
-        override fun close() {
-          calls.add("integration")
-        }
-      }
-    val options =
-      object : SentryOptions() {
-          override fun close() {
-            calls.add("options")
-          }
-        }
-        .apply {
-          dsn = "https://key@sentry.io/proj"
-          cacheDirPath = file.absolutePath
-          addIntegration(integration)
-        }
-    return createScopes(options)
   }
 
   @Test
