@@ -154,9 +154,7 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
 
       final @NotNull SentryEvent event = buildEvent(record, endTimestampMs);
       scopes.captureEvent(
-          event,
-          HintUtils.createWithTypeCheckHint(
-              new NonFatalAnrHint(record.hasEndedAtMaxRecordingTime(), writeMarker)));
+          event, HintUtils.createWithTypeCheckHint(new NonFatalAnrHint(writeMarker)));
 
       final @NotNull Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setCategory("anr");

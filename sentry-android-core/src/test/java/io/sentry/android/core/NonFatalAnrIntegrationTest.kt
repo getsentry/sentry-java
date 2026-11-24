@@ -347,33 +347,6 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `record cut at maxRecordingTime gives a hint with the main thread blocked`() {
-    val listener = subscribed()
-
-    listener.onHangRecorded(
-      HangRecord.Builder()
-        .setDurationMs(8_000)
-        .setStartTimestampMs(1_000)
-        .addStackTrace(AnrStackTrace(1_100, systemStack))
-        .setEndedAtMaxRecordingTime(true)
-        .build(),
-    )
-
-    val hint = HintUtils.getSentrySdkHint(capturedEvent().second) as NonFatalAnrHint
-    assertThat(hint.isMainThreadBlocked).isTrue()
-  }
-
-  @Test
-  fun `record of a recovered hang gives a hint without the main thread blocked`() {
-    val listener = subscribed()
-
-    listener.onHangRecorded(record())
-
-    val hint = HintUtils.getSentrySdkHint(capturedEvent().second) as NonFatalAnrHint
-    assertThat(hint.isMainThreadBlocked).isFalse()
-  }
-
-  @Test
   fun `main thread and culprit exceptions have the main thread id`() {
     val mainThreadId = AndroidThreadChecker.getThreadId(Looper.getMainLooper().thread)
     val listener = subscribed()
