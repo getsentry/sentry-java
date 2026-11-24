@@ -32,7 +32,7 @@ import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.anr.AnrProfilingIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
-import io.sentry.android.core.hang.HangRecorder
+import io.sentry.android.core.hang.HangManager
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.replay.ReplayIntegration
@@ -203,19 +203,19 @@ class SentryAndroidTest {
   }
 
   @Test
-  fun `close closes the hang recorder`() {
-    val recorder = mock<HangRecorder>()
-    fixture.initSut { it.hangRecorder = recorder }
+  fun `close closes the hang manager`() {
+    val manager = mock<HangManager>()
+    fixture.initSut { it.hangManager = manager }
 
     Sentry.close()
 
-    verify(recorder).close()
+    verify(manager).close()
   }
 
   @Test
-  fun `re-init closes the previous hang recorder and creates a new one`() {
-    val previous = mock<HangRecorder>()
-    fixture.initSut { it.hangRecorder = previous }
+  fun `re-init closes the previous hang manager and creates a new one`() {
+    val previous = mock<HangManager>()
+    fixture.initSut { it.hangManager = previous }
     var options: SentryAndroidOptions? = null
 
     fixture.initSut {
@@ -224,8 +224,8 @@ class SentryAndroidTest {
     }
 
     verify(previous).close()
-    assertThat(options!!.hangRecorder).isNotNull()
-    assertThat(options!!.hangRecorder).isNotSameInstanceAs(previous)
+    assertThat(options!!.hangManager).isNotNull()
+    assertThat(options!!.hangManager).isNotSameInstanceAs(previous)
   }
 
   @Test

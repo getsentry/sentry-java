@@ -2,7 +2,7 @@ package io.sentry.android.core
 
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
-import io.sentry.android.core.hang.HangRecorder
+import io.sentry.android.core.hang.HangManager
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -270,18 +270,18 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
-  fun `close closes the hang recorder`() {
+  fun `close closes the hang manager`() {
     val sentryOptions = SentryAndroidOptions()
-    val recorder = mock<HangRecorder>()
-    sentryOptions.hangRecorder = recorder
+    val manager = mock<HangManager>()
+    sentryOptions.hangManager = manager
 
     sentryOptions.close()
 
-    verify(recorder).close()
+    verify(manager).close()
   }
 
   @Test
-  fun `close without a hang recorder does not throw`() {
+  fun `close without a hang manager does not throw`() {
     SentryAndroidOptions().close()
   }
 

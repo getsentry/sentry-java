@@ -14,7 +14,7 @@ import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
-import io.sentry.android.core.hang.HangRecorder;
+import io.sentry.android.core.hang.HangManager;
 import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
@@ -334,7 +334,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableAnrFingerprinting = true;
 
-  private volatile @Nullable HangRecorder hangRecorder;
+  private volatile @Nullable HangManager hangManager;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -1010,26 +1010,26 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * The recorder that the ANR integrations share. Null if {@link #getCacheDirPath()} was null at
-   * init.
+   * The hang manager that the ANR integrations share. Null if {@link #getCacheDirPath()} was null
+   * at init.
    */
   @ApiStatus.Internal
-  public @Nullable HangRecorder getHangRecorder() {
-    return hangRecorder;
+  public @Nullable HangManager getHangManager() {
+    return hangManager;
   }
 
   @ApiStatus.Internal
-  public void setHangRecorder(final @Nullable HangRecorder hangRecorder) {
-    this.hangRecorder = hangRecorder;
+  public void setHangManager(final @Nullable HangManager hangManager) {
+    this.hangManager = hangManager;
   }
 
   @ApiStatus.Internal
   @Override
   public void close() {
     super.close();
-    final @Nullable HangRecorder recorder = hangRecorder;
-    if (recorder != null) {
-      recorder.close();
+    final @Nullable HangManager manager = hangManager;
+    if (manager != null) {
+      manager.close();
     }
   }
 
