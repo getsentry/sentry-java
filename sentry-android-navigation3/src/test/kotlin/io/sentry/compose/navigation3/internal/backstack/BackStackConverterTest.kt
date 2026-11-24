@@ -1,5 +1,7 @@
 package io.sentry.compose.navigation3.internal.backstack
 
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.Snapshot
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.JsonSerializer
@@ -511,6 +513,24 @@ class BackStackConverterTest {
         eq(UNSUPPORTED_VALUE_WARNING),
         eq("OpaqueValue"),
       )
+  }
+
+  @Test
+  fun `convert hides state reads during argument sanitization from snapshot observation`() {
+    val arguments = mutableStateMapOf<String, Any?>("state" to "value")
+    val sut = getSut(entryMapper = { entry -> entryInfo(entry, arguments) })
+    val observedReads = mutableListOf<Any>()
+    val snapshot = Snapshot.takeSnapshot(readObserver = { observedReads += it })
+
+    val converted =
+      try {
+        snapshot.enter { sut.convert(HomeScreen()) }
+      } finally {
+        snapshot.dispose()
+      }
+
+    assertThat(converted.arguments).isEqualTo(mapOf("state" to "value"))
+    assertThat(observedReads).isEmpty()
   }
 
   @Test

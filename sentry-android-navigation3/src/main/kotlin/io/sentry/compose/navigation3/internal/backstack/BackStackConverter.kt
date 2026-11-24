@@ -1,5 +1,6 @@
 package io.sentry.compose.navigation3.internal.backstack
 
+import androidx.compose.runtime.snapshots.Snapshot
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
@@ -86,7 +87,12 @@ internal class BackStackConverter<T : Any>(
     }
 
     val sanitizedArguments =
-      info.arguments?.let(sanitizer::sanitizeEntry) ?: SanitizedArguments(emptyMap())
+      info.arguments?.let { arguments ->
+        // Argument conversion may read Compose state through host app code. Suppress read
+        // observation so changes to that state don't trigger recomposition solely b/c our
+        // telemetry code read it.
+        Snapshot.withoutReadObservation { sanitizer.sanitizeEntry(arguments) }
+      } ?: SanitizedArguments(emptyMap())
     val formattedName = NormalizedSentryBackStackEntry.formatName(info.name)
 
     return if (formattedName.isBlank()) {
