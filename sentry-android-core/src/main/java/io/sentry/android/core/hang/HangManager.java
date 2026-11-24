@@ -147,7 +147,7 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
    * The manager calls {@link HangRecordingListener#onHangStarted()} on the manager thread and
    * {@link HangRecordingListener#onHangRecorded(HangRecord)} on the SDK executor, see {@link
    * SentryOptions#getExecutorService()}. A listener gets the record of a hang only if it asked for
-   * a record and is still subscribed when the hang ends. Does nothing after {@link #close()}.
+   * a record when the hang started. Does nothing after {@link #close()}.
    */
   public void subscribe(final @NotNull HangRecordingListener listener) {
     postOnManagerThread(
@@ -162,6 +162,7 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
   /**
    * At the last subscription, stops the signals and the tick, and drops an open hang record without
    * delivering it. The manager thread stays for the next {@link #subscribe(HangRecordingListener)}.
+   * Otherwise the listener still gets the record of an open hang that it asked for.
    */
   public void unsubscribe(final @NotNull HangRecordingListener listener) {
     postOnManagerThread(
@@ -384,11 +385,8 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
       return;
     }
     activeRecorder = null;
-    final @NotNull List<HangRecordingListener> listeners = recorder.recipients(subscriptions);
-    if (listeners.isEmpty()) {
-      return;
-    }
     final @NotNull HangRecord record = recorder.end(endTimeMs, endedAtMaxRecordingTime);
+    final @NotNull List<HangRecordingListener> listeners = recorder.getListeners();
     try {
       final @NotNull Future<?> delivery =
           options
