@@ -90,8 +90,13 @@ dependencies {
   compileOnly(libs.androidx.compose.runtime)
   compileOnly(libs.androidx.compose.ui)
   // All Nav3 apps depend on kotlinx.serialization via navigation3-runtime.
+  //
+  // Strict, as other compile dependencies (e.g., Compose UI via savedstate) also bring in
+  // kotlinx.serialization. With a mere minimum, a bump of one of those could silently raise the
+  // version we compile against, and the same source could then compile to calls that the floor
+  // version's runtime lacks. verifyKotlinxSerializationCompileVersion checks the result.
   compileOnly(nav3Libs.kotlinx.serialization.core) {
-    version { require(kotlinxSerializationFloor) }
+    version { strictly(kotlinxSerializationFloor) }
   }
 
   testImplementation(projects.sentryAndroidCore)
@@ -111,6 +116,63 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)
 }
+
+/**
+ * Fails the build if the release compile classpath resolves kotlinx.serialization to any version
+ * other than the floor, e.g., because another dependency declared a conflicting strict version. We
+ * must compile against the floor, as that's the oldest runtime the module promises to work with.
+ */
+val verifyKotlinxSerializationCompileVersion by tasks.registering {
+  val floor = kotlinxSerializationFloor
+  val resolvedVersions =
+    configurations.named("releaseCompileClasspath").flatMap { classpath ->
+      classpath.incoming.resolutionResult.rootComponent.map { root ->
+        val versions = sortedSetOf<String>()
+        val visited = mutableSetOf<ResolvedComponentResult>()
+        fun visit(component: ResolvedComponentResult) {
+          if (!visited.add(component)) return
+          val id = component.id
+          if (
+            id is ModuleComponentIdentifier &&
+              id.group == "org.jetbrains.kotlinx" &&
+              id.module.startsWith("kotlinx-serialization-core")
+          ) {
+            versions += "${id.module}:${id.version}"
+          }
+          for (dependency in component.dependencies) {
+            when (dependency) {
+              is ResolvedDependencyResult -> visit(dependency.selected)
+              is UnresolvedDependencyResult ->
+                if ("kotlinx-serialization-core" in dependency.requested.displayName) {
+                  versions += "${dependency.requested.displayName} (unresolved)"
+                }
+            }
+          }
+        }
+        visit(root)
+        versions.toList()
+      }
+    }
+  inputs.property("floor", floor)
+  inputs.property("resolvedVersions", resolvedVersions)
+  doLast {
+    val resolved = resolvedVersions.get()
+    val unexpected = resolved.filterNot { it.endsWith(":$floor") }
+    check(resolved.isNotEmpty() && unexpected.isEmpty()) {
+      "sentry-android-navigation3 must compile against kotlinx.serialization $floor (the " +
+        "kotlinxSerializationFloor in gradle/nav3.versions.toml), but releaseCompileClasspath " +
+        "resolved ${resolved.ifEmpty { "no kotlinx-serialization-core" }}."
+    }
+  }
+}
+
+tasks
+  .named { it == "compileReleaseKotlin" }
+  .configureEach {
+    dependsOn(verifyKotlinxSerializationCompileVersion)
+  }
+
+tasks.named("check") { dependsOn(verifyKotlinxSerializationCompileVersion) }
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
