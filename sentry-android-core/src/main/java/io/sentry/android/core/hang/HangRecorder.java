@@ -180,7 +180,9 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
    * Starts the recorder thread at the first call, and the signals when the app is in the
    * foreground. The recorder calls {@link HangRecorderListener#onHangStarted()} on the recorder
    * thread and {@link HangRecorderListener#onHangRecorded(HangRecord)} on the SDK executor, see
-   * {@link SentryOptions#getExecutorService()}. Does nothing after {@link #close()}.
+   * {@link SentryOptions#getExecutorService()}. A listener gets the record of a hang only if it
+   * asked for a record and is still subscribed when the hang ends. Does nothing after {@link
+   * #close()}.
    */
   public void subscribe(final @NotNull HangRecorderListener listener) {
     postOnRecorderThread(

@@ -45,7 +45,7 @@ public final class HangRecord {
     return endedAtMaxRecordingTime;
   }
 
-  /** The record of a hang while it is recorded. Used only on the recorder thread. */
+  /** Builds a {@link HangRecord}. */
   public static final class Builder {
     private long durationMs;
     private long startTimeMs;
@@ -60,7 +60,7 @@ public final class HangRecord {
       return this;
     }
 
-    /** The start of the hang, in the time base of the recorder's monotonic ticker. */
+    /** The start of the hang, as a monotonic time in milliseconds. */
     public @NotNull Builder setStartTimeMs(final long startTimeMs) {
       this.startTimeMs = startTimeMs;
       return this;
