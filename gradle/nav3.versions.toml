@@ -7,8 +7,8 @@
 [versions]
 # The oldest kotlinx.serialization version sentry-android-navigation3 supports, which it compiles and
 # tests against. Nav3 builds apply it explicitly rather than via version.ref to prevent Dependabot
-# from modifying it. When updating, also update MIN_KOTLINX_SERIALIZATION_VERSION in
-# KotlinxMapperDiagnostics (KotlinxBackStackEntryMapper.kt); a unit test fails if the two don't match.
+# from modifying it. Before changing it, read the rules under "Version floor" in
+# sentry-android-navigation3/src/main/kotlin/io/sentry/compose/navigation3/internal/backstack/kotlinx/README.md.
 kotlinxSerializationFloor = "1.7.3"
 
 [libraries]
