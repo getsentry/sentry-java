@@ -562,7 +562,6 @@ final class AndroidOptionsInitializer {
                 Collections.singletonList(
                     new ThreadHangSignal(
                         metronome,
-                        ticker,
                         debugManager,
                         mainThreadPoster,
                         HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)),

@@ -11,8 +11,10 @@ import kotlin.test.Test
 
 class ThreadHangSignalTest {
 
-  private class FakeMetronome : Metronome {
+  private class FakeMetronome(private val ticker: TestMonotonicTicker) : Metronome {
     val listeners = mutableListOf<Metronome.TickListener>()
+
+    override fun nowMs(): Long = NANOSECONDS.toMillis(ticker.tickNanos())
 
     override fun addTickListener(listener: Metronome.TickListener) {
       listeners.add(listener)
@@ -73,7 +75,7 @@ class ThreadHangSignalTest {
   @BeforeTest
   fun setUp() {
     ticker = TestMonotonicTicker(HOURS.toNanos(30))
-    metronome = FakeMetronome()
+    metronome = FakeMetronome(ticker)
     poster = FakePoster()
     listener = RecordingListener()
     signal = createSignal(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
@@ -83,7 +85,6 @@ class ThreadHangSignalTest {
   private fun createSignal(suspiciousThresholdMs: Long) =
     ThreadHangSignal(
       metronome,
-      ticker,
       IDebugManager { debuggerConnected },
       poster,
       suspiciousThresholdMs,
