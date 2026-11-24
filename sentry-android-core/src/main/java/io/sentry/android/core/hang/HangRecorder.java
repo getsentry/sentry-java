@@ -73,9 +73,9 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
 
   /** A collector, the writer of its values into the record, and its optional store. */
   public static final class CollectorSetup<T> {
-    private final @NotNull HangDataCollector<T> collector;
-    private final @NotNull RecordWriter<T> writer;
-    private final @Nullable HangSampleStore<T> store;
+    final @NotNull HangDataCollector<T> collector;
+    final @NotNull RecordWriter<T> writer;
+    final @Nullable HangSampleStore<T> store;
 
     public CollectorSetup(
         final @NotNull HangDataCollector<T> collector,
@@ -84,23 +84,6 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       this.collector = collector;
       this.writer = writer;
       this.store = store;
-    }
-
-    void sample(final @NotNull HangRecord.Builder record, final boolean persist)
-        throws IOException {
-      final @Nullable T sample = collector.sample();
-      if (sample != null) {
-        writer.write(sample, record);
-        if (persist && store != null) {
-          store.add(sample);
-        }
-      }
-    }
-
-    void clearStore() throws IOException {
-      if (store != null) {
-        store.clear();
-      }
     }
   }
 

@@ -91,7 +91,7 @@ final class HangRecording {
     samplingTicks++;
     for (final @NotNull HangRecorder.CollectorSetup<?> setup : collectors) {
       try {
-        setup.sample(record, persist);
+        sample(setup, record, persist);
       } catch (IOException e) {
         stopPersisting(e);
       }
@@ -121,12 +121,31 @@ final class HangRecording {
 
   private void clearStores() {
     for (final @NotNull HangRecorder.CollectorSetup<?> setup : collectors) {
+      final @Nullable HangSampleStore<?> store = setup.store;
+      if (store == null) {
+        continue;
+      }
       try {
-        setup.clearStore();
+        store.clear();
       } catch (IOException e) {
         stopPersisting(e);
         return;
       }
+    }
+  }
+
+  private static <T> void sample(
+      final @NotNull HangRecorder.CollectorSetup<T> setup,
+      final @NotNull HangRecord.Builder record,
+      final boolean persist)
+      throws IOException {
+    final @Nullable T sample = setup.collector.sample();
+    if (sample == null) {
+      return;
+    }
+    setup.writer.write(sample, record);
+    if (persist && setup.store != null) {
+      setup.store.add(sample);
     }
   }
 
