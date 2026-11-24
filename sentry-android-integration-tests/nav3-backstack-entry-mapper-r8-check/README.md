@@ -2,10 +2,11 @@
 
 Verifies that `BackStackEntryMapper.SerialName` and
 `BackStackEntryMapper.SerialNameAndProperties` from `sentry-android-navigation3` return expected Sentry names and arguments despite
-R8 obfuscation. `sentry-android-navigation3` ships no kotlinx.serialization R8 rules, so the check relies on kotlinx.serialization's own
+R8 obfuscation. `sentry-android-navigation3` ships no kotlinx.serialization keep rules, so the check relies on kotlinx.serialization's own
 consumer rules, plus the per-class rules in this app's `proguard-rules.pro` file.
 
-The tests check serialization names, argument encoding, and sensitive-value filtering. They also verify that R8 actually renamed
+The tests check serialization names, argument encoding (including open polymorphic values, whose serializers are looked up by
+reflection), and sensitive-value filtering. They also verify that R8 actually renamed
 representative classes and fields.
 
 ## How to run it

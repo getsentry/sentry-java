@@ -14,7 +14,9 @@ be linked.
 
 Creating a mapper also runs `KotlinxCompatibilityProbe`, which names and encodes SDK-owned `@Serializable` types. Those run no app code,
 so a `LinkageError` from them shows that the app's version is incompatible. If naming fails, creating the mapper fails. If encoding fails,
-`SerialNameAndProperties` keeps entry names but drops their arguments with `incompatible_kotlinx_serialization`. A `LinkageError` thrown while mapping an entry
+`SerialNameAndProperties` keeps entry names but drops their arguments with `incompatible_kotlinx_serialization`. Either failure also adds an
+integration (`ComposeNavigation3SerialNameMappersUnavailable` or `ComposeNavigation3PropertyEncodingDisabled`) to the SDK info sent with
+every event, so it's visible without debug logs. A `LinkageError` thrown while mapping an entry
 then fails only that entry's type.
 
 To keep our isolation policy intact:
@@ -47,11 +49,13 @@ Rules for changing the floor:
 
 ## Minification
 
-`sentry-android-navigation3` doesn't ship any R8 rules for kotlinx.serialization. Serial names survive R8 minification because Kotlin's
-serialization compiler plugin fixes them at compile time. `KotlinxBackStackEntryMapper`'s fallback for private `@Serializable` objects
+`sentry-android-navigation3` ships no keep rules for kotlinx.serialization, only `-dontwarn kotlinx.serialization.**`, so that apps without
+kotlinx.serialization still build (see `nav3-no-kotlinx-r8-check`). Serial names survive R8 minification because Kotlin's serialization
+compiler plugin fixes them at compile time. `KotlinxBackStackEntryMapper`'s fallback for private `@Serializable` objects
 relies on members preserved by kotlinx.serialization's own consumer rules.
 
-`KotlinxBackStackEntryMapper` only names classes whose `@Serializable` annotation is present at runtime. kotlinx.serialization's consumer
+`KotlinxBackStackEntryMapper` only names classes whose `@Serializable` annotation is present at runtime, and `KotlinxPropertiesEncoder` only
+looks up the serializers of open polymorphic values' runtime classes if they have it. kotlinx.serialization's consumer
 rules (from our 1.7.3 floor on) keep that annotation: `kotlinx-serialization-common.pro` keeps `RuntimeVisibleAnnotations`, and
 `kotlinx-serialization-r8.pro` keeps every `@Serializable` class (allowing shrinking and obfuscation) so that R8 full mode doesn't strip
 the annotation. kotlinx.serialization relies on the annotation itself, e.g., to pick sealed-class serializers, so an app that disables those
