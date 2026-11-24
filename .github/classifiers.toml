@@ -24,7 +24,7 @@ families = ["server"]
 [[area]]
 paths = [
   "sentry-okhttp/**", "sentry-apollo*/**", "sentry-kotlin-extensions/**", "sentry-ktor-client/**",
-  "sentry-spotlight/**", "sentry-test-support/**",
+  "sentry-spotlight/**",
 ]
 families = ["server", "mobile-native"]
 
@@ -38,10 +38,11 @@ kind = "samples"
 
 [[kind]]
 # Anchored to the Gradle modules' own source sets, so a test-named directory
-# planted inside src/main is not read as a test.
+# planted inside src/main is not read as a test. sentry-test-support is an unpublished
+# module of test helpers that the other modules' tests depend on.
 paths = [
   "*/src/test/**", "*/src/*Test*/**", "*/src/agentFixture/**", "sentry-opentelemetry/*/src/test/**",
-  "sentry-android-integration-tests/**",
+  "sentry-android-integration-tests/**", "sentry-test-support/**",
 ]
 kind = "tests"
 
