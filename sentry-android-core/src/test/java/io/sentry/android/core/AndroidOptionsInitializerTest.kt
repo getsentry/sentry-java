@@ -730,8 +730,8 @@ class AndroidOptionsInitializerTest {
     assertThat(signal.getProperty<Any>("debugManager"))
       .isSameInstanceAs(fixture.sentryOptions.debugManager)
     assertThat(fixture.sentryOptions.debugManager).isInstanceOf(AndroidDebugManager::class.java)
-    assertThat(signal.getProperty<Any>("ticker"))
-      .isSameInstanceAs(JavaMonotonicTicker.getInstance())
+    assertThat(signal.getProperty<Any>("metronome"))
+      .isSameInstanceAs(fixture.sentryOptions.hangManager)
     assertThat(signal.getProperty<Long>("suspiciousThresholdMs"))
       .isEqualTo(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
   }
