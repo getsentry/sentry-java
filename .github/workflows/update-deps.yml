@@ -29,10 +29,10 @@ jobs:
           name: Native SDK
           ssh-key: ${{ secrets.CI_DEPLOY_KEY }}
 
-  # Update weekly the kotlinx.serialization release candidate that the Nav3 R8 check and unit tests
-  # also run against (kotlinxSerialization-preview in gradle/dependency-matrix.versions.toml).
-  # Dependabot bumps the latest stable release they run against. (Verifying a new version before the
-  # next SDK release is sufficient.)
+  # Update weekly the kotlinx-serialization-core release candidate used by the Nav3 R8 check and unit tests
+  # (see kotlinxSerialization-preview in gradle/dependency-matrix.versions.toml). Verifying a new version
+  # before the next SDK release is sufficient. (Dependabot separately bumps the latest stable / non-preview
+  # release.)
   nav3-kotlinx-serialization-preview:
     if: github.event.schedule == '0 4 * * 1'
     runs-on: ubuntu-latest

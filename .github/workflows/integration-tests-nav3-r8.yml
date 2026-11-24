@@ -70,8 +70,8 @@ jobs:
   # gradle/libs.versions.toml or gradle/dependency-matrix.versions.toml. Skipping jobs (rather than
   # the whole workflow) lets them report as skipped.
   #
-  # Also decides whether release candidate failures fail the check: only on PRs that change
-  # kotlinxSerialization-preview.
+  # Also decides whether release candidate failures fail the check (but only on PRs that change
+  # kotlinxSerialization-preview).
   relevance:
     name: Check relevance
     runs-on: ubuntu-latest

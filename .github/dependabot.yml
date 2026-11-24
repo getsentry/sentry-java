@@ -11,7 +11,7 @@ updates:
     # covers them. Listing them too opens one PR per directory for the same bump.
     #
     # Also bumps the <matrix>-stable versions in gradle/dependency-matrix.versions.toml. Don't add
-    # ignore rules for those modules: see the rules at the top of that file.
+    # ignore rules for those modules (see the rules at the top of that file).
     directory: "/"
     registries:
       - gradle-plugin-portal
