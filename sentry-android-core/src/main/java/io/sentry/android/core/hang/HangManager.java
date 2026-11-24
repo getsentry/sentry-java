@@ -9,7 +9,6 @@ import io.sentry.time.EpochClock;
 import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.ExceptionUtils;
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,15 +36,16 @@ import org.jetbrains.annotations.Nullable;
  * start of the hang, so the fatal ANR path can read them after a process kill.
  *
  * <p>Runs on its own thread, {@code SentryHangManager}, which starts at the first subscription and
- * stops at {@link #close()}. All calls from other threads are moved to that thread, so the
- * recording state needs no lock. The manager calls its signals, its collectors, its stores and the
- * tick listeners only on that thread.
+ * stops at the last {@link #unsubscribe(HangRecordingListener)}. The manager is then closed, and
+ * later calls do nothing. All calls from other threads are moved to that thread, so the recording
+ * state needs no lock. The manager calls its signals, its collectors, its stores and the tick
+ * listeners only on that thread.
  *
  * <p>Needs a monotonic ticker that does not advance during device sleep, so a device suspend does
  * not read as a hang.
  */
 @ApiStatus.Internal
-public final class HangManager implements Metronome, Closeable, AppState.AppStateListener {
+public final class HangManager implements Metronome, AppState.AppStateListener {
 
   public static final long DEFAULT_POLLING_INTERVAL_MS = 66;
   public static final long DEFAULT_MAX_RECORDING_TIME_MS = 8_000;
@@ -90,7 +90,7 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
   private volatile @Nullable ScheduledExecutorService executor;
   private volatile @Nullable Thread executorThread;
 
-  private boolean closed;
+  private volatile boolean closed;
 
   private final @NotNull Set<HangRecordingListener> subscriptions = new LinkedHashSet<>();
   private boolean signalsStarted;
@@ -147,7 +147,8 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
    * The manager calls {@link HangRecordingListener#onHangStarted()} on the manager thread and
    * {@link HangRecordingListener#onHangRecorded(HangRecord)} on the SDK executor, see {@link
    * SentryOptions#getExecutorService()}. A listener gets the record of a hang only if it asked for
-   * a record when the hang started. Does nothing after {@link #close()}.
+   * a record when the hang started. Does nothing after the last {@link
+   * #unsubscribe(HangRecordingListener)}.
    */
   public void subscribe(final @NotNull HangRecordingListener listener) {
     postOnManagerThread(
@@ -160,16 +161,16 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
   }
 
   /**
-   * At the last subscription, stops the signals and the tick, and drops an open hang record without
-   * delivering it. The manager thread stays for the next {@link #subscribe(HangRecordingListener)}.
-   * Otherwise the listener still gets the record of an open hang that it asked for.
+   * The last unsubscribe closes the manager: it stops the signals and the tick, drops an open hang
+   * record without delivering it, closes the signals and the stores, and stops the manager thread.
+   * Later calls do nothing. Otherwise the listener still gets the record of an open hang that it
+   * asked for.
    */
   public void unsubscribe(final @NotNull HangRecordingListener listener) {
     postOnManagerThread(
         () -> {
           if (subscriptions.remove(listener) && subscriptions.isEmpty()) {
-            appStateProvider.removeAppStateListener(this);
-            stopSignals(false);
+            closeOnManagerThread();
           }
         },
         false);
@@ -187,29 +188,6 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
   @Override
   public void removeTickListener(final @NotNull TickListener listener) {
     tickListeners.remove(listener);
-  }
-
-  /**
-   * Drops an open hang record without delivering it, closes the signals and the stores, and stops
-   * the manager thread. Later calls do nothing.
-   */
-  @Override
-  public void close() {
-    final @Nullable ScheduledExecutorService current;
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      if (closed) {
-        return;
-      }
-      closed = true;
-      current = executor;
-      if (current != null) {
-        current.execute(() -> closeOnManagerThread(current));
-      }
-    }
-    if (current == null) {
-      // No manager thread was started, so close here.
-      closeSignalsAndStores();
-    }
   }
 
   @Override
@@ -237,7 +215,12 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
         // Runs before any other task of this single-thread executor.
         current.execute(() -> executorThread = Thread.currentThread());
       }
-      current.execute(task);
+      current.execute(() -> {
+        // A task queued before the last unsubscribe ran must not open the manager again.
+        if (!closed) {
+          task.run();
+        }
+      });
     }
   }
 
@@ -250,19 +233,23 @@ public final class HangManager implements Metronome, Closeable, AppState.AppStat
     }
   }
 
-  private void closeOnManagerThread(final @NotNull ScheduledExecutorService self) {
+  private void closeOnManagerThread() {
+    final @Nullable ScheduledExecutorService self;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      closed = true;
+      self = executor;
+    }
     try {
       try {
-        if (!subscriptions.isEmpty()) {
-          appStateProvider.removeAppStateListener(this);
-          stopSignals(false);
-        }
+        appStateProvider.removeAppStateListener(this);
+        stopSignals(false);
       } finally {
-        subscriptions.clear();
         closeSignalsAndStores();
       }
     } finally {
-      self.shutdown();
+      if (self != null) {
+        self.shutdown();
+      }
     }
   }
 

@@ -818,13 +818,12 @@ public abstract interface class io/sentry/android/core/hang/HangDataCollector {
 	public abstract fun sample ()Ljava/lang/Object;
 }
 
-public final class io/sentry/android/core/hang/HangManager : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome, java/io/Closeable {
+public final class io/sentry/android/core/hang/HangManager : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome {
 	public static final field DEFAULT_EXECUTOR_FACTORY Lio/sentry/android/core/hang/HangManager$ExecutorFactory;
 	public static final field DEFAULT_MAX_RECORDING_TIME_MS J
 	public static final field DEFAULT_POLLING_INTERVAL_MS J
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/core/AppStateProvider;Lio/sentry/time/MonotonicTicker;Lio/sentry/time/EpochClock;JJILio/sentry/android/core/hang/HangManager$ExecutorFactory;Lio/sentry/android/core/hang/HangManager$SignalFactory;Ljava/util/List;)V
 	public fun addTickListener (Lio/sentry/android/core/hang/Metronome$TickListener;)V
-	public fun close ()V
 	public fun nowMs ()J
 	public fun onBackground ()V
 	public fun onForeground ()V

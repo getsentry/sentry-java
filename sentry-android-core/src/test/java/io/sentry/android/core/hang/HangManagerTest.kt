@@ -539,7 +539,7 @@ class HangManagerTest {
     executor.runPending()
     tickEvery66Ms(3)
 
-    assertThat(store.calls).isEqualTo(callsBeforeUnsubscribe)
+    assertThat(store.calls).isEqualTo(callsBeforeUnsubscribe + "close")
   }
 
   @Test
@@ -910,7 +910,7 @@ class HangManagerTest {
   }
 
   @Test
-  fun `last unsubscribe stops signals and the tick but keeps the executor`() {
+  fun `last unsubscribe stops signals and the tick and shuts down the executor`() {
     val otherListener = FakeListener()
     manager.subscribe(otherListener)
     startInForeground()
@@ -918,12 +918,13 @@ class HangManagerTest {
     manager.unsubscribe(otherListener)
     executor.runPending()
     assertThat(signal.isStarted).isTrue()
+    assertThat(executor.isShutdown).isFalse()
 
     manager.unsubscribe(listener)
     executor.runPending()
     assertThat(signal.isStarted).isFalse()
     assertThat(executor.activePeriodicTasks).isEmpty()
-    assertThat(executor.isShutdown).isFalse()
+    assertThat(executor.isShutdown).isTrue()
     assertThat(appStateProvider.listeners).isEmpty()
   }
 
@@ -949,32 +950,22 @@ class HangManagerTest {
   }
 
   @Test
-  fun `last unsubscribe does not close signals or stores`() {
+  fun `last unsubscribe closes signals and stores once on the manager thread`() {
     startInForeground()
 
     manager.unsubscribe(listener)
-    executor.runPending()
-
     assertThat(signal.closeCount).isEqualTo(0)
     assertThat(store.calls).doesNotContain("close")
-  }
-
-  @Test
-  fun `hang after the last unsubscribe and a new subscribe starts with an empty record`() {
-    startInForeground()
-    openHangInTick(300)
+    executor.runPending()
     manager.unsubscribe(listener)
     executor.runPending()
 
-    startInForeground()
-    openHangInTick(300)
-    signal.report(HangSignal.State.IDLE, 0)
-
-    assertThat(recordedValues().single()).containsExactly("s2")
+    assertThat(signal.closeCount).isEqualTo(1)
+    assertThat(store.calls).containsExactly("close")
   }
 
   @Test
-  fun `subscribe after last unsubscribe reuses the executor`() {
+  fun `subscribe after the last unsubscribe does nothing`() {
     startInForeground()
     manager.unsubscribe(listener)
     executor.runPending()
@@ -982,8 +973,24 @@ class HangManagerTest {
     startInForeground()
 
     assertThat(executors).hasSize(1)
-    assertThat(signal.isStarted).isTrue()
-    assertThat(executor.activePeriodicTasks).hasSize(1)
+    assertThat(signal.isStarted).isFalse()
+    assertThat(appStateProvider.listeners).isEmpty()
+    assertThat(executor.taskFailures).isEmpty()
+  }
+
+  @Test
+  fun `subscribe queued behind the last unsubscribe does nothing`() {
+    val late = FakeListener()
+    startInForeground()
+
+    manager.unsubscribe(listener)
+    manager.subscribe(late)
+    executor.runPending()
+
+    assertThat(appStateProvider.listeners).isEmpty()
+    assertThat(signal.isStarted).isFalse()
+    assertThat(signal.closeCount).isEqualTo(1)
+    assertThat(executor.taskFailures).isEmpty()
   }
 
   @Test
@@ -1017,30 +1024,16 @@ class HangManagerTest {
   }
 
   @Test
-  fun `close closes signals and stores once on the manager thread`() {
-    startInForeground()
-
-    manager.close()
-    assertThat(signal.closeCount).isEqualTo(0)
-    assertThat(store.calls).doesNotContain("close")
-    executor.runPending()
-    manager.close()
-    executor.runPending()
-
-    assertThat(signal.closeCount).isEqualTo(1)
-    assertThat(store.calls).containsExactly("close")
-    assertThat(executor.isShutdown).isTrue()
-  }
-
-  @Test
   fun `store that fails to close is logged and the next stores are closed`() {
     val secondStore = FakeStore()
     store.throwOnClose = true
     createRecorder(
       collectors = listOf(setup(collector, store), setup(FakeCollector("t"), secondStore)),
     )
+    startInForeground()
 
-    manager.close()
+    manager.unsubscribe(listener)
+    executor.runPending()
 
     assertThat(secondStore.calls).containsExactly("close")
     verify(logger)
@@ -1052,7 +1045,7 @@ class HangManagerTest {
     signal.throwOnClose = true
     startInForeground()
 
-    manager.close()
+    manager.unsubscribe(listener)
     executor.runPending()
 
     assertThat(store.calls).containsExactly("close")
@@ -1061,31 +1054,16 @@ class HangManagerTest {
   }
 
   @Test
-  fun `close after the last unsubscribe still closes everything`() {
-    startInForeground()
-    manager.unsubscribe(listener)
-    executor.runPending()
-
-    manager.close()
-    executor.runPending()
-
-    assertThat(signal.closeCount).isEqualTo(1)
-    assertThat(store.calls).containsExactly("close")
-    assertThat(executor.isShutdown).isTrue()
-  }
-
-  @Test
-  fun `close stops ticks and ignores later calls`() {
+  fun `last unsubscribe stops ticks and later calls do nothing`() {
     var ticks = 0
     manager.addTickListener { ticks++ }
     startInForeground()
 
-    manager.close()
+    manager.unsubscribe(listener)
     executor.runPending()
     executor.runTick()
     assertThat(ticks).isEqualTo(0)
 
-    manager.close()
     manager.subscribe(listener)
     manager.unsubscribe(listener)
     appStateProvider.foreground()
@@ -1097,28 +1075,6 @@ class HangManagerTest {
     assertThat(executor.taskFailures).isEmpty()
     assertThat(signal.isStarted).isFalse()
     assertThat(store.calls).containsExactly("close")
-  }
-
-  @Test
-  fun `close removes the app state listener`() {
-    startInForeground()
-
-    manager.close()
-    executor.runPending()
-
-    assertThat(appStateProvider.listeners).isEmpty()
-  }
-
-  @Test
-  fun `close drops the open hang without a record`() {
-    startInForeground()
-    openHangInTick(300)
-
-    manager.close()
-    executor.runPending()
-    sdkExecutor.runAll()
-
-    assertThat(records).isEmpty()
   }
 
   @Test
@@ -1135,19 +1091,11 @@ class HangManagerTest {
   }
 
   @Test
-  fun `close without subscription starts no thread`() {
-    manager.close()
-    manager.subscribe(listener)
+  fun `unsubscribe without subscription starts no thread`() {
+    manager.unsubscribe(listener)
 
     assertThat(executors).isEmpty()
-  }
-
-  @Test
-  fun `close without subscription closes signals and stores`() {
-    manager.close()
-
-    assertThat(signal.closeCount).isEqualTo(1)
-    assertThat(store.calls).containsExactly("close")
+    assertThat(signal.closeCount).isEqualTo(0)
   }
 
   private class FakeAppStateProvider : AppStateProvider {
