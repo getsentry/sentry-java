@@ -28,7 +28,23 @@ internal object BuiltInBackStackEntryMappers {
       // threads may each create and probe a mapper and log warnings, and all but the first
       // published instance would be discarded.
       create(logger) {
-        KotlinxBackStackEntryMapper(logger = logger)
+        KotlinxBackStackEntryMapper(includeProperties = false, logger = logger)
+      }
+    }
+
+  /**
+   * Like [serialName], but also returns the properties of each back stack entry as Sentry
+   * arguments.
+   *
+   * Falls back to [UnavailableBackStackEntryMapper] if a mapper can't be created.
+   *
+   * See [BackStackEntryMapper.SerialNameAndProperties] for more details.
+   */
+  val serialNameAndProperties: BackStackEntryMapper<Any> by
+    lazy(LazyThreadSafetyMode.PUBLICATION) {
+      // PUBLICATION, as for serialName.
+      create(logger) {
+        KotlinxBackStackEntryMapper(includeProperties = true, logger = logger)
       }
     }
 

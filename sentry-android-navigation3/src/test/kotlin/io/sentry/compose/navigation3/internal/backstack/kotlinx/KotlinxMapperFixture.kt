@@ -77,15 +77,17 @@ internal class ShapeThrowingDetailSerializer(
 
 /**
  * A [KotlinxCompatibilityProbe] that finds the app's kotlinx.serialization version compatible
- * unless [nameLookupError] or [encodingError] is set, so that mapper tests don't depend on the real
- * probe. Reports the name check inconclusive with [nameLookupInconclusive], if set, and the
- * encoding check inconclusive with [encodingInconclusiveError], if set. Counts the checks of the
- * properties encoder in [encodingChecks].
+ * unless [nameLookupError] or [encoderError] is set, so that mapper tests don't depend on the real
+ * probe. Reports the name check inconclusive with [nameLookupInconclusive], if set. Any
+ * [encoderError], whether a [LinkageError] or not, makes the properties encoder unusable and
+ * disables property encoding. Counts the checks of the properties encoder in [encodingChecks].
  */
 internal class FakeCompatibilityProbe(
   private val nameLookupError: LinkageError? = null,
+  private val encoderError: Throwable? = null,
   private val nameLookupInconclusive: Inconclusive? = null,
 ) : KotlinxCompatibilityProbe {
+  var encodingChecks = 0
 
   override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? {
     nameLookupError?.let {
@@ -93,6 +95,11 @@ internal class FakeCompatibilityProbe(
     }
     nameLookupInconclusive?.let { onInconclusive(it.error) }
     return null
+  }
+
+  override fun encoderIncompatibility(): Throwable? {
+    encodingChecks++
+    return encoderError
   }
 
   /** Why the name check is inconclusive: [error], or `null` if a probe serializer wasn't found. */
@@ -109,6 +116,7 @@ internal class FakeCompatibilityProbe(
  */
 internal class KotlinxMapperFixture
 private constructor(
+  includeProperties: Boolean,
   useDefaultLookUp: Boolean,
   val probe: KotlinxCompatibilityProbe,
 ) {
@@ -129,9 +137,10 @@ private constructor(
 
   val mapper =
     if (useDefaultLookUp) {
-      KotlinxBackStackEntryMapper(logger = { logger }, probe = probe)
+      KotlinxBackStackEntryMapper(includeProperties, logger = { logger }, probe = probe)
     } else {
       KotlinxBackStackEntryMapper(
+        includeProperties,
         lookUpSerializer = {
           lookedUpTypes += it
           lookUp(it)
@@ -143,9 +152,10 @@ private constructor(
 
   companion object {
     fun create(
+      includeProperties: Boolean = false,
       useDefaultLookUp: Boolean = false,
       probe: KotlinxCompatibilityProbe = FakeCompatibilityProbe(),
-    ) = KotlinxMapperFixture(useDefaultLookUp, probe)
+    ) = KotlinxMapperFixture(includeProperties, useDefaultLookUp, probe)
   }
 }
 

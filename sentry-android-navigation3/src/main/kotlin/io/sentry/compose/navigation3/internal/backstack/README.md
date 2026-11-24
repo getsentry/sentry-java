@@ -9,6 +9,11 @@ The host app's `BackStackEntryMapper` supplies each entry's name and optional ar
 `SentryBackStackEntry`. Properties are the fields and values on the host's back stack entry;
 arguments are the values the mapper chooses to expose as `SentryBackStackEntry.arguments`.
 
+When a host app uses the built-in `SerialNameAndProperties` mapper, the SDK maps entry properties to
+arguments itself, in the [kotlinx subpackage](kotlinx/README.md). Hence `SerialNameAndProperties` and
+`KotlinxPropertiesEncoder`, but `SentryBackStackEntry(arguments = ...)`. A custom mapper performs
+that mapping on its end and hands us the resulting arguments.
+
 Arguments are the mapper's output before sanitization. `BackStackConverter` normalizes entry names
 and sanitizes arguments before they are recorded. Sanitization can stringify values or drop an
 entry's arguments when they are invalid or exceed the limits in `ArgumentConstraints`.
