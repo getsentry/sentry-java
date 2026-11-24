@@ -3212,13 +3212,6 @@ public class SentryOptions implements RateLimiterConfig {
     this.backpressureMonitor = backpressureMonitor;
   }
 
-  /**
-   * Called by {@link Scopes#close(boolean)} after the integrations, also on restart, so platform
-   * options can release what they own.
-   */
-  @ApiStatus.Internal
-  public void close() {}
-
   @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;

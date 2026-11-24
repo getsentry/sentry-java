@@ -19,8 +19,8 @@ public interface HangRecordingListener {
    * The record of a hang for which this listener asked for a record in {@link #onHangStarted()}.
    *
    * <p>The listener gets the record also if it unsubscribed during the hang or before the delivery.
-   * Only the last {@link HangManager#unsubscribe(HangRecordingListener)} and {@link
-   * HangManager#close()} drop an open hang without a record.
+   * Only the last {@link HangManager#unsubscribe(HangRecordingListener)} drops an open hang without
+   * a record.
    */
   void onHangRecorded(@NotNull HangRecord record);
 }
