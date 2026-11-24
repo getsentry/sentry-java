@@ -1091,16 +1091,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.hangManager = hangManager;
   }
 
-  @ApiStatus.Internal
-  @Override
-  public void close() {
-    super.close();
-    final @Nullable HangManager manager = hangManager;
-    if (manager != null) {
-      manager.close();
-    }
-  }
-
   /**
    * Returns whether ANR fingerprinting is enabled. When enabled, the SDK assigns static
    * fingerprints to ANR events that would otherwise produce noisy grouping. Currently, this applies
