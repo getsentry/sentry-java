@@ -1,0 +1,3 @@
+encodeSerializableValue(custom.Name, STRING)
+  encodeString("42")
+    encodeValue(String "42")

@@ -1,0 +1,3 @@
+encodeSerializableValue(Home, OBJECT)
+  beginStructure(Home, OBJECT)
+  endStructure(Home, OBJECT)

@@ -1,0 +1,8 @@
+encodeSerializableValue(WithCustomSerializer, CLASS)
+  beginStructure(WithCustomSerializer, CLASS)
+    encodeSerializableElement(WithCustomSerializer, CLASS, 0=custom, custom.Name, STRING)
+      encodeElement(WithCustomSerializer, CLASS, 0=custom)
+      encodeSerializableValue(custom.Name, STRING)
+        encodeString("42")
+          encodeValue(String "42")
+  endStructure(WithCustomSerializer, CLASS)

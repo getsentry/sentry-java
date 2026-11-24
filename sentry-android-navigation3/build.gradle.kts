@@ -17,6 +17,8 @@ plugins {
 }
 
 val kotlinxSerializationFloor = nav3Libs.versions.kotlinxSerializationFloor.get()
+val updateEncoderContract = providers.gradleProperty("nav3UpdateEncoderContract").orNull.toBoolean()
+val encoderContractDir = file("src/test/resources/kotlinx-encoder-contract").absolutePath
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -48,8 +50,15 @@ android {
       // AGP 9.5 can't create the Compose Preview task without it, which breaks any
       // build that creates every task, such as an LSP's Gradle import.
       isIncludeAndroidResources = true
-      // Lets tests check that MIN_KOTLINX_SERIALIZATION_VERSION matches the catalog's floor.
-      all { it.systemProperty("nav3.kotlinxSerializationFloor", kotlinxSerializationFloor) }
+      all {
+        // Lets tests check that MIN_KOTLINX_SERIALIZATION_VERSION matches the catalog's floor.
+        it.systemProperty("nav3.kotlinxSerializationFloor", kotlinxSerializationFloor)
+        // -Pnav3UpdateEncoderContract=true regenerates KotlinxEncoderContractTest's baselines.
+        if (updateEncoderContract) {
+          it.systemProperty("nav3.updateEncoderContract", "true")
+          it.systemProperty("nav3.encoderContractDir", encoderContractDir)
+        }
+      }
     }
   }
 
