@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public interface RuntimeStatsSource {
 
-  /** Must be cheap, callers may read it on a time-critical thread. */
+  /** Must be cheap. */
   @NotNull
   RuntimeStatsSnapshot read();
 }
