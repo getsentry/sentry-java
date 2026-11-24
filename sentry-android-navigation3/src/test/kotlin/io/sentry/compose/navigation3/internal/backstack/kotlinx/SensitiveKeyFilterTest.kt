@@ -36,6 +36,58 @@ class SensitiveKeyFilterTest {
       .isEqualTo(mapOf("query" to "shoes", "filters" to mapOf("brands" to listOf("a"))))
   }
 
+  // Encoder keys
+
+  @Test
+  fun `encoderKey() - writes a denylisted key and the scalar under it unfiltered`() {
+    filter.encoderKey("key")
+    filter.scalar("visible")
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("key" to "visible"))
+  }
+
+  @Test
+  fun `encoderKey() - writes a map under a denylisted key unfiltered, still filtering its sensitive keys`() {
+    filter.encoderKey("key")
+    filter.beginMap()
+    filter.key("user")
+    filter.scalar("alice")
+    filter.key("password")
+    filter.scalar("hunter2")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments)
+      .isEqualTo(mapOf("key" to mapOf("user" to "alice", "password" to SENSITIVE_DATA_SUBSTITUTE)))
+  }
+
+  @Test
+  fun `encoderKey() - writes the next value unfiltered after a sensitive key that had no value`() {
+    filter.key("token")
+    filter.encoderKey("value")
+    filter.scalar("visible")
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("value" to "visible"))
+  }
+
+  @Test
+  fun `encoderKey() - writes nothing in a map under a sensitive key`() {
+    filter.key("credentials")
+    filter.beginMap()
+    filter.encoderKey("key")
+    filter.scalar("alice")
+    filter.end()
+
+    val arguments = sink.argumentsOrThrow()
+
+    assertThat(arguments).isEqualTo(mapOf("credentials" to SENSITIVE_DATA_SUBSTITUTE))
+  }
+
   // Scalars
 
   @Test

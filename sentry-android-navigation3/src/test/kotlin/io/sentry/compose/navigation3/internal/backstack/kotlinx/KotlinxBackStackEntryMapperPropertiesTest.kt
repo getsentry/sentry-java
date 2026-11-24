@@ -81,21 +81,41 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   @SerialName("WithOpenPolymorphic")
   data class WithOpenPolymorphic(val id: String, @Polymorphic val origin: OpenOrigin)
 
+  /** Encodes to its code, unless it [fails], in which case it's written partway and then throws. */
+  @Serializable(with = FragileSerializer::class) class Fragile(val fails: Boolean)
+
+  object FragileSerializer : KSerializer<Fragile> {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("Fragile", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Fragile) {
+      encoder.encodeString("partial")
+      if (value.fails) throw SerializationException("failed partway")
+    }
+
+    override fun deserialize(decoder: Decoder): Fragile = throw UnsupportedOperationException()
+  }
+
+  /** Has a contextual property, and a property that fails the whole entry when [Fragile.fails]. */
+  @Serializable
+  @SerialName("WithContextualAndFragile")
+  internal data class WithContextualAndFragile(
+    @Contextual val other: Unregistered?,
+    val fragile: Fragile,
+  )
+
   @Serializable data class Point(val x: Int)
 
-  /** Has a contextual property, and a map whose class keys fail the whole entry when not empty. */
   @Serializable
-  @SerialName("WithContextualAndPointKeys")
-  internal data class WithContextualAndPointKeys(
-    @Contextual val other: Unregistered?,
-    val byPoint: Map<Point, Int>,
-  )
+  @SerialName("WithPointMapKeys")
+  data class WithPointMapKeys(val id: String, val byPoint: Map<Point, Int>, val page: Int)
 
   /** Serializers of this suite's own types, which tests add to the fixture's lookup. */
   private val otherSerializers: Map<Class<*>, KSerializer<*>> =
     mapOf(
       WithOpenPolymorphic::class.java to WithOpenPolymorphic.serializer(),
-      WithContextualAndPointKeys::class.java to WithContextualAndPointKeys.serializer(),
+      WithContextualAndFragile::class.java to WithContextualAndFragile.serializer(),
+      WithPointMapKeys::class.java to WithPointMapKeys.serializer(),
     )
 
   /** An id over the argument character limit. */
@@ -187,6 +207,28 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     assertThat(mapped).isEqualTo(SentryBackStackEntry("Search", mapOf("query" to "shoes")))
   }
 
+  @Test
+  fun `records a map with class keys as key and value entries beside the other arguments`() {
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
+    val mapper = fixture.mapper
+
+    val mapped = mapper.map(WithPointMapKeys("1", mapOf(Point(1) to 2), page = 3))
+
+    assertThat(mapped)
+      .isEqualTo(
+        SentryBackStackEntry(
+          "WithPointMapKeys",
+          mapOf(
+            "id" to "1",
+            "byPoint" to listOf(mapOf("key" to mapOf("x" to 1), "value" to 2)),
+            "page" to 3,
+          ),
+        ),
+      )
+    verifyNoInteractions(fixture.logger)
+  }
+
   // Property values that can't be encoded
 
   @Test
@@ -246,21 +288,21 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
     val mapper = fixture.mapper
-    mapper.mapAndReadArguments(WithContextualAndPointKeys(Unregistered("1"), emptyMap()))
+    mapper.mapAndReadArguments(WithContextualAndFragile(Unregistered("1"), Fragile(fails = false)))
 
-    mapper.mapAndReadArguments(WithContextualAndPointKeys(null, mapOf(Point(1) to 1)))
+    mapper.mapAndReadArguments(WithContextualAndFragile(null, Fragile(fails = true)))
 
     verify(fixture.logger, times(1))
       .log(
         eq(SentryLevel.WARNING),
         argThat<String> { contains(UNENCODABLE_VALUES) },
-        eq(WithContextualAndPointKeys::class.java.name),
+        eq(WithContextualAndFragile::class.java.name),
       )
     verify(fixture.logger, times(1))
       .log(
         eq(SentryLevel.WARNING),
         argThat<String> { contains(UNSUPPORTED_PROPERTIES) },
-        eq(WithContextualAndPointKeys::class.java.name),
+        eq(WithContextualAndFragile::class.java.name),
       )
     verifyNoMoreInteractions(fixture.logger)
   }
@@ -273,12 +315,12 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     fixture.lookUp = { otherSerializers[it] ?: fixture.serializers[it] }
     val mapper = fixture.mapper
 
-    val mapped = mapper.map(WithContextualAndPointKeys(null, mapOf(Point(1) to 1)))
+    val mapped = mapper.map(WithContextualAndFragile(null, Fragile(fails = true)))
 
     assertThat(mapped)
       .isEqualTo(
         SentryBackStackEntry(
-          "WithContextualAndPointKeys",
+          "WithContextualAndFragile",
           droppedBy(ArgumentDropReason.ENCODING_FAILED),
         ),
       )
@@ -734,8 +776,7 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   private companion object {
-    const val UNSUPPORTED_PROPERTIES =
-      "Structured map keys, and contextual and open polymorphic entries, aren't supported"
+    const val UNSUPPORTED_PROPERTIES = "values whose serializers fail partway aren't supported"
 
     const val UNENCODABLE_VALUES = "Recording them as [Unencodable]"
 

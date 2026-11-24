@@ -123,21 +123,23 @@ class KotlinxPropertiesEncoderTest {
 
   @Serializable data class WithVersionedNameMapKeys(val byName: Map<VersionedName, Int>)
 
-  @Serializable data class Point(val x: Int)
+  /** A map key whose descriptor claims a string, but whose serializer begins a structure. */
+  @Serializable(with = StructureWritingKeySerializer::class)
+  data class StructureWritingKey(val id: String)
 
-  @Serializable data class WithPointMapKeys(val byPoint: Map<Point, Int>)
+  object StructureWritingKeySerializer : KSerializer<StructureWritingKey> {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("custom.StructureWritingKey", PrimitiveKind.STRING)
 
-  @Serializable @JvmInline value class PointRef(val point: Point)
+    override fun serialize(encoder: Encoder, value: StructureWritingKey) {
+      encoder.encodeSerializableValue(Detail.serializer(), Detail(value.id))
+    }
 
-  @Serializable data class WithPointRefMapKeys(val byPointRef: Map<PointRef, Int>)
+    override fun deserialize(decoder: Decoder): StructureWritingKey =
+      throw UnsupportedOperationException()
+  }
 
-  @Serializable data class WithListMapKeys(val byList: Map<List<String>, Int>)
-
-  @Serializable data class WithMapMapKeys(val byMap: Map<Map<String, Int>, Int>)
-
-  @Serializable data class WithOriginMapKeys(val byOrigin: Map<Origin, Int>)
-
-  @Serializable data class WithNestedPointMapKeys(val groups: List<Map<Point, Int>>)
+  @Serializable data class WithStructureWritingMapKeys(val byCode: Map<StructureWritingKey, Int>)
 
   // Encoded shapes
 
@@ -414,58 +416,11 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
-  fun `encode() - throws for a class map key`() {
-    val entry = WithPointMapKeys(mapOf(Point(1) to 2))
+  fun `encode() - throws for a map key whose serializer begins a structure despite a scalar descriptor`() {
+    val entry = WithStructureWritingMapKeys(mapOf(StructureWritingKey("a") to 1))
 
     assertFailsWith<SerializationException> {
-      encodeToMap(WithPointMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a value class map key that wraps a class`() {
-    val entry = WithPointRefMapKeys(mapOf(PointRef(Point(1)) to 2))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithPointRefMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a list map key`() {
-    // Converting this key to a string would copy the one 16 KiB string 4,000 times (~64 MiB).
-    val longString = "a".repeat(16 * 1024)
-    val entry = WithListMapKeys(mapOf(List(4_000) { longString } to 1))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithListMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a map map key`() {
-    val entry = WithMapMapKeys(mapOf(mapOf("a" to 1) to 2))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithMapMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a polymorphic map key`() {
-    val entry = WithOriginMapKeys(mapOf(Origin.Search("shoes") to 1))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithOriginMapKeys.serializer(), entry)
-    }
-  }
-
-  @Test
-  fun `encode() - throws for a class map key in a map nested in a list`() {
-    val entry = WithNestedPointMapKeys(listOf(mapOf(Point(1) to 2)))
-
-    assertFailsWith<SerializationException> {
-      encodeToMap(WithNestedPointMapKeys.serializer(), entry)
+      encodeToMap(WithStructureWritingMapKeys.serializer(), entry)
     }
   }
 

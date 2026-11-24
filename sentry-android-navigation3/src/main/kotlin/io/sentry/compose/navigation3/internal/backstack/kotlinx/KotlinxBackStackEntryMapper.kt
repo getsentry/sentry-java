@@ -405,9 +405,9 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
           log(
             WARNING,
             "Nav3 couldn't encode properties for type %s. Recording names without arguments. " +
-              "Structured map keys, and contextual and open polymorphic entries, aren't " +
-              "supported. Use a custom BackStackEntryMapper to select supported properties or " +
-              "extract arguments directly.",
+              "Entries that are themselves contextual or open polymorphic, unencodable map keys, " +
+              "and values whose serializers fail partway aren't supported. Use a custom " +
+              "BackStackEntryMapper to select supported properties or extract arguments directly.",
             type.name,
           )
         }
@@ -468,7 +468,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
 
   /** Why encoding an entry's properties failed, which determines the warning we log. */
   private enum class PropertyFailure {
-    /** Encoding threw a [SerializationException], e.g., for a structured map key. */
+    /** Encoding threw a [SerializationException], e.g., for a contextual entry. */
     UNENCODABLE,
 
     /**

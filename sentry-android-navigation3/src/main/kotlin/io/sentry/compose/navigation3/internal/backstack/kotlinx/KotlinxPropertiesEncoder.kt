@@ -14,6 +14,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.AbstractEncoder
@@ -33,8 +34,15 @@ import kotlinx.serialization.modules.SerializersModule
  *
  * - Classes and objects become property maps. Objects without properties record no arguments.
  *
- * - Lists and sets become lists. Maps use stringified scalar keys, such as strings, numbers, or
- *   enums. Structured map keys are rejected, matching kotlinx-serialization-json's defaults.
+ * - Lists and sets become lists.
+ *
+ * - Maps whose keys are scalars, such as strings, numbers, enums, or value classes wrapping them,
+ *   become maps with stringified keys.
+ *
+ * - Maps whose keys are structures (classes, objects, lists, maps, or polymorphic values) become
+ *   lists of `{"key": <key>, "value": <value>}` entries, as a key can't be recorded as text without
+ *   losing its structure. Whether a map's keys are structures is decided by the key type's
+ *   descriptor, so all maps of one type have the same shape.
  *
  * - Enums use their serial names. Value classes use their underlying values.
  *
@@ -61,7 +69,8 @@ import kotlinx.serialization.modules.SerializersModule
  * It only does so if the serializer threw before writing anything for the value. Sinks can't undo
  * writes, so recording a value that's only partly written would show Sentry an incomplete value as
  * if it were complete. Such failures still propagate, as do failures of the entry's own serializer
- * and of map keys.
+ * and of scalar map keys. (A key that fails can't be replaced without risking two keys with the
+ * same text. Structured keys are recorded as entry values, so they are replaced like any value.)
  *
  * **Argument limits**
  *
@@ -79,8 +88,11 @@ import kotlinx.serialization.modules.SerializersModule
  * are replaced with [UrlUtils.SENSITIVE_DATA_SUBSTITUTE] without invoking their serializers.
  *
  * [ValueEncoder.encodeInline] also checks value classes' underlying property names, which aren't
- * written as keys. [SensitiveKeyFilter] checks every output key as a safeguard against missed
- * encoder checks.
+ * written as keys.
+ *
+ * Under a structured map key, there's no key text to check, so a value is filtered only by its own
+ * property names. The key's own properties are filtered by their names, like any class's.
+ * [SensitiveKeyFilter] checks every output key as a safeguard against missed encoder checks.
  *
  * The denylist originates from filtering HTTP headers, cookies, and query parameters. This encoder
  * applies it to navigation arguments as a baseline for sensitive-data filtering.
@@ -241,10 +253,14 @@ internal object KotlinxPropertiesEncoder {
           sink.beginList()
           ListEncoder(sink, context)
         }
-        StructureKind.MAP -> {
-          sink.beginMap()
-          MapEncoder(sink, context)
-        }
+        StructureKind.MAP ->
+          if (descriptor.hasStructuredKeys()) {
+            sink.beginList()
+            MapEntryListEncoder(sink, context)
+          } else {
+            sink.beginMap()
+            MapEncoder(sink, context)
+          }
         else -> {
           sink.beginMap()
           ClassEncoder(sink, context)
@@ -266,12 +282,14 @@ internal object KotlinxPropertiesEncoder {
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder =
-      when (descriptor.kind) {
-        StructureKind.LIST -> {
+      when {
+        // Lists and maps written as lists can't be the root map, so they go under VALUE_KEY.
+        descriptor.kind == StructureKind.LIST ||
+          (descriptor.kind == StructureKind.MAP && descriptor.hasStructuredKeys()) -> {
           sink.key(VALUE_KEY)
           super.beginStructure(descriptor)
         }
-        StructureKind.MAP -> MapEncoder(sink, context, isRoot = true)
+        descriptor.kind == StructureKind.MAP -> MapEncoder(sink, context, isRoot = true)
         else -> ClassEncoder(sink, context, isRoot = true)
       }
   }
@@ -318,8 +336,10 @@ internal object KotlinxPropertiesEncoder {
    * Writes alternating map keys and values. If [isRoot] is true, uses the sink's already-open root
    * map.
    *
-   * Keys must be scalars and are recorded as strings, matching kotlinx-serialization-json's
-   * defaults. Stringifying structured keys could exhaust memory before the sink checks their size.
+   * Keys must be scalars and are recorded as strings. Maps whose key type is a structure are
+   * written by [MapEntryListEncoder] instead. A key that begins a structure anyway (e.g., a custom
+   * serializer whose descriptor claims a scalar) is rejected rather than stringified, which could
+   * exhaust memory before the sink checks its size.
    *
    * Sensitive key text causes the value to be filtered. If the key itself was filtered because of a
    * sensitive value-class property, its original text is unavailable, so the value is filtered too.
@@ -385,6 +405,71 @@ internal object KotlinxPropertiesEncoder {
   }
 
   /**
+   * Writes a map whose keys are structures as a list of `{"key": <key>, "value": <value>}` entries.
+   *
+   * kotlinx.serialization encodes a map's keys and values as alternating elements, so each key
+   * element opens an entry map and each value element is written into it. An entry is closed when
+   * the next one opens or the map ends.
+   *
+   * Keys and values are written like any other value, so the sink's limits and the encoder's
+   * sensitive-data checks apply to their contents, and either can be replaced with
+   * [UNENCODABLE_SUBSTITUTE] if its serializer fails.
+   *
+   * A key has no text to check against the denylist, so its value is filtered only by its own
+   * property names. The exception matches [MapEncoder]: if the whole key is filtered (a value class
+   * whose underlying property's name is sensitive), its value is filtered too.
+   */
+  private class MapEntryListEncoder(sink: WriteCountingSink, context: EncodingContext) :
+    ValueEncoder(sink, context) {
+
+    private var isEntryOpen = false
+    private var isKey = true
+    private var isCurrentValueSensitive = false
+
+    override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
+      isKey = index % 2 == 0
+      if (isKey) {
+        endEntry()
+        sink.beginMap()
+        isEntryOpen = true
+        isCurrentValueSensitive = false
+        sink.encoderKey(ENTRY_KEY)
+        return true
+      }
+      sink.encoderKey(ENTRY_VALUE)
+      if (isCurrentValueSensitive) {
+        put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
+        return false
+      }
+      return true
+    }
+
+    override fun putFiltered() {
+      if (isKey) {
+        isCurrentValueSensitive = true
+      }
+      super.putFiltered()
+    }
+
+    override fun endStructure(descriptor: SerialDescriptor) {
+      endEntry()
+      sink.end()
+    }
+
+    private fun endEntry() {
+      if (isEntryOpen) {
+        sink.end()
+        isEntryOpen = false
+      }
+    }
+
+    private companion object {
+      const val ENTRY_KEY = "key"
+      const val ENTRY_VALUE = "value"
+    }
+  }
+
+  /**
    * Maximum nested [Encoder.encodeSerializableValue] calls per entry.
    *
    * Allows room for property serializers and polymorphic or value-class wrappers within
@@ -399,6 +484,22 @@ internal object KotlinxPropertiesEncoder {
    */
   private val UNSIGNED_SERIAL_NAMES =
     setOf("kotlin.UByte", "kotlin.UShort", "kotlin.UInt", "kotlin.ULong")
+
+  /**
+   * Whether this map descriptor's keys are structures, which [MapEncoder] can't record as text.
+   *
+   * Value classes are judged by their underlying type, as they're encoded as their underlying
+   * value. Contextual keys count as scalars: their serializers are unknown here, and fail anyway
+   * without a registered serializer.
+   */
+  private fun SerialDescriptor.hasStructuredKeys(): Boolean = getElementDescriptor(0).isStructured()
+
+  private fun SerialDescriptor.isStructured(): Boolean =
+    if (isInline && elementsCount == 1) {
+      getElementDescriptor(0).isStructured()
+    } else {
+      kind is StructureKind || kind is PolymorphicKind
+    }
 
   /** Whether this describes a value class whose underlying property's name is sensitive. */
   private fun SerialDescriptor.hasSensitiveUnderlyingProperty(): Boolean =
@@ -450,7 +551,7 @@ internal object KotlinxPropertiesEncoder {
    * Forwards to [sink], counting the values, keys, and structure boundaries written, so that an
    * encoder can tell whether a failing serializer wrote part of its value.
    */
-  private class WriteCountingSink(private val sink: ArgumentSink) : ArgumentSink {
+  private class WriteCountingSink(private val sink: SensitiveKeyFilter) : ArgumentSink {
 
     var writes: Long = 0
       private set
@@ -471,6 +572,14 @@ internal object KotlinxPropertiesEncoder {
     override fun key(name: String) {
       writes++
       sink.key(name)
+    }
+
+    /**
+     * Writes a key the encoder chose itself, unfiltered, as for [SensitiveKeyFilter.encoderKey].
+     */
+    fun encoderKey(name: String) {
+      writes++
+      sink.encoderKey(name)
     }
 
     override fun scalar(value: Any?) {
@@ -546,6 +655,21 @@ internal object KotlinxPropertiesEncoder {
       }
       sink.key(name)
       isNextValueSensitive = isSensitive(name)
+    }
+
+    /**
+     * Writes [name] as a key without checking it against the denylist.
+     *
+     * For keys the encoder chooses itself rather than takes from the entry, such as the `"key"`
+     * field of a structured map entry. Those aren't app data, and some are on the denylist (`"key"`
+     * matches it), so checking them would filter every value written under them.
+     */
+    fun encoderKey(name: String) {
+      if (discardDepth > 0) {
+        return
+      }
+      sink.key(name)
+      isNextValueSensitive = false
     }
 
     override fun scalar(value: Any?) {

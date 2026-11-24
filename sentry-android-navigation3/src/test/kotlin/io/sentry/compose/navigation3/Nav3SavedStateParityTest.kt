@@ -47,6 +47,13 @@ class Nav3SavedStateParityTest {
   @SerialName("Product")
   data class Product(val productId: String, val tags: List<String>, val page: Int) : NavKey
 
+  @Serializable data class Size2D(val width: Int, val height: Int)
+
+  @Serializable
+  @SerialName("Gallery")
+  data class Gallery(val galleryId: String, val countsBySize: Map<Size2D, Int>, val page: Int) :
+    NavKey
+
   data class PaymentMethod(val last4: String) : Parcelable {
     override fun describeContents(): Int = 0
 
@@ -105,6 +112,25 @@ class Nav3SavedStateParityTest {
     assertThat(mapped?.name).isEqualTo("Product")
     assertThat(mapped?.arguments)
       .containsExactly("productId", "p1", "tags", listOf("new", "sale"), "page", 2)
+  }
+
+  @Test
+  fun `a map with class keys Nav3 saves by default is key and value entries beside the name and other properties`() {
+    val gallery = Gallery(galleryId = "g1", countsBySize = mapOf(Size2D(640, 480) to 3), page = 2)
+    assertThat(saveAndRestoreByDefault(gallery)).containsExactly(gallery)
+
+    val mapped = BackStackEntryMapper.SerialNameAndProperties.map(gallery)
+
+    assertThat(mapped?.name).isEqualTo("Gallery")
+    assertThat(mapped?.arguments)
+      .containsExactly(
+        "galleryId",
+        "g1",
+        "countsBySize",
+        listOf(mapOf("key" to mapOf("width" to 640, "height" to 480), "value" to 3)),
+        "page",
+        2,
+      )
   }
 
   @Test

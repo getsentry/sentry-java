@@ -255,6 +255,12 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * Properties are encoded on the first argument read, including by `equals` or `hashCode`.
      *
+     * Maps are recorded as maps with their keys converted to text, unless their keys are classes,
+     * objects, collections, or polymorphic values. Such maps are recorded as lists of `{"key": ...,
+     * "value": ...}` entries, which keep each key's properties. A value under such a key is
+     * filtered as sensitive by its own property names, as there's no key text to check, unless the
+     * whole key is filtered.
+     *
      * Some values can't be encoded, e.g., contextual and open polymorphic properties (including
      * `Parcelable` properties), since their serializers require a `SerializersModule` or saved
      * state encoder this mapper doesn't have. Each such property value, list element, or map value
