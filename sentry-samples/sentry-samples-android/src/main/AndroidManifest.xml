@@ -326,9 +326,8 @@
     <!--    how to disable sentry -->
     <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
 
-    <meta-data
-      android:name="io.sentry.standalone-app-start-tracing.enable"
-      android:value="true" />
+    <!--    how to attach app start to the first Activity transaction instead of sending it standalone-->
+    <!--    <meta-data android:name="io.sentry.standalone-app-start-tracing.enable" android:value="false" />-->
 
     <meta-data
       android:name="io.sentry.session-replay.screenshot-strategy"

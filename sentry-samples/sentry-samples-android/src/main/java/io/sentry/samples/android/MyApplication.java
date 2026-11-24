@@ -40,9 +40,9 @@ public class MyApplication extends Application {
   }
 
   // Example of extending the app start: launch-time work done here (after the SDK auto-inits) is
-  // included in the app start measurement. Requires standalone app start tracing
-  // (io.sentry.standalone-app-start-tracing.enable in the manifest). The artificial delays stand in
-  // for real launch work, e.g. loading remote config or feature flags before the first screen.
+  // included in the app start measurement. Requires standalone app start tracing, which is on by
+  // default. The artificial delays stand in for real launch work, e.g. loading remote config or
+  // feature flags before the first screen.
   private void extendAppStartExample() {
     Sentry.extendAppStart();
 

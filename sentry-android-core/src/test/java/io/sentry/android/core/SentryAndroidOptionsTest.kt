@@ -173,9 +173,9 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
-  fun `standalone app start tracing is disabled by default`() {
+  fun `standalone app start tracing is enabled by default`() {
     val sentryOptions = SentryAndroidOptions()
-    assertFalse(sentryOptions.isEnableStandaloneAppStartTracing)
+    assertTrue(sentryOptions.isEnableStandaloneAppStartTracing)
   }
 
   fun `when options is initialized, enableScopeSync is enabled by default`() {

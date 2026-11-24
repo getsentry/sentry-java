@@ -3,16 +3,22 @@ package io.sentry.uitest.android.mockservers
 import io.sentry.EnvelopeReader
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
+import io.sentry.SentryItemType
+import io.sentry.assertEnvelopeTransaction
 import io.sentry.uitest.android.describeForTest
 import java.io.IOException
 import java.util.zip.GZIPInputStream
+import kotlin.test.assertEquals
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 import okio.GzipSource
 import okio.buffer
 
 /** Class used to assert requests sent to [MockRelay]. */
-class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>) {
+class RelayAsserter(
+  private val unassertedEnvelopes: MutableList<RelayResponse>,
+  private val appStartEnvelopes: List<RelayResponse>,
+) {
   private val originalUnassertedEnvelopes: MutableList<RelayResponse> =
     ArrayList(unassertedEnvelopes)
 
@@ -43,6 +49,19 @@ class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>)
     return unassertedEnvelopes.removeAt(relayResponseIndex)
   }
 
+  /**
+   * Asserts exactly one standalone app start transaction was sent. Only for tests that launch an
+   * Activity: each test runs in a new process, so its first Activity is an app start.
+   */
+  fun assertAppStartTransaction() {
+    val appStart =
+      appStartEnvelopes.singleOrNull()
+        ?: throw AssertionError(
+          "Expected one app start transaction, but got ${appStartEnvelopes.size}",
+        )
+    appStart.assert { assertEquals("app.start", it.assertTransaction().contexts.trace?.operation) }
+  }
+
   /** Asserts no other envelopes were sent. */
   fun assertNoOtherEnvelopes() {
     if (unassertedEnvelopes.isNotEmpty()) {
@@ -59,10 +78,17 @@ class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>)
     val envelope: SentryEnvelope? by lazy {
       try {
         EnvelopeReader(Sentry.getCurrentScopes().options.serializer)
-          .read(GZIPInputStream(request.body.inputStream()))
+          // A copy, so that MockRelay can check for an app start before keeping the request
+          .read(GZIPInputStream(request.body.clone().inputStream()))
       } catch (e: IOException) {
         null
       }
+    }
+
+    fun isAppStartTransaction(): Boolean {
+      val items = envelope?.items?.toList() ?: return false
+      return items.any { it.header.type == SentryItemType.Transaction } &&
+        assertEnvelopeTransaction(items).transaction == "App Start"
     }
 
     /** Run [assertion] on this request parsed as an envelope. */

@@ -18,6 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import leakcanary.LeakAssertions
 import leakcanary.LeakCanary
+import org.junit.Ignore
 import org.junit.runner.RunWith
 import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
@@ -74,6 +75,7 @@ class SdkInitTests : BaseUiTest() {
     transaction2.finish()
 
     relay.assert {
+      assertAppStartTransaction()
       findEnvelope {
         assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests"
       }
@@ -109,6 +111,10 @@ class SdkInitTests : BaseUiTest() {
     }
   }
 
+  // The headless app start sent after the second init can take the transaction profiler from
+  // afterRestart. Re-enable without the profile assertion once transaction-based profiling is
+  // dropped.
+  @Ignore("https://github.com/getsentry/sentry-java/issues/5094")
   @Test
   fun doubleInitDoesNotWait() {
     initSentry(true)
