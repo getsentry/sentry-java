@@ -1176,7 +1176,6 @@ class HangManagerTest {
           listOf(
             ThreadHangSignal(
               metronome,
-              JavaMonotonicTicker.getInstance(),
               { false },
               poster,
               HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS,

@@ -908,7 +908,7 @@ public abstract interface class io/sentry/android/core/hang/Metronome$TickListen
 }
 
 public final class io/sentry/android/core/hang/ThreadHangSignal : io/sentry/android/core/hang/HangSignal, io/sentry/android/core/hang/Metronome$TickListener {
-	public fun <init> (Lio/sentry/android/core/hang/Metronome;Lio/sentry/time/MonotonicTicker;Lio/sentry/IDebugManager;Lio/sentry/android/core/hang/ThreadPoster;J)V
+	public fun <init> (Lio/sentry/android/core/hang/Metronome;Lio/sentry/IDebugManager;Lio/sentry/android/core/hang/ThreadPoster;J)V
 	public fun close ()V
 	public fun onMetronomeTick (J)V
 	public fun start (Lio/sentry/android/core/hang/HangSignalListener;)V
