@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -99,16 +98,10 @@ final class HangRecorder {
     }
   }
 
-  /** The listeners that asked for the record of this hang and are in {@code subscriptions}. */
+  /** The listeners that asked for the record of this hang. */
   @NotNull
-  List<HangRecordingListener> recipients(final @NotNull Set<HangRecordingListener> subscriptions) {
-    final @NotNull List<HangRecordingListener> recipients = new ArrayList<>();
-    for (final @NotNull HangRecordingListener listener : listeners) {
-      if (subscriptions.contains(listener)) {
-        recipients.add(listener);
-      }
-    }
-    return recipients;
+  List<HangRecordingListener> getListeners() {
+    return listeners;
   }
 
   /** Builds the record of this hang. */

@@ -609,7 +609,7 @@ class HangManagerTest {
   }
 
   @Test
-  fun `record does not go to a subscriber that left during the hang`() {
+  fun `record still goes to a subscriber that left during the hang`() {
     val leaving = FakeListener()
     manager.subscribe(leaving)
     startInForeground()
@@ -621,7 +621,7 @@ class HangManagerTest {
     sdkExecutor.runAll()
 
     assertThat(records).hasSize(1)
-    assertThat(leaving.records).isEmpty()
+    assertThat(leaving.records).hasSize(1)
   }
 
   @Test
