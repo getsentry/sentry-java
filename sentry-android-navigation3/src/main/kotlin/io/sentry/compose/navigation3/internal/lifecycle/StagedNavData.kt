@@ -93,7 +93,9 @@ internal class StagedNavData {
    * Clears the screen and nav context this instance published, unless something else has replaced
    * them in [realScope] since.
    */
+  @Suppress("AvoidReferentialEquality")
   fun clearPublishedStateFrom(realScope: IScope) {
+    // Identity tracks the screen we published; equal but distinct host replacements must survive.
     if (publishedScreen != null && realScope.screen === publishedScreen) {
       realScope.screen = null
     }
