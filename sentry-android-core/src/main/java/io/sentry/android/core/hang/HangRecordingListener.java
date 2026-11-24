@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public interface HangRecorderListener {
+public interface HangRecordingListener {
 
   /**
    * A hang started. Must be fast, no IO.
