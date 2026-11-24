@@ -6,13 +6,24 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.samples.android.navigation.common.NavArgs
 import io.sentry.samples.android.navigation.common.RouteNames
 import io.sentry.samples.android.navigation.common.RouteSpec
 import io.sentry.samples.android.navigation.common.RouteSpecs
 import io.sentry.samples.android.navigation.common.displayRoute
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-internal fun Nav3Route.displayRoute(): String = routeSpec().displayRoute(arguments)
+internal fun Nav3Route.displayRoute(): String =
+  when (this) {
+    // Built without the back stack entry mappers, whose cost the performance scenario measures
+    // only through SentryNavEffect.
+    is Nav3Route.Performance -> "/$previewName"
+    else -> routeSpec().displayRoute(arguments)
+  }
 
 internal fun Nav3Route.routeSpec(): RouteSpec =
   when (this) {
@@ -228,10 +239,28 @@ internal fun SnapshotStateList<Nav3Route>.replacePerformanceTop(generation: Int)
   set(lastIndex, Nav3Route.Performance(index = lastIndex, generation = generation))
 }
 
+/**
+ * The sample's back stack keys. Each is `@Serializable`, so
+ * `BackStackEntryMapper.SerialNameAndProperties` can map it: the route's `@SerialName` becomes its
+ * Sentry name, and each property's `@SerialName` an argument name. Both match the Nav2 sample's
+ * [RouteNames] and [NavArgs], so the two samples send the same data. Every other member is a
+ * getter, so it isn't recorded as an argument.
+ */
 internal sealed interface Nav3Route {
+  /**
+   * The route's name as Sentry records it, without the leading `/`. Read from the same mapper
+   * `SentryNavEffect` uses, so screens, tags, and transaction checks can't drift from it.
+   */
   val routeName: String
+    get() =
+      checkNotNull(BackStackEntryMapper.SerialName.map(this)) {
+          "${this::class.simpleName} can't be named by BackStackEntryMapper.SerialName."
+        }
+        .name
+
+  /** The route's arguments as Sentry records them, read from the same mapper as [routeName]. */
   val arguments: Map<String, Any?>
-    get() = emptyMap()
+    get() = BackStackEntryMapper.SerialNameAndProperties.map(this)?.arguments.orEmpty()
 
   val previewName: String
     get() = routeName
@@ -239,87 +268,86 @@ internal sealed interface Nav3Route {
   val performanceSeed: Int
     get() = hashCode()
 
-  data object Landing : Nav3Route {
-    override val routeName: String = RouteNames.LANDING
-  }
+  @Serializable @SerialName(RouteNames.LANDING) data object Landing : Nav3Route
 
-  data object SingleStack : Nav3Route {
-    override val routeName: String = RouteNames.HOME
-  }
+  @Serializable @SerialName(RouteNames.HOME) data object SingleStack : Nav3Route
 
-  data object Custom : Nav3Route {
-    override val routeName: String = "Custom"
-  }
+  @Serializable @SerialName(RouteNames.CUSTOM) data object Custom : Nav3Route
 
-  data object MultiActivity : Nav3Route {
-    override val routeName: String = "MultiActivity"
-  }
+  @Serializable @SerialName("MultiActivity") data object MultiActivity : Nav3Route
 
-  data object MultiFragment : Nav3Route {
-    override val routeName: String = "MultiFragment"
-  }
+  @Serializable @SerialName("MultiFragment") data object MultiFragment : Nav3Route
 
-  data object FragmentOverlay : Nav3Route {
-    override val routeName: String = "FragmentOverlay"
-  }
+  @Serializable @SerialName("FragmentOverlay") data object FragmentOverlay : Nav3Route
 
-  data object ViewPager2 : Nav3Route {
-    override val routeName: String = "ViewPager2"
-  }
+  @Serializable @SerialName("ViewPager2") data object ViewPager2 : Nav3Route
 
-  data object DeepLink : Nav3Route {
-    override val routeName: String = RouteNames.DEEP_LINK
-  }
+  @Serializable @SerialName(RouteNames.DEEP_LINK) data object DeepLink : Nav3Route
 
-  data object ProductList : Nav3Route {
-    override val routeName: String = RouteNames.PRODUCT_LIST
-  }
+  @Serializable @SerialName(RouteNames.PRODUCT_LIST) data object ProductList : Nav3Route
 
+  @OptIn(ExperimentalSerializationApi::class)
+  @Serializable
+  @SerialName(RouteNames.PRODUCT_DETAIL)
   data class ProductDetail(
-    val productId: String,
-    val source: String,
+    @SerialName(NavArgs.PRODUCT_ID) val productId: String,
+    @SerialName(NavArgs.SOURCE) val source: String,
+    // Omitted from the arguments when null, like the Nav2 sample.
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    @SerialName(NavArgs.CAMPAIGN)
     val campaign: String? = null,
   ) : Nav3Route {
-    override val routeName: String = RouteNames.PRODUCT_DETAIL
-    override val arguments: Map<String, Any?> =
-      mapOf(
-          NavArgs.PRODUCT_ID to productId,
-          NavArgs.SOURCE to source,
-          NavArgs.CAMPAIGN to campaign,
-        )
-        .filterValues { it != null }
-    override val previewName: String = "ProductDetail($productId)"
+    override val previewName: String
+      get() = "ProductDetail($productId)"
   }
 
-  data class Checkout(val productId: String) : Nav3Route {
-    override val routeName: String = RouteNames.CHECKOUT
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.PRODUCT_ID to productId)
-    override val previewName: String = "Checkout($productId)"
+  @Serializable
+  @SerialName(RouteNames.CHECKOUT)
+  data class Checkout(@SerialName(NavArgs.PRODUCT_ID) val productId: String) : Nav3Route {
+    override val previewName: String
+      get() = "Checkout($productId)"
   }
 
-  data class Confirmation(val orderId: String) : Nav3Route {
-    override val routeName: String = RouteNames.CONFIRMATION
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.ORDER_ID to orderId)
-    override val previewName: String = "Confirmation($orderId)"
+  @Serializable
+  @SerialName(RouteNames.CONFIRMATION)
+  data class Confirmation(@SerialName(NavArgs.ORDER_ID) val orderId: String) : Nav3Route {
+    override val previewName: String
+      get() = "Confirmation($orderId)"
   }
 
-  data class PromoDialog(val promoId: String) : Nav3Route {
-    override val routeName: String = RouteNames.PROMO_DIALOG
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.PROMO_ID to promoId)
-    override val previewName: String = "PromoDialog($promoId)"
+  @Serializable
+  @SerialName(RouteNames.PROMO_DIALOG)
+  data class PromoDialog(@SerialName(NavArgs.PROMO_ID) val promoId: String) : Nav3Route {
+    override val previewName: String
+      get() = "PromoDialog($promoId)"
   }
 
-  data class ShareSheet(val productId: String) : Nav3Route {
-    override val routeName: String = RouteNames.SHARE_SHEET
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.PRODUCT_ID to productId)
-    override val previewName: String = "ShareSheet($productId)"
+  @Serializable
+  @SerialName(RouteNames.SHARE_SHEET)
+  data class ShareSheet(@SerialName(NavArgs.PRODUCT_ID) val productId: String) : Nav3Route {
+    override val previewName: String
+      get() = "ShareSheet($productId)"
   }
 
+  @Serializable
+  @SerialName(Performance.NAME)
   data class Performance(val index: Int, val generation: Int) : Nav3Route {
-    override val routeName: String = "Performance"
-    override val arguments: Map<String, Any?> = mapOf("index" to index, "generation" to generation)
-    override val previewName: String = "Performance($index:$generation)"
-    override val performanceSeed: Int = 31 * index + generation
+    /**
+     * A constant rather than the mapper's result, so screens and tags don't run the mapper outside
+     * the performance scenario's timed extraction, e.g. in its disabled baseline.
+     */
+    override val routeName: String
+      get() = NAME
+
+    override val previewName: String
+      get() = "Performance($index:$generation)"
+
+    override val performanceSeed: Int
+      get() = 31 * index + generation
+
+    companion object {
+      const val NAME = "Performance"
+    }
   }
 }
 
