@@ -297,18 +297,13 @@ gh pr view --json url -q '.url'
 
 User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. The
 `create-java-pr` skill is the source of truth for the full changelog and PR workflow, including
-subsection selection and the rebase caveat when a release renames `## Unreleased`.
+subsection selection and the rebase and merge caveat when a release renames `## Unreleased`.
 
 ### After Merging `main` or Resolving Conflicts
 
-Do these before you commit the merge, even when `CHANGELOG.md` is not in the conflict list:
-
-1. Run `make format api`, then stage what it changed.
-2. Make sure the branch's changelog entry is under `## Unreleased`. Look at the `## ` headings, not
-   only at the diff: when `main` cut a release, git auto-merges the entry into the released section
-   without a conflict, sometimes with a duplicate subsection heading.
-3. Compile and run the tests of the modules you changed. `main` adds build checks over time, so code
-   that passed before the merge can fail after it.
+Before you commit the merge, format and regenerate (workflow rule 7) and check the changelog entry
+(the `create-java-pr` rebase and merge caveat). Then compile and run the tests of the modules you
+changed: `main` adds build checks over time, so code that passed before the merge can fail after it.
 
 ## Useful Resources
 

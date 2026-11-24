@@ -178,7 +178,7 @@ Add an entry to `CHANGELOG.md` under the `## Unreleased` section.
 
 Create the subsection under `## Unreleased` if it does not already exist.
 
-**When rebasing:** A rebase onto `main` can land your branch after a release was cut, where the `## Unreleased` heading your entry lived under has since been renamed to that version number. If that happens, move your new entry into an `## Unreleased` section at the top of `CHANGELOG.md` (create the section if it no longer exists) so it is not left under an already-released version.
+**When rebasing or merging `main`:** Your branch can land after a release was cut, where the `## Unreleased` heading your entry lived under has since been renamed to that version number. A merge does this without a conflict, sometimes with a duplicate subsection heading, so check the `## ` headings, not only the diff. If that happens, move your new entry into an `## Unreleased` section at the top of `CHANGELOG.md` (create the section if it no longer exists) so it is not left under an already-released version.
 
 #### Entry format
 

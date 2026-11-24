@@ -57,12 +57,12 @@ If the user picks a specific method, use `--tests="*ClassName.methodName"` as th
 
 With a test class filter:
 ```bash
-./gradlew ':<module>:<task>' --tests="*<filter>*" --info
+./gradlew ':<module>:<task>' --tests="*<filter>*"
 ```
 
 Without a filter, only when the user asks for the whole module (CI runs full suites):
 ```bash
-./gradlew ':<module>:<task>' --info
+./gradlew ':<module>:<task>'
 ```
 
 When you choose the tests yourself, filter to the classes or packages the change touches, plus the
