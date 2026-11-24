@@ -278,11 +278,12 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
       return;
     }
     signalsStarted = true;
+    // Scheduled first, so a signal that fails to start does not stop the tick for the others.
+    tickFuture =
+        self.scheduleWithFixedDelay(this::tick, 0, pollingIntervalMs, TimeUnit.MILLISECONDS);
     for (final @NotNull HangSignal signal : signals) {
       signal.start(signalListener);
     }
-    tickFuture =
-        self.scheduleWithFixedDelay(this::tick, 0, pollingIntervalMs, TimeUnit.MILLISECONDS);
   }
 
   private void stopSignals(final boolean endIntervalWithRecord) {
@@ -312,18 +313,19 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
   private void tick() {
     try {
       final long nowMs = nowMs();
-      for (final @NotNull TickListener listener : tickListeners) {
-        listener.onMetronomeTick(nowMs);
-      }
-      final @Nullable HangRecorder recorder = activeRecorder;
-      if (recorder == null) {
-        return;
-      }
       try {
-        recorder.sample(maxSamples);
+        for (final @NotNull TickListener listener : tickListeners) {
+          listener.onMetronomeTick(nowMs);
+        }
+        final @Nullable HangRecorder recorder = activeRecorder;
+        if (recorder != null) {
+          recorder.sample(maxSamples);
+        }
       } finally {
-        // A collector that throws on every tick must not keep the hang open past the maximum.
-        if (nowMs - recorder.getStartTimeMs() >= maxRecordingTimeMs) {
+        // A tick listener or a collector that throws on every tick must not keep the hang open
+        // past the maximum.
+        final @Nullable HangRecorder recorder = activeRecorder;
+        if (recorder != null && nowMs - recorder.getStartTimeMs() >= maxRecordingTimeMs) {
           endRecord(recorder.getStartTimeMs() + maxRecordingTimeMs, true);
           waitingForIdleAfterMaxRecordingTime = true;
         }

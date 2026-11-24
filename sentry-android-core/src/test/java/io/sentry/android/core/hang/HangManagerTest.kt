@@ -792,6 +792,30 @@ class HangManagerTest {
   }
 
   @Test
+  fun `tick listener that always throws does not stop the maxRecordingTime end`() {
+    startInForeground()
+    openHangInTick(0)
+    manager.addTickListener { throw IllegalStateException("tick failed") }
+
+    tickUntilRecorded()
+
+    assertThat(records.single().durationMs).isEqualTo(DEFAULT_MAX_RECORDING_TIME_MS)
+    assertThat(records.single().hasEndedAtMaxRecordingTime()).isTrue()
+  }
+
+  @Test
+  fun `signal that throws on start does not stop the tick for the other signals`() {
+    createRecorder(signalCount = 2)
+    signals[1].throwOnStart = true
+
+    startInForeground()
+
+    assertThat(executor.taskFailures).hasSize(1)
+    assertThat(signals[0].isStarted).isTrue()
+    assertThat(executor.activePeriodicTasks).hasSize(1)
+  }
+
+  @Test
   fun `after maxRecordingTime no hang starts until idle`() {
     startInForeground()
     openHangInTick(0)
@@ -1136,6 +1160,7 @@ class HangManagerTest {
     }
     var startCount = 0
     var closeCount = 0
+    var throwOnStart = false
     var throwOnStop = false
     var throwOnClose = false
 
@@ -1144,6 +1169,9 @@ class HangManagerTest {
 
     override fun start(listener: HangSignalListener) {
       startCount++
+      if (throwOnStart) {
+        throw IllegalStateException("start failed")
+      }
       this.listener = listener
       metronome.addTickListener(tickListener)
     }
