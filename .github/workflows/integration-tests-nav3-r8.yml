@@ -24,6 +24,12 @@ on:
       - "scripts/nav3-r8-check-relevant.sh"
       - "gradle/libs.versions.toml"
       - "gradle/dependency-matrix.versions.toml"
+      # Build settings, R8 flags, and build logic, which all builds of the check use.
+      - "gradle.properties"
+      - "buildSrc/**"
+      - "build-logic/**"
+      # Utilities the mappers use to filter arguments and report integrations.
+      - "sentry/src/main/java/io/sentry/util/**"
       - ".github/workflows/integration-tests-nav3-r8.yml"
   # PRs that only change gradle/libs.versions.toml or gradle/dependency-matrix.versions.toml run the
   # check only if they change a version it depends on (see the relevance job). When changing these
@@ -40,6 +46,12 @@ on:
       - "scripts/nav3-r8-check-relevant.sh"
       - "gradle/libs.versions.toml"
       - "gradle/dependency-matrix.versions.toml"
+      # Build settings, R8 flags, and build logic, which all builds of the check use.
+      - "gradle.properties"
+      - "buildSrc/**"
+      - "build-logic/**"
+      # Utilities the mappers use to filter arguments and report integrations.
+      - "sentry/src/main/java/io/sentry/util/**"
       - ".github/workflows/integration-tests-nav3-r8.yml"
 
 concurrency:
@@ -85,13 +97,18 @@ jobs:
           else
             relevant=true
           fi
+          if [[ "$previewRequired" == "true" ]] \
+            && ! ./scripts/dependency-matrix.sh extra-versions kotlinxSerialization | grep -q '^preview '; then
+            echo "::notice::kotlinxSerialization-preview changed, but isn't newer than kotlinxSerialization-stable, so no release candidate is tested."
+          fi
           echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
           echo "preview-required=$previewRequired" >> "$GITHUB_OUTPUT"
           echo "Nav3 R8 check relevant: $relevant"
           echo "kotlinx.serialization release candidate required: $previewRequired"
 
-  build:
-    name: Build
+  # Runs separately from the APK builds, so a unit test failure doesn't hide the R8 check's results.
+  unit-tests:
+    name: Unit tests
     needs: relevance
     if: needs.relevance.outputs.relevant == 'true'
     runs-on: ubuntu-latest
@@ -131,6 +148,25 @@ jobs:
             echo "::endgroup::"
           done <<< "$versions"
           exit "$failed"
+
+  build:
+    name: Build
+    needs: relevance
+    if: needs.relevance.outputs.relevant == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Build APKs
         env:

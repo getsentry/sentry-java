@@ -44,12 +44,13 @@ internal class KotlinxBackStackEntryMapper(
   private val lookUpSerializer: (Class<*>) -> KSerializer<*>? = ::reflectiveSerializerOrNull,
   logger: () -> ILogger,
   probe: KotlinxCompatibilityProbe = KotlinxCompatibilityProbe,
+  /**
+   * Whether a back stack entry's class is annotated with `@Serializable`.
+   *
+   * May throw, as reading the class's annotations can fail.
+   */
+  private val isAnnotatedSerializable: (Class<*>) -> Boolean = serializableAnnotationCheck(),
 ) : BackStackEntryMapper<Any> {
-
-  // Resolved here, rather than on the first map() call, so that if kotlinx.serialization is
-  // missing, creating this mapper fails and BuiltInBackStackEntryMappers falls back to
-  // UnavailableBackStackEntryMapper.
-  private val serializableAnnotation: Class<Serializable> = Serializable::class.java
 
   // Serializer lookups use reflection and mapping runs on every navigation, so we cache each
   // class's serializer and name. Cache size is bounded by the number of back stack entry types.
@@ -162,7 +163,7 @@ internal class KotlinxBackStackEntryMapper(
    */
   private fun isMarkedSerializable(type: Class<*>): Boolean =
     try {
-      type.isAnnotationPresent(serializableAnnotation).also { isMarked ->
+      isAnnotatedSerializable(type).also { isMarked ->
         if (!isMarked) {
           diagnostics.notSerializable(type)
         }
@@ -291,6 +292,15 @@ internal class KotlinxBackStackEntryMapper(
 
     private const val NAME_LOOKUP_CAPABILITY = "name lookups"
     private val UNRESOLVED = CachedType(serializer = null, name = null)
+
+    /** Returns whether a class is annotated with `@Serializable`. */
+    private fun serializableAnnotationCheck(): (Class<*>) -> Boolean {
+      // Resolved here, when the mapper is created, rather than on the first map() call, so that if
+      // kotlinx.serialization is missing, creating this mapper fails and
+      // BuiltInBackStackEntryMappers falls back to UnavailableBackStackEntryMapper.
+      val serializableAnnotation: Class<Serializable> = Serializable::class.java
+      return { type -> type.isAnnotationPresent(serializableAnnotation) }
+    }
   }
 }
 

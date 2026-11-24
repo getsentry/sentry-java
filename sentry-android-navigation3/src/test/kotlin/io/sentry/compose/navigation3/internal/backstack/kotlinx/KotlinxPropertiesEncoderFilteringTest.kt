@@ -10,6 +10,8 @@ import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -92,6 +94,20 @@ class KotlinxPropertiesEncoderFilteringTest {
 
   @Serializable data class WithValueClassList(val references: List<TokenRef>)
 
+  /**
+   * A value class whose underlying property's name (`ref`) isn't sensitive, but whose value's is.
+   */
+  @Serializable @JvmInline value class OuterTokenRef(val ref: TokenRef)
+
+  @Serializable data class WithOuterTokenRef(val reference: OuterTokenRef)
+
+  @Serializable data class WithNullableTokenRef(val reference: TokenRef?)
+
+  /** A value class whose underlying property's name (`token`) is sensitive, and nullable. */
+  @Serializable @JvmInline value class NullableTokenRef(val token: String?)
+
+  @Serializable data class WithNullableTokenRefValue(val reference: NullableTokenRef)
+
   @Serializable data class Credentials(val user: String)
 
   @Serializable @JvmInline value class CredentialsRef(val credentials: Credentials)
@@ -162,7 +178,11 @@ class KotlinxPropertiesEncoderFilteringTest {
     data class Login(val user: String, val authToken: String) : SecretsOrigin
   }
 
-  /** Places sensitive keys at every structural position the encoder supports. */
+  /**
+   * Places sensitive keys at the common structural positions: properties, nested and sealed
+   * classes, lists, maps, and value classes. Structured map keys, open polymorphic values, and
+   * `CharSequence` and value class map keys are covered by their own tests.
+   */
   @Serializable
   data class SecretsEverywhere(
     val query: String,
@@ -218,6 +238,16 @@ class KotlinxPropertiesEncoderFilteringTest {
           "params" to mapOf("query" to "shoes", "authToken" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
         ),
       )
+  }
+
+  @Test
+  fun `encode() - replaces the values of a top-level map's sensitive keys with the Filtered substitute`() {
+    val serializer = MapSerializer(String.serializer(), String.serializer())
+
+    val encoded = encodeToMap(serializer, mapOf("query" to "shoes", "password" to "secret"))
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("query" to "shoes", "password" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
   }
 
   @Test
@@ -419,6 +449,41 @@ class KotlinxPropertiesEncoderFilteringTest {
     val encoded = encodeToMap(WithStructuredValueClass.serializer(), entry)
 
     assertThat(encoded).isEqualTo(mapOf("owner" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `encode() - filters a value class wrapping a value class whose underlying property is sensitive`() {
+    val entry = WithOuterTokenRef(OuterTokenRef(TokenRef("abc123")))
+
+    val encoded = encodeToMap(WithOuterTokenRef.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("reference" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `encode() - filters a value class whose nullable sensitive underlying property holds a value`() {
+    val entry = WithNullableTokenRefValue(NullableTokenRef("abc123"))
+
+    val encoded = encodeToMap(WithNullableTokenRefValue.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("reference" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `encode() - filters a value class whose nullable sensitive underlying property holds null`() {
+    val entry = WithNullableTokenRefValue(NullableTokenRef(null))
+
+    val encoded = encodeToMap(WithNullableTokenRefValue.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("reference" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  /** A null value class has no underlying property to check, and no value to leak. */
+  @Test
+  fun `encode() - encodes a null value class property whose underlying property is sensitive as null`() {
+    val encoded = encodeToMap(WithNullableTokenRef.serializer(), WithNullableTokenRef(null))
+
+    assertThat(encoded).isEqualTo(mapOf("reference" to null))
   }
 
   @Test

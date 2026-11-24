@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.compose.navigation3.BackStackEntryMapper
 
 /**
@@ -25,6 +26,10 @@ class BackStackEntryMapperActivity : Activity() {
         "SerialName maps the entry to null" to (BackStackEntryMapper.SerialName.map(key) == null),
         "SerialNameAndProperties maps the entry to null" to
           (BackStackEntryMapper.SerialNameAndProperties.map(key) == null),
+        // Shows why every entry is /unknown in the SDK info sent with every event.
+        "ComposeNavigation3SerialNameMappersUnavailable integration is added" to
+          ("ComposeNavigation3SerialNameMappersUnavailable" in
+            SentryIntegrationPackageStorage.getInstance().integrations),
         // Shows the build was minified, so the absence of R8 build failures proves something.
         "ProductKey was renamed (runtime class ${ProductKey::class.java.name})" to
           (ProductKey::class.java.name != "io.sentry.tests.nav3.r8.ProductKey"),

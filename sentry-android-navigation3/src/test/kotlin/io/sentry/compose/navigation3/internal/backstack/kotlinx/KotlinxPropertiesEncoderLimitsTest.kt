@@ -6,6 +6,7 @@ import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_DEPTH
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_VALUES
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
+import io.sentry.compose.navigation3.internal.backstack.ArgumentSink
 import io.sentry.compose.navigation3.internal.backstack.CountingText
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
@@ -105,6 +106,26 @@ class KotlinxPropertiesEncoderLimitsTest {
     }
 
     override fun deserialize(decoder: Decoder): Code = throw UnsupportedOperationException()
+  }
+
+  /**
+   * Forwards to [sink], counting [beginMap] calls in [beginMapCalls] and recording the reasons the
+   * encoder passes to [reject], so a test can tell the depth limit, which a write breaks, from the
+   * serializer nesting limit, which the encoder rejects itself.
+   */
+  private class LimitObservingSink(private val sink: TreeArgumentWriter) : ArgumentSink by sink {
+    var beginMapCalls = 0
+    val rejectedReasons = mutableListOf<ArgumentDropReason>()
+
+    override fun beginMap(identity: Any?) {
+      beginMapCalls++
+      sink.beginMap(identity)
+    }
+
+    override fun reject(reason: ArgumentDropReason, warning: String): Nothing {
+      rejectedReasons += reason
+      sink.reject(reason, warning)
+    }
   }
 
   private val textKeyedMapSerializer =
@@ -306,13 +327,18 @@ class KotlinxPropertiesEncoderLimitsTest {
 
   @Test
   fun `encode() - stops at the depth limit when an entry references itself`() {
+    // The encoder doesn't pass identities, so only the depth limit stops the cycle. It's reached
+    // long before the serializer nesting limit, which the encoder would reject itself.
+    val sink = LimitObservingSink(TreeArgumentWriter(ArgumentBudget()))
     val entry = SelfReferencing().apply { next = this }
 
     val exception =
-      assertFailsWith<DropArguments> { encodeToMap(SelfReferencing.serializer(), entry) }
+      assertFailsWith<DropArguments> { encodeInto(SelfReferencing.serializer(), entry, sink) }
 
     assertThat(exception.reason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
     assertThat(exception.warning).isEqualTo(DropArguments.STRUCTURE_WARNING)
+    assertThat(sink.beginMapCalls).isEqualTo(MAX_ARGUMENT_DEPTH + 1)
+    assertThat(sink.rejectedReasons).isEmpty()
   }
 
   // Value limit
@@ -400,12 +426,16 @@ class KotlinxPropertiesEncoderLimitsTest {
 
   @Test
   fun `encode() - drops the arguments for invalid structure when a custom serializer recurses through a cycle`() {
+    // The recursion never begins a structure, so only the nesting limit can stop it.
+    val sink = LimitObservingSink(TreeArgumentWriter(ArgumentBudget()))
     val entry = Link("leaf").apply { next = this }
 
-    val exception = assertFailsWith<DropArguments> { encodeToMap(LinkSerializer, entry) }
+    val exception = assertFailsWith<DropArguments> { encodeInto(LinkSerializer, entry, sink) }
 
     assertThat(exception.reason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
     assertThat(exception.warning).isEqualTo(DropArguments.STRUCTURE_WARNING)
+    assertThat(sink.rejectedReasons).containsExactly(ArgumentDropReason.INVALID_STRUCTURE)
+    assertThat(sink.beginMapCalls).isEqualTo(0)
   }
 
   @Test

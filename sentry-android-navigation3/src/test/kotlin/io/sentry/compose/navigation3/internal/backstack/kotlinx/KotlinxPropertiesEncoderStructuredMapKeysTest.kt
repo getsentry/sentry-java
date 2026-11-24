@@ -37,6 +37,11 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
 
   @Serializable @JvmInline value class PointRef(val point: Point)
 
+  @Serializable @JvmInline value class OuterPointRef(val ref: PointRef)
+
+  /** A value class whose underlying property's name (`token`) is sensitive. */
+  @Serializable @JvmInline value class TokenRef(val token: String)
+
   @Serializable
   sealed interface Origin {
     @Serializable @SerialName("search") data class Search(val query: String) : Origin
@@ -62,6 +67,10 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
   @Serializable data class WithOriginMapKeys(val byOrigin: Map<Origin, Int>)
 
   @Serializable data class WithPointRefMapKeys(val byPointRef: Map<PointRef, Int>)
+
+  @Serializable data class WithOuterPointRefMapKeys(val byOuterRef: Map<OuterPointRef, Int>)
+
+  @Serializable data class WithPointMapKeysToTokenRefs(val byPoint: Map<Point, TokenRef>)
 
   @Serializable data class WithNullablePointMapKeys(val byPoint: Map<Point?, Int>)
 
@@ -232,6 +241,16 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
 
     assertThat(encoded)
       .isEqualTo(mapOf("byPointRef" to listOf(mapOf("key" to mapOf("x" to 1), "value" to 2))))
+  }
+
+  @Test
+  fun `encode() - records a map with value class keys that wrap a value class wrapping a class as entries of the innermost keys`() {
+    val entry = WithOuterPointRefMapKeys(mapOf(OuterPointRef(PointRef(Point(1))) to 2))
+
+    val encoded = encodeToMap(WithOuterPointRefMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("byOuterRef" to listOf(mapOf("key" to mapOf("x" to 1), "value" to 2))))
   }
 
   @Test
@@ -406,6 +425,21 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
                   mapOf("user" to "jane", "password" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
               ),
             ),
+        ),
+      )
+  }
+
+  @Test
+  fun `encode() - filters a value under a class key when the value's underlying property is sensitive`() {
+    val entry = WithPointMapKeysToTokenRefs(mapOf(Point(1) to TokenRef("abc123")))
+
+    val encoded = encodeToMap(WithPointMapKeysToTokenRefs.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "byPoint" to
+            listOf(mapOf("key" to mapOf("x" to 1), "value" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE)),
         ),
       )
   }

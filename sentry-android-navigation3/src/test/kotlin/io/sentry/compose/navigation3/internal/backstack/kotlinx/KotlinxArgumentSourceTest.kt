@@ -140,6 +140,16 @@ class KotlinxArgumentSourceTest {
   }
 
   @Test
+  fun `encodes the entry when its arguments are first read through equals()`() {
+    val source = argumentSourceOf(detailSerializer, Detail("1"))
+
+    val isEqual = source.equals(mapOf("id" to "1"))
+
+    assertThat(isEqual).isTrue()
+    assertThat(detailSerializer.serialized).containsExactly(Detail("1"))
+  }
+
+  @Test
   fun `encodes the entry once across repeated reads`() {
     val source = argumentSourceOf(detailSerializer, Detail("1"))
 

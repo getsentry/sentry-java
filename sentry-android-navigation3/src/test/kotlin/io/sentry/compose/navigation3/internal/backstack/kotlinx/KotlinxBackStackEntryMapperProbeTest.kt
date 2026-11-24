@@ -74,6 +74,23 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
+  fun `doesn't check the properties encoder or add the property encoding disabled integration when the name lookup check fails`() {
+    val probe =
+      FakeCompatibilityProbe(
+        nameLookupError = NoSuchMethodError(),
+        encoderError = NoSuchMethodError(),
+      )
+
+    assertFailsWith<NoSuchMethodError> {
+      KotlinxBackStackEntryMapper(includeProperties = true, logger = { mock() }, probe = probe)
+    }
+
+    assertThat(probe.encodingChecks).isEqualTo(0)
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
+  }
+
+  @Test
   fun `names entries when the name lookup check is inconclusive`() {
     val probe =
       FakeCompatibilityProbe(nameLookupInconclusive = Inconclusive(IllegalStateException()))

@@ -55,8 +55,9 @@ import org.junit.Test
  * **When a test fails**
  * 1. Review kotlinx.serialization's changelog for the version under test for the changed calls.
  * 2. Check that [KotlinxPropertiesEncoder] still produces correct arguments for the new sequence,
- *    adding a [KotlinxPropertiesEncoderTest] case for the shape if needed, and fix the encoder if
- *    it doesn't. The encoder must still work with both the floor version and the new one.
+ *    adding a case for the shape to the matching `KotlinxPropertiesEncoder*Test` suite if needed,
+ *    and fix the encoder if it doesn't. The encoder must still work with both the floor version and
+ *    the new one.
  * 3. Only then regenerate the baselines:
  *    ```
  *    ./gradlew :sentry-android-navigation3:testReleaseUnitTest --tests '*EncoderContract*' \
@@ -200,7 +201,9 @@ class KotlinxEncoderContractTest {
     val filters: List<Filter>,
     val origin: Origin,
     val fallbackOrigin: Origin,
+    val referrer: Referrer,
     val note: String?,
+    val label: CharSequence,
     @Transient val cache: String = "not encoded",
   )
 
@@ -410,8 +413,17 @@ class KotlinxEncoderContractTest {
 
   // Combined
 
+  /**
+   * Mirrors the R8 check's value, except that the label is a `String` rather than a
+   * `StringBuilder`, as the module must register the label's class. The module registers the open
+   * polymorphic and `CharSequence` values as the tests above do.
+   */
   @Test
   fun `the R8 check's arguments key encodes every rule it covers`() {
+    val module = SerializersModule {
+      polymorphic(Referrer::class) { subclass(Campaign::class) }
+      polymorphic(CharSequence::class) { subclass(String::class, String.serializer()) }
+    }
     val value =
       ArgumentsKey(
         productId = 42,
@@ -426,10 +438,12 @@ class KotlinxEncoderContractTest {
         filters = listOf(Filter(sessionId = "secret", query = "hats")),
         origin = Origin.Search("shoes"),
         fallbackOrigin = Origin.DeepLink,
+        referrer = Campaign("spring"),
         note = null,
+        label = "sale",
       )
 
-    assertMatchesBaseline("arguments-key", ArgumentsKey.serializer(), value)
+    assertMatchesBaseline("arguments-key", ArgumentsKey.serializer(), value, module)
   }
 
   private fun <T> assertMatchesBaseline(

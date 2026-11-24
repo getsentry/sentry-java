@@ -57,6 +57,10 @@ android {
         if (updateEncoderContract) {
           it.systemProperty("nav3.updateEncoderContract", "true")
           it.systemProperty("nav3.encoderContractDir", encoderContractDir)
+          // The baselines it writes aren't declared outputs, so an up-to-date or cached run would
+          // report success without writing them.
+          it.outputs.upToDateWhen { false }
+          it.outputs.cacheIf { false }
         }
       }
     }

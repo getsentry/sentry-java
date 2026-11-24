@@ -22,8 +22,10 @@ val kotlinxVersion = kotlinxVersionOverride ?: matrixLibs.versions.kotlinxSerial
 // on the version and R8 (e.g., 1.9.x's succeeds in R8 compat mode only), so either outcome is
 // accepted.
 val kotlinxKeepsNamedCompanions =
-  kotlinxVersion.split(".").let { (major, minor) ->
-    major.toInt() > 1 || (major.toInt() == 1 && minor.toInt() >= 10)
+  kotlinxVersion.split('.', '-').let { parts ->
+    val major = parts[0].toInt()
+    val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
+    major > 1 || (major == 1 && minor >= 10)
   }
 
 android {
@@ -71,13 +73,12 @@ android {
 
 dependencies {
   implementation("io.sentry:sentry-android-navigation3:$sentryVersion")
+  // Lets the check read the integrations the SDK reports, which sentry-android-navigation3 only
+  // has as a runtime dependency.
+  implementation("io.sentry:sentry:$sentryVersion")
   // compileOnly in sentry-android-navigation3; always available for apps that use Nav3.
   implementation(libs.androidx.compose.runtime)
 
-  implementation(matrixLibs.kotlinxSerialization.core) {
-    version {
-      require(kotlinxVersion)
-      kotlinxVersionOverride?.let { strictly(it) }
-    }
-  }
+  // Strict, so that no other dependency can raise the version the check runs against.
+  implementation(matrixLibs.kotlinxSerialization.core) { version { strictly(kotlinxVersion) } }
 }

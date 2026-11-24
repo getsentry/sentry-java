@@ -102,27 +102,31 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName maps entries to null when the kotlinx mapper can't be loaded`() {
+  fun `BackStackEntryMapper SerialName maps entries to null and adds the mappers unavailable integration when the kotlinx mapper can't be loaded`() {
     val classLoader = KotlinxMapperHidingClassLoader()
 
     val mapper = classLoader.companionMapper("getSerialName")
 
     assertThat(mapper.map(Home)).isNull()
     assertThat(classLoader.wasKotlinxMapperRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test
-  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null when the kotlinx mapper can't be loaded`() {
+  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null and adds the mappers unavailable integration when the kotlinx mapper can't be loaded`() {
     val classLoader = KotlinxMapperHidingClassLoader()
 
     val mapper = classLoader.companionMapper("getSerialNameAndProperties")
 
     assertThat(mapper.map(Detail("1"))).isNull()
     assertThat(classLoader.wasKotlinxMapperRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName maps entries to null when kotlinx serialization is missing`() {
+  fun `BackStackEntryMapper SerialName maps entries to null and adds the mappers unavailable integration when kotlinx serialization is missing`() {
     val classLoader = KotlinxMapperHidingClassLoader(hidesKotlinx = true)
     val entry = classLoader.notSerializableEntry("1")
 
@@ -131,10 +135,12 @@ class BuiltInBackStackEntryMappersTest {
     assertThat(mapper.map("home")).isNull()
     assertThat(mapper.map(entry)).isNull()
     assertThat(classLoader.wasKotlinxRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   @Test
-  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null when kotlinx serialization is missing`() {
+  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null and adds the mappers unavailable integration when kotlinx serialization is missing`() {
     val classLoader = KotlinxMapperHidingClassLoader(hidesKotlinx = true)
     val entry = classLoader.notSerializableEntry("1")
 
@@ -143,6 +149,8 @@ class BuiltInBackStackEntryMappersTest {
     assertThat(mapper.map("home")).isNull()
     assertThat(mapper.map(entry)).isNull()
     assertThat(classLoader.wasKotlinxRequested).isTrue()
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .contains(BuiltInBackStackEntryMappers.MAPPERS_UNAVAILABLE_INTEGRATION)
   }
 
   // First access from several threads

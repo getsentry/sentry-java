@@ -6,6 +6,7 @@ import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibi
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE
 import kotlin.test.assertFailsWith
+import kotlinx.serialization.KSerializer
 import org.junit.Test
 
 /**
@@ -27,6 +28,92 @@ class KotlinxCompatibilityProbeTest {
     assertThat(inconclusive).isEmpty()
   }
 
+  @Test
+  fun `nameLookupLinkageError() - returns the LinkageError a probe type's serializer lookup throws`() {
+    val error = NoSuchMethodError("serializerOrNull")
+    val inconclusive = mutableListOf<Throwable?>()
+
+    val returned =
+      KotlinxCompatibilityProbe.nameLookupLinkageError({ throw error }) { inconclusive += it }
+
+    assertThat(returned).isSameInstanceAs(error)
+    assertThat(inconclusive).isEmpty()
+  }
+
+  @Test
+  fun `nameLookupLinkageError() - reports a non-fatal exception as inconclusive and returns null`() {
+    val error = IllegalStateException("lookup failed")
+    val inconclusive = mutableListOf<Throwable?>()
+
+    val returned =
+      KotlinxCompatibilityProbe.nameLookupLinkageError({ throw error }) { inconclusive += it }
+
+    assertThat(returned).isNull()
+    assertThat(inconclusive).containsExactly(error)
+  }
+
+  @Test
+  fun `nameLookupLinkageError() - propagates a fatal error that isn't a LinkageError`() {
+    val error = OutOfMemoryError()
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> {
+        KotlinxCompatibilityProbe.nameLookupLinkageError({ throw error }) {}
+      }
+
+    assertThat(thrown).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `nameLookupLinkageError() - reports a missing probe serializer as inconclusive without an error`() {
+    val inconclusive = mutableListOf<Throwable?>()
+
+    val returned =
+      KotlinxCompatibilityProbe.nameLookupLinkageError(
+        { type -> if (type == ProbeObject::class.java) null else reflectiveSerializerOrNull(type) },
+      ) {
+        inconclusive += it
+      }
+
+    assertThat(returned).isNull()
+    assertThat(inconclusive).containsExactly(null)
+  }
+
+  @Test
+  fun `nameLookupLinkageError() - doesn't report an exception onInconclusive throws for a missing probe serializer back to onInconclusive`() {
+    val error = IllegalStateException("callback failed")
+    val inconclusive = mutableListOf<Throwable?>()
+
+    val thrown =
+      assertFailsWith<IllegalStateException> {
+        KotlinxCompatibilityProbe.nameLookupLinkageError({ null }) {
+          inconclusive += it
+          throw error
+        }
+      }
+
+    assertThat(thrown).isSameInstanceAs(error)
+    assertThat(inconclusive).containsExactly(null)
+  }
+
+  @Test
+  fun `nameLookupLinkageError() - doesn't report an exception onInconclusive throws for a lookup exception back to onInconclusive`() {
+    val lookupError = IllegalStateException("lookup failed")
+    val callbackError = IllegalArgumentException("callback failed")
+    val inconclusive = mutableListOf<Throwable?>()
+
+    val thrown =
+      assertFailsWith<IllegalArgumentException> {
+        KotlinxCompatibilityProbe.nameLookupLinkageError({ throw lookupError }) {
+          inconclusive += it
+          throw callbackError
+        }
+      }
+
+    assertThat(thrown).isSameInstanceAs(callbackError)
+    assertThat(inconclusive).containsExactly(lookupError)
+  }
+
   // encoderIncompatibility()
 
   @Test
@@ -36,6 +123,20 @@ class KotlinxCompatibilityProbeTest {
     val error = KotlinxCompatibilityProbe.encoderIncompatibility()
 
     assertThat(error).isNull()
+  }
+
+  @Test
+  fun `encoderIncompatibility() - returns EncoderProducedUnexpectedOutput when the encoder's output doesn't match the probe's expected encoding`() {
+    val error = KotlinxCompatibilityProbe.encoderIncompatibility { writer ->
+      @Suppress("UNCHECKED_CAST")
+      KotlinxPropertiesEncoder.encode(
+        ProbeClass.serializer() as KSerializer<Any>,
+        ProbeClass(name = "unexpected"),
+        writer,
+      )
+    }
+
+    assertThat(error).isInstanceOf(EncoderProducedUnexpectedOutput::class.java)
   }
 
   // encoderFailureOf()

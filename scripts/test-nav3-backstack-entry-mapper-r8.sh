@@ -69,6 +69,9 @@ copyApk() {
 build() {
   local outDir="$1"
   mkdir -p "$outDir"
+  # Removes APKs from earlier builds, which run() would otherwise run too (e.g., one for a release
+  # candidate that's no longer tested).
+  rm -f "$outDir"/*.apk
   for mode in full compat; do
     local fullMode=true
     [[ "$mode" == "compat" ]] && fullMode=false
@@ -103,6 +106,43 @@ build() {
   cp "${noKotlinxModuleDir}/build/outputs/apk/release/${noKotlinxModule}-release.apk" "${outDir}/no-kotlinx.apk"
 }
 
+# Installs and launches APK $1, prints what its check reports, and returns non-zero unless the check
+# passed. Failures to install or launch the APK return non-zero too, rather than exiting, so that
+# run() can apply the same advisory rule to them.
+runApk() {
+  local apk="$1"
+  adb uninstall "$appId" > /dev/null 2>&1 || true
+  adb install "$apk" > /dev/null || return 1
+  # Only read lines logged from this launch on, so a stale RESULT=PASS from the previous APK can't
+  # hide this one's failure. Doesn't clear the log, which would also discard unrelated logs on a
+  # development device. The timestamp is truncated to the second, so wait a second for it to
+  # postdate earlier lines.
+  local since
+  sleep 1
+  since="$(adb shell "date +'%m-%d %H:%M:%S.000'" | tr -d '\r')" || return 1
+  adb shell am start -W -n "${appId}/.BackStackEntryMapperActivity" > /dev/null || return 1
+
+  local output=""
+  for _ in $(seq 1 60); do
+    output="$(adb logcat -d -T "$since" -s "${tag}:I" | grep "${tag}" || true)"
+    if grep -q "RESULT=" <<< "$output"; then
+      break
+    fi
+    if adb logcat -d -T "$since" -b crash | grep -q "$appId"; then
+      break
+    fi
+    sleep 1
+  done
+
+  if [[ -n "$output" ]]; then
+    sed -E "s/^.*${tag}: //" <<< "$output"
+  fi
+  if ! grep -q "RESULT=PASS" <<< "$output"; then
+    adb logcat -d -T "$since" -b crash | grep -A 20 "$appId" || true
+    return 1
+  fi
+}
+
 run() {
   local apkDir="$1"
   local failed=0
@@ -117,35 +157,8 @@ run() {
     local name
     name="$(basename "$apk" .apk)"
     echo "=== $name"
-    adb uninstall "$appId" > /dev/null 2>&1 || true
-    adb install -r -d "$apk" > /dev/null
-    # Only read lines logged from this launch on, so a stale RESULT=PASS from the previous APK can't
-    # hide this one's failure. Doesn't clear the log, which would also discard unrelated logs on a
-    # development device. The timestamp is truncated to the second, so wait a second for it to
-    # postdate earlier lines.
-    local since
-    sleep 1
-    since="$(adb shell "date +'%m-%d %H:%M:%S.000'" | tr -d '\r')"
-    adb shell am start -W -n "${appId}/.BackStackEntryMapperActivity" > /dev/null
-
-    local output=""
-    for _ in $(seq 1 60); do
-      output="$(adb logcat -d -T "$since" -s "${tag}:I" | grep "${tag}" || true)"
-      if grep -q "RESULT=" <<< "$output"; then
-        break
-      fi
-      if adb logcat -d -T "$since" -b crash | grep -q "$appId"; then
-        break
-      fi
-      sleep 1
-    done
-
-    if [[ -n "$output" ]]; then
-      sed -E "s/^.*${tag}: //" <<< "$output"
-    fi
-    if ! grep -q "RESULT=PASS" <<< "$output"; then
+    if ! runApk "$apk"; then
       echo "FAILED: $name"
-      adb logcat -d -T "$since" -b crash | grep -A 20 "$appId" || true
       if [[ "$name" == *-kotlinx-preview-* ]] && isAdvisory preview; then
         warn "The R8 check failed for $name, which uses a kotlinx.serialization release candidate."
       else
@@ -166,7 +179,6 @@ case "${1:-}" in
   run) run "${2:?Usage: $0 run DIR}" ;;
   "")
     apkDir="${moduleDir}/build/r8-check-apks"
-    rm -rf "$apkDir"
     build "$apkDir"
     run "$apkDir"
     ;;

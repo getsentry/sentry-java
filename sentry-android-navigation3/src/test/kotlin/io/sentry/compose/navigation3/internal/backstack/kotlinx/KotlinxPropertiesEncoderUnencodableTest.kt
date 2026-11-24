@@ -15,6 +15,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -462,6 +463,21 @@ class KotlinxPropertiesEncoderUnencodableTest {
   fun `encode() - drops the arguments for the character limit a serializer rethrew as an IllegalArgumentException`() {
     val serializer = Labeled.serializer(LimitReplacingSerializer(String.serializer()))
     val entry = Labeled("1", "x".repeat(MAX_ARGUMENT_CHARACTERS + 1), page = 2)
+
+    val thrown =
+      assertFailsWith<DropArguments> { encodeToMap(serializer, entry, unencodableValues::add) }
+
+    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
+    assertThat(unencodableValues).isEmpty()
+  }
+
+  @Test
+  fun `encode() - drops the arguments for the character limit a map key's serializer rethrew as an IllegalArgumentException`() {
+    val serializer =
+      Labeled.serializer(
+        MapSerializer(LimitReplacingSerializer(String.serializer()), Int.serializer()),
+      )
+    val entry = Labeled("1", mapOf("k".repeat(MAX_ARGUMENT_CHARACTERS + 1) to 1), page = 2)
 
     val thrown =
       assertFailsWith<DropArguments> { encodeToMap(serializer, entry, unencodableValues::add) }

@@ -53,6 +53,9 @@ configurations.configureEach {
 
 dependencies {
   implementation("io.sentry:sentry-android-navigation3:$sentryVersion")
+  // Lets the check read the integrations the SDK reports, which sentry-android-navigation3 only
+  // has as a runtime dependency.
+  implementation("io.sentry:sentry:$sentryVersion")
   // compileOnly in sentry-android-navigation3. Apps that use it always use Compose.
   implementation(libs.androidx.compose.runtime)
 }

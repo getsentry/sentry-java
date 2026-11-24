@@ -74,7 +74,7 @@ internal object BuiltInBackStackEntryMappers {
       logger()
         .log(
           WARNING,
-          // The compiler inlines INCOMPATIBLE_KOTLINX_ADVICE, and it's use here doesn't access any
+          // The compiler inlines INCOMPATIBLE_KOTLINX_ADVICE, and its use here doesn't access any
           // kotlinx.serialization code.
           "Nav3 built-in mapper creation failed. Using $UNKNOWN_ENTRY_NAME for all entries. See " +
             "the attached error. $INCOMPATIBLE_KOTLINX_ADVICE",

@@ -61,14 +61,24 @@ internal interface KotlinxCompatibilityProbe {
   /** Probes the app's kotlinx.serialization version using [ProbeClass] and [ProbeObject]. */
   companion object : KotlinxCompatibilityProbe {
 
-    override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? {
+    override fun nameLookupLinkageError(onInconclusive: (Throwable?) -> Unit): LinkageError? =
+      nameLookupLinkageError(::reflectiveSerializerOrNull, onInconclusive)
+
+    /**
+     * Like [nameLookupLinkageError], but looks up the probe types' serializers with
+     * [lookUpSerializer], so tests can make the lookup fail.
+     */
+    internal fun nameLookupLinkageError(
+      lookUpSerializer: (Class<*>) -> KSerializer<*>?,
+      onInconclusive: (Throwable?) -> Unit,
+    ): LinkageError? {
       var isSerializerMissing = false
 
       val error =
         probe(onInconclusive) {
           val descriptors =
             listOf(ProbeClass::class.java, ProbeObject::class.java).map { type ->
-              reflectiveSerializerOrNull(type)?.descriptor
+              lookUpSerializer(type)?.descriptor
             }
           for (descriptor in descriptors.filterNotNull()) {
             descriptor.serialName
@@ -87,23 +97,32 @@ internal interface KotlinxCompatibilityProbe {
       return error
     }
 
-    override fun encoderIncompatibility(): Throwable? = encoderFailureOf {
-      val writer = TreeArgumentWriter(ArgumentBudget())
+    override fun encoderIncompatibility(): Throwable? = encoderIncompatibility { writer ->
       @Suppress("UNCHECKED_CAST")
       KotlinxPropertiesEncoder.encode(
         ProbeClass.serializer() as KSerializer<Any>,
         ProbeClass(),
         writer,
       )
-      // An incompatible kotlinx.serialization version can link and run yet mis-encode properties
-      // under R8 without throwing. Verifying the fixture's output disables such a silently
-      // corrupting encoder instead of letting wrong arguments reach Sentry.
-      if (writer.argumentsOrThrow() == EXPECTED_PROBE_ENCODING) {
-        null
-      } else {
-        EncoderProducedUnexpectedOutput()
-      }
     }
+
+    /**
+     * Like [encoderIncompatibility], but encodes [ProbeClass] to the writer with [encode], so tests
+     * can make the encoder fail or produce unexpected output.
+     */
+    internal fun encoderIncompatibility(encode: (TreeArgumentWriter) -> Unit): Throwable? =
+      encoderFailureOf {
+        val writer = TreeArgumentWriter(ArgumentBudget())
+        encode(writer)
+        // An incompatible kotlinx.serialization version can link and run yet mis-encode properties
+        // under R8 without throwing. Verifying the fixture's output disables such a silently
+        // corrupting encoder instead of letting wrong arguments reach Sentry.
+        if (writer.argumentsOrThrow() == EXPECTED_PROBE_ENCODING) {
+          null
+        } else {
+          EncoderProducedUnexpectedOutput()
+        }
+      }
 
     /**
      * Runs [check], returning the failure it reports or throws, or `null` if it reports none.

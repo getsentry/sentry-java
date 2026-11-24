@@ -1,8 +1,14 @@
 package io.sentry.tests.nav3.r8
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 @Serializable data object PublicObject
 
@@ -51,6 +57,45 @@ sealed interface Origin {
 interface Referrer
 
 @Serializable @SerialName("campaign") data class Campaign(val name: String) : Referrer
+
+/** Not `@Serializable`, so the properties mapper can't find a serializer for it. */
+data class PlainReferrer(val source: String) : Referrer
+
+/**
+ * Has an open polymorphic property whose runtime class isn't `@Serializable`, which the properties
+ * mapper records as `[Unencodable]` while keeping the entry's other arguments.
+ */
+@Serializable data class UnencodableReferrerKey(val id: String, val referrer: Referrer)
+
+/**
+ * Named and encoded by its custom serializer, which the plugin's companion `serializer()` returns.
+ */
+@Serializable(with = SlugSerializer::class) class Slug(val value: String)
+
+object SlugSerializer : KSerializer<Slug> {
+  override val descriptor: SerialDescriptor =
+    PrimitiveSerialDescriptor("slug", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: Slug) = encoder.encodeString(value.value)
+
+  override fun deserialize(decoder: Decoder): Slug = Slug(decoder.decodeString())
+}
+
+/**
+ * An enum whose constant has a body, so the constant is an instance of an anonymous subclass that
+ * isn't `@Serializable` itself. The mappers look up the declaring enum instead.
+ */
+@Serializable
+enum class TabWithBody {
+  HOME {
+    override fun icon(): String = "house"
+  };
+
+  abstract fun icon(): String
+}
+
+/** A value class used as a back stack key itself, which is boxed when passed as `Any`. */
+@Serializable @JvmInline value class TabId(val id: String)
 
 /**
  * Has a named companion object but no named-companion R8 rules of the app's own.
@@ -187,6 +232,20 @@ fun serializableExpectations(): List<Expectation> =
     ),
     Expectation("arguments key", argumentsKey, "$PKG.ArgumentsKey", argumentsKeyArguments),
     Expectation(
+      "open polymorphic property whose runtime class isn't @Serializable",
+      UnencodableReferrerKey("1", PlainReferrer("email")),
+      "$PKG.UnencodableReferrerKey",
+      mapOf("id" to "1", "referrer" to "[Unencodable]"),
+    ),
+    Expectation("class with a custom serializer", Slug("shoes"), "slug", mapOf("value" to "shoes")),
+    Expectation(
+      "enum constant with a body",
+      TabWithBody.HOME,
+      "$PKG.TabWithBody",
+      mapOf("value" to "HOME"),
+    ),
+    Expectation("value class", TabId("feed"), "$PKG.TabId", mapOf("value" to "feed")),
+    Expectation(
       "named companion without rules",
       NamedCompanionKey.of("1"),
       "$PKG.NamedCompanionKey",
@@ -201,14 +260,14 @@ fun serializableExpectations(): List<Expectation> =
     ),
   ) + Holder.keys()
 
-fun minificationChecks(): List<MinificationCheck> =
+fun minificationChecks(): List<Check> =
   listOf(
-    MinificationCheck(
+    Check(
       "PublicObject was renamed (runtime class ${PublicObject::class.java.name})",
       PublicObject::class.java.name != "$PKG.PublicObject",
     ),
     // Argument names come from serializer descriptors, so they survive R8 renaming fields.
-    MinificationCheck(
+    Check(
       "ArgumentsKey fields were renamed " +
         "(fields ${ArgumentsKey::class.java.declaredFields.map { it.name }})",
       ArgumentsKey::class.java.declaredFields.none { it.name == "productId" },

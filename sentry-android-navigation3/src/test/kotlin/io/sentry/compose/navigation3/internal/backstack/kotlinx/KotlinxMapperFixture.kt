@@ -112,13 +112,15 @@ internal class FakeCompatibilityProbe(
  * [probe] finds the app's kotlinx.serialization version compatible by default.
  *
  * With `useDefaultLookUp = true`, the mapper uses its real serializer lookup, so [lookUp] and
- * [lookedUpTypes] are unused.
+ * [lookedUpTypes] are unused. With an `isAnnotatedSerializable` check, the mapper uses it instead
+ * of reading each type's `@Serializable` annotation.
  */
 internal class KotlinxMapperFixture
 private constructor(
   includeProperties: Boolean,
   useDefaultLookUp: Boolean,
   val probe: KotlinxCompatibilityProbe,
+  isAnnotatedSerializable: ((Class<*>) -> Boolean)?,
 ) {
   val logger = mock<ILogger>()
 
@@ -135,27 +137,39 @@ private constructor(
   val lookedUpTypes = mutableListOf<Class<*>>()
   var lookUp: (Class<*>) -> KSerializer<*>? = { serializers[it] }
 
-  val mapper =
-    if (useDefaultLookUp) {
-      KotlinxBackStackEntryMapper(includeProperties, logger = { logger }, probe = probe)
-    } else {
-      KotlinxBackStackEntryMapper(
-        includeProperties,
-        lookUpSerializer = {
+  val mapper: KotlinxBackStackEntryMapper
+
+  init {
+    val lookUpSerializer: (Class<*>) -> KSerializer<*>? =
+      if (useDefaultLookUp) {
+        ::reflectiveSerializerOrNull
+      } else {
+        {
           lookedUpTypes += it
           lookUp(it)
-        },
-        logger = { logger },
-        probe = probe,
-      )
-    }
+        }
+      }
+    mapper =
+      if (isAnnotatedSerializable == null) {
+        KotlinxBackStackEntryMapper(includeProperties, lookUpSerializer, { logger }, probe)
+      } else {
+        KotlinxBackStackEntryMapper(
+          includeProperties,
+          lookUpSerializer,
+          { logger },
+          probe,
+          isAnnotatedSerializable,
+        )
+      }
+  }
 
   companion object {
     fun create(
       includeProperties: Boolean = false,
       useDefaultLookUp: Boolean = false,
       probe: KotlinxCompatibilityProbe = FakeCompatibilityProbe(),
-    ) = KotlinxMapperFixture(includeProperties, useDefaultLookUp, probe)
+      isAnnotatedSerializable: ((Class<*>) -> Boolean)? = null,
+    ) = KotlinxMapperFixture(includeProperties, useDefaultLookUp, probe, isAnnotatedSerializable)
   }
 }
 

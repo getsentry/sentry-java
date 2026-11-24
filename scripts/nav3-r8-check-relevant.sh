@@ -35,7 +35,7 @@ changedFiles="$(git diff --name-only "$base" "$head")"
 # Changed files other than the two catalogs trigger the workflow only if they match its
 # pull_request paths. Keep this pattern in sync with them.
 if grep -v -x -F -e "$versionCatalog" -e "$matrixCatalog" <<< "$changedFiles" | grep -q -E \
-  '^(sentry-android-navigation3/|sentry-android-integration-tests/(nav3-backstack-entry-mapper-r8-check|nav3-no-kotlinx-r8-check)/|sentry-android-integration-tests/[^/]*\.gradle\.kts$|scripts/(test-nav3-backstack-entry-mapper-r8|update-kotlinx-serialization-preview|dependency-matrix|nav3-r8-check-relevant)\.sh$|\.github/workflows/integration-tests-nav3-r8\.yml$)'; then
+  '^(sentry-android-navigation3/|sentry-android-integration-tests/(nav3-backstack-entry-mapper-r8-check|nav3-no-kotlinx-r8-check)/|sentry-android-integration-tests/[^/]*\.gradle\.kts$|scripts/(test-nav3-backstack-entry-mapper-r8|update-kotlinx-serialization-preview|dependency-matrix|nav3-r8-check-relevant)\.sh$|gradle\.properties$|buildSrc/|build-logic/|sentry/src/main/java/io/sentry/util/|\.github/workflows/integration-tests-nav3-r8\.yml$)'; then
   echo true
   exit 0
 fi

@@ -6,8 +6,9 @@ R8 obfuscation. `sentry-android-navigation3` ships no kotlinx.serialization keep
 consumer rules, plus the per-class rules in this app's `proguard-rules.pro` file.
 
 The tests check serialization names, argument encoding (including open polymorphic values, whose serializers are looked up by
-reflection), and sensitive-value filtering. They also verify that R8 actually renamed
-representative classes and fields.
+reflection), and sensitive-value filtering. They also check that the mappers' compatibility probes passed (neither
+`ComposeNavigation3SerialNameMappersUnavailable` nor `ComposeNavigation3PropertyEncodingDisabled` was added to the SDK's integrations),
+and that R8 actually renamed representative classes and fields.
 
 ## How to run it
 
@@ -31,7 +32,8 @@ floor, which is always tested). Each of those is required.
 
 Two kinds of PRs bump the versions this check and the module's unit tests run against:
 
-- Dependabot opens a PR that sets `kotlinxSerialization-stable` to each new stable release.
+- Dependabot opens a PR that sets `kotlinxSerialization-stable` to the latest stable release. It waits until a release is three days old
+  (Dependabot's default cooldown), so it may skip a release that's quickly followed by another.
 - Each week, `update-deps.yml` opens or updates a PR that sets `kotlinxSerialization-preview` to the latest release candidate, using
   `scripts/update-kotlinx-serialization-preview.sh`.
 

@@ -7,7 +7,8 @@ module without kotlinx.serialization. R8 then sees missing classes referenced by
 consumer `-dontwarn kotlinx.serialization.**` rule keeps R8 from failing the build on them. Without the rule, this app's build fails.
 
 At runtime, the app checks that kotlinx.serialization is absent, that `BackStackEntryMapper.SerialName` and `SerialNameAndProperties` map
-an entry to `null` (recorded as `/unknown`) instead of crashing, and that R8 actually renamed a representative class.
+an entry to `null` (recorded as `/unknown`) instead of crashing, that the `ComposeNavigation3SerialNameMappersUnavailable` integration
+was added to the SDK's integrations (so events show why), and that R8 actually renamed a representative class.
 
 It's built and run by `scripts/test-nav3-backstack-entry-mapper-r8.sh`, along with `nav3-backstack-entry-mapper-r8-check`, and shares
 that app's application ID, Activity name, and log tag so the script runs both the same way.

@@ -52,6 +52,18 @@ class KotlinxPropertiesEncoderTest {
 
   @Serializable data class WithValueClass(val productId: ProductId)
 
+  @Serializable @JvmInline value class Price(val cents: Int)
+
+  @Serializable data class WithNullablePrice(val price: Price?)
+
+  @Serializable @JvmInline value class MaybeId(val value: String?)
+
+  @Serializable data class WithMaybeId(val maybeId: MaybeId)
+
+  @Serializable @JvmInline value class Rank(val value: UInt)
+
+  @Serializable data class WithRank(val rank: Rank)
+
   @Serializable data class WithDefault(val query: String, val page: Int = 1)
 
   @Serializable
@@ -90,10 +102,28 @@ class KotlinxPropertiesEncoderTest {
 
   @Serializable data class WithULong(val uLong: ULong)
 
+  @Serializable data class WithULongList(val uLongs: List<ULong>)
+
   @Serializable
   data class WithSignedNumbers(val byte: Byte, val short: Short, val int: Int, val long: Long)
 
+  @Serializable data class WithFloatingPointNumbers(val float: Float, val double: Double)
+
+  @Serializable
+  data class WithNonFiniteNumbers(
+    val floatNaN: Float,
+    val floatInfinity: Float,
+    val doubleNegativeInfinity: Double,
+  )
+
   @Serializable data class WithIntMapKeys(val counts: Map<Int, Long>)
+
+  @Serializable
+  data class WithUnsignedMapKeys(
+    val byUByte: Map<UByte, Int>,
+    val byUShort: Map<UShort, Int>,
+    val byULong: Map<ULong, Int>,
+  )
 
   @Serializable
   data class WithEncodedMapKeys(val bySort: Map<Sort, Int>, val byRank: Map<UInt, Int>)
@@ -231,6 +261,34 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
+  fun `encode() - encodes a nullable value class property holding a value by its underlying value`() {
+    val encoded = encodeToMap(WithNullablePrice.serializer(), WithNullablePrice(Price(999)))
+
+    assertThat(encoded).isEqualTo(mapOf("price" to 999))
+  }
+
+  @Test
+  fun `encode() - encodes a null value class property as null`() {
+    val encoded = encodeToMap(WithNullablePrice.serializer(), WithNullablePrice(null))
+
+    assertThat(encoded).isEqualTo(mapOf("price" to null))
+  }
+
+  @Test
+  fun `encode() - encodes a value class wrapping a nullable value that's present by its underlying value`() {
+    val encoded = encodeToMap(WithMaybeId.serializer(), WithMaybeId(MaybeId("p-1")))
+
+    assertThat(encoded).isEqualTo(mapOf("maybeId" to "p-1"))
+  }
+
+  @Test
+  fun `encode() - encodes a value class wrapping a null value as null`() {
+    val encoded = encodeToMap(WithMaybeId.serializer(), WithMaybeId(MaybeId(null)))
+
+    assertThat(encoded).isEqualTo(mapOf("maybeId" to null))
+  }
+
+  @Test
   fun `encode() - encodes properties that have their default values`() {
     val encoded = encodeToMap(WithDefault.serializer(), WithDefault(query = "shoes"))
 
@@ -346,6 +404,14 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
+  fun `encode() - encodes a nullable CharSequence property holding a value as a string of its text`() {
+    val encoded =
+      encodeToMap(WithNullableLabel.serializer(), WithNullableLabel(StringBuilder("shoes")))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
   fun `encode() - encodes a null CharSequence property as null`() {
     val encoded = encodeToMap(WithNullableLabel.serializer(), WithNullableLabel(null))
 
@@ -438,6 +504,22 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Test
+  fun `encode() - encodes a ULong list element above Long MAX_VALUE as a BigInteger`() {
+    val encoded =
+      encodeToMap(WithULongList.serializer(), WithULongList(listOf(1uL, ULong.MAX_VALUE)))
+
+    assertThat(encoded).isEqualTo(mapOf("uLongs" to listOf(1L, BigInteger("18446744073709551615"))))
+  }
+
+  @Test
+  fun `encode() - encodes a value class wrapping an unsigned number by its unsigned value`() {
+    val encoded = encodeToMap(WithRank.serializer(), WithRank(Rank(UInt.MAX_VALUE)))
+
+    val uIntMax: Long = 4_294_967_295L
+    assertThat(encoded).isEqualTo(mapOf("rank" to uIntMax))
+  }
+
+  @Test
   fun `encode() - encodes negative signed numbers as-is`() {
     val entry = WithSignedNumbers(byte = -1, short = -1, int = -1, long = -1L)
 
@@ -446,6 +528,37 @@ class KotlinxPropertiesEncoderTest {
     assertThat(encoded)
       .isEqualTo(
         mapOf("byte" to (-1).toByte(), "short" to (-1).toShort(), "int" to -1, "long" to -1L),
+      )
+  }
+
+  @Test
+  fun `encode() - encodes Float and Double properties as-is`() {
+    val entry = WithFloatingPointNumbers(float = 0.5f, double = -2.25)
+
+    val encoded = encodeToMap(WithFloatingPointNumbers.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("float" to 0.5f, "double" to -2.25))
+  }
+
+  /** JSON has no NaN or infinity, so the sink records them as text. */
+  @Test
+  fun `encode() - encodes NaN and infinite Float and Double properties as strings`() {
+    val entry =
+      WithNonFiniteNumbers(
+        floatNaN = Float.NaN,
+        floatInfinity = Float.POSITIVE_INFINITY,
+        doubleNegativeInfinity = Double.NEGATIVE_INFINITY,
+      )
+
+    val encoded = encodeToMap(WithNonFiniteNumbers.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "floatNaN" to "NaN",
+          "floatInfinity" to "Infinity",
+          "doubleNegativeInfinity" to "-Infinity",
+        ),
       )
   }
 
@@ -468,6 +581,27 @@ class KotlinxPropertiesEncoderTest {
     assertThat(encoded)
       .isEqualTo(
         mapOf("bySort" to mapOf("price_asc" to 1), "byRank" to mapOf("4294967295" to 2)),
+      )
+  }
+
+  @Test
+  fun `encode() - converts UByte, UShort, and ULong map keys to strings of their unsigned values`() {
+    val entry =
+      WithUnsignedMapKeys(
+        byUByte = mapOf(UByte.MAX_VALUE to 1),
+        byUShort = mapOf(UShort.MAX_VALUE to 2),
+        byULong = mapOf(ULong.MAX_VALUE to 3),
+      )
+
+    val encoded = encodeToMap(WithUnsignedMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "byUByte" to mapOf("255" to 1),
+          "byUShort" to mapOf("65535" to 2),
+          "byULong" to mapOf("18446744073709551615" to 3),
+        ),
       )
   }
 

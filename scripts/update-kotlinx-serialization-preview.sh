@@ -14,7 +14,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../"
 matrix=scripts/dependency-matrix.sh
 
-case $1 in
+case "${1:-}" in
 get-version)
     # Printed as the release's tag (e.g. v1.12.0-RC), which the updater uses as the old ref when it
     # compares upstream changelogs.
@@ -31,7 +31,7 @@ set-version)
     "$matrix" set kotlinxSerialization preview "$version"
     ;;
 *)
-    echo "Unknown argument $1"
+    echo "Unknown argument '${1:-}'"
     exit 1
     ;;
 esac

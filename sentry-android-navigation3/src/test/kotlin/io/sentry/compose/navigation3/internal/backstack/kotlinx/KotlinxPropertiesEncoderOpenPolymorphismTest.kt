@@ -97,6 +97,17 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
   /** `@Serializable`, but generic, so its serializer can't be found without type arguments. */
   @Serializable @SerialName("generic") data class GenericOrigin<T>(val value: T) : Origin
 
+  /** `@Serializable`, so its serializer is found, but its serializer throws without writing. */
+  @Serializable(with = FailingOriginSerializer::class) internal class FailingOrigin : Origin
+
+  internal object FailingOriginSerializer : NamingOnlySerializer<FailingOrigin>() {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("failingOrigin", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: FailingOrigin) =
+      throw SerializationException("failing origin")
+  }
+
   // A class whose serializer's initializer threw can't be initialized again for the rest of the
   // JVM's life, so each test that triggers one gets its own pair, separate from other suites'.
 
@@ -233,6 +244,20 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
         mapOf(
           "id" to "1",
           "extra" to mapOf("type" to "search", "value" to mapOf("term" to "shoes")),
+        ),
+      )
+  }
+
+  @Test
+  fun `encode() - encodes a nullable open polymorphic property holding a value as its runtime class's serial name and value`() {
+    val encoded =
+      encodeToMap(WithNullableOrigin.serializer(), WithNullableOrigin("1", Search("shoes")))
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "id" to "1",
+          "origin" to mapOf("type" to "search", "value" to mapOf("term" to "shoes")),
         ),
       )
   }
@@ -438,6 +463,28 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
         ),
       )
     assertThat(unencodableValues).hasSize(1)
+  }
+
+  /**
+   * The type is written before the runtime class's serializer runs, and the value element is
+   * substituted like any other, so the value keeps its type.
+   */
+  @Test
+  fun `encode() - records the value of an open polymorphic value whose found serializer fails as the Unencodable substitute, keeping its type`() {
+    val entry = WithOrigin("1", FailingOrigin(), page = 2)
+
+    val encoded = encodeToMap(WithOrigin.serializer(), entry, unencodableValues::add)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf(
+          "id" to "1",
+          "origin" to mapOf("type" to "failingOrigin", "value" to UNENCODABLE_SUBSTITUTE),
+          "page" to 2,
+        ),
+      )
+    assertThat(unencodableValues).hasSize(1)
+    assertThat(unencodableValues[0]).hasMessageThat().isEqualTo("failing origin")
   }
 
   // Sensitive data and limits
