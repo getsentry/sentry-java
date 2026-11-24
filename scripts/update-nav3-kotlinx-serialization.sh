@@ -6,7 +6,8 @@ set -euo pipefail
 # adds that version to the test matrix alongside the SDK's pinned compile version.
 #
 # Run weekly by update-deps.yml. Does not change kotlinxSerializationFloor in
-# gradle/nav3.versions.toml.
+# gradle/nav3.versions.toml. If the resulting PR fails, see "When the weekly kotlinx.serialization
+# bump fails" in sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md.
 
 cd "$(dirname "$0")/../"
 SCRIPT_FILEPATH=scripts/test-nav3-backstack-entry-mapper-r8.sh
