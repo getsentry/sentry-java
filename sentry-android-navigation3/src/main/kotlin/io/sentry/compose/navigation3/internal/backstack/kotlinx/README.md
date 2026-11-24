@@ -40,3 +40,7 @@ rules breaks kotlinx.serialization as well as our mappers.
 We also don't ship rules for `@Serializable` classes with named companion objects. kotlinx.serialization's rules only cover those from
 1.10.0 on. A generic rule set that fixes older versions exists, but we don't apply it because it would keep `InnerClasses` and
 named-companion class names in every host app.
+
+`nav3-backstack-entry-mapper-r8-check` verifies our built-in `SerialName` and `SerialNameAndProperties` mappers behave
+correctly despite R8 minification. It does so against the kotlinx.serialization version we use for compilation, along with newer versions,
+and in both R8 full and compat modes. See its README for more details.
