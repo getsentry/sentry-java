@@ -17,7 +17,8 @@ Run the tests against a booted emulator or device:
 ```
 
 
-The script builds and runs four APKs: R8 full and compat modes, each with the pinned and latest kotlinx.serialization versions. Every APK
+The script builds and runs four APKs: R8 full and compat modes, each with the pinned and latest kotlinx.serialization versions. It also
+builds and runs a fifth APK from `nav3-no-kotlinx-r8-check`, which checks apps without kotlinx.serialization (see its README). Every APK
 must report `RESULT=PASS` in order to pass. Set `NAV3_EXTRA_KOTLINX_VERSIONS` to override the extra versions tested (i.e., the versions
 besides the compile floor, which is always tested).
 

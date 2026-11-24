@@ -5,7 +5,8 @@
 #
 # The app is built against the kotlinxSerializationFloor in gradle/nav3.versions.toml
 # plus each version in NAV3_EXTRA_KOTLINX_VERSIONS (default: defaultLatestKotlinx below),
-# each in R8 full and compat modes.
+# each in R8 full and compat modes. Also builds nav3-no-kotlinx-r8-check once, which checks that an
+# app without kotlinx.serialization builds and runs.
 #
 # Usage:
 #   test-nav3-backstack-entry-mapper-r8.sh             Build all APKs, then run them.
@@ -17,6 +18,8 @@ module="nav3-backstack-entry-mapper-r8-check"
 moduleDir="sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check"
 appId="io.sentry.tests.nav3.r8"
 tag="NAV3_R8_CHECK"
+noKotlinxModule="nav3-no-kotlinx-r8-check"
+noKotlinxModuleDir="sentry-android-integration-tests/nav3-no-kotlinx-r8-check"
 
 # Newer kotlinx.serialization versions to also build the app against, on top of the
 # kotlinxSerializationFloor. Lets us prevent regressions should host apps ship a newer
@@ -52,6 +55,12 @@ build() {
       copyApk "${outDir}/${mode}-kotlinx-${version}.apk"
     done
   done
+
+  # Shares the R8 check's application ID, Activity, and log tag, so run() handles its APK the same
+  # way. R8 full mode only, as the check is whether R8 accepts the missing classes.
+  echo "Building R8 full mode APK without kotlinx.serialization..."
+  ./gradlew -p sentry-android-integration-tests ":${noKotlinxModule}:assembleRelease"
+  cp "${noKotlinxModuleDir}/build/outputs/apk/release/${noKotlinxModule}-release.apk" "${outDir}/no-kotlinx.apk"
 }
 
 run() {
