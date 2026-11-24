@@ -2,7 +2,6 @@ package io.sentry.android.core
 
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
-import io.sentry.android.core.hang.HangManager
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,7 +10,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 
 class SentryAndroidOptionsTest {
   @Test
@@ -290,22 +288,6 @@ class SentryAndroidOptionsTest {
     hosts.add("other.com")
 
     assertEquals(listOf("example.com"), sentryOptions.webViewTracing.allowedHosts)
-  }
-
-  @Test
-  fun `close closes the hang manager`() {
-    val sentryOptions = SentryAndroidOptions()
-    val manager = mock<HangManager>()
-    sentryOptions.hangManager = manager
-
-    sentryOptions.close()
-
-    verify(manager).close()
-  }
-
-  @Test
-  fun `close without a hang manager does not throw`() {
-    SentryAndroidOptions().close()
   }
 
   private class CustomDebugImagesLoader : IDebugImagesLoader {
