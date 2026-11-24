@@ -50,6 +50,9 @@ import kotlinx.serialization.modules.SerializersModule
  *
  * - Enums use their serial names. Value classes use their underlying values.
  *
+ * - `CharSequence` properties become strings, as in Nav3's saved state on Android. Their declared
+ *   type is open polymorphic, but their values aren't `@Serializable`.
+ *
  * - Unsigned numbers (`UByte`, `UShort`, `UInt`, `ULong`) retain their unsigned values.
  *
  * - Polymorphic properties become `{"type": <serial name>, "value": <value>}`. See "Open
@@ -57,7 +60,8 @@ import kotlinx.serialization.modules.SerializersModule
  *
  * - Entries encoded as scalars, such as by a custom string serializer, become `{"value": <value>}`.
  *
- * - Properties marked `@Transient` are omitted.
+ * - Properties marked `@Transient` are omitted. Properties whose values equal their defaults are
+ *   recorded, unlike in Nav3's saved state, which omits them by default.
  *
  * - A property, list element, or map value whose serializer can't encode it with this encoder
  *   becomes [UNENCODABLE_SUBSTITUTE]. See "Unencodable values" below.
@@ -233,6 +237,11 @@ internal object KotlinxPropertiesEncoder {
     override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
       nesting.enter()
       try {
+        if (serializer.isCharSequenceSerializer() && value is CharSequence) {
+          // The sink records text as a String.
+          put(value)
+          return
+        }
         val subclassSerializer =
           if (serializer is PolymorphicSerializer<*> && value != null) {
             subclassSerializerOrNull(value.javaClass)
@@ -543,11 +552,31 @@ internal object KotlinxPropertiesEncoder {
   private fun SerialDescriptor.hasStructuredKeys(): Boolean = getElementDescriptor(0).isStructured()
 
   private fun SerialDescriptor.isStructured(): Boolean =
-    if (isInline && elementsCount == 1) {
-      getElementDescriptor(0).isStructured()
-    } else {
-      kind is StructureKind || kind is PolymorphicKind
+    when {
+      isInline && elementsCount == 1 -> getElementDescriptor(0).isStructured()
+      // CharSequence keys are encoded as text, like strings.
+      isCharSequenceDescriptor() -> false
+      else -> kind is StructureKind || kind is PolymorphicKind
     }
+
+  /**
+   * The descriptor of kotlinx.serialization's serializer for `CharSequence` properties, which only
+   * works with a `SerializersModule` that registers the values' classes. Nav3 apps don't need one,
+   * as saved state encodes `CharSequence` values itself on Android.
+   */
+  private val CHAR_SEQUENCE_DESCRIPTOR: SerialDescriptor =
+    PolymorphicSerializer(CharSequence::class).descriptor
+
+  /**
+   * Whether this is [CHAR_SEQUENCE_DESCRIPTOR], or its nullable form, whose serial name has a `?`
+   * suffix and which isn't equal to it.
+   */
+  private fun SerialDescriptor.isCharSequenceDescriptor(): Boolean =
+    kind == PolymorphicKind.OPEN &&
+      serialName.removeSuffix("?") == CHAR_SEQUENCE_DESCRIPTOR.serialName
+
+  private fun SerializationStrategy<*>.isCharSequenceSerializer(): Boolean =
+    this is PolymorphicSerializer<*> && baseClass == CharSequence::class
 
   /**
    * The serializers that [subclassSerializerOrNull] found for runtime classes, or [NO_SERIALIZER].

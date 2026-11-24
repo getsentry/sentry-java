@@ -7,6 +7,7 @@ import java.math.BigInteger
 import kotlin.jvm.JvmInline
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -140,6 +141,29 @@ class KotlinxPropertiesEncoderTest {
   }
 
   @Serializable data class WithStructureWritingMapKeys(val byCode: Map<StructureWritingKey, Int>)
+
+  /** The Kotlin compiler plugin gives `CharSequence` properties an open polymorphic serializer. */
+  @Serializable data class WithLabel(val label: CharSequence)
+
+  @Serializable data class WithNullableLabel(val label: CharSequence?)
+
+  @Serializable data class WithLabelList(val labels: List<CharSequence>)
+
+  @Serializable data class WithLabelMapKeys(val countsByLabel: Map<CharSequence, Int>)
+
+  @Serializable data class WithNullableLabelMapKeys(val countsByLabel: Map<CharSequence?, Int>)
+
+  /** A `CharSequence` that isn't a `String`. */
+  class Label(private val text: String) : CharSequence by text {
+    override fun toString(): String = text
+  }
+
+  /** A `CharSequence` whose class is `@Serializable`, so it has a serializer of its own. */
+  @Serializable
+  @SerialName("slug")
+  class Slug(val text: String) : CharSequence by text {
+    override fun toString(): String = text
+  }
 
   // Encoded shapes
 
@@ -289,6 +313,85 @@ class KotlinxPropertiesEncoderTest {
     val encoded = encodeToMap(Origin.serializer(), Origin.Search("shoes"))
 
     assertThat(encoded).isEqualTo(mapOf("type" to "search", "value" to mapOf("query" to "shoes")))
+  }
+
+  // CharSequences
+
+  @Test
+  fun `encode() - encodes a CharSequence property holding a String as the string`() {
+    val encoded = encodeToMap(WithLabel.serializer(), WithLabel("shoes"))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
+  fun `encode() - encodes a CharSequence property holding a StringBuilder as a string of its text`() {
+    val encoded = encodeToMap(WithLabel.serializer(), WithLabel(StringBuilder("shoes")))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
+  fun `encode() - encodes a CharSequence property holding a custom CharSequence as a string of its text`() {
+    val encoded = encodeToMap(WithLabel.serializer(), WithLabel(Label("shoes")))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
+  fun `encode() - encodes a CharSequence property holding a @Serializable CharSequence as a string of its text`() {
+    val encoded = encodeToMap(WithLabel.serializer(), WithLabel(Slug("shoes")))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to "shoes"))
+  }
+
+  @Test
+  fun `encode() - encodes a null CharSequence property as null`() {
+    val encoded = encodeToMap(WithNullableLabel.serializer(), WithNullableLabel(null))
+
+    assertThat(encoded).isEqualTo(mapOf("label" to null))
+  }
+
+  @Test
+  fun `encode() - encodes CharSequence list elements as strings`() {
+    val entry = WithLabelList(listOf("shoes", StringBuilder("hats"), Label("socks")))
+
+    val encoded = encodeToMap(WithLabelList.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(mapOf("labels" to listOf("shoes", "hats", "socks")))
+  }
+
+  @Test
+  fun `encode() - converts CharSequence map keys to strings`() {
+    val entry =
+      WithLabelMapKeys(mapOf("shoes" to 1, StringBuilder("hats") to 2, Label("socks") to 3))
+
+    val encoded = encodeToMap(WithLabelMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("countsByLabel" to mapOf("shoes" to 1, "hats" to 2, "socks" to 3)))
+  }
+
+  @Test
+  fun `encode() - converts nullable CharSequence map keys to strings, as for nullable String map keys`() {
+    val entry = WithNullableLabelMapKeys(mapOf(StringBuilder("shoes") to 1, null to 2))
+
+    val encoded = encodeToMap(WithNullableLabelMapKeys.serializer(), entry)
+
+    val stringKeysEncoded =
+      encodeToMap(
+        WithNullableMapKeys.serializer(),
+        WithNullableMapKeys(mapOf("shoes" to 1, null to 2)),
+      )
+    assertThat(encoded).isEqualTo(mapOf("countsByLabel" to mapOf("shoes" to 1, "null" to 2)))
+    assertThat(encoded["countsByLabel"]).isEqualTo(stringKeysEncoded["counts"])
+  }
+
+  @Test
+  fun `encode() - wraps a top-level CharSequence's text under the value key`() {
+    val encoded = encodeToMap(PolymorphicSerializer(CharSequence::class), StringBuilder("shoes"))
+
+    assertThat(encoded).isEqualTo(mapOf(KotlinxPropertiesEncoder.VALUE_KEY to "shoes"))
   }
 
   // Numbers

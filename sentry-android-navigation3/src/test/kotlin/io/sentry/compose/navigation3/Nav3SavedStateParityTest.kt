@@ -1,5 +1,6 @@
 package io.sentry.compose.navigation3
 
+import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.Size
@@ -47,6 +48,14 @@ class Nav3SavedStateParityTest {
   @Serializable
   @SerialName("Product")
   data class Product(val productId: String, val tags: List<String>, val page: Int) : NavKey
+
+  @Serializable
+  @SerialName("Category")
+  data class Category(val categoryId: String, val title: CharSequence, val page: Int) : NavKey
+
+  @Serializable
+  @SerialName("Listing")
+  data class Listing(val listingId: String, val page: Int = 1) : NavKey
 
   @Serializable data class Size2D(val width: Int, val height: Int)
 
@@ -113,6 +122,35 @@ class Nav3SavedStateParityTest {
     assertThat(mapped?.name).isEqualTo("Product")
     assertThat(mapped?.arguments)
       .containsExactly("productId", "p1", "tags", listOf("new", "sale"), "page", 2)
+  }
+
+  @Test
+  fun `a CharSequence property Nav3 saves by default is its text beside the name and other properties`() {
+    val category = Category(categoryId = "c1", title = "Shoes", page = 2)
+    assertThat(saveAndRestoreByDefault(category)).containsExactly(category)
+
+    val mapped = BackStackEntryMapper.SerialNameAndProperties.map(category)
+
+    assertThat(mapped?.name).isEqualTo("Category")
+    assertThat(mapped?.arguments).containsExactly("categoryId", "c1", "title", "Shoes", "page", 2)
+  }
+
+  /**
+   * Documents that Sentry deliberately records more than Nav3 saves here: Nav3's saved state omits
+   * properties that have their default values, but they're recorded like any other property.
+   */
+  @Test
+  fun `a property with its default value that Nav3 omits from saved state is still recorded`() {
+    val listing = Listing(listingId = "l1")
+    assertThat(saveAndRestoreByDefault(listing)).containsExactly(listing)
+    val savedKeys = keysSavedByDefault(listing)
+    assertThat(savedKeys).contains("listingId")
+    assertThat(savedKeys).doesNotContain("page")
+
+    val mapped = BackStackEntryMapper.SerialNameAndProperties.map(listing)
+
+    assertThat(mapped?.name).isEqualTo("Listing")
+    assertThat(mapped?.arguments).containsExactly("listingId", "l1", "page", 1)
   }
 
   @Test
@@ -217,6 +255,24 @@ class Nav3SavedStateParityTest {
     val savedState = encodeToSavedState(serializer, NavBackStack(destination))
     return decodeFromSavedState(serializer, savedState).toList()
   }
+
+  /**
+   * Returns the keys, including nested ones, of the saved state that `rememberNavBackStack(vararg
+   * elements)` saves for [destination].
+   */
+  private fun keysSavedByDefault(destination: NavKey): Set<String> {
+    val serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer<NavKey>())
+    return keysOf(encodeToSavedState(serializer, NavBackStack(destination)))
+  }
+
+  @Suppress("DEPRECATION") // Bundle.get, to read values whatever their types.
+  private fun keysOf(value: Any?): Set<String> =
+    when (value) {
+      is Bundle -> value.keySet().flatMapTo(mutableSetOf()) { keysOf(value.get(it)) + it }
+      is Iterable<*> -> value.flatMapTo(mutableSetOf()) { keysOf(it) }
+      is Array<*> -> value.flatMapTo(mutableSetOf()) { keysOf(it) }
+      else -> emptySet()
+    }
 
   /**
    * Saves and restores [destination] as `rememberNavBackStack(configuration, vararg elements)`

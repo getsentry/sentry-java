@@ -12,6 +12,7 @@ import io.sentry.compose.navigation3.internal.backstack.budgetWithValuesRemainin
 import kotlin.jvm.JvmInline
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -122,6 +123,29 @@ class KotlinxPropertiesEncoderLimitsTest {
   fun `encode() - drops the arguments for the character limit when property names put an entry one character over`() {
     val value = "x".repeat(MAX_ARGUMENT_CHARACTERS - "value".length + 1)
     val (serializer, entry) = boxed(depth = 1, value = value, String.serializer())
+
+    val exception = assertFailsWith<DropArguments> { encodeToMap(serializer, entry) }
+
+    assertThat(exception.reason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
+    assertThat(exception.warning).isEqualTo(DropArguments.MAX_CHARACTER_WARNING)
+  }
+
+  @Test
+  fun `encode() - encodes a CharSequence with the maximum number of characters, counting property names`() {
+    val text = "x".repeat(MAX_ARGUMENT_CHARACTERS - "value".length)
+    val (serializer, entry) =
+      boxed(depth = 1, value = StringBuilder(text), PolymorphicSerializer(CharSequence::class))
+
+    val encoded = encodeToMap(serializer, entry)
+
+    assertThat(encoded).isEqualTo(mapOf("value" to text))
+  }
+
+  @Test
+  fun `encode() - drops the arguments for the character limit when a CharSequence puts an entry one character over`() {
+    val text = "x".repeat(MAX_ARGUMENT_CHARACTERS - "value".length + 1)
+    val (serializer, entry) =
+      boxed(depth = 1, value = StringBuilder(text), PolymorphicSerializer(CharSequence::class))
 
     val exception = assertFailsWith<DropArguments> { encodeToMap(serializer, entry) }
 

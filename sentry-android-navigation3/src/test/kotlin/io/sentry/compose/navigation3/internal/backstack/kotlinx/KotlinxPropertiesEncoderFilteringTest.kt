@@ -131,6 +131,23 @@ class KotlinxPropertiesEncoderFilteringTest {
     override fun deserialize(decoder: Decoder): String = decoder.decodeString()
   }
 
+  @Serializable data class WithSensitiveTextProperty(val id: String, val authToken: CharSequence)
+
+  @Serializable data class WithTextMapKeys(val params: Map<CharSequence, String>)
+
+  /** A `CharSequence` whose text can't be read, failing the test if anything tries. */
+  class UnreadableText : CharSequence {
+    override val length: Int
+      get() = error("length read")
+
+    override fun get(index: Int): Char = error("character read")
+
+    override fun subSequence(startIndex: Int, endIndex: Int): CharSequence =
+      error("subsequence read")
+
+    override fun toString(): String = error("text read")
+  }
+
   @Serializable @JvmInline value class Wrapped(val raw: String)
 
   @Serializable
@@ -241,6 +258,19 @@ class KotlinxPropertiesEncoderFilteringTest {
           "headers" to
             mapOf("Accept" to "json", "Authorization" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
         ),
+      )
+  }
+
+  @Test
+  fun `encode() - replaces the values of CharSequence map keys whose text is sensitive with the Filtered substitute`() {
+    val entry =
+      WithTextMapKeys(mapOf(StringBuilder("query") to "shoes", StringBuilder("token") to "secret"))
+
+    val encoded = encodeToMap(WithTextMapKeys.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(
+        mapOf("params" to mapOf("query" to "shoes", "token" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE)),
       )
   }
 
@@ -425,6 +455,16 @@ class KotlinxPropertiesEncoderFilteringTest {
     val entry = WithUnencodableSecret(id = "1", authToken = "secret")
 
     val encoded = encodeToMap(WithUnencodableSecret.serializer(), entry)
+
+    assertThat(encoded)
+      .isEqualTo(mapOf("id" to "1", "authToken" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))
+  }
+
+  @Test
+  fun `encode() - replaces a sensitive CharSequence property with the Filtered substitute without reading its text`() {
+    val entry = WithSensitiveTextProperty(id = "1", authToken = UnreadableText())
+
+    val encoded = encodeToMap(WithSensitiveTextProperty.serializer(), entry)
 
     assertThat(encoded)
       .isEqualTo(mapOf("id" to "1", "authToken" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE))

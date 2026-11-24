@@ -254,6 +254,8 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * **Encoding and encoding failures**
      *
      * Properties are encoded on the first argument read, including by `equals` or `hashCode`.
+     * Properties with default values are recorded too, although Nav3's saved state omits them.
+     * `CharSequence` properties are recorded as strings.
      *
      * Maps are recorded as maps with their keys converted to text, unless their keys are classes,
      * objects, collections, or polymorphic values. Such maps are recorded as lists of `{"key": ...,

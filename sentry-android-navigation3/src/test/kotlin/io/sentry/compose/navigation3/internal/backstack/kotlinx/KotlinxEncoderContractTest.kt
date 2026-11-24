@@ -149,6 +149,13 @@ class KotlinxEncoderContractTest {
 
   @Serializable data class WithOpenPolymorphic(val referrer: Referrer)
 
+  @Serializable
+  data class WithCharSequences(
+    val label: CharSequence,
+    val labels: List<CharSequence>,
+    val countsByLabel: Map<CharSequence, Int>,
+  )
+
   @Serializable data object Home
 
   @Serializable data class WithDefaults(val query: String, val page: Int = 1, val size: Int = 20)
@@ -364,6 +371,26 @@ class KotlinxEncoderContractTest {
     val value = WithOpenPolymorphic(Campaign("spring"))
 
     assertMatchesBaseline("open-polymorphic", WithOpenPolymorphic.serializer(), value, module)
+  }
+
+  /**
+   * [KotlinxPropertiesEncoder] identifies these properties by their polymorphic `CharSequence`
+   * serializer, and map keys by its descriptor. The module registers `String`, as without one the
+   * polymorphic serializer fails.
+   */
+  @Test
+  fun `CharSequence properties, elements, and map keys encode with the polymorphic CharSequence serializer`() {
+    val module = SerializersModule {
+      polymorphic(CharSequence::class) { subclass(String::class, String.serializer()) }
+    }
+    val value =
+      WithCharSequences(
+        label = "shoes",
+        labels = listOf("hats"),
+        countsByLabel = mapOf("socks" to 1),
+      )
+
+    assertMatchesBaseline("char-sequences", WithCharSequences.serializer(), value, module)
   }
 
   // Custom serializers

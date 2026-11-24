@@ -95,6 +95,7 @@ data class ArgumentsKey(
   val fallbackOrigin: Origin,
   val referrer: Referrer,
   val note: String?,
+  val label: CharSequence,
   @Transient val cache: String = "not encoded",
 )
 
@@ -141,6 +142,7 @@ private val argumentsKey =
     fallbackOrigin = Origin.DeepLink,
     referrer = Campaign("spring"),
     note = null,
+    label = StringBuilder("sale"),
   )
 
 private val argumentsKeyArguments =
@@ -159,6 +161,7 @@ private val argumentsKeyArguments =
     "fallbackOrigin" to mapOf("type" to "deeplink", "value" to emptyMap<String, Any?>()),
     "referrer" to mapOf("type" to "campaign", "value" to mapOf("name" to "spring")),
     "note" to null,
+    "label" to "sale",
   )
 
 fun serializableExpectations(): List<Expectation> =
