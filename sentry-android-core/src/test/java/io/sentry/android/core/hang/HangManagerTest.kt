@@ -627,7 +627,7 @@ class HangManagerTest {
   }
 
   @Test
-  fun `record goes to the subscribers of the hang end, also if they leave before the delivery`() {
+  fun `record still goes to a subscriber that left after the hang end and before the delivery`() {
     val other = FakeListener()
     manager.subscribe(other)
     startInForeground()
