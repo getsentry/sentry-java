@@ -1,8 +1,6 @@
 package io.sentry.android.core.hang;
 
 import io.sentry.IDebugManager;
-import io.sentry.time.MonotonicTicker;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,20 +11,22 @@ import org.jetbrains.annotations.Nullable;
  * watched thread is the thread that the {@link ThreadPoster} posts to.
  *
  * <p>Only the probe runs on the watched thread. Everything else runs on the thread that calls the
- * ticks of the {@link Metronome}.
+ * ticks of the {@link Metronome}. All times come from {@link Metronome#nowMs()}.
+ *
+ * <p>A hang starts at the last run of the probe. The watched thread can block at any time up to one
+ * tick after that run, so the duration of a hang can be up to one polling interval too long.
  */
 @ApiStatus.Internal
 public final class ThreadHangSignal implements HangSignal, Metronome.TickListener {
 
   private final @NotNull Metronome metronome;
-  private final @NotNull MonotonicTicker ticker;
   private final @NotNull IDebugManager debugManager;
   private final @NotNull ThreadPoster poster;
   private final long suspiciousThresholdMs;
 
   private volatile long probeRunMs;
 
-  private final @NotNull Runnable probe = () -> probeRunMs = nowMs();
+  private final @NotNull Runnable probe;
 
   private @Nullable HangSignalListener listener;
   private long probeFloorMs;
@@ -35,15 +35,14 @@ public final class ThreadHangSignal implements HangSignal, Metronome.TickListene
 
   public ThreadHangSignal(
       final @NotNull Metronome metronome,
-      final @NotNull MonotonicTicker ticker,
       final @NotNull IDebugManager debugManager,
       final @NotNull ThreadPoster poster,
       final long suspiciousThresholdMs) {
     this.metronome = metronome;
-    this.ticker = ticker;
     this.debugManager = debugManager;
     this.poster = poster;
     this.suspiciousThresholdMs = suspiciousThresholdMs;
+    this.probe = () -> probeRunMs = metronome.nowMs();
   }
 
   @Override
@@ -51,7 +50,7 @@ public final class ThreadHangSignal implements HangSignal, Metronome.TickListene
     this.listener = listener;
     suspicious = false;
     // The probe may not have run since the last stop, so its time would read as a hang.
-    probeFloorMs = nowMs();
+    probeFloorMs = metronome.nowMs();
     metronome.addTickListener(this);
   }
 
@@ -102,9 +101,5 @@ public final class ThreadHangSignal implements HangSignal, Metronome.TickListene
       suspiciousSinceMs = lastProbeMs;
       currentListener.onSignalChanged(this, State.SUSPICIOUS, nowMs - lastProbeMs);
     }
-  }
-
-  private long nowMs() {
-    return TimeUnit.NANOSECONDS.toMillis(ticker.tickNanos());
   }
 }
