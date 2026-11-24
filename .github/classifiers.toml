@@ -1,0 +1,70 @@
+# getsentry/sentry-java f56ca2a589ade86046136e68686ed0412c3bc3f3
+
+rubric = "sdk"
+
+# The version catalog pins the dependencies every module is built with.
+[[area]]
+paths = ["sentry/**", "gradle/libs.versions.toml"]
+families = ["server", "mobile-native"]
+shared_core = true
+
+[[area]]
+paths = ["sentry-android*/**", "sentry-compose/**", "sentry-launchdarkly-android/**"]
+families = ["mobile-native"]
+
+[[area]]
+paths = [
+  "sentry-spring*/**", "sentry-servlet*/**", "sentry-jdbc/**", "sentry-jul/**", "sentry-log4j2/**",
+  "sentry-logback/**", "sentry-graphql*/**", "sentry-kafka/**", "sentry-jcache/**", "sentry-quartz/**",
+  "sentry-reactor/**", "sentry-openfeign/**", "sentry-openfeature/**", "sentry-opentelemetry/**",
+  "sentry-apache-http-client*/**", "sentry-async-profiler/**", "sentry-launchdarkly-server/**",
+]
+families = ["server"]
+
+[[area]]
+paths = [
+  "sentry-okhttp/**", "sentry-apollo*/**", "sentry-kotlin-extensions/**", "sentry-ktor-client/**",
+  "sentry-spotlight/**", "sentry-test-support/**",
+]
+families = ["server", "mobile-native"]
+
+[[kind]]
+paths = ["**/api/*.api", "**/api/**/*.api"]
+kind = "public-api-record"
+
+[[kind]]
+paths = ["sentry-samples/**"]
+kind = "samples"
+
+[[kind]]
+# Anchored to the Gradle modules' own source sets, so a test-named directory
+# planted inside src/main is not read as a test.
+paths = [
+  "*/src/test/**", "*/src/*Test*/**", "*/src/agentFixture/**", "sentry-opentelemetry/*/src/test/**",
+  "sentry-android-integration-tests/**",
+]
+kind = "tests"
+
+[[kind]]
+paths = [
+  "**/build.gradle.kts", "**/build.gradle", "**/settings.gradle.kts", "**/gradle.properties",
+  "**/gradlew", "**/gradlew.bat", "**/gradle/**", "buildSrc/**", "build-logic/**", "scripts/**",
+  ".mvn/**", ".sauce/**", ".fossa.yml", "**/*.pro", "debug.keystore", "sentry.properties",
+  "sentry-bom/**", "sentry-*/*.properties",
+]
+kind = "build-release"
+
+[[kind]]
+paths = ["gradle/libs.versions.toml", "gradle/spring-boot-versions.json"]
+kind = "dependencies"
+
+[[kind]]
+paths = ["develop-docs/**"]
+kind = "docs"
+
+[[kind]]
+paths = [
+  "detekt.yml", "*/detekt-baseline.xml", "agents.toml",
+  ".git-blame-ignore-revs",
+]
+kind = "dev-tooling"
