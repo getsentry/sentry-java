@@ -437,7 +437,6 @@ public final class io/sentry/android/core/SentryAndroidDateProvider : io/sentry/
 
 public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/SentryOptions {
 	public fun <init> ()V
-	public fun close ()V
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrProfilingSampleRate ()Ljava/lang/Double;
 	public fun getAnrTimeoutIntervalMillis ()J
