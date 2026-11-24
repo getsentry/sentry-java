@@ -325,6 +325,7 @@ internal enum class ArgumentDropReason(
 
   CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
   DUPLICATE_KEY("duplicate_key"),
+  ENCODING_FAILED("encoding_failed"),
   INVALID_STRUCTURE("invalid_structure"),
   MAPPING_FAILED("mapping_failed"),
   MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),
