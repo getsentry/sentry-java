@@ -49,7 +49,37 @@ class BuiltInBackStackEntryMappersTest {
       .inOrder()
   }
 
+  @Test
+  fun `serialNameAndProperties records properties as arguments`() {
+    val mapper = BuiltInBackStackEntryMappers.serialNameAndProperties
+
+    val mapped = listOf(Home, Detail("1")).map(mapper::map)
+
+    assertThat(mapped)
+      .containsExactly(
+        SentryBackStackEntry("Home"),
+        SentryBackStackEntry("Detail", mapOf("id" to "1")),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `serialName and serialNameAndProperties return the same mapper on every access`() {
+    assertThat(BuiltInBackStackEntryMappers.serialName)
+      .isSameInstanceAs(BuiltInBackStackEntryMappers.serialName)
+    assertThat(BuiltInBackStackEntryMappers.serialNameAndProperties)
+      .isSameInstanceAs(BuiltInBackStackEntryMappers.serialNameAndProperties)
+  }
+
   // BackStackEntryMapper's companion mappers
+
+  @Test
+  fun `BackStackEntryMapper SerialName and SerialNameAndProperties return the built-in mappers`() {
+    assertThat(BackStackEntryMapper.SerialName)
+      .isSameInstanceAs(BuiltInBackStackEntryMappers.serialName)
+    assertThat(BackStackEntryMapper.SerialNameAndProperties)
+      .isSameInstanceAs(BuiltInBackStackEntryMappers.serialNameAndProperties)
+  }
 
   @Test
   fun `BackStackEntryMapper SerialName can serve as the mapper for any entry type`() {
@@ -69,11 +99,33 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
+  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null when the kotlinx mapper can't be loaded`() {
+    val classLoader = KotlinxMapperHidingClassLoader()
+
+    val mapper = classLoader.companionMapper("getSerialNameAndProperties")
+
+    assertThat(mapper.map(Detail("1"))).isNull()
+    assertThat(classLoader.wasKotlinxMapperRequested).isTrue()
+  }
+
+  @Test
   fun `BackStackEntryMapper SerialName maps entries to null when kotlinx serialization is missing`() {
     val classLoader = KotlinxMapperHidingClassLoader(hidesKotlinx = true)
     val entry = classLoader.notSerializableEntry("1")
 
     val mapper = classLoader.companionMapper("getSerialName")
+
+    assertThat(mapper.map("home")).isNull()
+    assertThat(mapper.map(entry)).isNull()
+    assertThat(classLoader.wasKotlinxRequested).isTrue()
+  }
+
+  @Test
+  fun `BackStackEntryMapper SerialNameAndProperties maps entries to null when kotlinx serialization is missing`() {
+    val classLoader = KotlinxMapperHidingClassLoader(hidesKotlinx = true)
+    val entry = classLoader.notSerializableEntry("1")
+
+    val mapper = classLoader.companionMapper("getSerialNameAndProperties")
 
     assertThat(mapper.map("home")).isNull()
     assertThat(mapper.map(entry)).isNull()
@@ -92,6 +144,21 @@ class BuiltInBackStackEntryMappersTest {
   @Test
   fun `BackStackEntryMapper SerialName returns the mapper published first to racing threads`() {
     val race = raceOnFirstAccess("getSerialName")
+
+    assertThat(race.otherThreadMapper).isSameInstanceAs(race.thisThreadMapper)
+    assertThat(race.laterMapper).isSameInstanceAs(race.thisThreadMapper)
+  }
+
+  @Test
+  fun `BackStackEntryMapper SerialNameAndProperties holds no lock while creating the mapper logs`() {
+    val race = raceOnFirstAccess("getSerialNameAndProperties")
+
+    assertThat(race.otherThreadLoggerGotAppLock).isTrue()
+  }
+
+  @Test
+  fun `BackStackEntryMapper SerialNameAndProperties returns the mapper published first to racing threads`() {
+    val race = raceOnFirstAccess("getSerialNameAndProperties")
 
     assertThat(race.otherThreadMapper).isSameInstanceAs(race.thisThreadMapper)
     assertThat(race.laterMapper).isSameInstanceAs(race.thisThreadMapper)

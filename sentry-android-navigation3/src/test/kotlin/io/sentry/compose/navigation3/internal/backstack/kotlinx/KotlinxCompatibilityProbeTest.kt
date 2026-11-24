@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeClass
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeObject
+import kotlin.test.assertFailsWith
 import org.junit.Test
 
 /**
@@ -23,6 +24,81 @@ class KotlinxCompatibilityProbeTest {
     assertThat(inconclusive).isEmpty()
   }
 
+  // encoderIncompatibility()
+
+  @Test
+  fun `encoderIncompatibility() - returns null for a compatible kotlinx serialization version`() {
+    // A compatible version encodes the probe fixture to its expected output, so the probe's output
+    // verification matches and it reports no incompatibility.
+    val error = KotlinxCompatibilityProbe.encoderIncompatibility()
+
+    assertThat(error).isNull()
+  }
+
+  // encoderFailureOf()
+
+  @Test
+  fun `encoderFailureOf() - returns null when the check reports no failure`() {
+    val failure = KotlinxCompatibilityProbe.encoderFailureOf { null }
+
+    assertThat(failure).isNull()
+  }
+
+  @Test
+  fun `encoderFailureOf() - returns the failure the check reports without throwing`() {
+    val error = EncoderProducedUnexpectedOutput()
+
+    val failure = KotlinxCompatibilityProbe.encoderFailureOf { error }
+
+    assertThat(failure).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `encoderFailureOf() - returns a LinkageError the check throws instead of rethrowing it`() {
+    // Rethrown, the error would escape the mapper's constructor and disable name recording too.
+    val errors = listOf(NoSuchMethodError(), NoClassDefFoundError(), VerifyError())
+
+    val failures = errors.map { error ->
+      KotlinxCompatibilityProbe.encoderFailureOf { throw error }
+    }
+
+    assertThat(failures).containsExactlyElementsIn(errors).inOrder()
+  }
+
+  @Test
+  fun `encoderFailureOf() - returns a non-fatal exception the check throws`() {
+    val error = NullPointerException()
+
+    val failure = KotlinxCompatibilityProbe.encoderFailureOf { throw error }
+
+    assertThat(failure).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `encoderFailureOf() - rethrows a fatal error the check throws that isn't a LinkageError`() {
+    val error = OutOfMemoryError()
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> {
+        KotlinxCompatibilityProbe.encoderFailureOf { throw error }
+      }
+
+    assertThat(thrown).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `EncoderProducedUnexpectedOutput is a RuntimeException with a message that leaks no route data`() {
+    val error = EncoderProducedUnexpectedOutput()
+
+    assertThat(error).isInstanceOf(RuntimeException::class.java)
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "The kotlinx.serialization properties encoder produced unexpected output for a known " +
+          "fixture.",
+      )
+  }
+
   // Probe types
 
   @Test
@@ -36,5 +112,14 @@ class KotlinxCompatibilityProbeTest {
     assertThat(names)
       .containsExactly(ProbeClass::class.qualifiedName, ProbeObject::class.qualifiedName)
       .inOrder()
+  }
+
+  @Test
+  fun `the properties encoder encodes every property of the probe's class`() {
+    // A probe type that failed to encode for another reason would make the check fail closed.
+    val encoded = encodeToMap(ProbeClass.serializer(), ProbeClass())
+
+    assertThat(encoded)
+      .containsExactly("name", "probe", "values", listOf(1), "counts", mapOf("count" to 1))
   }
 }
