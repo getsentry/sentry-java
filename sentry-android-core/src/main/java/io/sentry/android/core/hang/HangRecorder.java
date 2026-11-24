@@ -86,13 +86,20 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       this.store = store;
     }
 
-    public void sample(final @NotNull HangRecord.Builder record) throws IOException {
+    void sample(final @NotNull HangRecord.Builder record, final boolean persist)
+        throws IOException {
       final @Nullable T sample = collector.sample();
       if (sample != null) {
         writer.write(sample, record);
-        if (store != null && record.isShouldPersist()) {
+        if (persist && store != null) {
           store.add(sample);
         }
+      }
+    }
+
+    void clearStore() throws IOException {
+      if (store != null) {
+        store.clear();
       }
     }
   }
@@ -127,8 +134,7 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
   private final @NotNull Set<HangRecorderListener> subscriptions = new LinkedHashSet<>();
   private boolean signalsStarted;
   private @Nullable Future<?> tickFuture;
-  private @Nullable HangRecord.Builder openHangRecord;
-  private @NotNull List<HangRecorderListener> recordingSubscribers = Collections.emptyList();
+  private @Nullable HangRecording openRecording;
   private boolean waitingForIdleAfterMaxRecordingTime;
 
   private final @NotNull HangSignalListener signalListener =
@@ -362,26 +368,16 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       for (final @NotNull TickListener listener : tickListeners) {
         listener.onMetronomeTick(nowMs);
       }
-      final @Nullable HangRecord.Builder hangRecord = openHangRecord;
-      if (hangRecord == null) {
+      final @Nullable HangRecording recording = openRecording;
+      if (recording == null) {
         return;
       }
       try {
-        // Stop sampling at the cap instead of rotating out samples: the early ones show how the
-        // hang began.
-        if (hangRecord.increaseSamplingCount() <= maxSamples) {
-          for (final @NotNull CollectorSetup<?> setup : collectors) {
-            try {
-              setup.sample(hangRecord);
-            } catch (IOException e) {
-              stopPersisting(hangRecord, e);
-            }
-          }
-        }
+        recording.sample(maxSamples);
       } finally {
         // A collector that throws on every tick must not keep the hang open past the maximum.
-        if (nowMs - hangRecord.getStartTimeMs() >= maxRecordingTimeMs) {
-          endRecord(hangRecord.getStartTimeMs() + maxRecordingTimeMs, true);
+        if (nowMs - recording.getStartTimeMs() >= maxRecordingTimeMs) {
+          endRecord(recording.getStartTimeMs() + maxRecordingTimeMs, true);
           waitingForIdleAfterMaxRecordingTime = true;
         }
       }
@@ -397,34 +393,17 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
       return;
     }
     if (state == HangSignal.State.SUSPICIOUS) {
-      if (openHangRecord != null || waitingForIdleAfterMaxRecordingTime) {
+      if (openRecording != null || waitingForIdleAfterMaxRecordingTime) {
         return;
       }
       final long nowTimestampMs = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
-      boolean persist = false;
-      final @NotNull List<HangRecorderListener> hangSubscribers = new ArrayList<>();
-      for (final @NotNull HangRecorderListener listener : subscriptions) {
-        final @Nullable HangRecordingRequest request = listener.onHangStarted();
-        if (request != null && request.shouldRecord()) {
-          hangSubscribers.add(listener);
-          if (request.shouldPersist()) {
-            persist = true;
-          }
-        }
-      }
-      if (hangSubscribers.isEmpty()) {
-        return;
-      }
-      final @NotNull HangRecord.Builder hangRecord =
-          new HangRecord.Builder()
-              .setStartTimeMs(sinceMs)
-              .setStartTimestampMs(nowTimestampMs - (nowMs() - sinceMs))
-              .setShouldPersist(persist);
-      if (persist) {
-        clearStores(hangRecord);
-      }
-      openHangRecord = hangRecord;
-      recordingSubscribers = hangSubscribers;
+      openRecording =
+          HangRecording.start(
+              subscriptions,
+              collectors,
+              sinceMs,
+              nowTimestampMs - (nowMs() - sinceMs),
+              options.getLogger());
     } else {
       waitingForIdleAfterMaxRecordingTime = false;
       endRecord(sinceMs, false);
@@ -436,52 +415,21 @@ public final class HangRecorder implements Metronome, Closeable, AppState.AppSta
     cancelRecord();
   }
 
-  private void clearStores(final @NotNull HangRecord.Builder hangRecord) {
-    for (final @NotNull CollectorSetup<?> setup : collectors) {
-      final @Nullable HangSampleStore<?> store = setup.store;
-      if (store == null) {
-        continue;
-      }
-      try {
-        store.clear();
-      } catch (IOException e) {
-        stopPersisting(hangRecord, e);
-        return;
-      }
-    }
-  }
-
-  private void stopPersisting(
-      final @NotNull HangRecord.Builder hangRecord, final @NotNull IOException e) {
-    hangRecord.setShouldPersist(false);
-    options.getLogger().log(SentryLevel.WARNING, "Failed to write to a hang sample store", e);
-  }
-
   private void cancelRecord() {
-    openHangRecord = null;
-    recordingSubscribers = Collections.emptyList();
+    openRecording = null;
   }
 
   private void endRecord(final long endTimeMs, final boolean endedAtMaxRecordingTime) {
-    final @Nullable HangRecord.Builder builder = openHangRecord;
-    if (builder == null) {
+    final @Nullable HangRecording recording = openRecording;
+    if (recording == null) {
       return;
     }
-    final @NotNull List<HangRecorderListener> listeners = new ArrayList<>();
-    for (final @NotNull HangRecorderListener listener : recordingSubscribers) {
-      if (subscriptions.contains(listener)) {
-        listeners.add(listener);
-      }
-    }
-    cancelRecord();
+    openRecording = null;
+    final @NotNull List<HangRecorderListener> listeners = recording.recipients(subscriptions);
     if (listeners.isEmpty()) {
       return;
     }
-    final @NotNull HangRecord record =
-        builder
-            .setDurationMs(endTimeMs - builder.getStartTimeMs())
-            .setEndedAtMaxRecordingTime(endedAtMaxRecordingTime)
-            .build();
+    final @NotNull HangRecord record = recording.end(endTimeMs, endedAtMaxRecordingTime);
     try {
       final @NotNull Future<?> delivery =
           options

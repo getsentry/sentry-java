@@ -1,0 +1,195 @@
+package io.sentry.android.core.hang
+
+import com.google.common.truth.Truth.assertThat
+import io.sentry.ILogger
+import io.sentry.SentryLevel
+import io.sentry.android.core.anr.AnrStackTrace
+import io.sentry.android.core.hang.HangRecorder.CollectorSetup
+import java.io.IOException
+import kotlin.test.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+
+class HangRecordingTest {
+
+  private val logger = mock<ILogger>()
+  private val collector = FakeCollector()
+  private val store = FakeStore()
+  private val writer =
+    HangRecorder.RecordWriter<String> { value, record ->
+      record.addStackTrace(AnrStackTrace(0, arrayOf(StackTraceElement("Fake", value, null, 0))))
+    }
+
+  private fun start(
+    vararg listeners: FakeListener,
+    collectors: List<CollectorSetup<*>> = listOf(CollectorSetup(collector, writer, store)),
+  ): HangRecording? = HangRecording.start(listeners.toList(), collectors, 100, 5_000, logger)
+
+  private fun HangRecord.values() = stackTraces.map { it.stack.single().methodName }
+
+  @Test
+  fun `no record without a listener that asks for one`() {
+    val recording = start(FakeListener(null), FakeListener(HangRecordingRequest(false, true)))
+
+    assertThat(recording).isNull()
+    assertThat(store.calls).isEmpty()
+  }
+
+  @Test
+  fun `asks every listener`() {
+    val first = FakeListener(HangRecordingRequest(true, false))
+    val second = FakeListener(null)
+
+    start(first, second)
+
+    assertThat(first.started).isEqualTo(1)
+    assertThat(second.started).isEqualTo(1)
+  }
+
+  @Test
+  fun `persist request clears the store and writes each sample`() {
+    val recording =
+      start(
+        FakeListener(HangRecordingRequest(true, false)),
+        FakeListener(HangRecordingRequest(true, true)),
+      )!!
+
+    recording.sample(120)
+    recording.sample(120)
+
+    assertThat(store.calls).containsExactly("clear", "add s1", "add s2").inOrder()
+  }
+
+  @Test
+  fun `record without persist request does not touch the store`() {
+    val recording = start(FakeListener(HangRecordingRequest(true, false)))!!
+
+    recording.sample(120)
+
+    assertThat(store.calls).isEmpty()
+    assertThat(recording.end(200, false).values()).containsExactly("s1")
+  }
+
+  @Test
+  fun `stops sampling after maxSamples ticks`() {
+    val recording = start(FakeListener(HangRecordingRequest(true, false)))!!
+
+    repeat(5) { recording.sample(3) }
+
+    assertThat(collector.sampleCount).isEqualTo(3)
+    assertThat(recording.end(200, false).values()).containsExactly("s1", "s2", "s3").inOrder()
+  }
+
+  @Test
+  fun `a tick without a value still counts against maxSamples`() {
+    val recording = start(FakeListener(HangRecordingRequest(true, false)))!!
+    collector.returnNull = true
+
+    recording.sample(2)
+    recording.sample(2)
+    collector.returnNull = false
+    recording.sample(2)
+
+    assertThat(collector.sampleCount).isEqualTo(2)
+    assertThat(recording.end(200, false).values()).isEmpty()
+  }
+
+  @Test
+  fun `store write failure stops persisting but not sampling`() {
+    val other = FakeCollector("o")
+    val recording =
+      start(
+        FakeListener(HangRecordingRequest(true, true)),
+        collectors =
+          listOf(CollectorSetup(collector, writer, store), CollectorSetup(other, writer, null)),
+      )!!
+    store.throwOnAdd = true
+
+    recording.sample(120)
+    store.throwOnAdd = false
+    recording.sample(120)
+
+    assertThat(store.calls).containsExactly("clear", "add s1").inOrder()
+    assertThat(recording.end(200, false).values()).containsExactly("s1", "o1", "s2", "o2").inOrder()
+    verify(logger, times(1)).log(eq(SentryLevel.WARNING), any<String>(), any<IOException>())
+  }
+
+  @Test
+  fun `store clear failure stops persisting`() {
+    store.throwOnClear = true
+    val recording = start(FakeListener(HangRecordingRequest(true, true)))!!
+
+    recording.sample(120)
+
+    assertThat(store.calls).containsExactly("clear")
+    verify(logger).log(eq(SentryLevel.WARNING), any<String>(), any<IOException>())
+  }
+
+  @Test
+  fun `recipients are the recording listeners that are still subscribed`() {
+    val recording1 = FakeListener(HangRecordingRequest(true, false))
+    val recording2 = FakeListener(HangRecordingRequest(true, true))
+    val notRecording = FakeListener(null)
+    val recording = start(recording1, recording2, notRecording)!!
+
+    assertThat(recording.recipients(setOf(recording2, notRecording))).containsExactly(recording2)
+  }
+
+  @Test
+  fun `end builds the record with duration and start timestamp`() {
+    val recording = start(FakeListener(HangRecordingRequest(true, false)))!!
+
+    val record = recording.end(8_100, true)
+
+    assertThat(recording.startTimeMs).isEqualTo(100)
+    assertThat(record.durationMs).isEqualTo(8_000)
+    assertThat(record.startTimestampMs).isEqualTo(5_000)
+    assertThat(record.hasEndedAtMaxRecordingTime()).isTrue()
+  }
+
+  private class FakeListener(private val request: HangRecordingRequest?) : HangRecorderListener {
+    var started = 0
+
+    override fun onHangStarted(): HangRecordingRequest? {
+      started++
+      return request
+    }
+
+    override fun onHangRecorded(record: HangRecord) = Unit
+  }
+
+  private class FakeCollector(private val prefix: String = "s") : HangDataCollector<String> {
+    var sampleCount = 0
+    var returnNull = false
+
+    override fun sample(): String? {
+      sampleCount++
+      return if (returnNull) null else "$prefix$sampleCount"
+    }
+  }
+
+  private class FakeStore : HangSampleStore<String> {
+    val calls = mutableListOf<String>()
+    var throwOnClear = false
+    var throwOnAdd = false
+
+    override fun clear() {
+      calls.add("clear")
+      if (throwOnClear) {
+        throw IOException("clear failed")
+      }
+    }
+
+    override fun add(sample: String) {
+      calls.add("add $sample")
+      if (throwOnAdd) {
+        throw IOException("add failed")
+      }
+    }
+
+    override fun close() = Unit
+  }
+}

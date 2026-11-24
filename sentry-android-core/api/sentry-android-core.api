@@ -825,13 +825,8 @@ public final class io/sentry/android/core/hang/HangRecord$Builder {
 	public fun <init> ()V
 	public fun addStackTrace (Lio/sentry/android/core/anr/AnrStackTrace;)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun build ()Lio/sentry/android/core/hang/HangRecord;
-	public fun getStartTimeMs ()J
-	public fun increaseSamplingCount ()I
-	public fun isShouldPersist ()Z
 	public fun setDurationMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setEndedAtMaxRecordingTime (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
-	public fun setShouldPersist (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
-	public fun setStartTimeMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setStartTimestampMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 }
 
@@ -851,7 +846,6 @@ public final class io/sentry/android/core/hang/HangRecorder : io/sentry/android/
 
 public final class io/sentry/android/core/hang/HangRecorder$CollectorSetup {
 	public fun <init> (Lio/sentry/android/core/hang/HangDataCollector;Lio/sentry/android/core/hang/HangRecorder$RecordWriter;Lio/sentry/android/core/hang/HangSampleStore;)V
-	public fun sample (Lio/sentry/android/core/hang/HangRecord$Builder;)V
 }
 
 public abstract interface class io/sentry/android/core/hang/HangRecorder$ExecutorFactory {
