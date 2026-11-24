@@ -131,13 +131,13 @@ class HangRecorderTest {
   }
 
   @Test
-  fun `recipients are the recorder listeners that are still subscribed`() {
+  fun `listeners are the ones that asked for a record`() {
     val recording1 = FakeListener(HangRecordingRequest(true, false))
     val recording2 = FakeListener(HangRecordingRequest(true, true))
     val notRecording = FakeListener(null)
     val recorder = start(recording1, recording2, notRecording)!!
 
-    assertThat(recorder.recipients(setOf(recording2, notRecording))).containsExactly(recording2)
+    assertThat(recorder.listeners).containsExactly(recording1, recording2).inOrder()
   }
 
   @Test
