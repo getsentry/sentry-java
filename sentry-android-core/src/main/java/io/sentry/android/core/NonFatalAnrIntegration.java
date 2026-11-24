@@ -196,7 +196,7 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       final @NotNull SentryEvent event = new SentryEvent(DateUtils.getDateTime(endTimestampMs));
       event.setLevel(SentryLevel.ERROR);
       event.setExceptions(exceptions);
-      event.setThreads(Arrays.asList(mainThread(mainThreadId, samples, culprit, exceptions)));
+      event.setThreads(Arrays.asList(mainThread(mainThreadId, culprit, exceptions)));
 
       final @NotNull Map<String, Object> context = new HashMap<>();
       context.put("duration_ms", record.getDurationMs());
@@ -225,7 +225,6 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
 
     private static @NotNull SentryThread mainThread(
         final long mainThreadId,
-        final @NotNull List<AnrStackTrace> samples,
         final @Nullable AggregatedStackTrace culprit,
         final @NotNull List<SentryException> exceptions) {
       final @NotNull SentryThread thread = new SentryThread();
@@ -233,44 +232,10 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       thread.setName("main");
       thread.setCurrent(true);
       thread.setMain(true);
-      final @Nullable Thread.State state = culpritState(samples, culprit);
-      if (state != null) {
-        thread.setState(state.name());
-      }
       if (culprit != null) {
         thread.setStacktrace(exceptions.get(0).getStacktrace());
       }
       return thread;
-    }
-
-    private static @Nullable Thread.State culpritState(
-        final @NotNull List<AnrStackTrace> samples, final @Nullable AggregatedStackTrace culprit) {
-      if (samples.isEmpty()) {
-        return null;
-      }
-      if (culprit != null) {
-        final @NotNull StackTraceElement[] culpritStack = culprit.getStack();
-        for (int i = samples.size() - 1; i >= 0; i--) {
-          if (containsRun(samples.get(i).stack, culpritStack)) {
-            return samples.get(i).state;
-          }
-        }
-      }
-      return samples.get(samples.size() - 1).state;
-    }
-
-    private static boolean containsRun(
-        final @NotNull StackTraceElement[] stack, final @NotNull StackTraceElement[] run) {
-      for (int start = 0; start + run.length <= stack.length; start++) {
-        int offset = 0;
-        while (offset < run.length && stack[start + offset].equals(run[offset])) {
-          offset++;
-        }
-        if (offset == run.length) {
-          return true;
-        }
-      }
-      return false;
     }
   }
 }
