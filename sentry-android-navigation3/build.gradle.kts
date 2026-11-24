@@ -112,6 +112,8 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.fragment.ktx)
+  // Saves back stack entries as Nav3 does, to check what SerialNameAndProperties records for them.
+  testImplementation(libs.androidx.navigation3.runtime)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)
