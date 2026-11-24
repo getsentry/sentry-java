@@ -1,6 +1,7 @@
 package io.sentry.util.sql
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.NoOpLogger
 import io.sentry.SentryOptions
@@ -9,6 +10,7 @@ import io.sentry.Span
 import io.sentry.TransactionContext
 import kotlin.test.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 /**
@@ -87,6 +89,21 @@ class SqlSpanDataTest {
 
     assertThat(data.description).isNull()
     assertThat(span.data.keys.filter { it.startsWith("db.") }).isEmpty()
+  }
+
+  @Test
+  fun `query over 1 MiB gives no description, no query keys and no failure log`() {
+    // D66: SKIPPED is not an analysis failure, so the ERROR log line must not fire for it.
+    val logger = mock<ILogger>()
+    val sql = "SELECT '" + "x".repeat(1024 * 1024) + "'"
+    val data = SqlSpanData.analyze(sql, "postgresql", 32 * 1024, logger)
+    val span = span()
+
+    data.applyTo(span)
+
+    assertThat(data.description).isNull()
+    assertThat(span.data.keys.filter { it.startsWith("db.") }).isEmpty()
+    verifyNoInteractions(logger)
   }
 
   /**
