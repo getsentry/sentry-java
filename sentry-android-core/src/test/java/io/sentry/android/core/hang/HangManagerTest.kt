@@ -1138,7 +1138,7 @@ class HangManagerTest {
     try {
       assertThat(posted.await(10, TimeUnit.SECONDS)).isTrue()
     } finally {
-      created.close()
+      created.unsubscribe(listener)
     }
   }
 
