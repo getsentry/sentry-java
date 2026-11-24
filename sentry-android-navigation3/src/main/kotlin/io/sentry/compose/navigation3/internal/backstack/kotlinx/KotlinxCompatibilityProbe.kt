@@ -5,9 +5,12 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 import io.sentry.compose.navigation3.internal.backstack.ArgumentBudget
 import io.sentry.compose.navigation3.internal.backstack.TreeArgumentWriter
 import io.sentry.util.ExceptionUtils
+import io.sentry.util.UrlUtils
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /**
  * Checks whether the app's kotlinx.serialization version successfully links against the APIs used
@@ -150,8 +153,16 @@ internal interface KotlinxCompatibilityProbe {
 
     /**
      * A known serializable type used to test whether the app's kotlinx.serialization version
-     * supports serializer lookup and property encoding. Its scalar, list, and map properties
-     * exercise common encoding paths without running host app code.
+     * supports serializer lookup and property encoding, without running host app code.
+     *
+     * Its properties use every encoding rule of [KotlinxPropertiesEncoder] that the encoder relies
+     * on kotlinx.serialization's serializers for: primitives, unsigned numbers, value classes,
+     * enums with serial names, lists, sets, maps, nested classes, sealed polymorphism, nullable
+     * values, and transient properties. It also has sensitive property names, a sensitive map key,
+     * and a value class with a sensitive underlying property name, which must be filtered. A
+     * kotlinx.serialization version that changes how its serializers drive the encoder for any of
+     * these is likely to change the encoding, so the probe catches it on versions CI never tested,
+     * before wrong arguments reach Sentry.
      *
      * Internal visibility lets the probe look up its serializer the same way
      * [KotlinxBackStackEntryMapper] looks up serializers for the host app's public back stack entry
@@ -160,18 +171,69 @@ internal interface KotlinxCompatibilityProbe {
     @Serializable
     internal data class ProbeClass(
       val name: String = "probe",
+      val count: Int = 1,
+      val quantity: UInt = UInt.MAX_VALUE,
+      val authToken: String = "secret",
+      val price: ProbePrice = ProbePrice(1),
+      val login: ProbeLogin = ProbeLogin("secret"),
+      val sort: ProbeSort = ProbeSort.ASCENDING,
       val values: List<Int> = listOf(1),
-      val counts: Map<String, Int> = mapOf("count" to 1),
+      val sizes: Set<Int> = setOf(1, 2),
+      val counts: Map<String, Int> = mapOf("count" to 1, "apiKey" to 2),
+      val filter: ProbeFilter = ProbeFilter(),
+      val filters: List<ProbeFilter> = listOf(ProbeFilter()),
+      val origin: ProbeOrigin = ProbeOrigin.Search("query"),
+      val fallbackOrigin: ProbeOrigin = ProbeOrigin.DeepLink,
+      val note: String? = null,
+      @Transient val cache: String = "not encoded",
     )
+
+    /** A value class, which [KotlinxPropertiesEncoder] records as its underlying value. */
+    @Serializable @JvmInline internal value class ProbePrice(val cents: Int)
+
+    /** A value class whose underlying property's name is sensitive, so its value is filtered. */
+    @Serializable @JvmInline internal value class ProbeLogin(val password: String)
+
+    @Serializable
+    internal enum class ProbeSort {
+      @SerialName("ascending") ASCENDING,
+    }
+
+    @Serializable
+    internal data class ProbeFilter(val sessionId: String = "secret", val query: String = "query")
+
+    @Serializable
+    internal sealed interface ProbeOrigin {
+      @Serializable @SerialName("search") data class Search(val term: String) : ProbeOrigin
+
+      @Serializable @SerialName("deeplink") data object DeepLink : ProbeOrigin
+    }
 
     /**
      * [ProbeClass]'s expected encoding.
      *
      * A kotlinx.serialization version that encodes it to anything else mis-encodes properties and
-     * must not be used. None of the keys are on the sensitive denylist, so none are filtered.
+     * must not be used.
      */
     private val EXPECTED_PROBE_ENCODING: Map<String, Any?> =
-      mapOf("name" to "probe", "values" to listOf(1), "counts" to mapOf("count" to 1))
+      mapOf(
+        "name" to "probe",
+        "count" to 1,
+        "quantity" to 4_294_967_295L,
+        "authToken" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+        "price" to 1,
+        "login" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE,
+        "sort" to "ascending",
+        "values" to listOf(1),
+        "sizes" to listOf(1, 2),
+        "counts" to mapOf("count" to 1, "apiKey" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE),
+        "filter" to mapOf("sessionId" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE, "query" to "query"),
+        "filters" to
+          listOf(mapOf("sessionId" to UrlUtils.SENSITIVE_DATA_SUBSTITUTE, "query" to "query")),
+        "origin" to mapOf("type" to "search", "value" to mapOf("term" to "query")),
+        "fallbackOrigin" to mapOf("type" to "deeplink", "value" to emptyMap<String, Any?>()),
+        "note" to null,
+      )
 
     /**
      * A known serializable object used to test serializer lookup for the host app's object-based
