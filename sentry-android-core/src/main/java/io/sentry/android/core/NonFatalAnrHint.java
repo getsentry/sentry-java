@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class NonFatalAnrHint implements DiskFlushNotification {
 
-  private final boolean mainThreadBlocked;
   private final @Nullable Runnable onStoredOnDisk;
   private final @NotNull AtomicBoolean flushed = new AtomicBoolean(false);
 
@@ -23,17 +22,8 @@ public final class NonFatalAnrHint implements DiskFlushNotification {
    *     stored on disk. The transport also calls it when a rate limit drops the event. Null if the
    *     event needs no action on disk.
    */
-  public NonFatalAnrHint(final boolean mainThreadBlocked, final @Nullable Runnable onStoredOnDisk) {
-    this.mainThreadBlocked = mainThreadBlocked;
+  public NonFatalAnrHint(final @Nullable Runnable onStoredOnDisk) {
     this.onStoredOnDisk = onStoredOnDisk;
-  }
-
-  /**
-   * Whether the main thread is still blocked when the event is captured, because the hang was cut
-   * at the maximum recording time. Anything that waits for the main thread must then skip its work.
-   */
-  public boolean isMainThreadBlocked() {
-    return mainThreadBlocked;
   }
 
   @Override
