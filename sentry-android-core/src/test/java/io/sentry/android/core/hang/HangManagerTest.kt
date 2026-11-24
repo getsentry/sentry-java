@@ -186,6 +186,19 @@ class HangManagerTest {
   }
 
   @Test
+  fun `ticks carry the time of nowMs`() {
+    val ticks = mutableListOf<Long>()
+    manager.addTickListener { ticks.add(it) }
+    startInForeground()
+    ticker.advance(100, MILLISECONDS)
+
+    executor.runTick()
+
+    assertThat(ticks.last()).isEqualTo(manager.nowMs())
+    assertThat(manager.nowMs()).isEqualTo(nowMs())
+  }
+
+  @Test
   fun `tick listeners run before collectors sample`() {
     val calls = collector.calls
     manager.addTickListener { calls.add("tick") }
