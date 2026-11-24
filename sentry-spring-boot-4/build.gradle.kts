@@ -6,7 +6,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  id("io.sentry.spring-boot-matrix")
+  id("io.sentry.dependency-matrix")
   id("io.sentry.otel-agent-tests")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
@@ -385,12 +385,17 @@ listOf(
   }
 
 // The suites on each Spring Boot 4 version the CI matrix tests.
-springBootMatrix {
-  versions(line = 4)
-  test("integrationTest")
-  test("integrationTestLog4j2")
-  test("integrationTestWebflux")
-  test("integrationTestOtelNoAgent")
-  test("integrationTestOtlp")
-  otelAgentTests()
+dependencyMatrix {
+  jvmTestSuites(
+    name = "springBoot",
+    groups = listOf("org.springframework.boot"),
+    versionsFile = "spring-boot-4-versions.json",
+  ) {
+    test("integrationTest")
+    test("integrationTestLog4j2")
+    test("integrationTestWebflux")
+    test("integrationTestOtelNoAgent")
+    test("integrationTestOtlp")
+    otelAgentTests()
+  }
 }

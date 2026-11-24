@@ -62,21 +62,21 @@ jar; each module adds only the dependencies of its Spring Boot line. `AgentApp` 
 per test JVM in a child process, with `ChildJvmApp` and the agent jar passed through
 `ChildJvmTestArguments`. The suite's task runs with the agent initializing Sentry, and its second
 target, `integrationTestOtelAgentWithoutAutoInit`, runs the same tests with the Spring Boot starter
-doing it. Gradle runs the two in parallel. `otelAgentTests()` in a `springBootMatrix` block registers
+doing it. Gradle runs the two in parallel. `otelAgentTests()` in a `jvmTestSuites` block registers
 both on each version.
 
 ## Running them
 
-- The `springBootMatrix` block in each Spring module's build file runs its suites on every version
-  of its Spring Boot line in `gradle/spring-boot-versions.json`, with a task per suite and version,
-  e.g. `integrationTestWebfluxBoot3_2_12`. The suites and the SDK compile once, against the
-  catalog's version; only the runtime classpath changes. `allIntegrationTestsBoot3_2_12` runs one
-  version's suites, `allIntegrationTestsBoot3` every version's.
-- The `spring-boot-{2,3,4}-matrix.yml` workflows read the same file and run each version in its own
-  job, e.g. `./gradlew :sentry-spring-jakarta:allIntegrationTestsBoot3_2_12
-  :sentry-spring-boot-jakarta:allIntegrationTestsBoot3_2_12`. The suites aren't part of `check`, so
-  a new suite only runs on CI once it's added to its module's `springBootMatrix` block, and a new
-  module once it's added to its workflow.
+- The `dependencyMatrix { jvmTestSuites(...) }` block in each Spring module's build file runs its
+  suites on every version of its Spring Boot line in `gradle/spring-boot-{2,3,4}-versions.json`,
+  with a task per suite and version, e.g. `integrationTestWebfluxSpringBoot3_2_12`. The suites and
+  the SDK compile once, against the catalog's version; only the runtime classpath changes.
+  `springBootTest3_2_12` runs one version's suites, `springBootTest` every version's, one version
+  at a time.
+- The `spring-boot-{2,3,4}-matrix.yml` workflows run every version in one job, e.g. `./gradlew
+  :sentry-spring-jakarta:springBootTest :sentry-spring-boot-jakarta:springBootTest --continue`. The
+  suites aren't part of `check`, so a new suite only runs on CI once it's added to its module's
+  `jvmTestSuites` block, and a new module once it's added to its workflow.
 - Suite code may only use APIs that exist in the oldest version of its line. Compiled against a
   newer one, a missing API fails at runtime with `NoSuchMethodError` or `NoClassDefFoundError`.
 
