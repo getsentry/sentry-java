@@ -9,7 +9,6 @@ import io.sentry.util.UrlUtils
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
@@ -21,12 +20,6 @@ import kotlinx.serialization.encoding.Encoder
 import org.junit.Test
 
 class KotlinxPropertiesEncoderUnencodableTest {
-
-  interface OpenOrigin
-
-  class SearchOrigin : OpenOrigin
-
-  @Serializable data class WithOpenPolymorphic(val id: String, @Polymorphic val origin: OpenOrigin)
 
   @Serializable
   internal data class WithNullableContextual(val id: String, @Contextual val other: Unregistered?)
@@ -111,15 +104,6 @@ class KotlinxPropertiesEncoderUnencodableTest {
     val encoded = encodeToMap(WithContextual.serializer(), entry)
 
     assertThat(encoded).isEqualTo(mapOf("id" to "1", "other" to UNENCODABLE_SUBSTITUTE))
-  }
-
-  @Test
-  fun `encode() - records an unregistered open polymorphic property as the Unencodable substitute`() {
-    val entry = WithOpenPolymorphic("1", SearchOrigin())
-
-    val encoded = encodeToMap(WithOpenPolymorphic.serializer(), entry)
-
-    assertThat(encoded).isEqualTo(mapOf("id" to "1", "origin" to UNENCODABLE_SUBSTITUTE))
   }
 
   @Test

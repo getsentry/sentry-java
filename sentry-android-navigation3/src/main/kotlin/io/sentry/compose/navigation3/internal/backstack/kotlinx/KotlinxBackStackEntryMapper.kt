@@ -460,9 +460,10 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
       log(
         WARNING,
         "Nav3 couldn't encode some property values for type %s. Recording them as " +
-          "${KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE}. Contextual and open polymorphic " +
-          "values (e.g., Parcelable properties) aren't supported. Use a custom " +
-          "BackStackEntryMapper to extract those values directly.",
+          "${KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE}. Contextual values, and " +
+          "polymorphic values whose runtime classes aren't @Serializable (e.g., Parcelable " +
+          "properties), aren't supported. Use a custom BackStackEntryMapper to extract those " +
+          "values directly.",
         type.name,
       )
     }

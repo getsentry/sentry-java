@@ -34,6 +34,7 @@ import org.robolectric.annotation.Config
 /**
  * Checks that if Nav3 can save a destination, [BackStackEntryMapper.SerialNameAndProperties]
  * records its name and every property it can represent, with a placeholder for each one it can't.
+ * Open polymorphic properties are represented if their runtime classes are `@Serializable`.
  *
  * Destinations are saved as Nav3 1.1's `rememberNavBackStack` overloads save them: with
  * `encodeToSavedState`, a [NavBackStackSerializer], and either [NavKeySerializer] with the default
@@ -175,7 +176,7 @@ class Nav3SavedStateParityTest {
   }
 
   @Test
-  fun `an open polymorphic property Nav3 saves via a module is a placeholder beside the name and other properties`() {
+  fun `an open polymorphic property Nav3 saves with a module is a type and value beside the other properties`() {
     val results = Results(category = "boots", origin = SearchOrigin("shoes"), page = 2)
     val configuration = SavedStateConfiguration {
       serializersModule = SerializersModule {
@@ -189,15 +190,17 @@ class Nav3SavedStateParityTest {
 
     assertThat(mapped?.name).isEqualTo("Results")
     assertThat(mapped?.arguments)
-      .containsExactly("category", "boots", "origin", UNENCODABLE, "page", 2)
+      .containsExactly("category", "boots", "origin", SEARCH_ORIGIN_ARGUMENTS, "page", 2)
   }
 
   /**
    * Outside the guarantee, as Nav3 can't save this destination without a module registering the
-   * property's subclasses, but documents that Sentry records it the same way as when Nav3 can.
+   * property's subclasses. Documents that Sentry deliberately records more than Nav3 can save here:
+   * it finds the subclass's serializer by reflection, so it records the property the same way as
+   * when Nav3 can.
    */
   @Test
-  fun `an open polymorphic property Nav3 can't save is still a placeholder beside the name and other properties`() {
+  fun `an open polymorphic property Nav3 can't save is still a type and value beside the other properties`() {
     val results = Results(category = "boots", origin = SearchOrigin("shoes"), page = 2)
     assertFailsWith<SerializationException> { saveAndRestoreByDefault(results) }
 
@@ -205,7 +208,7 @@ class Nav3SavedStateParityTest {
 
     assertThat(mapped?.name).isEqualTo("Results")
     assertThat(mapped?.arguments)
-      .containsExactly("category", "boots", "origin", UNENCODABLE, "page", 2)
+      .containsExactly("category", "boots", "origin", SEARCH_ORIGIN_ARGUMENTS, "page", 2)
   }
 
   /** Saves and restores [destination] as `rememberNavBackStack(vararg elements)` does. */
@@ -231,5 +234,8 @@ class Nav3SavedStateParityTest {
 
   private companion object {
     const val UNENCODABLE = "[Unencodable]"
+
+    val SEARCH_ORIGIN_ARGUMENTS =
+      mapOf("type" to "SearchOrigin", "value" to mapOf("query" to "shoes"))
   }
 }

@@ -45,6 +45,14 @@ sealed interface Origin {
 }
 
 /**
+ * An open polymorphic type, whose values the properties mapper encodes with their runtime class's
+ * serializer, found by reflection rather than through a `SerializersModule`.
+ */
+interface Referrer
+
+@Serializable @SerialName("campaign") data class Campaign(val name: String) : Referrer
+
+/**
  * Has a named companion object but no named-companion R8 rules of the app's own.
  * kotlinx.serialization 1.10.0+'s own rules keep what its reflective serializer lookup needs, so
  * the mappers must name it. Before 1.10.0, minification may strip that (e.g., always with 1.7.3,
@@ -85,6 +93,7 @@ data class ArgumentsKey(
   val filters: List<Filter>,
   val origin: Origin,
   val fallbackOrigin: Origin,
+  val referrer: Referrer,
   val note: String?,
   @Transient val cache: String = "not encoded",
 )
@@ -130,6 +139,7 @@ private val argumentsKey =
     filters = listOf(Filter(sessionId = "secret", query = "hats")),
     origin = Origin.Search("shoes"),
     fallbackOrigin = Origin.DeepLink,
+    referrer = Campaign("spring"),
     note = null,
   )
 
@@ -147,6 +157,7 @@ private val argumentsKeyArguments =
     "filters" to listOf(mapOf("sessionId" to "[Filtered]", "query" to "hats")),
     "origin" to mapOf("type" to "search", "value" to mapOf("term" to "shoes")),
     "fallbackOrigin" to mapOf("type" to "deeplink", "value" to emptyMap<String, Any?>()),
+    "referrer" to mapOf("type" to "campaign", "value" to mapOf("name" to "spring")),
     "note" to null,
   )
 

@@ -44,6 +44,7 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
 
   interface OpenOrigin
 
+  /** Isn't `@Serializable`, so it can't be encoded as an [OpenOrigin] without a module. */
   class SearchOrigin : OpenOrigin
 
   @Serializable data class Credentials(val user: String, val password: String)

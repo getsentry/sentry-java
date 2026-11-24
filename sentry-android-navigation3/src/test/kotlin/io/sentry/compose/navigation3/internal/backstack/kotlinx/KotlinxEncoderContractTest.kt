@@ -23,6 +23,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 import org.junit.Test
 
 /**
@@ -43,6 +45,11 @@ import org.junit.Test
  * serializers) and the [AbstractEncoder] routing come from the kotlinx-serialization-core jar on
  * the test classpath. CI also runs these tests against the latest kotlinx.serialization release
  * with `-Pnav3TestKotlinxVersion=<version>`.
+ *
+ * Open polymorphic values are encoded with a `SerializersModule` registering their subclasses, so
+ * the baseline pins the calls kotlinx.serialization's own polymorphic serializer makes, which
+ * [KotlinxPropertiesEncoder] makes itself in place of that serializer (see "Open polymorphic
+ * values" in its KDoc).
  *
  * **When a test fails**
  * 1. Review kotlinx.serialization's changelog for the version under test for the changed calls.
@@ -135,6 +142,12 @@ class KotlinxEncoderContractTest {
   }
 
   @Serializable data class WithSealed(val origin: Origin, val fallbackOrigin: Origin)
+
+  interface Referrer
+
+  @Serializable @SerialName("campaign") data class Campaign(val name: String) : Referrer
+
+  @Serializable data class WithOpenPolymorphic(val referrer: Referrer)
 
   @Serializable data object Home
 
@@ -343,6 +356,16 @@ class KotlinxEncoderContractTest {
     assertMatchesBaseline("top-level-sealed", Origin.serializer(), Origin.Search("shoes"))
   }
 
+  @Test
+  fun `open polymorphic properties encode as a structure of the serial name and value`() {
+    val module = SerializersModule {
+      polymorphic(Referrer::class) { subclass(Campaign::class) }
+    }
+    val value = WithOpenPolymorphic(Campaign("spring"))
+
+    assertMatchesBaseline("open-polymorphic", WithOpenPolymorphic.serializer(), value, module)
+  }
+
   // Custom serializers
 
   @Test
@@ -385,8 +408,9 @@ class KotlinxEncoderContractTest {
     name: String,
     serializer: SerializationStrategy<T>,
     value: T,
+    serializersModule: SerializersModule = EmptySerializersModule(),
   ) {
-    val encoder = RecordingEncoder()
+    val encoder = RecordingEncoder(serializersModule)
     encoder.encodeSerializableValue(serializer, value)
     val calls = encoder.calls
 
@@ -420,12 +444,11 @@ class KotlinxEncoderContractTest {
    * [encodeValue] from [encodeString], and the calls between [beginStructure] and [endStructure]
    * are indented one level deeper.
    */
-  private class RecordingEncoder : AbstractEncoder() {
+  private class RecordingEncoder(override val serializersModule: SerializersModule) :
+    AbstractEncoder() {
 
     val calls = mutableListOf<String>()
     private var depth = 0
-
-    override val serializersModule: SerializersModule = EmptySerializersModule()
 
     private fun record(call: String) {
       calls += "  ".repeat(depth) + call

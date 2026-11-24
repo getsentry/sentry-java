@@ -7,11 +7,15 @@ import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_
 import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.ArgumentSink
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.PolymorphicKind
@@ -48,7 +52,8 @@ import kotlinx.serialization.modules.SerializersModule
  *
  * - Unsigned numbers (`UByte`, `UShort`, `UInt`, `ULong`) retain their unsigned values.
  *
- * - Polymorphic properties become `{"type": <serial name>, "value": <value>}`.
+ * - Polymorphic properties become `{"type": <serial name>, "value": <value>}`. See "Open
+ *   polymorphic values" below.
  *
  * - Entries encoded as scalars, such as by a custom string serializer, become `{"value": <value>}`.
  *
@@ -59,18 +64,31 @@ import kotlinx.serialization.modules.SerializersModule
  *
  * **Unencodable values**
  *
- * Some values that the app's own saved state can store can't be encoded here: contextual and open
- * polymorphic values (e.g., a `Parcelable` property) need serializers registered in a
- * `SerializersModule` we don't have, and some serializers only work with a specific encoder. Their
- * serializers throw an [IllegalArgumentException] (which includes [SerializationException]). Rather
- * than dropping all of the entry's arguments, the encoder records such a value as
- * [UNENCODABLE_SUBSTITUTE] and continues with the next one.
+ * Some values that the app's own saved state can store can't be encoded here: contextual values,
+ * and open polymorphic values whose runtime classes aren't `@Serializable` (e.g., a `Parcelable`
+ * property), need serializers registered in a `SerializersModule` we don't have, and some
+ * serializers only work with a specific encoder. Their serializers throw an
+ * [IllegalArgumentException] (which includes [SerializationException]). Rather than dropping all of
+ * the entry's arguments, the encoder records such a value as [UNENCODABLE_SUBSTITUTE] and continues
+ * with the next one.
  *
  * It only does so if the serializer threw before writing anything for the value. Sinks can't undo
  * writes, so recording a value that's only partly written would show Sentry an incomplete value as
  * if it were complete. Such failures still propagate, as do failures of the entry's own serializer
  * and of scalar map keys. (A key that fails can't be replaced without risking two keys with the
  * same text. Structured keys are recorded as entry values, so they are replaced like any value.)
+ *
+ * **Open polymorphic values**
+ *
+ * kotlinx.serialization encodes a value of an open polymorphic type (e.g., a non-sealed interface)
+ * with the serializer registered for its runtime class in the encoder's `SerializersModule`. We
+ * don't have the app's module, so we find the runtime class's own serializer by reflection instead,
+ * as Nav3's default back stack serializer does for back stack entries. This works for runtime
+ * classes annotated with `@Serializable`, and writes what a registration would. Other values, e.g.,
+ * a `Parcelable` that isn't `@Serializable`, still fail and become [UNENCODABLE_SUBSTITUTE].
+ *
+ * Unlike kotlinx.serialization, this also encodes subclasses the app didn't register, and uses a
+ * subclass's own serializer even if the app registered a different one for it.
  *
  * **Argument limits**
  *
@@ -215,10 +233,40 @@ internal object KotlinxPropertiesEncoder {
     override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
       nesting.enter()
       try {
-        serializer.serialize(this, value)
+        val subclassSerializer =
+          if (serializer is PolymorphicSerializer<*> && value != null) {
+            subclassSerializerOrNull(value.javaClass)
+          } else {
+            null
+          }
+        if (subclassSerializer != null) {
+          encodePolymorphic(serializer.descriptor, subclassSerializer, value as Any)
+        } else {
+          serializer.serialize(this, value)
+        }
       } finally {
         nesting.exit()
       }
+    }
+
+    /**
+     * Encodes [value] as kotlinx.serialization's polymorphic serializers do once they've found its
+     * runtime class's serializer: its serial name as the [polymorphicDescriptor]'s `type` element,
+     * and its properties as the `value` element.
+     */
+    private fun encodePolymorphic(
+      polymorphicDescriptor: SerialDescriptor,
+      subclassSerializer: KSerializer<Any>,
+      value: Any,
+    ) {
+      val composite = beginStructure(polymorphicDescriptor)
+      composite.encodeStringElement(
+        polymorphicDescriptor,
+        0,
+        subclassSerializer.descriptor.serialName,
+      )
+      composite.encodeSerializableElement(polymorphicDescriptor, 1, subclassSerializer, value)
+      composite.endStructure(polymorphicDescriptor)
     }
 
     override fun encodeValue(value: Any) {
@@ -499,6 +547,43 @@ internal object KotlinxPropertiesEncoder {
       getElementDescriptor(0).isStructured()
     } else {
       kind is StructureKind || kind is PolymorphicKind
+    }
+
+  /**
+   * The serializers that [subclassSerializerOrNull] found for runtime classes, or [NO_SERIALIZER].
+   * Bounded by the number of classes the app's open polymorphic values have.
+   */
+  private val subclassSerializers = ConcurrentHashMap<Class<*>, Any>()
+
+  private val NO_SERIALIZER = Any()
+
+  /**
+   * Returns the serializer of [type], an open polymorphic value's runtime class, if it's annotated
+   * with `@Serializable` and its serializer can be found by reflection. See "Open polymorphic
+   * values" in [KotlinxPropertiesEncoder].
+   */
+  @Suppress("UNCHECKED_CAST")
+  private fun subclassSerializerOrNull(type: Class<*>): KSerializer<Any>? =
+    subclassSerializers.getOrPut(type) { lookUpSubclassSerializer(type) ?: NO_SERIALIZER }
+      as? KSerializer<Any>
+
+  private fun lookUpSubclassSerializer(type: Class<*>): KSerializer<*>? =
+    try {
+      if (type.isAnnotationPresent(Serializable::class.java)) {
+        reflectiveSerializerOrNull(type)
+      } else {
+        null
+      }
+    } catch (_: LinkageError) {
+      // Caught before rethrowIfFatal, which rethrows LinkageErrors. A class that can't be linked
+      // fails like one without a serializer, and so does the next case.
+      null
+    } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
+      // Broad because looking up a serializer can run the app's serializer initialization, which
+      // may throw anything. Without a serializer, the value is encoded with its declared
+      // polymorphic serializer, which fails and records the value as UNENCODABLE_SUBSTITUTE.
+      ExceptionUtils.rethrowIfFatal(t)
+      null
     }
 
   /** Whether this describes a value class whose underlying property's name is sensitive. */

@@ -261,10 +261,15 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * filtered as sensitive by its own property names, as there's no key text to check, unless the
      * whole key is filtered.
      *
-     * Some values can't be encoded, e.g., contextual and open polymorphic properties (including
-     * `Parcelable` properties), since their serializers require a `SerializersModule` or saved
-     * state encoder this mapper doesn't have. Each such property value, list element, or map value
-     * is recorded as `"[Unencodable]"`, and the entry's other arguments are kept.
+     * A value of an open polymorphic type (e.g., a non-sealed interface) is recorded as `{"type":
+     * <serial name>, "value": <properties>}` if its runtime class is `@Serializable`, without the
+     * app registering it with this mapper.
+     *
+     * Some values can't be encoded, e.g., contextual properties, and `Parcelable` or other
+     * polymorphic values whose runtime classes aren't `@Serializable`, since their serializers
+     * require a `SerializersModule` or saved state encoder this mapper doesn't have. Each such
+     * property value, list element, or map value is recorded as `"[Unencodable]"`, and the entry's
+     * other arguments are kept.
      *
      * Other failures preserve the entry's name and replace its arguments with a drop reason, e.g.,
      * `{"dropped_by_sentry": "encoding_failed"}`. Encoding errors are logged once per entry type
