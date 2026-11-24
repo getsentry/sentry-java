@@ -5,6 +5,7 @@ import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.MetaSerializable
@@ -105,6 +106,40 @@ class KotlinxBackStackEntryMapperNamingTest {
 
     override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("uninitializable.C", PrimitiveKind.STRING)
+  }
+
+  @Serializable(with = FatallyUninitializableSerializer::class)
+  internal class FatallyUninitializableSerialized
+
+  internal object FatallyUninitializableSerializer :
+    NamingOnlySerializer<FatallyUninitializableSerialized>() {
+    init {
+      if (System.nanoTime() != 0L) throw OutOfMemoryError("serializer init failed fatally")
+    }
+
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("fatallyUninitializable", PrimitiveKind.STRING)
+  }
+
+  /**
+   * A serializer class, unlike an object, is constructed on each lookup, so its first construction
+   * can fail while later ones succeed.
+   */
+  @Serializable(with = FatalOnceSerializer::class) internal class FatalOnceSerialized
+
+  internal class FatalOnceSerializer : NamingOnlySerializer<FatalOnceSerialized>() {
+    init {
+      if (constructions.getAndIncrement() == 0) {
+        throw OutOfMemoryError("first serializer construction failed fatally")
+      }
+    }
+
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("fatalOnce", PrimitiveKind.STRING)
+
+    private companion object {
+      val constructions = AtomicInteger()
+    }
   }
 
   @Serializable(with = DescriptorThrowsIllegalStateSerializer::class)
@@ -763,6 +798,28 @@ class KotlinxBackStackEntryMapperNamingTest {
       .hasCauseThat()
       .hasMessageThat()
       .isEqualTo("serializer C init failed")
+  }
+
+  @Test
+  fun `propagates a fatal error from a type's serializer initializer`() {
+    val fixture = KotlinxMapperFixture.create(useDefaultLookUp = true)
+    val mapper = fixture.mapper
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> { mapper.map(FatallyUninitializableSerialized()) }
+
+    assertThat(thrown).hasMessageThat().isEqualTo("serializer init failed fatally")
+  }
+
+  @Test
+  fun `names a type after its serializer lookup previously threw a fatal error`() {
+    val fixture = KotlinxMapperFixture.create(useDefaultLookUp = true)
+    val mapper = fixture.mapper
+    assertFailsWith<OutOfMemoryError> { mapper.map(FatalOnceSerialized()) }
+
+    val mapped = mapper.map(FatalOnceSerialized())
+
+    assertThat(mapped).isEqualTo(SentryBackStackEntry("fatalOnce"))
   }
 
   private fun verifyLookUpErrorLoggedOnce(

@@ -6,8 +6,10 @@ import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.backstack.DropArguments
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.UNENCODABLE_SUBSTITUTE
 import io.sentry.util.UrlUtils
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerialName
@@ -16,6 +18,8 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import org.junit.Test
 
 /**
@@ -117,6 +121,47 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
 
     override val descriptor: SerialDescriptor =
       PrimitiveSerialDescriptor("unlinkableOrigin", PrimitiveKind.STRING)
+  }
+
+  @Serializable(with = FatallyUninitializableOriginSerializer::class)
+  internal class FatallyUninitializableOrigin : Origin
+
+  internal object FatallyUninitializableOriginSerializer :
+    NamingOnlySerializer<FatallyUninitializableOrigin>() {
+    init {
+      if (System.nanoTime() != 0L) throw OutOfMemoryError("serializer init failed fatally")
+    }
+
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("fatallyUninitializableOrigin", PrimitiveKind.STRING)
+  }
+
+  /**
+   * A serializer class, unlike an object, is constructed on each lookup, so its first construction
+   * can fail while later ones succeed.
+   */
+  @Serializable(with = FatalOnceOriginSerializer::class) internal class FatalOnceOrigin : Origin
+
+  internal class FatalOnceOriginSerializer : KSerializer<FatalOnceOrigin> {
+    init {
+      if (constructions.getAndIncrement() == 0) {
+        throw OutOfMemoryError("first serializer construction failed fatally")
+      }
+    }
+
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("fatalOnceOrigin", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: FatalOnceOrigin) {
+      encoder.encodeString("encoded")
+    }
+
+    override fun deserialize(decoder: Decoder): FatalOnceOrigin =
+      throw UnsupportedOperationException()
+
+    private companion object {
+      val constructions = AtomicInteger()
+    }
   }
 
   private val unencodableValues = mutableListOf<IllegalArgumentException>()
@@ -352,6 +397,31 @@ class KotlinxPropertiesEncoderOpenPolymorphismTest {
     assertThat(encoded)
       .isEqualTo(mapOf("id" to "1", "origin" to UNENCODABLE_SUBSTITUTE, "page" to 2))
     assertThat(unencodableValues).hasSize(1)
+  }
+
+  @Test
+  fun `encode() - propagates a fatal error from an open polymorphic value's serializer init`() {
+    val entry = WithOrigin("1", FatallyUninitializableOrigin(), page = 2)
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> {
+        encodeToMap(WithOrigin.serializer(), entry, unencodableValues::add)
+      }
+
+    assertThat(thrown).hasMessageThat().isEqualTo("serializer init failed fatally")
+    assertThat(unencodableValues).isEmpty()
+  }
+
+  @Test
+  fun `encode() - looks up an open polymorphic value's serializer again after its lookup throws a fatal error`() {
+    val entry = WithOrigin("1", FatalOnceOrigin(), page = 2)
+    assertFailsWith<OutOfMemoryError> { encodeToMap(WithOrigin.serializer(), entry) }
+
+    val encoded = encodeToMap(WithOrigin.serializer(), entry, unencodableValues::add)
+
+    assertThat(encoded["origin"])
+      .isEqualTo(mapOf("type" to "fatalOnceOrigin", "value" to "encoded"))
+    assertThat(unencodableValues).isEmpty()
   }
 
   @Test
