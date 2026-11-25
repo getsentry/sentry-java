@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Improvements
+
+- Android: Narrow consumer keep rules to the classes and members the SDK reads by reflection, so R8 can optimize more of your app ([#6779](https://github.com/getsentry/sentry-java/pull/6779))
+
 ### Fixes
 
 - Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
