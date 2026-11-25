@@ -1,13 +1,12 @@
 ##---------------Begin: proguard configuration for android-core  ----------
 
 ##---------------Begin: proguard configuration for androidx.core  ----------
--keep class androidx.core.app.FrameMetricsAggregator { <init>(...); }
--keep interface androidx.core.view.ScrollingView { *; }
+-keepnames class androidx.core.app.FrameMetricsAggregator
+-keepnames interface androidx.core.view.ScrollingView
 ##---------------End: proguard configuration for androidx.core  ----------
 
 ##---------------Begin: proguard configuration for androidx.lifecycle  ----------
--keep interface androidx.lifecycle.DefaultLifecycleObserver { *; }
--keep class androidx.lifecycle.ProcessLifecycleOwner { <init>(...); }
+-keepnames class androidx.lifecycle.ProcessLifecycleOwner
 ##---------------End: proguard configuration for androidx.lifecycle  ----------
 
 # To mitigate the issue on R8 site (https://issuetracker.google.com/issues/235733922)
@@ -44,9 +43,6 @@
 # otherwise merge unrelated exception classes, causing the runtime type and retraced frames to
 # disagree. Unused Throwables may still be removed, and retained Throwables may still be obfuscated.
 -keep,allowshrinking,allowobfuscation class * extends java.lang.Throwable
-
-# Keep Classnames for integrations
--keepnames class * implements io.sentry.Integration
 
 -dontwarn io.sentry.apollo.SentryApolloInterceptor
 -keepnames class io.sentry.apollo.SentryApolloInterceptor
