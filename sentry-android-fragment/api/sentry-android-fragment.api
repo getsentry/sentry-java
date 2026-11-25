@@ -34,6 +34,7 @@ public final class io/sentry/android/fragment/FragmentLifecycleState : java/lang
 	public static final field STOPPED Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static final field VIEW_CREATED Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static final field VIEW_DESTROYED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static fun values ()[Lio/sentry/android/fragment/FragmentLifecycleState;
 }

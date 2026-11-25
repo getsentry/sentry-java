@@ -26,7 +26,6 @@ tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
     freeCompilerArgs.add("-Xjsr305=strict")
   }
 }
