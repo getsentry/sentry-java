@@ -1,11 +1,14 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.util.thread.ThreadChecker
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -114,6 +117,7 @@ class DefaultCompositePerformanceCollectorTest {
   fun `when start, collection is scheduled every 100 milliseconds`() {
     val collector = fixture.getSut()
     collector.start(fixture.transaction1)
+    Thread.sleep(300)
     assertTrue(fixture.executorService.scheduledDelays.contains(100L))
   }
 
@@ -121,6 +125,7 @@ class DefaultCompositePerformanceCollectorTest {
   fun `when start with a string, collection is scheduled every 100 milliseconds`() {
     val collector = fixture.getSut()
     collector.start(fixture.id1)
+    Thread.sleep(300)
     assertTrue(fixture.executorService.scheduledDelays.contains(100L))
   }
 
@@ -292,6 +297,38 @@ class DefaultCompositePerformanceCollectorTest {
   }
 
   @Test
+  fun `first collect runs a full interval after setup even when the timer thread was busy`() {
+    val setupNanos = AtomicLong()
+    val firstCollectNanos = AtomicLong()
+    val collected = CountDownLatch(1)
+    val timingCollector =
+      object : IPerformanceSnapshotCollector {
+        override fun setup() {
+          setupNanos.set(System.nanoTime())
+        }
+
+        override fun collect(performanceCollectionData: PerformanceCollectionData) {
+          if (firstCollectNanos.compareAndSet(0, System.nanoTime())) {
+            collected.countDown()
+          }
+        }
+      }
+    val collector = fixture.getSut(memoryCollector = null, cpuCollector = timingCollector)
+    val timerThreadBusy = CountDownLatch(1)
+    fixture.executorService.schedule({ timerThreadBusy.await() }, 0L)
+
+    collector.start(fixture.transaction1)
+    // keep the timer thread busy past the collection interval
+    Thread.sleep(200)
+    timerThreadBusy.countDown()
+
+    assertTrue(collected.await(1, TimeUnit.SECONDS))
+    assertThat(firstCollectNanos.get() - setupNanos.get())
+      .isAtLeast(TimeUnit.MILLISECONDS.toNanos(100))
+    collector.stop(fixture.transaction1)
+  }
+
+  @Test
   fun `setup and collect happen on background thread`() {
     val threadCheckerCollector = spy(ThreadCheckerCollector())
     fixture.options.addPerformanceCollector(threadCheckerCollector)
@@ -315,7 +352,7 @@ class DefaultCompositePerformanceCollectorTest {
     collector.close()
 
     // Collection was canceled
-    assertTrue(fixture.executorService.scheduledDelays.contains(100L))
+    assertTrue(fixture.executorService.scheduledDelays.isNotEmpty())
     assertNull(collector.collectFuture())
 
     // Data was cleared

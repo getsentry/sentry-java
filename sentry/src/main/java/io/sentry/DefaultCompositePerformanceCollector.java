@@ -22,8 +22,8 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private volatile @Nullable Future<?> collectFuture = null;
 
   /**
-   * Incremented on close() so an in-flight collect run doesn't reschedule itself after its chain
-   * was cancelled. Guarded by timerLock.
+   * Incremented on close() so an in-flight setup or collect run doesn't schedule the next collect
+   * after its chain was cancelled. Guarded by timerLock.
    */
   private long generation = 0;
 
@@ -78,7 +78,6 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull String id) {
     if (hasNoCollectors) {
       options
@@ -97,32 +96,26 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
     if (!isStarted.getAndSet(true)) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         final long currentGeneration = generation;
-        // We schedule the executor to call setup() on collectors immediately in the background.
-        options
-            .getTimerExecutorService()
-            .schedule(
-                () -> {
-                  for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
-                    collector.setup();
-                  }
-                },
-                0L);
-        // We schedule the collection to start after a delay, so we let some time pass between
-        // setup() and collect() calls.
-        // This way ICollectors that collect average stats based on time intervals, like
-        // AndroidCpuCollector, can have an actual time interval to evaluate.
         collectFuture =
             options
                 .getTimerExecutorService()
-                .schedule(
-                    () -> collectAndReschedule(currentGeneration),
-                    TRANSACTION_COLLECTION_INTERVAL_MILLIS);
+                .schedule(() -> setupAndScheduleCollect(currentGeneration), 0L);
       } catch (RejectedExecutionException e) {
         options
             .getLogger()
             .log(SentryLevel.WARNING, "Failed to schedule performance collection.", e);
       }
     }
+  }
+
+  private void setupAndScheduleCollect(final long scheduledGeneration) {
+    for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
+      collector.setup();
+    }
+    // The first collect() is scheduled only after setup() ran, not alongside it: if the shared
+    // timer thread was busy, both would be due at once and run back to back, leaving collectors
+    // that average over the time since the previous call, like AndroidCpuCollector, no interval.
+    scheduleCollect(scheduledGeneration);
   }
 
   private void collectAndReschedule(final long scheduledGeneration) {
@@ -150,9 +143,13 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       stop(t);
     }
 
+    scheduleCollect(scheduledGeneration);
+  }
+
+  private void scheduleCollect(final long scheduledGeneration) {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      // stopping a timed out transaction above may have closed this collector; only reschedule if
-      // this run still belongs to the current collection chain
+      // close() may have run since this chain was scheduled, even from the calling run by stopping
+      // a timed out transaction; only continue if the chain is still the current one
       if (scheduledGeneration == generation) {
         collectFuture =
             options
@@ -162,9 +159,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                     TRANSACTION_COLLECTION_INTERVAL_MILLIS);
       }
     } catch (RejectedExecutionException e) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Failed to reschedule performance collection.", e);
+      options.getLogger().log(SentryLevel.WARNING, "Failed to schedule performance collection.", e);
     }
   }
 
