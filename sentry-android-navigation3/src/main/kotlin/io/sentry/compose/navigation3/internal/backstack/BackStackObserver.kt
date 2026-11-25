@@ -15,6 +15,7 @@ import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.Reten
 import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackHasNewTop
 import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackIsEmpty
+import io.sentry.compose.navigation3.internal.backstack.UnnamedReason.Companion.UNNAMED_REASON_KEY
 import io.sentry.compose.navigation3.internal.lifecycle.INavScope
 import io.sentry.compose.navigation3.internal.lifecycle.INavScopes
 import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
@@ -237,7 +238,7 @@ internal class BackStackObserver<T : Any>(
 
     return NavTransactionRequest.forDestination(
       name = top.name,
-      arguments = top.argumentsWithMetadata(),
+      data = top.transactionData(),
       contexts = navContext.forTransaction(backStack.capturedEntriesNormalized),
       viewNames = if (scopes.options.isEnableScreenTracking) listOf(top.name) else null,
       options = scopes.options,
@@ -362,6 +363,7 @@ private class NavBreadcrumbs(private val scopes: INavScopes) {
 
         fromEntry?.let { entry ->
           data["from"] = entry.name
+          entry.unnamedReason?.let { data["from_$UNNAMED_REASON_KEY"] = it.serializedValue }
           entry
             .argumentsWithMetadata()
             .takeIf { it.isNotEmpty() }
@@ -371,6 +373,7 @@ private class NavBreadcrumbs(private val scopes: INavScopes) {
         }
 
         data["to"] = toEntry.name
+        toEntry.unnamedReason?.let { data["to_$UNNAMED_REASON_KEY"] = it.serializedValue }
         toEntry
           .argumentsWithMetadata()
           .takeIf { it.isNotEmpty() }

@@ -664,6 +664,10 @@ class BackStackObserverTest {
         },
       )
 
+    val unknown = NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME
+    val blankNameEntry = mapOf("entry" to unknown, "entry_unnamed_reason" to "blank_name")
+    val mappingFailedEntry = mapOf("entry" to unknown, "entry_unnamed_reason" to "mapping_failed")
+
     // Navigate to the home screen and verify that a transaction has started and related Sentry data
     // have been generated (i.e., screen name, breadcrumb, and updated back stack context), as the
     // host app's BackStackEntryMapper returned a valid name for the home screen entry.
@@ -676,28 +680,24 @@ class BackStackObserverTest {
     assertThat(fixture.breadcrumbs).hasSize(1)
     assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("entry" to "/home")))
 
-    // Navigate to the profile screen and verify the invalid route name is recorded as /unknown so
-    // the transition history remains intact.
+    // Navigate to the profile screen and verify the invalid route name is recorded as /unknown,
+    // with
+    // the reason why, so the transition history remains intact.
     sut.onBackStackChanged(listOf(home, profile))
     assertThat(transaction.isFinished).isTrue()
     assertThat(fixture.startedTransactions).hasSize(2)
     val profileTransaction = fixture.startedTransactions.last()
     assertThat(profileTransaction.isFinished).isFalse()
-    assertThat(profileTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
+    assertThat(profileTransaction.name).isEqualTo(unknown)
+    assertThat(profileTransaction.getData("unnamed_reason")).isEqualTo("blank_name")
     assertThat(fixture.scope.transaction).isSameInstanceAs(profileTransaction)
-    assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
-    assertThat(fixture.scope.contexts.app?.viewNames)
-      .isEqualTo(listOf(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME))
+    assertThat(fixture.scope.screen).isEqualTo(unknown)
+    assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf(unknown))
     assertThat(fixture.breadcrumbs).hasSize(2)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly("from", "/home", "to", NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
+      .isEqualTo(mapOf("from" to "/home", "to" to unknown, "to_unnamed_reason" to "blank_name"))
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(
-        listOf(
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
-          mapOf("entry" to "/home"),
-        ),
-      )
+      .isEqualTo(listOf(blankNameEntry, mapOf("entry" to "/home")))
 
     // Navigate to the cart screen and verify the later failure is also recorded as /unknown rather
     // than collapsing the route history.
@@ -706,34 +706,24 @@ class BackStackObserverTest {
     assertThat(fixture.startedTransactions).hasSize(3)
     val cartTransaction = fixture.startedTransactions.last()
     assertThat(cartTransaction.isFinished).isFalse()
-    assertThat(cartTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
-    assertThat(cartTransaction.getData("arguments"))
-      .isEqualTo(mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"))
+    assertThat(cartTransaction.name).isEqualTo(unknown)
+    assertThat(cartTransaction.getData("arguments")).isNull()
+    assertThat(cartTransaction.getData("unnamed_reason")).isEqualTo("mapping_failed")
     assertThat(fixture.scope.transaction).isSameInstanceAs(cartTransaction)
-    assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
-    assertThat(fixture.scope.contexts.app?.viewNames)
-      .isEqualTo(listOf(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME))
+    assertThat(fixture.scope.screen).isEqualTo(unknown)
+    assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf(unknown))
     assertThat(fixture.breadcrumbs).hasSize(3)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly(
-        "from",
-        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
-        "to",
-        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
-        "to_arguments",
-        mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
-      )
-    assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
-        listOf(
-          mapOf(
-            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
-            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
-          ),
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
-          mapOf("entry" to "/home"),
+        mapOf(
+          "from" to unknown,
+          "from_unnamed_reason" to "blank_name",
+          "to" to unknown,
+          "to_unnamed_reason" to "mapping_failed",
         ),
       )
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(listOf(mappingFailedEntry, blankNameEntry, mapOf("entry" to "/home")))
 
     // Navigate to the settings screen and verify a new /settings transaction is started and Sentry
     // data are generated again, as we received a valid route name.
@@ -744,28 +734,21 @@ class BackStackObserverTest {
     val settingsTransaction = fixture.startedTransactions.last()
     assertThat(settingsTransaction.isFinished).isFalse()
     assertThat(settingsTransaction.name).isEqualTo("/settings")
+    assertThat(settingsTransaction.getData("unnamed_reason")).isNull()
     assertThat(fixture.scope.transaction).isSameInstanceAs(settingsTransaction)
     assertThat(fixture.scope.screen).isEqualTo("/settings")
     assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/settings"))
     assertThat(fixture.breadcrumbs).hasSize(4)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly(
-        "from",
-        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
-        "from_arguments",
-        mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
-        "to",
-        "/settings",
+      .isEqualTo(
+        mapOf("from" to unknown, "from_unnamed_reason" to "mapping_failed", "to" to "/settings"),
       )
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
           mapOf("entry" to "/settings"),
-          mapOf(
-            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
-            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
-          ),
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mappingFailedEntry,
+          blankNameEntry,
           mapOf("entry" to "/home"),
         ),
       )

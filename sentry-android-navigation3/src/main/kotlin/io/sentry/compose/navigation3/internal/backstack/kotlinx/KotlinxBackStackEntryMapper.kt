@@ -521,10 +521,9 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         "it nests values more than $MAX_ARGUMENT_DEPTH levels deep, or serializers or value " +
           "classes more than $MAX_SERIALIZER_NESTING deep"
       // Not limits, and not reported through this path: encoding failures are logged by their
-      // own kind, and the others come from mapping and sanitization, not from encoding.
+      // own kind, and the others come from the compatibility probe and sanitization.
       ArgumentDropReason.ENCODING_FAILED,
       ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION,
-      ArgumentDropReason.MAPPING_FAILED,
       ArgumentDropReason.SANITIZATION_FAILED -> "it broke an argument limit"
     }
 

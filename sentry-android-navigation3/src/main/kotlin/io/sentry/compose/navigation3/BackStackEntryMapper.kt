@@ -92,6 +92,11 @@ public class SentryBackStackEntry(
  * `/detail` throws, the back stack record will be `/home -> /unknown -> /settings` rather than
  * `/home -> /settings`.
  *
+ * Each "/unknown" entry records why it has no name, as `unnamed_reason` in the back stack record,
+ * breadcrumbs, and navigation transactions (e.g., `"entry_unnamed_reason": "unmapped"`):
+ * `mapping_failed` if [map] threw, `blank_name` for a blank name, and `unmapped` if [map] returned
+ * `null`.
+ *
  * **Choosing appropriate arguments**
  *
  * Argument values may be any of the following scalar types:

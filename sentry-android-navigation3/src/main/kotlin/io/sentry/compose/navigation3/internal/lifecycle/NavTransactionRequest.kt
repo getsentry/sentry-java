@@ -42,10 +42,13 @@ internal class NavTransactionRequest(
 
     private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
 
-    /** Creates a request whose transaction options are read when each transaction starts. */
+    /**
+     * Creates a request whose transaction options are read when each transaction starts, and whose
+     * transactions get [data] (see [ITransaction.setData]).
+     */
     fun forDestination(
       name: String,
-      arguments: Map<String, Any?>,
+      data: Map<String, Any>,
       contexts: Map<String, Any>,
       viewNames: List<String>?,
       options: SentryOptions,
@@ -62,7 +65,7 @@ internal class NavTransactionRequest(
             it.origin = TRANSACTION_ORIGIN
           }
         },
-        data = if (arguments.isNotEmpty()) mapOf("arguments" to arguments) else emptyMap(),
+        data = data,
         contexts = contexts,
         viewNames = viewNames,
       )
