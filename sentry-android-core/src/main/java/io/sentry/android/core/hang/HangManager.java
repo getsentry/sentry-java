@@ -56,6 +56,7 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
 
   /** How long a hang is sampled at most. The hang itself can last longer. */
   public static final long DEFAULT_MAX_RECORDING_TIME_MS = 8_000;
+
   public static final long DEFAULT_SUSPICIOUS_THRESHOLD_MS = 300;
 
   /**
