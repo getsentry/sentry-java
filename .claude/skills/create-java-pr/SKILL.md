@@ -112,6 +112,15 @@ default body shape — it is the single source of truth for the sections and che
 reproduce it from memory. Fill in each section based on the changes being PR'd, drop the HTML
 comment hints, and check any checklist items that apply.
 
+Before you create the PR, check which repository `gh` targets:
+
+```bash
+gh repo set-default --view
+```
+
+If it prints anything other than `getsentry/sentry-java`, or nothing, ask the user which repository
+to target. Don't let `gh` pick a community fork.
+
 Write the body to `/tmp/pr-body-<branch>.md`, with each `/` in the branch name replaced by `-`, not
 to pr-writer's `/tmp/pr-body.md`: that file outlives sessions and can still hold another PR's body.
 Only after the write succeeds, pass that file to `gh pr create` in place of pr-writer's:
@@ -169,7 +178,7 @@ Add an entry to `CHANGELOG.md` under the `## Unreleased` section.
 
 Create the subsection under `## Unreleased` if it does not already exist.
 
-**When rebasing:** A rebase onto `main` can land your branch after a release was cut, where the `## Unreleased` heading your entry lived under has since been renamed to that version number. If that happens, move your new entry into an `## Unreleased` section at the top of `CHANGELOG.md` (create the section if it no longer exists) so it is not left under an already-released version.
+**When rebasing or merging `main`:** Your branch can land after a release was cut, where the `## Unreleased` heading your entry lived under has since been renamed to that version number. A merge does this without a conflict, sometimes with a duplicate subsection heading, so check the `## ` headings, not only the diff. If that happens, move your new entry into an `## Unreleased` section at the top of `CHANGELOG.md` (create the section if it no longer exists) so it is not left under an already-released version.
 
 #### Entry format
 

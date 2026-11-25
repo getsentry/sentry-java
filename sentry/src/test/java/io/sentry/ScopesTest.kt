@@ -2878,6 +2878,28 @@ class ScopesTest {
   }
 
   @Test
+  fun `already formatted log is not formatted again`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val params =
+      SentryLogParameters.create(
+        SentryAttributes.of(SentryAttribute.stringAttribute("sentry.message.template", "q={}")),
+      )
+    params.setMessageAlreadyFormatted(true)
+
+    sut.logger().log(SentryLogLevel.INFO, params, "q=PO%2010B", "PO%2010B")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("q=PO%2010B", it.body)
+          assertEquals("q={}", it.attributes?.get("sentry.message.template")?.value)
+          assertEquals("PO%2010B", it.attributes?.get("sentry.message.parameter.0")?.value)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `log environment attribute uses the scope environment`() {
     val (sut, mockClient) =
       getEnabledScopes {
