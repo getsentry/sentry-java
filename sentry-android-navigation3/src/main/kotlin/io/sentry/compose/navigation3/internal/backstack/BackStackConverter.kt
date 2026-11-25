@@ -1,5 +1,6 @@
 package io.sentry.compose.navigation3.internal.backstack
 
+import androidx.compose.runtime.snapshots.Snapshot
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
@@ -26,7 +27,7 @@ import java.util.IdentityHashMap
  * **Threading policy**
  *
  * This class performs work synchronously on the calling thread. The host app's
- * [BackStackEntryMapper] is invoked on that same thread and should remain small, non-blocking, and
+ * `BackStackEntryMapper` is invoked on that same thread and should remain small, non-blocking, and
  * safe for the caller's threading context.
  */
 internal class BackStackConverter<T : Any>(
@@ -86,7 +87,12 @@ internal class BackStackConverter<T : Any>(
     }
 
     val sanitizedArguments =
-      info.arguments?.let(sanitizer::sanitizeEntry) ?: SanitizedArguments(emptyMap())
+      info.arguments?.let { arguments ->
+        // Argument conversion may read Compose state through host app code. Suppress read
+        // observation so changes to that state don't trigger recomposition solely b/c our
+        // telemetry code read it.
+        Snapshot.withoutReadObservation { sanitizer.sanitizeEntry(arguments) }
+      } ?: SanitizedArguments(emptyMap())
     val formattedName = NormalizedSentryBackStackEntry.formatName(info.name)
 
     return if (formattedName.isBlank()) {
@@ -303,18 +309,19 @@ internal class BackStackConverter<T : Any>(
       override fun fillInStackTrace(): Throwable = this
     }
 
-    private companion object {
+    companion object {
 
-      private const val MAX_CHARACTER_WARNING =
-        "Nav3 arguments exceeded the maximum total character count for one backstack update. Skipping " +
-          "arguments for this and older captured entries."
+      const val MAX_CHARACTER_WARNING =
+        "Nav3 back stack update exceeded the argument character limit. Dropping arguments for " +
+          "this and older entries."
 
-      private const val MAX_COUNT_WARNING =
-        "Nav3 arguments exceeded the maximum total count for one backstack update. Skipping arguments for " +
-          "this and older captured entries."
+      const val MAX_COUNT_WARNING =
+        "Nav3 back stack update exceeded the argument value limit. Dropping arguments for this " +
+          "and older entries."
 
-      private const val STRUCTURE_WARNING =
-        "Nav3 argument sanitization failed (possibly a cyclic or deeply nested structure). Skipping arguments."
+      const val STRUCTURE_WARNING =
+        "Nav3 argument sanitization failed (possibly cyclic or too deeply nested). Dropping this " +
+          "entry's arguments."
     }
   }
 
@@ -332,8 +339,7 @@ internal class BackStackConverter<T : Any>(
 
       logger.log(
         WARNING,
-        "Nav3 backStackEntryMapper returned a blank name while processing this back stack update. " +
-          "Using $UNKNOWN_ENTRY_NAME instead.",
+        "Nav3 backStackEntryMapper returned a blank name. Using $UNKNOWN_ENTRY_NAME.",
       )
       hasLoggedInvalidNameWarning = true
     }
@@ -345,8 +351,7 @@ internal class BackStackConverter<T : Any>(
 
       logger.log(
         WARNING,
-        "Nav3 backStackEntryMapper threw while resolving an entry. " +
-          "Using $UNKNOWN_ENTRY_NAME without arguments instead.",
+        "Nav3 backStackEntryMapper threw. Using $UNKNOWN_ENTRY_NAME without arguments.",
         throwable,
       )
       hasLoggedMapperFailureWarning = true
@@ -359,10 +364,8 @@ internal class BackStackConverter<T : Any>(
 
       logger.log(
         WARNING,
-        "Nav3 backStackEntryMapper returned unsupported argument value of type %s while processing this back " +
-          "stack update. Falling back to toString(). Use String, CharSequence, Char, Number, " +
-          "Boolean, Enum, Map, Collection, object Array, and primitive array values for reliable " +
-          "results.",
+        "Nav3 argument type %s is unsupported. Using toString(). Return scalars, enums, maps, " +
+          "collections, or arrays from BackStackEntryMapper.",
         typeName,
       )
       hasLoggedUnsupportedValueWarning = true

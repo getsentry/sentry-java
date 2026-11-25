@@ -10,7 +10,12 @@
 ### Fixes
 
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
+- Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
 - Android profiling: Uploading a Perfetto profile chunk now keeps the trace in memory once instead of up to three times, lowering peak memory use for traces up to 50 MB ([#6743](https://github.com/getsentry/sentry-java/pull/6743))
+
+### Dependencies
+
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
 
 ## 8.65.1
 
