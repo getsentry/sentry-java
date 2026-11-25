@@ -1,6 +1,5 @@
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.BuildConfigField
-import com.android.build.api.variant.impl.VariantImpl
 import io.sentry.android.gradle.extensions.InstrumentationFeature
 import io.sentry.android.gradle.extensions.SentryPluginExtension
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -159,14 +158,11 @@ android {
         mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
         repoDir.set(layout.projectDirectory.dir("../..").asFile.canonicalPath)
       }
-    project.afterEvaluate {
-      (variant as? VariantImpl<*>)?.taskContainer?.assembleTask?.configure {
-        finalizedBy(toggleNativeLoggingTask)
-      }
-      (variant as? VariantImpl<*>)?.taskContainer?.installTask?.configure {
-        finalizedBy(toggleNativeLoggingTask)
-      }
-    }
+    val finalizedTasks =
+      setOf("assemble${variant.name.capitalized()}", "install${variant.name.capitalized()}")
+    project.tasks
+      .matching { it.name in finalizedTasks }
+      .configureEach { finalizedBy(toggleNativeLoggingTask) }
   }
 
   @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
