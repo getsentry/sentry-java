@@ -1,10 +1,13 @@
 name: Update Dependencies
 
 on:
-  # Run every day.
   schedule:
+    # Run every day.
     - cron: '0 3 * * *'
-  # And on on every PR merge so we get the updated dependencies ASAP, and to make sure the changelog doesn't conflict.
+    # Run weekly (select btw daily or weekly via `if:`).
+    - cron: '0 4 * * 1'
+  # Also trigger on pushes to main (individual jobs decide whether to run). E.g., lets us get updated
+  # dependencies ASAP and make sure the changelog doesn't conflict.
   push:
     branches:
       - main
@@ -15,11 +18,29 @@ permissions:
   actions: write
 
 jobs:
+  # Update the Sentry Native SDK dependency daily and on pushes to main.
   native:
+    if: github.event.schedule != '0 4 * * 1'
     runs-on: ubuntu-latest
     steps:
       - uses: getsentry/github-workflows/updater@36529d71129a14967bea1fb81bcaf2a5943cf877 # v3
         with:
           path: scripts/update-sentry-native-ndk.sh
           name: Native SDK
+          ssh-key: ${{ secrets.CI_DEPLOY_KEY }}
+
+  # Update weekly the kotlinx-serialization-core release candidate used by the Nav3 R8 check and
+  # unit tests. (Dependabot separately bumps the latest stable / non-preview release.)
+  nav3-kotlinx-serialization-preview:
+    if: github.event.schedule == '0 4 * * 1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: getsentry/github-workflows/updater@36529d71129a14967bea1fb81bcaf2a5943cf877 # v3
+        with:
+          path: scripts/update-kotlinx-serialization-preview.sh
+          name: Nav3 kotlinx.serialization RC check
+          # Release candidates only. kotlinx.serialization publishes no alpha or beta releases.
+          pattern: '^v?(?<version>[0-9.]+-RC[0-9]*)$'
+          # Only the Nav3 tests use this version; the SDK's dependency doesn't change.
+          changelog-entry: false
           ssh-key: ${{ secrets.CI_DEPLOY_KEY }}

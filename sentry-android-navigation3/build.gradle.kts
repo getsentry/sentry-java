@@ -77,9 +77,10 @@ android {
 
 kotlin { explicitApi() }
 
-// Unit tests run against the kotlinx.serialization floor by default. To run them against a newer
-// version, as apps may ship a newer kotlinx.serialization dependency than
-// sentry-android-navigation3 compiles against, pass -Pnav3TestKotlinxVersion=<version>.
+// Unit tests run against the kotlinx.serialization floor by default. CI also runs them against the
+// latest stable release and any newer release candidate (-Pnav3TestKotlinxVersion=<version>), as
+// apps may ship a newer kotlinx.serialization dependency than sentry-android-navigation3 compiles
+// against.
 val testKotlinxVersion =
   providers.gradleProperty("nav3TestKotlinxVersion").orNull ?: kotlinxSerializationFloor
 

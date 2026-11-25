@@ -69,3 +69,11 @@ named-companion class names in every host app.
 
 The [R8 check](../../../../../../../../../../../sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md)
 verifies `SerialName` after minification, including named-companion lookups.
+
+## Newer versions
+
+CI also runs all of the module's unit tests (`scripts/test-nav3-kotlinx-versions.sh`), and
+`nav3-backstack-entry-mapper-r8-check`, against the latest stable release
+(`kotlinxSerialization-stable`, bumped by Dependabot) and any newer release candidate (`kotlinxSerialization-preview`, bumped by a
+weekly job in `update-deps.yml`). Release candidate failures block only PRs that change the preview version. For failure handling,
+see "When a kotlinx.serialization bump fails" in the R8 check's README.

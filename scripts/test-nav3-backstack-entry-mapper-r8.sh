@@ -3,9 +3,14 @@
 # emulator or device. See
 # sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md.
 #
-# The app is built against kotlinxSerialization-floor in gradle/dependency-matrix.versions.toml, plus
-# each version in NAV3_EXTRA_KOTLINX_VERSIONS, in R8 full mode, and against the floor in R8 compat
-# mode too.
+# The app is built against kotlinxSerialization-floor in gradle/dependency-matrix.versions.toml,
+# plus kotlinxSerialization-stable and, if it's newer, kotlinxSerialization-preview (or each version
+# in NAV3_EXTRA_KOTLINX_VERSIONS instead), in R8 full mode, and against the floor in R8 compat mode
+# too.
+#
+# A release candidate's APKs are advisory: if they fail to build or run, the script warns instead
+# of failing, unless NAV3_PREVIEW_REQUIRED=true (set by CI on PRs that change
+# kotlinxSerialization-preview).
 #
 # Usage:
 #   test-nav3-backstack-entry-mapper-r8.sh             Build all APKs, then run them.
@@ -20,14 +25,37 @@ module="nav3-backstack-entry-mapper-r8-check"
 moduleDir="sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check"
 appId="io.sentry.tests.nav3.r8"
 tag="NAV3_R8_CHECK"
+previewRequired="${NAV3_PREVIEW_REQUIRED:-false}"
 
-# Extra versions as "<role> <version>" lines. Set, e.g.,
+# Extra versions as "<role> <version>" lines. Defaults to stable and any newer preview from the
+# matrix catalog. Override with, e.g.,
 # NAV3_EXTRA_KOTLINX_VERSIONS="1.10.0 1.12.0" to test the floor, 1.10.0, and 1.12.0, all required.
-# Without it, only the floor is tested.
+# (Provide an empty string to test the floor only.)
 extraKotlinxVersions=()
-for version in ${NAV3_EXTRA_KOTLINX_VERSIONS:-}; do
-  extraKotlinxVersions+=("extra $version")
-done
+if [[ -n "${NAV3_EXTRA_KOTLINX_VERSIONS+x}" ]]; then
+  for version in $NAV3_EXTRA_KOTLINX_VERSIONS; do
+    extraKotlinxVersions+=("extra $version")
+  done
+else
+  matrixVersions="$("$(dirname "$0")/dependency-matrix.sh" extra-versions kotlinxSerialization)"
+  while read -r entry; do
+    extraKotlinxVersions+=("$entry")
+  done <<< "$matrixVersions"
+fi
+
+# Reports a problem as a GitHub Actions annotation in CI, and as a plain warning otherwise.
+warn() {
+  if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    echo "::warning::$1"
+  else
+    echo "WARNING: $1"
+  fi
+}
+
+# Whether failures of APKs built against a version of role $1 are advisory.
+isAdvisory() {
+  [[ "$1" == "preview" && "$previewRequired" != "true" ]]
+}
 
 copyApk() {
   cp "${moduleDir}/build/outputs/apk/release/nav3-backstack-entry-mapper-r8-check-release.apk" "$1"
@@ -59,12 +87,21 @@ build() {
 
     # Apps may ship a newer kotlinx than our compile floor, so rebuild against each.
     for entry in ${extraKotlinxVersions[@]+"${extraKotlinxVersions[@]}"}; do
-      local role version
+      local role version apkName
       read -r role version <<< "$entry"
+      # run() tells release candidates' APKs apart by name.
+      apkName="${mode}-kotlinx-${version}"
+      [[ "$role" == "preview" ]] && apkName="${mode}-kotlinx-preview-${version}"
       echo "Building R8 $mode mode APK (kotlinx ${version}, ${role})..."
-      ./gradlew -p sentry-android-integration-tests ":${module}:assembleRelease" \
-        "-Pandroid.enableR8.fullMode=${fullMode}" "-Pnav3CheckKotlinxVersion=${version}"
-      copyApk "${outDir}/${mode}-kotlinx-${version}.apk"
+      if ./gradlew -p sentry-android-integration-tests ":${module}:assembleRelease" \
+        "-Pandroid.enableR8.fullMode=${fullMode}" "-Pnav3CheckKotlinxVersion=${version}"; then
+        copyApk "${outDir}/${apkName}.apk"
+      elif isAdvisory "$role"; then
+        # E.g., the release candidate requires a newer Kotlin compiler than the repo uses.
+        warn "Couldn't build the R8 $mode mode APK against kotlinx.serialization release candidate $version. Skipping it."
+      else
+        exit 1
+      fi
     done
   done
 }
@@ -123,7 +160,11 @@ run() {
     echo "=== $name"
     if ! runApk "$apk"; then
       echo "FAILED: $name"
-      failed=1
+      if [[ "$name" == *-kotlinx-preview-* ]] && isAdvisory preview; then
+        warn "The R8 check failed for $name, which uses a kotlinx.serialization release candidate."
+      else
+        failed=1
+      fi
     fi
   done
 
