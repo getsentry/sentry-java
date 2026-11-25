@@ -231,7 +231,10 @@ Two more rules that catch most of the rest:
 - **Read mutable shared state once per operation.** Re-reading the same field for several
   decisions in one pass lets it change mid-pass, so the results disagree with each other.
 
-Prefer `AutoClosableReentrantLock` over `synchronized`, matching the rest of the codebase.
+**Which lock to use depends on the module.** In JVM and shared modules, including `sentry` core,
+use `AutoClosableReentrantLock`: `synchronized` pins virtual threads on JDK 21–23. In Android-only
+modules (`sentry-android-*`), use `synchronized`, since Android has no virtual threads. Don't rewrite
+existing locks only to switch between the two.
 
 ### Measuring Time
 
