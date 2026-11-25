@@ -7,7 +7,7 @@ This directory is a separate Gradle build that includes the SDK build, so run it
 symlinks to the SDK build's, so both builds use the same Gradle, JDK and settings.
 
 * [Sample app](./sentry-samples-android)
-* [Macrobenchmark](./sentry-uitest-android-macrobenchmark) - cold start of the sample app, run locally or within SauceLabs (see /.sauce/*.yml)
+* [Macrobenchmark](./sentry-uitest-android-macrobenchmark) - cold start of the sample app, run locally on a connected device
 * [Espresso-based UI tests](./sentry-uitest-android) - run on an emulator in the AGP matrix workflow
 * [Maestro-based critical UI tests](./sentry-uitest-android-critical) - run by the UI Tests Critical workflow
 * [App size test](./test-app-size) - built by the SDK Size Analysis workflow
