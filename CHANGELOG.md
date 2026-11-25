@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 
 ### Dependencies
