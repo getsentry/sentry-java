@@ -10,6 +10,11 @@
 
 ### Breaking Changes
 
+- Android: Narrow the SDK's consumer keep rules, so R8 can optimize more of your app ([#6787](https://github.com/getsentry/sentry-java/pull/6787))
+  - Members of `io.sentry` enums are no longer kept. Enum constants can be renamed or removed.
+  - Only the name and no-arg constructor of `SentryAndroidOptions` are kept, instead of every member of every `SentryOptions` subclass.
+  - `sentry-android-ndk` no longer keeps native methods of all `io.sentry.**` classes. `sentry-native-ndk` still keeps its own.
+  - If your code reaches any of these by name through JNI, reflection, or bindings, add your own keep rules for exactly what it uses.
 - The Spring Boot 3 integrations are tested against Spring Boot 3.4 and newer. Spring Boot 3.2 and 3.3 are no longer supported ([#6656](https://github.com/getsentry/sentry-java/pull/6656))
 - Remove the deprecated `io.sentry.android.core.LoadClass`. Use `io.sentry.util.LoadClass` instead ([#6594](https://github.com/getsentry/sentry-java/pull/6594))
 - `SentryOptions.getIgnoredErrors()`, `getIgnoredTransactions()`, `getIgnoredCheckIns()` and `getIgnoredSpanOrigins()` now return `List<String>` instead of `List<FilterString>`, matching their setters ([#6489](https://github.com/getsentry/sentry-java/pull/6489))
