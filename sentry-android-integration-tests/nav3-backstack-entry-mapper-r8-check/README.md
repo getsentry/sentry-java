@@ -3,10 +3,9 @@
 Verifies that `BackStackEntryMapper.SerialName` and `SerialNameAndProperties` return expected names and arguments after R8 obfuscation.
 The SDK ships no kotlinx.serialization keep rules; this app uses the library's consumer rules and per-class rules in `proguard-rules.pro`.
 
-The tests check serialization names, argument encoding (including open polymorphic values, whose serializers are looked up by
-reflection), and sensitive-value filtering. They also check that the mappers' compatibility probes passed (neither
-`ComposeNavigation3SerialNameMappersUnavailable` nor `ComposeNavigation3PropertyEncodingDisabled` was added to the SDK's integrations),
-and that R8 actually renamed representative classes and fields.
+The tests check serialization names, argument encoding (including values recorded as `[Unencodable]`), and sensitive-value filtering,
+which also shows that the mappers' compatibility probes passed: a failed probe records `/unknown` names or
+`incompatible_kotlinx_serialization` arguments. They also check that R8 actually renamed representative classes and fields.
 
 ## How to run it
 
@@ -61,8 +60,9 @@ untested until the Kotlin upgrade lands.
    behave differently, so apps on older versions keep working.
 3. Merge the PR together with the fix.
 
-**The compatibility probe turns off property encoding.** The R8 check reports that the `ComposeNavigation3PropertyEncodingDisabled`
-integration is added, and `KotlinxCompatibilityProbeTest`'s `encoderIncompatibility()` test fails. Apps on the new release then record every
+**The compatibility probe turns off property encoding.** The R8 check reports every entry's arguments as
+`{"dropped_by_sentry": "incompatible_kotlinx_serialization"}` instead of the expected ones, and `KotlinxCompatibilityProbeTest`'s
+`encoderIncompatibility()` test fails. Apps on the new release then record every
 entry's arguments as `incompatible_kotlinx_serialization`, as the probe's fixture (`ProbeClass`) didn't encode to
 `EXPECTED_PROBE_ENCODING`.
 

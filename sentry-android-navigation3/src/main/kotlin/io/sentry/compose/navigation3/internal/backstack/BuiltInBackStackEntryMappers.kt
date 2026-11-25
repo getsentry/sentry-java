@@ -9,7 +9,6 @@ import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxBackStackEntryMapper
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
-import io.sentry.util.IntegrationUtils
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -72,20 +71,9 @@ internal object BuiltInBackStackEntryMappers {
             "the attached error. $INCOMPATIBLE_KOTLINX_ADVICE",
           e,
         )
-      // The log above is silent unless debug is enabled. The SDK's integrations are sent with
-      // every event, so this also shows why every entry is UNKNOWN_ENTRY_NAME without debug logs.
-      IntegrationUtils.addIntegrationToSdkVersion(MAPPERS_UNAVAILABLE_INTEGRATION)
       UnavailableBackStackEntryMapper(logger)
     }
   }
-
-  /**
-   * Added to the SDK's integrations when a built-in mapper can't be created, e.g., because the
-   * app's kotlinx.serialization version is incompatible, so every entry is recorded as
-   * [UNKNOWN_ENTRY_NAME].
-   */
-  const val MAPPERS_UNAVAILABLE_INTEGRATION: String =
-    "ComposeNavigation3SerialNameMappersUnavailable"
 }
 
 /**
@@ -93,10 +81,10 @@ internal object BuiltInBackStackEntryMappers {
  * entry, rather than when the app reads it.
  *
  * Apps read the built-in mappers while composing, e.g., as an argument to `SentryNavEffect`.
- * Creating a mapper looks up serializers by reflection, encodes a probe fixture, and may log and
- * add an SDK integration. Deferring that work to the first [map] call keeps it out of composition,
- * which Compose may discard, and runs it where `SentryNavEffect` maps entries: in an effect, after
- * the composition is applied, where a failure only affects the entries being mapped.
+ * Creating a mapper looks up serializers by reflection, encodes a probe fixture, and may log.
+ * Deferring that work to the first [map] call keeps it out of composition, which Compose may
+ * discard, and runs it where `SentryNavEffect` maps entries: in an effect, after the composition is
+ * applied, where a failure only affects the entries being mapped.
  *
  * If [create] throws, [map] throws too, and the next [map] call tries to create the mapper again.
  */

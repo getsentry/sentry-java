@@ -77,7 +77,7 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `doesn't check the properties encoder or add the property encoding disabled integration when the name lookup check fails`() {
+  fun `doesn't check the properties encoder when the name lookup check fails`() {
     val probe =
       FakeCompatibilityProbe(
         nameLookupError = NoSuchMethodError(),
@@ -89,8 +89,6 @@ class KotlinxBackStackEntryMapperProbeTest {
     }
 
     assertThat(probe.encodingChecks).isEqualTo(0)
-    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
-      .doesNotContain(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
   }
 
   @Test
@@ -235,32 +233,17 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   @Test
-  fun `adds the property encoding disabled integration when the properties encoder is incompatible`() {
+  fun `adds no Nav3 integration to the SDK when the properties encoder is incompatible`() {
     val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
 
     KotlinxMapperFixture.create(includeProperties = true, probe = probe)
 
-    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
-      .contains(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
-  }
-
-  @Test
-  fun `doesn't add the property encoding disabled integration when the properties encoder is compatible`() {
-    KotlinxMapperFixture.create(includeProperties = true, probe = FakeCompatibilityProbe())
-
-    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
-      .doesNotContain(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
-  }
-
-  @Test
-  fun `doesn't add the property encoding disabled integration when properties are excluded`() {
-    // The encoder check isn't run when properties are excluded, so its failure goes unnoticed.
-    val probe = FakeCompatibilityProbe(encoderError = NoSuchMethodError())
-
-    KotlinxMapperFixture.create(includeProperties = false, probe = probe)
-
-    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
-      .doesNotContain(KotlinxBackStackEntryMapper.PROPERTY_ENCODING_DISABLED_INTEGRATION)
+    assertThat(
+        SentryIntegrationPackageStorage.getInstance().integrations.filter {
+          it.startsWith(NAV3_INTEGRATION_PREFIX)
+        },
+      )
+      .isEmpty()
   }
 
   @Test
@@ -291,6 +274,8 @@ class KotlinxBackStackEntryMapperProbeTest {
   }
 
   private companion object {
+    const val NAV3_INTEGRATION_PREFIX = "ComposeNavigation3"
+
     const val INCONCLUSIVE_PROBE = "Nav3 couldn't verify kotlinx.serialization support for %s"
 
     const val INCOMPATIBLE_ENCODER =

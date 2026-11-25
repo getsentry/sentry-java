@@ -73,9 +73,6 @@ android {
 
 dependencies {
   implementation("io.sentry:sentry-android-navigation3:$sentryVersion")
-  // Lets the check read the integrations the SDK reports, which sentry-android-navigation3 only
-  // has as a runtime dependency.
-  implementation("io.sentry:sentry:$sentryVersion")
   // compileOnly in sentry-android-navigation3; always available for apps that use Nav3.
   implementation(libs.androidx.compose.runtime)
 

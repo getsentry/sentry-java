@@ -14,7 +14,6 @@ import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStac
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxPropertiesEncoder.MAX_SERIALIZER_NESTING
 import io.sentry.util.ExceptionUtils
-import io.sentry.util.IntegrationUtils
 import java.lang.reflect.InvocationTargetException
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -71,17 +70,14 @@ internal class KotlinxBackStackEntryMapper(
 
   /**
    * Whether the compatibility probe disabled property encoding. Entries with properties record
-   * [ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION]; names are unaffected.
-   *
-   * A failed probe also adds [PROPERTY_ENCODING_DISABLED_INTEGRATION] to event SDK info, making the
-   * problem visible without debug logs.
+   * [ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION], which is sent with them, so the
+   * problem is visible without debug logs; names are unaffected.
    */
   private val isEncodingIncompatible: Boolean =
     includeProperties &&
       run {
         val error = probe.encoderIncompatibility() ?: return@run false
         diagnostics.incompatibleEncoder(error)
-        IntegrationUtils.addIntegrationToSdkVersion(PROPERTY_ENCODING_DISABLED_INTEGRATION)
         true
       }
 
@@ -294,13 +290,6 @@ internal class KotlinxBackStackEntryMapper(
   }
 
   internal companion object {
-    /**
-     * Added to the SDK's integrations when the app's kotlinx.serialization version can't run the
-     * properties encoder, so `SerialNameAndProperties` records no entry's arguments.
-     */
-    const val PROPERTY_ENCODING_DISABLED_INTEGRATION: String =
-      "ComposeNavigation3PropertyEncodingDisabled"
-
     /** The capability the name lookup check verifies, as its inconclusive log names it. */
     const val NAME_LOOKUP_CAPABILITY: String = "name lookups"
 

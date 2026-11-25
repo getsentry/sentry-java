@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
-import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 
@@ -53,7 +52,7 @@ class BackStackEntryMapperActivity : Activity() {
           if (fellBack) " (INFO: fell back to /unknown, also accepted)" else ""
     }
 
-    for (check in minificationChecks() + integrationChecks()) {
+    for (check in minificationChecks()) {
       if (!check.passed) failures++
       lines += "${if (check.passed) "PASS" else "FAIL"} ${check.description}"
     }
@@ -90,22 +89,6 @@ class BackStackEntryMapperActivity : Activity() {
     }
 
     return if (parts.isEmpty()) "" else " " + parts.joinToString(separator = " ")
-  }
-
-  /**
-   * Checks that both mappers' compatibility probes passed under R8. A failed probe adds an
-   * integration to the SDK info sent with every event (see `BuiltInBackStackEntryMappers` and
-   * `KotlinxBackStackEntryMapper`). Runs after the mappers are created, i.e., after their probes.
-   */
-  private fun integrationChecks(): List<Check> {
-    val integrations = SentryIntegrationPackageStorage.getInstance().integrations
-    return listOf(
-        "ComposeNavigation3SerialNameMappersUnavailable",
-        "ComposeNavigation3PropertyEncodingDisabled",
-      )
-      .map { integration ->
-        Check("$integration integration isn't added", integration !in integrations)
-      }
   }
 
   private companion object {

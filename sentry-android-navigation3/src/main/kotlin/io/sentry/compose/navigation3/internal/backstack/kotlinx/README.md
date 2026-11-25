@@ -21,8 +21,6 @@ Creating a mapper runs `KotlinxCompatibilityProbe` on SDK-owned `@Serializable` 
 - Any non-fatal encoding failure or unexpected probe output disables property encoding. `SerialNameAndProperties` preserves names
   but replaces arguments with `incompatible_kotlinx_serialization`.
 
-Disabling a mapper or property encoding adds `ComposeNavigation3SerialNameMappersUnavailable` or
-`ComposeNavigation3PropertyEncodingDisabled`, respectively, to event SDK info, making the problem visible without debug logs.
 Later name-lookup failures are cached per entry type. Property-encoding failures drop only the affected entry's arguments.
 
 To keep our isolation policy intact:
