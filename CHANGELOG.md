@@ -9,12 +9,27 @@
 
 ### Fixes
 
+- Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
+- Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
+- Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
+- Android profiling: Uploading a Perfetto profile chunk now keeps the trace in memory once instead of up to three times, lowering peak memory use for traces up to 50 MB ([#6743](https://github.com/getsentry/sentry-java/pull/6743))
 - Stop a transaction's CPU and memory collection 30 seconds after it starts even when the device's wall clock changes in between ([#6739](https://github.com/getsentry/sentry-java/pull/6739))
+
+### Dependencies
+
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
+
+## 8.65.1
+
+### Fixes
+
+- Prevent Logback, Log4j2, and JUL log arguments containing percent format sequences from being formatted a second time, which could corrupt messages or exhaust memory ([#6737](https://github.com/getsentry/sentry-java/pull/6737))
 - Nav3: Drop an entry’s arguments with `duplicate_key` when distinct map keys stringify to the same key, instead of silently overwriting a value ([#6714](https://github.com/getsentry/sentry-java/pull/6714))
 - Nav3: Serialize `NaN` and infinite navigation arguments as strings so they cannot prevent the containing error report or transaction from being serialized ([#6713](https://github.com/getsentry/sentry-java/pull/6713))
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 - Android app start: Reopening the app within a minute of process start is now reported as a warm start timed from the reopened screen, instead of reusing the cold start's timing. In standalone app start mode, this no longer sends the cold start a second time, as a warm start ([#6687](https://github.com/getsentry/sentry-java/pull/6687))
+- Android app start: On Android 10+, a warm start now begins when the screen starts being created, matching its `activity.load` span ([#6719](https://github.com/getsentry/sentry-java/pull/6719))
 
 ## 8.65.0
 

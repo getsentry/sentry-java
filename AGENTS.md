@@ -26,6 +26,10 @@ Rules can be combined — a tracing scope issue may need both `scopes` and `open
 There is no rule for Android profiling yet; read the `sentry-android-core` profiling code
 directly and fetch related rules such as `options`, `offline`, or `api` as needed.
 
+## Code Review
+
+When reviewing a pull request, follow [`REVIEWS.md`](REVIEWS.md).
+
 ## Project Overview
 
 This is the Sentry Java/Android SDK - a comprehensive error monitoring and performance tracking SDK for Java and Android applications. The repository contains multiple modules for different integrations and platforms.
@@ -80,8 +84,9 @@ resolves the per-module test task, including integration test suites, for you.
 3. **Use todo tracking**: Work through todo items, marking them as complete as you go
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
-6. **Format and regenerate**: Once done, format code and regenerate .api files: `make format api`
-7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
+6. **Don't code for impossible states**: Before you add state tracking or heuristics around a framework object, find out its real lifecycle.
+7. **Format and regenerate**: Once done, format code and regenerate .api files: `make format api`
+8. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
 
@@ -132,6 +137,21 @@ The repository is organized into multiple modules:
 - **Languages**: Java 8+ and Kotlin
 - **Formatting**: Enforced via Spotless
 - **API Compatibility**: Binary compatibility is enforced. `.api` files are generated, never hand-edited
+
+### Comments
+
+The default is no comment. Add one only when it gives a reason that the code, the names, and the
+class Javadoc don't, in one short sentence: a rationale, a gotcha, the meaning of a magic number,
+why an empty catch is safe, or a comment this file requires (for example on a broad catch).
+
+- Don't describe what the next line does, in production code or in tests.
+- Don't repeat what a method Javadoc already describes.
+- Existing narrating comments are not a pattern to copy.
+
+**Javadoc of an interface, callback, or model class describes only the type itself**, in general
+terms. Requirements on the implementer are fine ("Must be fast, no I/O."). Don't name who calls it,
+when, or on which thread: a type can't promise how others use it. A thread contract belongs on the
+methods of the component that owns the thread.
 
 ### Exception Handling
 
@@ -211,7 +231,10 @@ Two more rules that catch most of the rest:
 - **Read mutable shared state once per operation.** Re-reading the same field for several
   decisions in one pass lets it change mid-pass, so the results disagree with each other.
 
-Prefer `AutoClosableReentrantLock` over `synchronized`, matching the rest of the codebase.
+**Which lock to use depends on the module.** In JVM and shared modules, including `sentry` core,
+use `AutoClosableReentrantLock`: `synchronized` pins virtual threads on JDK 21–23. In Android-only
+modules (`sentry-android-*`), use `synchronized`, since Android has no virtual threads. Don't rewrite
+existing locks only to switch between the two.
 
 ### Measuring Time
 
@@ -281,7 +304,13 @@ gh pr view --json url -q '.url'
 
 User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. The
 `create-java-pr` skill is the source of truth for the full changelog and PR workflow, including
-subsection selection and the rebase caveat when a release renames `## Unreleased`.
+subsection selection and the rebase and merge caveat when a release renames `## Unreleased`.
+
+### After Merging `main` or Resolving Conflicts
+
+Before you commit the merge, format and regenerate (workflow rule 7) and check the changelog entry
+(the `create-java-pr` rebase and merge caveat). Then compile and run the tests of the modules you
+changed: `main` adds build checks over time, so code that passed before the merge can fail after it.
 
 ## Useful Resources
 

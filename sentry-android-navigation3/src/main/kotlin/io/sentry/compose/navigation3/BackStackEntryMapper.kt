@@ -1,6 +1,5 @@
 package io.sentry.compose.navigation3
 
-import androidx.compose.runtime.snapshots.Snapshot
 import org.jetbrains.annotations.ApiStatus
 
 /** Info about a given back stack entry, suitable for display in Sentry. */
@@ -92,7 +91,8 @@ public class SentryBackStackEntry(
  * - [CharSequence]
  * - [Char]
  * - [Boolean]
- * - any [Number] (`NaN` and infinite values are sent as strings)
+ * - any [Number] (`NaN` and infinite values are sent as the strings `"NaN"`, `"Infinity"`, and
+ *   `"-Infinity"`, which JSON can represent)
  * - enums (via [Enum.name])
  * - `null`
  *
@@ -110,9 +110,9 @@ public class SentryBackStackEntry(
  * All non-supported argument types are stringified via `toString()`, as are map keys.
  *
  * No arguments will be recorded for a back stack entry if [map] throws or returns `null`, or if its
- * arguments are cyclic, too deeply nested, too large, or contain map keys that stringify to the
- * same string. If the SDK drops an entry's arguments, it adds a `dropped_by_sentry` field and
- * corresponding reason (e.g., `duplicate_key`) in the Sentry UI.
+ * arguments are cyclic, too deeply nested, or too large, or contain a map with two keys that are
+ * stringified the same way (e.g., `1` and `"1"`). If the SDK drops an entry's arguments, it adds a
+ * `dropped_by_sentry` field and corresponding reason (e.g., `duplicate_key`) in the Sentry UI.
  *
  * **Using kotlinx.serialization**
  *
@@ -150,25 +150,4 @@ public class SentryBackStackEntry(
 @ApiStatus.Experimental
 public fun interface BackStackEntryMapper<T : Any> {
   public fun map(backStackEntry: T): SentryBackStackEntry?
-}
-
-/**
- * A Compose-compatible version of [BackStackEntryMapper] that generates [SentryBackStackEntry]s by
- * forwarding the request to the host app mapper in effect at the time [map] is called.
- *
- * Dynamically determining the current mapper lets us separate two concerns:
- *
- * 1. the lifetime of a consumer that tracks navigation state over time (e.g., [BackStackObserver]);
- *    and
- * 2. the lifetime of the mapper used to generate `SentryBackStackEntry`s.
- *
- * Without that separation, a long-lived consumer would have to choose between holding stale mapping
- * logic or recreating its own state whenever the mapper changed.
- */
-internal class ForwardingBackStackEntryMapper<T : Any>(
-  private val currentMapper: () -> BackStackEntryMapper<T>,
-) {
-  fun map(backStackEntry: T): SentryBackStackEntry? = Snapshot.withoutReadObservation {
-    currentMapper().map(backStackEntry)
-  }
 }

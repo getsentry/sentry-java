@@ -2,8 +2,6 @@ package io.sentry.android.ndk.outproc;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.ServiceConnection;
-import android.os.Build;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
@@ -29,7 +27,7 @@ public final class SentryNdkOutproc {
   @SuppressLint("StaticFieldLeak") // the application context from NdkIntegration
   private static @Nullable Context serviceContext;
 
-  private static @Nullable ServiceConnection serviceConnection;
+  private static @Nullable SentryNdkCrashService.Connection serviceConnection;
 
   private SentryNdkOutproc() {}
 
@@ -68,8 +66,8 @@ public final class SentryNdkOutproc {
   public static void init(
       @Nullable final Context context, @NotNull final SentryAndroidOptions options) {
     // no fork/exec fallback, the native crash daemon only runs in the crash service
-    if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-      throw new IllegalStateException("The NDK crash service needs a context and API 30+");
+    if (context == null) {
+      throw new IllegalStateException("The NDK crash service needs a context");
     }
 
     addPackage(options.getSdkVersion());
@@ -107,7 +105,7 @@ public final class SentryNdkOutproc {
         ndkOptions.setEnableAppHangTracking(options.isEnableNdkAppHangTracking());
         ndkOptions.setAppHangTimeoutMillis(options.getNdkAppHangTimeoutIntervalMillis());
 
-        final @Nullable ServiceConnection connection =
+        final @Nullable SentryNdkCrashService.Connection connection =
             SentryNdkCrashService.start(context, options);
         if (connection == null) {
           throw new IllegalStateException("Failed to start the NDK crash service");
@@ -168,11 +166,15 @@ public final class SentryNdkOutproc {
 
   private static void unbindCrashService() {
     final @Nullable Context context = serviceContext;
-    final @Nullable ServiceConnection connection = serviceConnection;
+    final @Nullable SentryNdkCrashService.Connection connection = serviceConnection;
     serviceContext = null;
     serviceConnection = null;
     if (context != null && connection != null) {
-      context.unbindService(connection);
+      try {
+        context.unbindService(connection);
+      } finally {
+        connection.close();
+      }
     }
   }
 }

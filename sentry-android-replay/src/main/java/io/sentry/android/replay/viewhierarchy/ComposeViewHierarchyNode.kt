@@ -24,9 +24,8 @@ import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.SentryReplayDebug
 import io.sentry.android.replay.util.boundsInWindow
-import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextColor
-import io.sentry.android.replay.util.isMaskable
+import io.sentry.android.replay.util.isMaskableImage
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -228,8 +227,8 @@ internal object ComposeViewHierarchyNode {
         )
       }
       else -> {
-        val painter = node.findPainter()
-        if (painter != null) {
+        val isMaskableImage = node.isMaskableImage()
+        if (isMaskableImage != null) {
           val shouldMask = isVisible && semantics.shouldMask(isImage = true, options)
 
           parent?.setImportantForCaptureToAncestors(true)
@@ -243,7 +242,7 @@ internal object ComposeViewHierarchyNode {
             parent = parent,
             isVisible = isVisible,
             isImportantForContentCapture = true,
-            shouldMask = shouldMask && painter.isMaskable(),
+            shouldMask = shouldMask && isMaskableImage,
             visibleRect = visibleRect.toRect(),
           )
         } else {

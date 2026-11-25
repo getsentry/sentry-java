@@ -5620,7 +5620,9 @@ public final class io/sentry/logger/SentryLogParameters {
 	public fun getAttributes ()Lio/sentry/SentryAttributes;
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getTimestamp ()Lio/sentry/SentryDate;
+	public fun isMessageAlreadyFormatted ()Z
 	public fun setAttributes (Lio/sentry/SentryAttributes;)V
+	public fun setMessageAlreadyFormatted (Z)V
 	public fun setOrigin (Ljava/lang/String;)V
 	public fun setTimestamp (Lio/sentry/SentryDate;)V
 }

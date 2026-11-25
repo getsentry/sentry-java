@@ -846,6 +846,24 @@ class SentryAppenderTest {
   }
 
   @Test
+  fun `does not format an already formatted log message again`() {
+    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture.logger.error("q={}", "PO%2010B")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("q=PO%2010B", log.body)
+          assertEquals("q={}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("PO%2010B", log.attributes?.get("sentry.message.parameter.0")?.value)
+        },
+      )
+  }
+
+  @Test
   fun `sets template on log when logging message with parameters and number of parameters is wrong`() {
     fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
     fixture.logger.error("testing message {} {} {}", "param1", "param2")
