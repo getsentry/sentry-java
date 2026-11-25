@@ -9,10 +9,6 @@
 -keep class androidx.lifecycle.ProcessLifecycleOwner { <init>(...); }
 ##---------------End: proguard configuration for androidx.lifecycle  ----------
 
-# To mitigate the issue on R8 site (https://issuetracker.google.com/issues/235733922)
-# which comes through AGP 7.3.0-betaX and 7.4.0-alphaX
--keepclassmembers enum io.sentry.** { *; }
-
 # To filter out io.sentry frames from stacktraces
 -keeppackagenames io.sentry.**
 
@@ -62,9 +58,8 @@
 -keepnames class io.sentry.android.core.ScreenshotEventProcessor
 -keepnames class io.sentry.android.core.ViewHierarchyEventProcessor
 
-# Keep any custom option classes like SentryAndroidOptions, as they're loaded via reflection
-# Also keep method names, as they're e.g. used by native via JNI calls
--keep class * extends io.sentry.SentryOptions { *; }
+# Sentry.init() checks this class by name, and OptionsContainer.create() instantiates it reflectively
+-keep class io.sentry.android.core.SentryAndroidOptions { public <init>(); }
 
 -keepnames class io.sentry.android.core.ApplicationNotResponding
 
