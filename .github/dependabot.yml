@@ -19,6 +19,8 @@ updates:
       - dependency-name: "io.opentelemetry*"
       # Servlet 3.1 is the minimum supported API and must remain the production compile target.
       - dependency-name: "javax.servlet:javax.servlet-api"
+      # Logback 1.2 is the compatibility floor and must remain the production compile target.
+      - dependency-name: "ch.qos.logback:logback-classic"
       # Spring GraphQL 1.0 is the Spring 5 and Spring Boot 2 compatibility line.
       - dependency-name: "org.springframework.graphql:spring-graphql"
       # Ktor 3.0 is the compatibility floor; the default suite already tests the latest version.
