@@ -7,6 +7,14 @@
 
 ## Unreleased
 
+### Features
+
+- Report main-thread hangs that recover as non-fatal ANR events, from Android 11 (API 30). Enable it with `options.nonFatalAnrSampleRate` (manifest: `io.sentry.anr.non-fatal.sample-rate`), and set the minimum hang duration with `options.nonFatalAnrThresholdMs` (default 700 ms, manifest: `io.sentry.anr.non-fatal.threshold-ms`). A hang that does not recover is reported only as a fatal ANR ([#6726](https://github.com/getsentry/sentry-java/pull/6726))
+
+### Improvements
+
+- ANR profiling: the profile now starts when the main thread has been blocked for 300 ms instead of 1 s, so it also shows the beginning of the hang ([#6725](https://github.com/getsentry/sentry-java/pull/6725))
+
 ### Fixes
 
 - Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
