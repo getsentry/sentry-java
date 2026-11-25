@@ -5,9 +5,6 @@
 -keep class io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter { <init>(...); }
 
 -keepnames interface androidx.compose.ui.node.Owner
--keepclassmembers class androidx.compose.ui.node.LayoutNode {
-    private androidx.compose.ui.node.LayoutNodeLayoutDelegate layoutDelegate;
-}
 
 -keepnames class androidx.compose.foundation.ClickableElement
 -keepnames class androidx.compose.foundation.CombinedClickableElement
