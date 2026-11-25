@@ -96,16 +96,14 @@ internal fun LayoutNode.isMaskableImage(): Boolean? {
   for (index in modifierInfos.indices) {
     val modifier = modifierInfos[index].modifier
     if (modifier::class.java.name.contains("Painter")) {
+      // a lookup by name instead of getDeclaredField, which throws on every frame for Coil 3.1+
       val painter =
-        try {
-          modifier::class
-            .java
-            .getDeclaredField("painter")
-            .apply { isAccessible = true }
-            .get(modifier) as? Painter
-        } catch (e: NoSuchFieldException) {
-          null
-        }
+        modifier::class
+          .java
+          .declaredFields
+          .firstOrNull { it.name == "painter" }
+          ?.apply { isAccessible = true }
+          ?.get(modifier) as? Painter
       return painter?.isMaskable() ?: true
     }
   }
