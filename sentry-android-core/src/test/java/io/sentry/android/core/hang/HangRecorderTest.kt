@@ -69,7 +69,7 @@ class HangRecorderTest {
     recorder.sample(120)
 
     assertThat(store.calls).isEmpty()
-    assertThat(recorder.end(200, false).values()).containsExactly("s1")
+    assertThat(recorder.end(200).values()).containsExactly("s1")
   }
 
   @Test
@@ -79,7 +79,7 @@ class HangRecorderTest {
     repeat(5) { recorder.sample(3) }
 
     assertThat(collector.sampleCount).isEqualTo(3)
-    assertThat(recorder.end(200, false).values()).containsExactly("s1", "s2", "s3").inOrder()
+    assertThat(recorder.end(200).values()).containsExactly("s1", "s2", "s3").inOrder()
   }
 
   @Test
@@ -93,7 +93,7 @@ class HangRecorderTest {
     recorder.sample(2)
 
     assertThat(collector.sampleCount).isEqualTo(2)
-    assertThat(recorder.end(200, false).values()).isEmpty()
+    assertThat(recorder.end(200).values()).isEmpty()
   }
 
   @Test
@@ -115,7 +115,7 @@ class HangRecorderTest {
     recorder.sample(120)
 
     assertThat(store.calls).containsExactly("clear", "add s1").inOrder()
-    assertThat(recorder.end(200, false).values()).containsExactly("s1", "o1", "s2", "o2").inOrder()
+    assertThat(recorder.end(200).values()).containsExactly("s1", "o1", "s2", "o2").inOrder()
     verify(logger, times(1)).log(eq(SentryLevel.WARNING), any<String>(), any<IOException>())
   }
 
@@ -144,12 +144,11 @@ class HangRecorderTest {
   fun `end builds the record with duration and start timestamp`() {
     val recorder = start(FakeListener(HangRecordingRequest(true, false)))!!
 
-    val record = recorder.end(8_100, true)
+    val record = recorder.end(8_100)
 
     assertThat(recorder.startTimeMs).isEqualTo(100)
     assertThat(record.durationMs).isEqualTo(8_000)
     assertThat(record.startTimestampMs).isEqualTo(5_000)
-    assertThat(record.hasEndedAtMaxRecordingTime()).isTrue()
   }
 
   private class FakeListener(private val request: HangRecordingRequest?) : HangRecordingListener {

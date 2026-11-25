@@ -128,17 +128,9 @@ class HangManagerTest {
     }
   }
 
-  private fun tickUntilRecorded() {
-    var ticks = 0
-    while (
-      records.isEmpty() && ticks < DEFAULT_MAX_RECORDING_TIME_MS / DEFAULT_POLLING_INTERVAL_MS + 2
-    ) {
-      advance(DEFAULT_POLLING_INTERVAL_MS)
-      executor.runTick()
-      sdkExecutor.runAll()
-      ticks++
-    }
-    assertThat(records).isNotEmpty()
+  private fun tickPastMaxRecordingTime() {
+    tickEvery66Ms((DEFAULT_MAX_RECORDING_TIME_MS / DEFAULT_POLLING_INTERVAL_MS + 2).toInt())
+    sdkExecutor.runAll()
   }
 
   @Test
@@ -234,19 +226,20 @@ class HangManagerTest {
   }
 
   @Test
-  fun `maxRecordingTime counts from the monotonic start of the hang`() {
+  fun `sampling stops at maxRecordingTime counted from the monotonic start of the hang`() {
     startInForeground()
     openHangInTick(300)
+    collector.calls.clear()
 
     advance(DEFAULT_MAX_RECORDING_TIME_MS - 300 - 1)
     executor.runTick()
-    sdkExecutor.runAll()
-    assertThat(records).isEmpty()
+    assertThat(collector.calls).hasSize(1)
 
     advance(1)
     executor.runTick()
     sdkExecutor.runAll()
-    assertThat(records.single().durationMs).isEqualTo(DEFAULT_MAX_RECORDING_TIME_MS)
+    assertThat(collector.calls).hasSize(1)
+    assertThat(records).isEmpty()
   }
 
   @Test
@@ -303,15 +296,33 @@ class HangManagerTest {
   }
 
   @Test
-  fun `the maxRecordingTime cut still happens after maxSamples`() {
-    createRecorder(maxSamples = 3)
+  fun `a hang past maxRecordingTime ends at idle with its full duration`() {
     startInForeground()
+    val start = nowMs()
     openHangInTick(0)
+    tickPastMaxRecordingTime()
+    assertThat(records).isEmpty()
+    advance(1_000)
 
-    tickUntilRecorded()
+    signal.report(HangSignal.State.IDLE, 0)
+    sdkExecutor.runAll()
 
-    assertThat(records.single().durationMs).isEqualTo(DEFAULT_MAX_RECORDING_TIME_MS)
-    assertThat(records.single().hasEndedAtMaxRecordingTime()).isTrue()
+    assertThat(records.single().durationMs).isEqualTo(nowMs() - start)
+    assertThat(records.single().durationMs).isGreaterThan(DEFAULT_MAX_RECORDING_TIME_MS)
+  }
+
+  @Test
+  fun `a hang past maxRecordingTime ends at background with its full duration`() {
+    startInForeground()
+    val start = nowMs()
+    openHangInTick(0)
+    tickPastMaxRecordingTime()
+
+    appStateProvider.background()
+    executor.runPending()
+    sdkExecutor.runAll()
+
+    assertThat(records.single().durationMs).isEqualTo(nowMs() - start)
   }
 
   @Test
@@ -547,11 +558,11 @@ class HangManagerTest {
   }
 
   @Test
-  fun `maxRecordingTime cut of a persisting hang stops the store writes`() {
+  fun `persisting hang stops the store writes at maxRecordingTime`() {
     listener.request = persist
     startInForeground()
     openHangInTick(0)
-    tickUntilRecorded()
+    tickPastMaxRecordingTime()
     val callsAtCut = store.calls.toList()
 
     tickEvery66Ms(3)
@@ -733,78 +744,17 @@ class HangManagerTest {
   }
 
   @Test
-  fun `maxRecordingTime ends the hang with durationMs 8000 and later idle is ignored`() {
+  fun `after maxRecordingTime there is no sample and no record until idle`() {
     startInForeground()
     openHangInTick(0)
-    tickUntilRecorded()
-    val samplesAtEnd = collector.calls.size
+    tickPastMaxRecordingTime()
+    val samplesAtMax = collector.calls.size
 
-    executor.runTick()
-    signal.report(HangSignal.State.IDLE, 0)
-    executor.runTick()
+    tickEvery66Ms(3)
     sdkExecutor.runAll()
 
-    assertThat(records.single().durationMs).isEqualTo(DEFAULT_MAX_RECORDING_TIME_MS)
-    assertThat(collector.calls).hasSize(samplesAtEnd)
-  }
-
-  @Test
-  fun `maxRecordingTime end marks the record as ended at maxRecordingTime`() {
-    startInForeground()
-    openHangInTick(0)
-
-    tickUntilRecorded()
-
-    assertThat(records.single().hasEndedAtMaxRecordingTime()).isTrue()
-  }
-
-  @Test
-  fun `idle end does not mark the record as ended at maxRecordingTime`() {
-    startInForeground()
-    openHangInTick(300)
-    advance(500)
-
-    signal.report(HangSignal.State.IDLE, 0)
-    sdkExecutor.runAll()
-
-    assertThat(records.single().hasEndedAtMaxRecordingTime()).isFalse()
-  }
-
-  @Test
-  fun `background end does not mark the record as ended at maxRecordingTime`() {
-    startInForeground()
-    openHangInTick(300)
-    advance(500)
-
-    appStateProvider.background()
-    executor.runPending()
-    sdkExecutor.runAll()
-
-    assertThat(records.single().hasEndedAtMaxRecordingTime()).isFalse()
-  }
-
-  @Test
-  fun `collector that always throws does not stop the maxRecordingTime end`() {
-    startInForeground()
-    collector.throwOnSample = true
-    openHangInTick(0)
-
-    tickUntilRecorded()
-
-    assertThat(records.single().durationMs).isEqualTo(DEFAULT_MAX_RECORDING_TIME_MS)
-    assertThat(records.single().hasEndedAtMaxRecordingTime()).isTrue()
-  }
-
-  @Test
-  fun `tick listener that always throws does not stop the maxRecordingTime end`() {
-    startInForeground()
-    openHangInTick(0)
-    manager.addTickListener { throw IllegalStateException("tick failed") }
-
-    tickUntilRecorded()
-
-    assertThat(records.single().durationMs).isEqualTo(DEFAULT_MAX_RECORDING_TIME_MS)
-    assertThat(records.single().hasEndedAtMaxRecordingTime()).isTrue()
+    assertThat(collector.calls).hasSize(samplesAtMax)
+    assertThat(records).isEmpty()
   }
 
   @Test

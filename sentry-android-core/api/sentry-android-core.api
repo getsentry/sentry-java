@@ -862,7 +862,6 @@ public final class io/sentry/android/core/hang/HangRecord {
 	public fun getDurationMs ()J
 	public fun getStackTraces ()Ljava/util/List;
 	public fun getStartTimestampMs ()J
-	public fun hasEndedAtMaxRecordingTime ()Z
 }
 
 public final class io/sentry/android/core/hang/HangRecord$Builder {
@@ -870,7 +869,6 @@ public final class io/sentry/android/core/hang/HangRecord$Builder {
 	public fun addStackTrace (Lio/sentry/android/core/anr/AnrStackTrace;)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun build ()Lio/sentry/android/core/hang/HangRecord;
 	public fun setDurationMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
-	public fun setEndedAtMaxRecordingTime (Z)Lio/sentry/android/core/hang/HangRecord$Builder;
 	public fun setStartTimestampMs (J)Lio/sentry/android/core/hang/HangRecord$Builder;
 }
 
