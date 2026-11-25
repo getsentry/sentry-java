@@ -70,8 +70,8 @@ internal class KotlinxBackStackEntryMapper(
 
   /**
    * Whether the compatibility probe disabled property encoding. Entries with properties record
-   * [ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION], which is sent with them, so the
-   * problem is visible without debug logs; names are unaffected.
+   * [ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION], which is sent with them, so the problem is
+   * visible without debug logs; names are unaffected.
    */
   private val isEncodingIncompatible: Boolean =
     includeProperties &&
@@ -523,7 +523,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
       // Not limits, and not reported through this path: encoding failures are logged by their
       // own kind, and the others come from mapping and sanitization, not from encoding.
       ArgumentDropReason.ENCODING_FAILED,
-      ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION,
+      ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION,
       ArgumentDropReason.MAPPING_FAILED,
       ArgumentDropReason.SANITIZATION_FAILED -> "it broke an argument limit"
     }

@@ -187,11 +187,11 @@ class KotlinxBackStackEntryMapperProbeTest {
       .containsExactly(
         SentryBackStackEntry(
           "Detail",
-          droppedBy(ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION),
+          droppedBy(ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION),
         ),
         SentryBackStackEntry(
           "Search",
-          droppedBy(ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION),
+          droppedBy(ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION),
         ),
       )
       .inOrder()

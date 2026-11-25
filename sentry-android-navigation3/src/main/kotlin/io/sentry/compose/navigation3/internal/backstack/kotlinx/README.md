@@ -19,7 +19,7 @@ Creating a mapper runs `KotlinxCompatibilityProbe` on SDK-owned `@Serializable` 
   with failures handled per entry type.
 
 - Any non-fatal encoding failure or unexpected probe output disables property encoding. `SerialNameAndProperties` preserves names
-  but replaces arguments with `incompatible_kotlinx_serialization`.
+  but replaces arguments with `kotlinx_serialization_version`.
 
 Later name-lookup failures are cached per entry type. Property-encoding failures drop only the affected entry's arguments.
 

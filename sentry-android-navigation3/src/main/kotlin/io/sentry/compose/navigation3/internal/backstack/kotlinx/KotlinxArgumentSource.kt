@@ -139,22 +139,21 @@ internal class KotlinxArgumentSource(
  * kotlinx.serialization version doesn't support the properties encoder.
  *
  * Like [KotlinxArgumentSource], it's both a [Map] and an [ArgumentSource]. Map reads return
- * `{"dropped_by_sentry": "incompatible_kotlinx_serialization"}`, and writes drop the entry's
- * arguments with [ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION], so that the recorded
- * reason points at the version rather than at the entry's own type.
+ * `{"dropped_by_sentry": "kotlinx_serialization_version"}`, and writes drop the entry's arguments
+ * with [ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION], so that the recorded reason points at
+ * the version rather than at the entry's own type.
  */
 internal object KotlinxUnencodableArguments : AbstractMap<String, Any?>(), ArgumentSource {
 
   private val dropReason =
     mapOf(
-      ARGUMENT_DROP_REASON_KEY to
-        ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION.serializedValue,
+      ARGUMENT_DROP_REASON_KEY to ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION.serializedValue,
     )
 
   override val entries: Set<Map.Entry<String, Any?>>
     get() = dropReason.entries
 
   override fun writeTo(sink: ArgumentSink) {
-    throw DropArguments(ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION, warning = null)
+    throw DropArguments(ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION, warning = null)
   }
 }

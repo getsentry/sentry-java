@@ -5,7 +5,7 @@ The SDK ships no kotlinx.serialization keep rules; this app uses the library's c
 
 The tests check serialization names, argument encoding (including values recorded as `[Unencodable]`), and sensitive-value filtering,
 which also shows that the mappers' compatibility probes passed: a failed probe records `/unknown` names or
-`incompatible_kotlinx_serialization` arguments. The app initializes Sentry with a logger that records the mappers' messages, and checks
+`kotlinx_serialization_version` arguments. The app initializes Sentry with a logger that records the mappers' messages, and checks
 that neither probe was inconclusive or failed (`ProbeLogChecks.kt`): an inconclusive name-lookup probe leaves names right but can't detect
 an incompatible kotlinx.serialization version in minified apps. They also check that R8 actually renamed representative classes and fields.
 
@@ -63,9 +63,9 @@ untested until the Kotlin upgrade lands.
 3. Merge the PR together with the fix.
 
 **The compatibility probe turns off property encoding.** The R8 check reports every entry's arguments as
-`{"dropped_by_sentry": "incompatible_kotlinx_serialization"}` instead of the expected ones, and `KotlinxCompatibilityProbeTest`'s
+`{"dropped_by_sentry": "kotlinx_serialization_version"}` instead of the expected ones, and `KotlinxCompatibilityProbeTest`'s
 `encoderIncompatibility()` test fails. Apps on the new release then record every
-entry's arguments as `incompatible_kotlinx_serialization`, as the probe's fixture (`ProbeClass`) didn't encode to
+entry's arguments as `kotlinx_serialization_version`, as the probe's fixture (`ProbeClass`) didn't encode to
 `EXPECTED_PROBE_ENCODING`.
 
 1. Find out whether the arguments are wrong or only different. Compare the probe's output with `EXPECTED_PROBE_ENCODING`, and check the R8

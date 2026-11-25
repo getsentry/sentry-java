@@ -18,7 +18,7 @@ class KotlinxUnencodableArgumentsTest {
     assertThat(arguments)
       .containsExactly(
         ArgumentDropReason.ARGUMENT_DROP_REASON_KEY,
-        ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION.serializedValue,
+        ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION.serializedValue,
       )
   }
 
@@ -29,7 +29,7 @@ class KotlinxUnencodableArgumentsTest {
     val thrown =
       assertThrows(DropArguments::class.java) { KotlinxUnencodableArguments.writeTo(sink) }
 
-    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.INCOMPATIBLE_KOTLINX_SERIALIZATION)
+    assertThat(thrown.reason).isEqualTo(ArgumentDropReason.KOTLINX_SERIALIZATION_VERSION)
     assertThat(thrown.warning).isNull()
     verifyNoInteractions(sink)
   }
