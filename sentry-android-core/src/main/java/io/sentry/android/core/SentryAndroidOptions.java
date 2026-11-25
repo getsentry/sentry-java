@@ -58,6 +58,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   private long ndkAppHangTimeoutIntervalMillis = 5000;
 
   /**
+   * Attach the stack traces of all threads, not only the hung one, to app-hang events captured by
+   * sentry-native's heartbeat-based detection. Default is disabled. Has an effect only with {@link
+   * #enableNdkAppHangTracking}.
+   */
+  private boolean ndkAppHangAttachAllThreads = false;
+
+  /**
    * Enable or disable automatic breadcrumbs for Activity lifecycle. Using
    * Application.ActivityLifecycleCallbacks
    */
@@ -448,6 +455,33 @@ public final class SentryAndroidOptions extends SentryOptions {
   @ApiStatus.Experimental
   public void setNdkAppHangTimeoutIntervalMillis(long ndkAppHangTimeoutIntervalMillis) {
     this.ndkAppHangTimeoutIntervalMillis = ndkAppHangTimeoutIntervalMillis;
+  }
+
+  /**
+   * Checks if sentry-native's app-hang events carry the stack traces of all threads. Default is
+   * disabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public boolean isNdkAppHangAttachAllThreads() {
+    return ndkAppHangAttachAllThreads;
+  }
+
+  /**
+   * Enables or disables attaching the stack traces of all threads, not only the hung one, to
+   * sentry-native's app-hang events. Default is disabled. Has an effect only with {@link
+   * #setEnableNdkAppHangTracking(boolean)}.
+   *
+   * <p>On Android, each thread is paused and signalled to read its stack, so blocking calls such as
+   * {@code sleep} or {@code poll} can return {@code EINTR}, and a thread paused while it holds the
+   * allocator lock can stall the watchdog and that thread.
+   *
+   * @param ndkAppHangAttachAllThreads true for enabled and false for disabled
+   */
+  @ApiStatus.Experimental
+  public void setNdkAppHangAttachAllThreads(boolean ndkAppHangAttachAllThreads) {
+    this.ndkAppHangAttachAllThreads = ndkAppHangAttachAllThreads;
   }
 
   /**

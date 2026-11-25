@@ -244,6 +244,7 @@ class SentryAndroidOptionsTest {
     val sentryOptions = SentryAndroidOptions()
     assertFalse(sentryOptions.isEnableNdkAppHangTracking)
     assertEquals(5000L, sentryOptions.ndkAppHangTimeoutIntervalMillis)
+    assertFalse(sentryOptions.isNdkAppHangAttachAllThreads)
   }
 
   @Test

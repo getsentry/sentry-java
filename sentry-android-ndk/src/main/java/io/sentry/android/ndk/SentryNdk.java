@@ -87,6 +87,7 @@ public final class SentryNdk {
 
         ndkOptions.setEnableAppHangTracking(options.isEnableNdkAppHangTracking());
         ndkOptions.setAppHangTimeoutMillis(options.getNdkAppHangTimeoutIntervalMillis());
+        ndkOptions.setAppHangAttachAllThreads(options.isNdkAppHangAttachAllThreads());
 
         //noinspection UnstableApiUsage
         io.sentry.ndk.SentryNdk.init(ndkOptions);

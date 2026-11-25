@@ -390,6 +390,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads app hang attach all threads to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.NDK_APP_HANG_ATTACH_ALL_THREADS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isNdkAppHangAttachAllThreads)
+  }
+
+  @Test
+  fun `applyMetadata reads app hang attach all threads to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isNdkAppHangAttachAllThreads)
+  }
+
+  @Test
   fun `applyMetadata reads tombstone attach raw to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_ATTACH_RAW to true)

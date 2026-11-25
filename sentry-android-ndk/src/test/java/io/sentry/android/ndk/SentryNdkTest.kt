@@ -77,6 +77,7 @@ class SentryNdkTest {
       assertNotNull(fixture.capturedOptions)
       assertFalse(fixture.capturedOptions!!.isEnableAppHangTracking)
       assertEquals(5000L, fixture.capturedOptions!!.appHangTimeoutMillis)
+      assertFalse(fixture.capturedOptions!!.isAppHangAttachAllThreads)
     }
   }
 
@@ -94,6 +95,21 @@ class SentryNdkTest {
       assertNotNull(fixture.capturedOptions)
       assertTrue(fixture.capturedOptions!!.isEnableAppHangTracking)
       assertEquals(2000L, fixture.capturedOptions!!.appHangTimeoutMillis)
+    }
+  }
+
+  @Test
+  fun `SentryNdk propagates app hang attach all threads`() {
+    fixture.getSut(
+      options =
+        SentryAndroidOptions().apply {
+          dsn = "https://key@sentry.io/proj"
+          cacheDirPath = "/cache"
+          isNdkAppHangAttachAllThreads = true
+        },
+    ) {
+      assertNotNull(fixture.capturedOptions)
+      assertTrue(fixture.capturedOptions!!.isAppHangAttachAllThreads)
     }
   }
 }

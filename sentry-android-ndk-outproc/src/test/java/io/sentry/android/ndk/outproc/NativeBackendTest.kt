@@ -32,6 +32,7 @@ class NativeBackendTest {
     initialize {
       assertThat(it.isEnableAppHangTracking).isFalse()
       assertThat(it.appHangTimeoutMillis).isEqualTo(5000L)
+      assertThat(it.isAppHangAttachAllThreads).isFalse()
     }
   }
 
@@ -45,6 +46,13 @@ class NativeBackendTest {
     ) {
       assertThat(it.isEnableAppHangTracking).isTrue()
       assertThat(it.appHangTimeoutMillis).isEqualTo(2000L)
+    }
+  }
+
+  @Test
+  fun `propagates app hang attach all threads`() {
+    initialize({ isNdkAppHangAttachAllThreads = true }) {
+      assertThat(it.isAppHangAttachAllThreads).isTrue()
     }
   }
 
