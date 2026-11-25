@@ -149,6 +149,9 @@ class JdkTargetConvention : Plugin<Project> {
    * KGP 2.4 prefixes the Kotlin module name with the group, e.g. `io.sentry:sentry-okhttp`. R8 copies
    * that name into the names of the `.kotlin_module` entries it writes under `META-INF`, and app
    * bundles reject the colon, so the module name stays the project name, as before KGP 2.4.
+   *
+   * - Group prefix: https://youtrack.jetbrains.com/issue/KT-69701
+   * - R8 bug: https://issuetracker.google.com/issues/543685256
    */
   private fun Project.keepKotlinModuleNameWithoutGroup() {
     val moduleName = name
