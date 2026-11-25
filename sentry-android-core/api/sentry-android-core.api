@@ -398,13 +398,6 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/NonFatalAnrHint : io/sentry/hints/DiskFlushNotification {
-	public fun <init> (Ljava/lang/Runnable;)V
-	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
-	public fun markFlushed ()V
-	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
-}
-
 public final class io/sentry/android/core/NonFatalAnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> ()V
 	public fun close ()V
@@ -811,14 +804,6 @@ public final class io/sentry/android/core/anr/AnrStackTrace : java/lang/Comparab
 	public synthetic fun compareTo (Ljava/lang/Object;)I
 	public static fun deserialize (Ljava/io/DataInputStream;)Lio/sentry/android/core/anr/AnrStackTrace;
 	public fun serialize (Ljava/io/DataOutputStream;)V
-}
-
-public final class io/sentry/android/core/anr/NonFatalAnrMarker {
-	public static final field FILE_NAME Ljava/lang/String;
-	public static fun delete (Lio/sentry/SentryOptions;)V
-	public fun matches (IJ)Z
-	public static fun read (Lio/sentry/SentryOptions;)Lio/sentry/android/core/anr/NonFatalAnrMarker;
-	public static fun write (Lio/sentry/SentryOptions;IJJ)V
 }
 
 public final class io/sentry/android/core/anr/StackTraceConverter {

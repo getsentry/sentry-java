@@ -1018,8 +1018,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Returns the sample rate for reporting non-fatal ANRs: main-thread hangs that recover, and hangs
-   * that still block the main thread after 8 s, which are cut there.
+   * Returns the sample rate for reporting non-fatal ANRs: main-thread hangs that recover. A hang
+   * that does not recover is reported only as a fatal ANR.
    *
    * @return the non-fatal ANR sample rate, or {@code null} when reporting is disabled (default)
    */
@@ -1056,8 +1056,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Sets the minimum duration in milliseconds a main-thread hang needs to be reported as a
    * non-fatal ANR. Defaults to 700. Only used if {@link #getNonFatalAnrSampleRate()} is set.
    *
-   * <p>Detection starts after 300 ms, so a lower value behaves like 300 ms. A hang is measured up
-   * to 8 000 ms, so a higher value never reports. A negative value is ignored.
+   * <p>Detection starts after 300 ms, so a lower value behaves like 300 ms. A negative value is
+   * ignored.
    *
    * @param nonFatalAnrThresholdMs the threshold in milliseconds
    */

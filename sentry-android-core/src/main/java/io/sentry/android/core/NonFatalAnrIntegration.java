@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.os.Looper;
-import android.os.Process;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
@@ -18,7 +17,6 @@ import io.sentry.android.core.anr.AggregatedStackTrace;
 import io.sentry.android.core.anr.AnrCulpritEventHelper;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
 import io.sentry.android.core.anr.AnrStackTrace;
-import io.sentry.android.core.anr.NonFatalAnrMarker;
 import io.sentry.android.core.hang.HangManager;
 import io.sentry.android.core.hang.HangRecord;
 import io.sentry.android.core.hang.HangRecordingListener;
@@ -27,7 +25,6 @@ import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryThread;
-import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SentryRandom;
 import java.io.Closeable;
@@ -36,32 +33,25 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Reports main-thread hangs as non-fatal ANR events: hangs that recover, before or after Android
- * shows the ANR dialog, and hangs that still block the main thread after 8 s, which are cut there.
+ * Reports main-thread hangs that recover as non-fatal ANR events: the main thread runs again, or
+ * the app goes to the background. A hang that does not recover, for example because the process is
+ * killed, is left to the fatal ANR path.
  *
  * <p>Subscribes to the {@link HangManager} of the options for the SDK lifetime, and draws the
- * sample rate at each hang. Installed from Android 11 (API 30), where {@link AnrV2Integration}
- * skips the fatal ANRs that this integration already reported.
+ * sample rate at each hang. Installed from Android 11 (API 30); below that, {@link AnrIntegration}
+ * reports the same hangs.
  *
  * <p>Enable via {@link SentryAndroidOptions#setNonFatalAnrSampleRate(Double)} or the {@code
  * io.sentry.anr.non-fatal.sample-rate} manifest metadata.
  */
 @ApiStatus.Internal
 public final class NonFatalAnrIntegration implements Integration, Closeable {
-
-  /**
-   * Android reports an input ANR after 5 s at the earliest, so a shorter hang cannot be a fatal ANR
-   * and gets no marker.
-   */
-  static final long MIN_FATAL_ANR_DURATION_MS = 5_000;
 
   private final @NotNull AtomicReference<HangManager> subscribedManager = new AtomicReference<>();
   private final @NotNull AtomicReference<HangRecordingListener> subscription =
@@ -105,7 +95,6 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
     private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
     private final @NotNull AnrCulpritEventHelper culpritEventHelper;
-    private final @NotNull AtomicBoolean markerWritten = new AtomicBoolean(false);
 
     Reporter(final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
       this.scopes = scopes;
@@ -117,11 +106,6 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
 
     @Override
     public @Nullable HangRecordingRequest onHangStarted() {
-      // A fatal ANR of this hang must not match the marker of an earlier hang. A marker of the
-      // previous process stays, AnrV2Integration still needs it.
-      if (markerWritten.getAndSet(false)) {
-        deleteMarker();
-      }
       final @Nullable Double sampleRate = options.getNonFatalAnrSampleRate();
       if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
         return new HangRecordingRequest(true, false);
@@ -134,27 +118,8 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       if (record.getDurationMs() < options.getNonFatalAnrThresholdMs()) {
         return;
       }
-      final long startTimestampMs = record.getStartTimestampMs();
-      final long endTimestampMs = startTimestampMs + record.getDurationMs();
-
-      // Only once the transport has handled the event: a kill before that must not suppress the
-      // fatal ANR.
-      final @Nullable Runnable writeMarker;
-      if (record.hasEndedAtMaxRecordingTime()
-          || record.getDurationMs() >= MIN_FATAL_ANR_DURATION_MS) {
-        final int pid = Process.myPid();
-        writeMarker =
-            () -> {
-              NonFatalAnrMarker.write(options, pid, startTimestampMs, endTimestampMs);
-              markerWritten.set(true);
-            };
-      } else {
-        writeMarker = null;
-      }
-
-      final @NotNull SentryEvent event = buildEvent(record, endTimestampMs);
-      scopes.captureEvent(
-          event, HintUtils.createWithTypeCheckHint(new NonFatalAnrHint(writeMarker)));
+      final long endTimestampMs = record.getStartTimestampMs() + record.getDurationMs();
+      scopes.captureEvent(buildEvent(record, endTimestampMs));
 
       final @NotNull Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setCategory("anr");
@@ -208,17 +173,6 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
         event.setFingerprints(Arrays.asList("{{ default }}", "non-fatal-anr"));
       }
       return event;
-    }
-
-    @SuppressWarnings("FutureReturnValueIgnored")
-    private void deleteMarker() {
-      try {
-        options.getExecutorService().submit(() -> NonFatalAnrMarker.delete(options));
-      } catch (RejectedExecutionException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Failed to delete the non-fatal ANR marker", e);
-      }
     }
 
     private static @NotNull SentryThread mainThread(

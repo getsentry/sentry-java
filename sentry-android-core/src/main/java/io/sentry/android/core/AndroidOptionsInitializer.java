@@ -492,7 +492,7 @@ final class AndroidOptionsInitializer {
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
     options.addIntegration(new AnrProfilingIntegration());
-    // Below API 30, AnrIntegration reports the same hangs, and nothing reads the marker.
+    // Below API 30, AnrIntegration reports the same hangs.
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
       options.addIntegration(new NonFatalAnrIntegration());
     }

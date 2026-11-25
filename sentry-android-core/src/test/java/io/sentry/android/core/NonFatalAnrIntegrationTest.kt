@@ -4,24 +4,17 @@ import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
-import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.android.core.anr.AnrStackTrace
-import io.sentry.android.core.anr.NonFatalAnrMarker
 import io.sentry.android.core.hang.HangManager
 import io.sentry.android.core.hang.HangRecord
 import io.sentry.android.core.hang.HangRecordingListener
 import io.sentry.android.core.internal.util.AndroidThreadChecker
-import io.sentry.hints.AbnormalExit
-import io.sentry.protocol.SentryId
-import io.sentry.test.ImmediateExecutorService
-import io.sentry.util.HintUtils
 import io.sentry.util.Random
 import io.sentry.util.SentryRandom
-import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.junit.Rule
@@ -33,7 +26,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class NonFatalAnrIntegrationTest {
@@ -43,8 +35,6 @@ class NonFatalAnrIntegrationTest {
   private val scopes = mock<IScopes>()
   private val manager = mock<HangManager>()
   private lateinit var options: SentryAndroidOptions
-  private val marker by lazy { File(tmpDir.root, "last_non_fatal_anr") }
-  private var markerExistedAtCapture: Boolean? = null
 
   @BeforeTest
   fun setup() {
@@ -55,10 +45,6 @@ class NonFatalAnrIntegrationTest {
         nonFatalAnrSampleRate = 1.0
         hangManager = manager
       }
-    whenever(scopes.captureEvent(any<SentryEvent>(), any<Hint>())).thenAnswer {
-      markerExistedAtCapture = marker.exists()
-      SentryId()
-    }
   }
 
   private fun frame(cls: String, method: String) = StackTraceElement(cls, method, "F.java", 1)
@@ -92,14 +78,10 @@ class NonFatalAnrIntegrationTest {
     return captor.firstValue
   }
 
-  private fun capturedHint(): NonFatalAnrHint =
-    HintUtils.getSentrySdkHint(capturedEvent().second) as NonFatalAnrHint
-
-  private fun capturedEvent(): Pair<SentryEvent, Hint> {
+  private fun capturedEvent(): SentryEvent {
     val event = argumentCaptor<SentryEvent>()
-    val hint = argumentCaptor<Hint>()
-    verify(scopes).captureEvent(event.capture(), hint.capture())
-    return event.firstValue to hint.firstValue
+    verify(scopes).captureEvent(event.capture())
+    return event.firstValue
   }
 
   @Test
@@ -202,13 +184,12 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `record below threshold sends no event and writes no marker`() {
+  fun `record below threshold sends no event`() {
     val listener = subscribed()
 
     listener.onHangRecorded(record(durationMs = 699))
 
-    verify(scopes, never()).captureEvent(any<SentryEvent>(), any<Hint>())
-    assertThat(marker.exists()).isFalse()
+    verify(scopes, never()).captureEvent(any<SentryEvent>())
   }
 
   @Test
@@ -218,119 +199,22 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record(durationMs = 1_999))
 
-    verify(scopes, never()).captureEvent(any<SentryEvent>(), any<Hint>())
+    verify(scopes, never()).captureEvent(any<SentryEvent>())
   }
 
   @Test
-  fun `recovered hang shorter than 5 s writes no marker`() {
-    val listener = subscribed()
-
-    listener.onHangRecorded(record(durationMs = 4_999))
-    capturedHint().markFlushed()
-
-    assertThat(marker.exists()).isFalse()
-  }
-
-  @Test
-  fun `recovered hang of 5 s writes the marker only once the event is on disk`() {
-    val listener = subscribed()
-
-    listener.onHangRecorded(record(durationMs = 5_000))
-
-    assertThat(markerExistedAtCapture).isFalse()
-    assertThat(marker.exists()).isFalse()
-    capturedHint().markFlushed()
-    val read = NonFatalAnrMarker.read(options)!!
-    assertThat(read.matches(android.os.Process.myPid(), 1_000)).isTrue()
-    assertThat(read.matches(android.os.Process.myPid(), 6_000 + 30_000)).isTrue()
-    assertThat(read.matches(android.os.Process.myPid(), 6_000 + 30_001)).isFalse()
-  }
-
-  @Test
-  fun `record cut at maxRecordingTime writes the marker once the event is on disk`() {
-    val listener = subscribed()
-
-    listener.onHangRecorded(
-      HangRecord.Builder()
-        .setDurationMs(8_000)
-        .setStartTimestampMs(1_000)
-        .addStackTrace(AnrStackTrace(1_100, systemStack))
-        .setEndedAtMaxRecordingTime(true)
-        .build(),
-    )
-
-    assertThat(marker.exists()).isFalse()
-    capturedHint().markFlushed()
-    assertThat(NonFatalAnrMarker.read(options)!!.matches(android.os.Process.myPid(), 9_000))
-      .isTrue()
-  }
-
-  @Test
-  fun `marker is written once when the event is flushed twice`() {
-    val listener = subscribed()
-    listener.onHangRecorded(record(durationMs = 5_000))
-    val hint = capturedHint()
-    hint.markFlushed()
-    marker.delete()
-
-    hint.markFlushed()
-
-    assertThat(marker.exists()).isFalse()
-  }
-
-  @Test
-  fun `next hang deletes the marker of this process`() {
-    options.executorService = ImmediateExecutorService()
-    val listener = subscribed()
-    listener.onHangRecorded(record(durationMs = 5_000))
-    capturedHint().markFlushed()
-    assertThat(marker.exists()).isTrue()
-
-    listener.onHangStarted()
-
-    assertThat(marker.exists()).isFalse()
-  }
-
-  @Test
-  fun `unsampled next hang also deletes the marker of this process`() {
-    options.executorService = ImmediateExecutorService()
-    val listener = subscribed()
-    listener.onHangRecorded(record(durationMs = 5_000))
-    capturedHint().markFlushed()
-    options.nonFatalAnrSampleRate = null
-
-    assertThat(listener.onHangStarted()).isNull()
-
-    assertThat(marker.exists()).isFalse()
-  }
-
-  @Test
-  fun `next hang keeps the marker of the previous process`() {
-    options.executorService = ImmediateExecutorService()
-    val listener = subscribed()
-    NonFatalAnrMarker.write(options, 1, 1_000, 2_000)
-
-    listener.onHangStarted()
-
-    assertThat(marker.exists()).isTrue()
-  }
-
-  @Test
-  fun `event has handled mechanism and no abnormal exit hint`() {
+  fun `event has handled mechanism`() {
     val listener = subscribed()
 
     listener.onHangRecorded(record())
 
-    val (event, hint) = capturedEvent()
+    val event = capturedEvent()
     val exception = event.exceptions!!.single()
     assertThat(exception.mechanism!!.type).isEqualTo("NonFatalANR")
     assertThat(exception.mechanism!!.isHandled).isTrue()
     assertThat(exception.mechanism!!.data.orEmpty()).doesNotContainKey("abnormal_mechanism")
     assertThat(event.level).isEqualTo(SentryLevel.ERROR)
     assertThat(event.timestamp.time).isEqualTo(2_000)
-    val typeCheckHint = HintUtils.getSentrySdkHint(hint)
-    assertThat(typeCheckHint).isInstanceOf(NonFatalAnrHint::class.java)
-    assertThat(typeCheckHint).isNotInstanceOf(AbnormalExit::class.java)
   }
 
   @Test
@@ -339,7 +223,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record(samples = emptyList()))
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     val exception = event.exceptions!!.single()
     assertThat(exception.value).isEqualTo("Non-fatal ANR")
     assertThat(exception.mechanism!!.type).isEqualTo("NonFatalANR")
@@ -353,7 +237,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record())
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     assertThat(event.threads!!.single().id).isEqualTo(mainThreadId)
     assertThat(event.exceptions!!.map { it.threadId }).containsExactly(mainThreadId)
   }
@@ -365,7 +249,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record(samples = emptyList()))
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     assertThat(event.threads!!.single().id).isEqualTo(mainThreadId)
     assertThat(event.exceptions!!.single().threadId).isEqualTo(mainThreadId)
   }
@@ -376,7 +260,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record())
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     assertThat(event.fingerprints).containsExactly("system-frames-only-anr", "non-fatal-anr")
   }
 
@@ -388,7 +272,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record(samples = listOf(AnrStackTrace(1_100, stack))))
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     assertThat(event.fingerprints).containsExactly("{{ default }}", "non-fatal-anr").inOrder()
   }
 
@@ -399,7 +283,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record())
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     assertThat(event.fingerprints).containsExactly("{{ default }}", "non-fatal-anr").inOrder()
   }
 
@@ -409,7 +293,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record())
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     val thread = event.threads!!.single()
     assertThat(thread.name).isEqualTo("main")
     assertThat(thread.isCurrent).isTrue()
@@ -424,7 +308,7 @@ class NonFatalAnrIntegrationTest {
 
     listener.onHangRecorded(record())
 
-    val (event, _) = capturedEvent()
+    val event = capturedEvent()
     val context = event.contexts["non_fatal_anr"] as Map<*, *>
     assertThat(context["duration_ms"]).isEqualTo(1_000L)
     assertThat(context["sample_count"]).isEqualTo(2)
