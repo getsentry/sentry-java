@@ -91,8 +91,10 @@ enum class TabWithBody {
 /**
  * Has a named companion object but no named-companion R8 rules of the app's own.
  * kotlinx.serialization 1.10.0+'s own rules keep what its reflective serializer lookup needs, so
- * the mappers must name it. Before 1.10.0, minification may strip that (e.g., always with 1.7.3,
- * and with 1.9.x in R8 full mode), so falling back to `/unknown` is also accepted.
+ * the mappers must name it. The floor's rules don't, in R8 full and compat mode alike, so at the
+ * floor the mappers must record it as `/unknown`. In between, it depends on the version and R8 mode
+ * (e.g., 1.9.x's lookup survives in compat mode only), so either outcome is accepted. See
+ * `namedCompanionOutcome` in `build.gradle.kts`.
  */
 @Serializable
 data class NamedCompanionKey(val id: String) {
@@ -230,13 +232,21 @@ fun serializableExpectations(): List<Expectation> =
       mapOf("value" to "HOME"),
     ),
     Expectation("value class", TabId("feed"), "$PKG.TabId", mapOf("value" to "feed")),
-    Expectation(
-      "named companion without rules",
-      NamedCompanionKey.of("1"),
-      "$PKG.NamedCompanionKey",
-      ID_ARGUMENTS,
-      alsoAcceptsUnnamed = !BuildConfig.KOTLINX_KEEPS_NAMED_COMPANIONS,
-    ),
+    if (BuildConfig.NAMED_COMPANION_OUTCOME == "unknown") {
+      Expectation(
+        "named companion without rules (/unknown at the floor)",
+        NamedCompanionKey.of("1"),
+        null,
+      )
+    } else {
+      Expectation(
+        "named companion without rules",
+        NamedCompanionKey.of("1"),
+        "$PKG.NamedCompanionKey",
+        ID_ARGUMENTS,
+        alsoAcceptsUnnamed = BuildConfig.NAMED_COMPANION_OUTCOME == "either",
+      )
+    },
     Expectation(
       "named companion with rules",
       NamedCompanionKeyWithRules.of("1"),

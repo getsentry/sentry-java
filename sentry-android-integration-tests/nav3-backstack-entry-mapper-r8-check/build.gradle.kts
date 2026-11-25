@@ -15,17 +15,25 @@ val sentryVersion = libs.versions.sentry.get()
 // -Pnav3CheckKotlinxVersion=<version> for the latest stable release and any newer release
 // candidate.
 val kotlinxVersionOverride = providers.gradleProperty("nav3CheckKotlinxVersion").orNull
-val kotlinxVersion = kotlinxVersionOverride ?: matrixLibs.versions.kotlinxSerialization.floor.get()
+val kotlinxFloor = matrixLibs.versions.kotlinxSerialization.floor.get()
+val kotlinxVersion = kotlinxVersionOverride ?: kotlinxFloor
 
-// kotlinx.serialization's own R8 rules keep what its lookup of named companion objects needs from
-// 1.10.0 on. With older versions, whether the lookup survives without the app's own rules depends
-// on the version and R8 (e.g., 1.9.x's succeeds in R8 compat mode only), so either outcome is
-// accepted.
-val kotlinxKeepsNamedCompanions =
+// Whether the mappers can name a @Serializable class with a named companion object and no
+// named-companion R8 rules of the app's own: "named", "unknown", or "either".
+// - kotlinx.serialization's own R8 rules keep what its lookup needs from 1.10.0 on.
+// - The floor's rules don't, in R8 full and compat mode alike (verified on a device), so the floor
+//   must record /unknown. Asserting it means a change in that behavior shows up here.
+// - Between the two, it depends on the version and R8 mode (e.g., 1.9.x's lookup succeeds in
+//   compat mode only), so either outcome is accepted.
+val namedCompanionOutcome =
   kotlinxVersion.split('.', '-').let { parts ->
     val major = parts[0].toInt()
     val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
-    major > 1 || (major == 1 && minor >= 10)
+    when {
+      major > 1 || (major == 1 && minor >= 10) -> "named"
+      kotlinxVersion == kotlinxFloor -> "unknown"
+      else -> "either"
+    }
   }
 
 android {
@@ -39,11 +47,7 @@ android {
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = 1
     versionName = "1.0"
-    buildConfigField(
-      "boolean",
-      "KOTLINX_KEEPS_NAMED_COMPANIONS",
-      kotlinxKeepsNamedCompanions.toString(),
-    )
+    buildConfigField("String", "NAMED_COMPANION_OUTCOME", "\"$namedCompanionOutcome\"")
   }
 
   signingConfigs {
