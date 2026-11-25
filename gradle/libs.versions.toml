@@ -23,7 +23,7 @@ kotlin = "2.3.21"
 kotlin-compatible-version = "1.9"
 ksp = "2.3.14"
 ktorClient = "3.6.1"
-logback = "1.2.9"
+logback = "1.6.8"
 log4j2 = "2.26.1"
 nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
