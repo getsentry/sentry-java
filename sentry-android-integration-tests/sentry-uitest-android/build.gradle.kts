@@ -21,8 +21,7 @@ android {
   namespace = "io.sentry.uitest.android"
 
   defaultConfig {
-    // Compose UI 1.10+ requires minSdk 23; the Sentry SDK still supports 21.
-    minSdk = 23
+    minSdk = libs.versions.minSdk.get().toInt()
     targetSdk = libs.versions.compileSdk.get().toInt()
     versionCode = 1
     versionName = "1.0.0"

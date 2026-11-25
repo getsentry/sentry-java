@@ -2,6 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools">
 
+  <!-- Compose UI 1.10+ needs minSdk 23. The app uses it because it lets R8 rename modifier
+       elements, which the replay masking keep rules must handle. The tests run on API 23+ only -->
+  <uses-sdk
+    tools:overrideLibrary="androidx.compose.ui.unit,
+    androidx.compose.ui.graphics,
+    androidx.compose.ui.geometry,
+    androidx.compose.ui.util,
+    androidx.compose.ui.text,
+    androidx.compose.ui,
+    androidx.window.core,
+    androidx.window,
+    androidx.compose.runtime.annotation,
+    androidx.compose.runtime.retain,
+    androidx.compose.runtime,
+    androidx.compose.runtime.saveable" />
+
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
   <application
@@ -9,7 +25,8 @@
     android:label="Sentry End2End Tests"
     android:largeHeap="true"
     android:icon="@android:mipmap/sym_def_app_icon"
-    android:usesCleartextTraffic="true">
+    android:usesCleartextTraffic="true"
+    tools:targetApi="m">
 <!--  android:usesCleartextTraffic="true" is needed to send data to http://localhost... (the mock relay server)  -->
 
     <activity android:name=".EmptyActivity" />
