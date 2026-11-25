@@ -20,6 +20,7 @@ import java.io.StringWriter
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.concurrent.Callable
+import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -785,6 +786,47 @@ class SentryEnvelopeItemTest {
       "expected meta_length=$metaLength in header JSON, was: $json",
     )
   }
+
+  @Test
+  fun `fromPerfettoProfileChunk keeps a multi-megabyte trace intact after the metadata`() {
+    val traceFile = tmpDir.newFile("trace.pftrace")
+    val traceBytes = Random(42).nextBytes(3 * 1024 * 1024 + 17)
+    traceFile.writeBytes(traceBytes)
+
+    val item =
+      SentryEnvelopeItem.fromPerfettoProfileChunk(perfettoChunk(traceFile), fixture.serializer)
+
+    val payload = item.data
+    val metaLength = item.header.metaLength!!
+    assertThat(payload.size).isEqualTo(metaLength + traceBytes.size)
+    assertThat(payload.copyOfRange(metaLength, payload.size)).isEqualTo(traceBytes)
+    assertThat(traceFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `fromPerfettoProfileChunk with trace over 50MB throws and deletes the file`() {
+    val traceFile = tmpDir.newFile("trace.pftrace")
+    RandomAccessFile(traceFile, "rw").use { it.setLength(50L * 1024 * 1024 + 1) }
+
+    val item =
+      SentryEnvelopeItem.fromPerfettoProfileChunk(perfettoChunk(traceFile), fixture.serializer)
+
+    val exception = assertFailsWith<SentryEnvelopeException> { item.data }
+    assertThat(exception.message).contains("bigger than the maximum allowed size")
+    assertThat(traceFile.exists()).isFalse()
+  }
+
+  private fun perfettoChunk(traceFile: File): ProfileChunk =
+    ProfileChunk.Builder(
+        SentryId(),
+        SentryId(),
+        emptyMap(),
+        traceFile,
+        SentryNanotimeDate(),
+        ProfileChunk.PLATFORM_ANDROID,
+      )
+      .setContentType(ProfileChunk.CONTENT_TYPE_PERFETTO)
+      .build(fixture.options)
 
   @Test
   fun `fromPerfettoProfileChunk with missing file throws`() {
