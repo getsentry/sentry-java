@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: getsentry/classifiers
-          ref: e9cc499bbf218d6166d201a895f7bed206a92c60
+          ref: 3f2158c236f47bfb7e918a7350399769a59569ec
           token: ${{ steps.app.outputs.token }}
           path: .classifiers
           persist-credentials: false
