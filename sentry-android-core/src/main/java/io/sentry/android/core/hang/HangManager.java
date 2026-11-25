@@ -28,7 +28,12 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Starts a {@link HangRecorder} when a {@link HangSignal} reports {@link
  * HangSignal.State#SUSPICIOUS}, lets it sample the {@link HangDataCollector}s on each tick, and
- * gives its {@link HangRecord} to the subscribers that asked for it when the hang ends.
+ * gives its {@link HangRecord} to the subscribers that asked for it when the hang ends: when the
+ * signal reports {@link HangSignal.State#IDLE} or the app goes to the background. A hang that never
+ * ends, for example because the process is killed, gives no record.
+ *
+ * <p>Only the first {@code maxRecordingTimeMs} of a hang are sampled. The hang stays open after
+ * that, and its record has the full duration.
  *
  * <p>Each subscriber says in {@link HangRecordingListener#onHangStarted()} what it needs from the
  * hang. If no subscriber needs a record, the hang is not recorded and the collectors are not
@@ -48,6 +53,8 @@ import org.jetbrains.annotations.Nullable;
 public final class HangManager implements Metronome, AppState.AppStateListener {
 
   public static final long DEFAULT_POLLING_INTERVAL_MS = 66;
+
+  /** How long a hang is sampled at most. The hang itself can last longer. */
   public static final long DEFAULT_MAX_RECORDING_TIME_MS = 8_000;
 
   /**
@@ -96,7 +103,6 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
   private boolean signalsStarted;
   private @Nullable Future<?> tickFuture;
   private @Nullable HangRecorder activeRecorder;
-  private boolean waitingForIdleAfterMaxRecordingTime;
 
   private final @NotNull HangSignalListener signalListener =
       new HangSignalListener() {
@@ -291,7 +297,6 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
       return;
     }
     signalsStarted = false;
-    waitingForIdleAfterMaxRecordingTime = false;
     final @Nullable Future<?> future = tickFuture;
     if (future != null) {
       future.cancel(false);
@@ -303,7 +308,7 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
       }
     } finally {
       if (endIntervalWithRecord) {
-        endRecord(nowMs(), false);
+        endRecord(nowMs());
       } else {
         cancelRecord();
       }
@@ -313,22 +318,12 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
   private void tick() {
     try {
       final long nowMs = nowMs();
-      try {
-        for (final @NotNull TickListener listener : tickListeners) {
-          listener.onMetronomeTick(nowMs);
-        }
-        final @Nullable HangRecorder recorder = activeRecorder;
-        if (recorder != null) {
-          recorder.sample(maxSamples);
-        }
-      } finally {
-        // A tick listener or a collector that throws on every tick must not keep the hang open
-        // past the maximum.
-        final @Nullable HangRecorder recorder = activeRecorder;
-        if (recorder != null && nowMs - recorder.getStartTimeMs() >= maxRecordingTimeMs) {
-          endRecord(recorder.getStartTimeMs() + maxRecordingTimeMs, true);
-          waitingForIdleAfterMaxRecordingTime = true;
-        }
+      for (final @NotNull TickListener listener : tickListeners) {
+        listener.onMetronomeTick(nowMs);
+      }
+      final @Nullable HangRecorder recorder = activeRecorder;
+      if (recorder != null && nowMs - recorder.getStartTimeMs() < maxRecordingTimeMs) {
+        recorder.sample(maxSamples);
       }
     } catch (Throwable t) {
       // scheduleWithFixedDelay stops all later ticks after an exception.
@@ -342,7 +337,7 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
       return;
     }
     if (state == HangSignal.State.SUSPICIOUS) {
-      if (activeRecorder != null || waitingForIdleAfterMaxRecordingTime) {
+      if (activeRecorder != null) {
         return;
       }
       final long nowTimestampMs = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
@@ -354,13 +349,11 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
               nowTimestampMs - (nowMs() - sinceMs),
               options.getLogger());
     } else {
-      waitingForIdleAfterMaxRecordingTime = false;
-      endRecord(sinceMs, false);
+      endRecord(sinceMs);
     }
   }
 
   private void handleSignalCanceled() {
-    waitingForIdleAfterMaxRecordingTime = false;
     cancelRecord();
   }
 
@@ -368,13 +361,13 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
     activeRecorder = null;
   }
 
-  private void endRecord(final long endTimeMs, final boolean endedAtMaxRecordingTime) {
+  private void endRecord(final long endTimeMs) {
     final @Nullable HangRecorder recorder = activeRecorder;
     if (recorder == null) {
       return;
     }
     activeRecorder = null;
-    final @NotNull HangRecord record = recorder.end(endTimeMs, endedAtMaxRecordingTime);
+    final @NotNull HangRecord record = recorder.end(endTimeMs);
     final @NotNull List<HangRecordingListener> listeners = recorder.getListeners();
     try {
       final @NotNull Future<?> delivery =
