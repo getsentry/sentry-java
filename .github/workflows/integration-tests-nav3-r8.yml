@@ -1,94 +1,59 @@
-name: Nav3 BackStackEntryMapper R8 Check
+name: Nav3 Built-in Back Stack Mappers R8 Check
 
 # Verifies behavior of BackStackEntryMapper.SerialName from sentry-android-navigation3 in
-# R8-minified builds on an emulator (R8 full mode with the
-# compile floor, the latest stable release, and any newer release candidate of
-# kotlinx.serialization, from gradle/dependency-matrix.versions.toml, and R8 compat mode with the
-# floor). Also runs all of the module's unit tests against the newer versions. See sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md.
+# R8-minified builds on an emulator. Runs tests in:
 #
-# Release candidate failures are warnings, except on PRs that change kotlinxSerialization-preview,
-# such as the weekly updater's.
+#  - R8 full mode against the compile floor of kotlinx-serialization-core and its latest stable
+#    release; and
+#  - R8 compat mode against the compile floor.
+#
+# Also runs all the module's unit tests against the latest stable release. See
+# sentry-android-integration-tests/nav3-built-in-back-stack-mappers-r8-check/README.md.
 
-# Runs on every PR and every push to main, without paths filters: the relevance job decides
-# whether the check runs, using scripts/nav3-r8-check-relevant.sh as the only list of relevant
-# changes.
+# Only runs for the paths below. Not a required check, so skipped runs don't block PRs. Catalog
+# filters match whole files, including changes to unrelated dependencies.
 on:
   push:
     branches:
       - main
+    paths: &nav3-r8-paths
+      - 'sentry-android-navigation3/**'
+      - 'sentry-android-integration-tests/nav3-built-in-back-stack-mappers-r8-check/**'
+      # The settings, build script, and properties of the build that produces the check's APKs.
+      - 'sentry-android-integration-tests/*.gradle.kts'
+      - 'sentry-android-integration-tests/*.properties'
+      - 'scripts/test-nav3-built-in-back-stack-mappers-r8.sh'
+      - '.github/workflows/integration-tests-nav3-r8.yml'
+      # Build settings, R8 flags, build logic, the Gradle version, and the version catalogs
+      # (Kotlin, AGP and its R8, Compose, Nav3, and the kotlinx.serialization matrix).
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
+      - 'gradle/wrapper/**'
+      - 'gradle/libs.versions.toml'
+      - 'gradle/dependency-matrix.versions.toml'
+      - 'buildSrc/**'
+      - 'build-logic/**'
+      # Utilities the mapper uses to handle exceptions.
+      - 'sentry/src/main/java/io/sentry/util/**'
   pull_request:
+    paths: *nav3-r8-paths
 
 permissions:
   contents: read
 
-# A new push only cancels a superseded PR run. On main, a run that started finishes, as the API 23
-# job only runs there and would otherwise rarely complete; a newer push waits for it instead.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 env:
   APK_DIR: "nav3-r8-check-apks"
   APK_ARTIFACT_NAME: "nav3-r8-check-apks"
 
 jobs:
-  # Decides whether the changes affect the check, with scripts/nav3-r8-check-relevant.sh. The
-  # other jobs are skipped (and report as skipped) if they don't, e.g., for PRs that don't touch
-  # Nav3 or that only bump unrelated versions in gradle/libs.versions.toml.
-  #
-  # Also decides whether release candidate failures fail the check (but only on PRs that change
-  # kotlinxSerialization-preview).
-  relevance:
-    name: Check relevance
-    runs-on: ubuntu-latest
-    outputs:
-      relevant: ${{ steps.check.outputs.relevant }}
-      preview-required: ${{ steps.check.outputs.preview-required }}
-
-    steps:
-      # A PR's checkout is a merge commit, whose first parent is the base branch, and a push to
-      # main is usually one squashed commit, so two commits are usually enough to diff the changes.
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-
-      - name: Check whether the changes affect the check
-        id: check
-        env:
-          PUSH_BEFORE: ${{ github.event.before }}
-        run: |
-          previewRequired=false
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            relevant="$(./scripts/nav3-r8-check-relevant.sh HEAD^1 HEAD)"
-            if ./scripts/dependency-matrix.sh changed-roles HEAD^1 HEAD kotlinxSerialization | grep -qx preview; then
-              previewRequired=true
-            fi
-          else
-            # A push may contain several commits, so diff against the commit main pointed to before
-            # it. If that commit can't be fetched (e.g., after a force push), run the check.
-            if [[ -n "$PUSH_BEFORE" && ! "$PUSH_BEFORE" =~ ^0+$ ]] \
-              && { git cat-file -e "${PUSH_BEFORE}^{commit}" 2> /dev/null \
-                || git fetch --depth=1 origin "$PUSH_BEFORE"; }; then
-              relevant="$(./scripts/nav3-r8-check-relevant.sh --any-catalog-change "$PUSH_BEFORE" HEAD)"
-            else
-              relevant=true
-            fi
-          fi
-          if [[ "$previewRequired" == "true" ]] \
-            && ! ./scripts/dependency-matrix.sh extra-versions kotlinxSerialization | grep -q '^preview '; then
-            echo "::notice::kotlinxSerialization-preview changed, but isn't newer than kotlinxSerialization-stable, so no release candidate is tested."
-          fi
-          echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
-          echo "preview-required=$previewRequired" >> "$GITHUB_OUTPUT"
-          echo "Nav3 R8 check relevant: $relevant"
-          echo "kotlinx.serialization release candidate required: $previewRequired"
-
   # Runs separately from the APK builds, so a unit test failure doesn't hide the R8 check's results.
   unit-tests:
     name: Unit tests
-    needs: relevance
-    if: needs.relevance.outputs.relevant == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -106,15 +71,11 @@ jobs:
 
       # Apps may ship a newer kotlinx.serialization than sentry-android-navigation3 compiles
       # against. The Build workflow runs the unit tests against the floor.
-      - name: Run unit tests against newer kotlinx.serialization versions
-        env:
-          NAV3_PREVIEW_REQUIRED: ${{ needs.relevance.outputs.preview-required }}
-        run: ./scripts/test-nav3-kotlinx-versions.sh
+      - name: Run unit tests against the latest stable kotlinx.serialization
+        run: ./gradlew :sentry-android-navigation3:testReleaseUnitTest -Pnav3TestKotlinx=latestStable
 
   build:
     name: Build
-    needs: relevance
-    if: needs.relevance.outputs.relevant == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -131,9 +92,7 @@ jobs:
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Build APKs
-        env:
-          NAV3_PREVIEW_REQUIRED: ${{ needs.relevance.outputs.preview-required }}
-        run: ./scripts/test-nav3-backstack-entry-mapper-r8.sh build "${{ env.APK_DIR }}"
+        run: ./scripts/test-nav3-built-in-back-stack-mappers-r8.sh build "${{ env.APK_DIR }}"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -142,16 +101,12 @@ jobs:
           path: ${{ env.APK_DIR }}
           retention-days: 1
 
+  # Run on API 23, Nav3's minSdk, to verify that the minified app and its dependencies work on the
+  # oldest supported runtime.
   run:
-    name: Run on API Level ${{ matrix.api-level }}
-    needs: [relevance, build]
+    name: Run on API Level 23
+    needs: build
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Tests against API 37.0 on every run. Also tests against API 23 (Nav3's minSdkVersion) when changes reach main.
-        # The latter lets us catch issues present on the oldest Nav3 app runtime without slowing down PRs.
-        api-level: ${{ fromJSON(github.event_name == 'push' && '[23, "37.0"]' || '["37.0"]') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -168,33 +123,13 @@ jobs:
           name: ${{ env.APK_ARTIFACT_NAME }}
           path: ${{ env.APK_DIR }}
 
-      # The runner ships an outdated avdmanager that writes target=android-0 into the
-      # AVD config for minor-versioned packages (android-37.x), so the emulator clamps
-      # to API 3 and boots misconfigured. Update cmdline-tools so avdmanager parses it.
-      # See https://github.com/ReactiveCircus/android-emulator-runner/issues/482
-      - name: Update SDK cmdline-tools
-        if: matrix.api-level == '37.0'
-        run: |
-          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "cmdline-tools;latest" > /dev/null
-          # sdkmanager won't overwrite the preinstalled dir, so it installs to latest-2.
-          if [ -d "$SDK/cmdline-tools/latest-2" ]; then
-            rm -rf "$SDK/cmdline-tools/latest"
-            mv "$SDK/cmdline-tools/latest-2" "$SDK/cmdline-tools/latest"
-          fi
-
       - name: Run check
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
-        env:
-          NAV3_PREVIEW_REQUIRED: ${{ needs.relevance.outputs.preview-required }}
         with:
-          api-level: ${{ matrix.api-level }}
-          # API 37 has no plain google_apis image.
-          target: ${{ matrix.api-level == 23 && 'google_apis' || 'google_apis_ps16k' }}
-          # Use canary for API 37, matching the critical UI tests.
-          channel: ${{ matrix.api-level == 23 && 'stable' || 'canary' }}
+          api-level: 23
+          target: google_apis
           arch: x86_64
           disable-animations: true
           disable-spellchecker: true
           emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
-          script: ./scripts/test-nav3-backstack-entry-mapper-r8.sh run "${{ env.APK_DIR }}"
+          script: ./scripts/test-nav3-built-in-back-stack-mappers-r8.sh run "${{ env.APK_DIR }}"

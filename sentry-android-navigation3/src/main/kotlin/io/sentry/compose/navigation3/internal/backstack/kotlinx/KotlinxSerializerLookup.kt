@@ -6,22 +6,13 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializerOrNull
 
 /**
- * Returns the serializer of [type], or `null` if kotlinx.serialization can't provide one (e.g. for
- * a generic class whose serializer needs type arguments).
+ * Returns [type]'s serializer, or `null` if unavailable, including when type arguments are needed.
+ * Extends [serializerOrNull] to support private `@Serializable` objects. Also supports built-in
+ * types and unannotated enums.
  *
- * Unlike kotlinx.serialization's [serializerOrNull], this also finds the serializers of private
- * `@Serializable` objects. Like it, this returns serializers for built-in types (e.g. `String`) and
- * enums that aren't `@Serializable`.
- *
- * This method may throw, as looking up a serializer can run the type's serializer code for the
- * first time (e.g. an [InvocationTargetException] whose cause is the serializer initializer's
- * error).
- *
- * Reflection wraps whatever that code throws in an [InvocationTargetException], which callers'
- * fatal-error checks don't recognize as fatal. So a fatal cause, such as an [OutOfMemoryError], is
- * rethrown unwrapped instead. A wrapped [LinkageError] stays wrapped: callers treat a
- * [LinkageError] thrown directly as a sign that kotlinx.serialization itself is incompatible, while
- * one from the app's serializer code is specific to that type.
+ * May execute serializer code and throw. Unwraps fatal causes such as [OutOfMemoryError] from
+ * [InvocationTargetException] so that fatal-error checks can recognize them. Keeps [LinkageError]
+ * causes wrapped because they affect only this type.
  */
 @Suppress("SwallowedException")
 internal fun reflectiveSerializerOrNull(type: Class<*>): KSerializer<*>? =
@@ -30,7 +21,7 @@ internal fun reflectiveSerializerOrNull(type: Class<*>): KSerializer<*>? =
       serializerOrNull(type)
     } catch (_: IllegalAccessException) {
       // kotlinx.serialization reads a serializable object's INSTANCE field without making it
-      // accessible, which fails for private objects.
+      // accessible, which will fail for private objects.
       privateObjectSerializerOrNull(type)
     }
   } catch (e: InvocationTargetException) {

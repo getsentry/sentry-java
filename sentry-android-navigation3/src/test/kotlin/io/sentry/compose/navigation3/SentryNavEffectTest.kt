@@ -386,10 +386,10 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.first().name).isEqualTo("/SerializableHome")
     assertThat(fixture.scope.screen).isEqualTo("/unknown")
     assertThat(fixture.breadcrumbs.last().data["to_unknown_entry_reason"])
-      .isEqualTo("not_serializable")
+      .isEqualTo("entry_not_annotated")
     assertThat(fixture.scope.navigationBackStack())
       .containsExactly(
-        mapOf("entry" to "/unknown", "unknown_entry_reason" to "not_serializable"),
+        mapOf("entry" to "/unknown", "unknown_entry_reason" to "entry_not_annotated"),
         mapOf("entry" to profileName),
         mapOf("entry" to "/SerializableHome"),
       )

@@ -1,22 +1,21 @@
 package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import com.google.common.truth.Truth.assertThat
-import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeClass
-import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.Companion.ProbeObject
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.ProbeClass
+import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxCompatibilityProbe.ProbeObject
 import kotlin.test.assertFailsWith
 import org.junit.Test
 
 /**
  * Runs the default probe against the kotlinx.serialization version on the test classpath, which CI
- * also sets to the latest stable release and any newer release candidate with
- * `-Pnav3TestKotlinxVersion`.
+ * also sets to the latest stable release with `-Pnav3TestKotlinx=latestStable`.
  */
 class KotlinxCompatibilityProbeTest {
 
   // nameLookupLinkageError()
 
   @Test
-  fun `nameLookupLinkageError() - returns null without an inconclusive result for a compatible kotlinx serialization version`() {
+  fun `nameLookupLinkageError() - returns null without an inconclusive result for a compatible version`() {
     val inconclusive = mutableListOf<Throwable?>()
 
     val error = KotlinxCompatibilityProbe.nameLookupLinkageError { inconclusive += it }
@@ -77,7 +76,7 @@ class KotlinxCompatibilityProbeTest {
   }
 
   @Test
-  fun `nameLookupLinkageError() - doesn't report an exception onInconclusive throws for a missing probe serializer back to onInconclusive`() {
+  fun `nameLookupLinkageError() - doesn't re-report onInconclusive's exception for a missing probe serializer`() {
     val error = IllegalStateException("callback failed")
     val inconclusive = mutableListOf<Throwable?>()
 
@@ -94,7 +93,7 @@ class KotlinxCompatibilityProbeTest {
   }
 
   @Test
-  fun `nameLookupLinkageError() - doesn't report an exception onInconclusive throws for a lookup exception back to onInconclusive`() {
+  fun `nameLookupLinkageError() - doesn't re-report onInconclusive's exception for a lookup exception`() {
     val lookupError = IllegalStateException("lookup failed")
     val callbackError = IllegalArgumentException("callback failed")
     val inconclusive = mutableListOf<Throwable?>()

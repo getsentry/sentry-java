@@ -59,16 +59,36 @@ class PackageBoundariesTest {
   }
 
   @Test
-  fun `the lifecycle package has no imports from other Sentry navigation3 packages, Compose, or AndroidX Nav3`() {
+  fun `the lifecycle package imports only the contract package from other Sentry navigation3 packages`() {
     val lifecycleSources = sources.filter { it.packageName.isIn(LIFECYCLE) }
 
     val violations = lifecycleSources.importsMatching {
-      (it.isIn(ROOT) && !it.isIn(LIFECYCLE)) ||
-        it.isIn("androidx.navigation3") ||
-        (it.isIn("androidx") && "compose" in it.split('.'))
+      it.isIn(ROOT) && !it.isIn(LIFECYCLE) && !it.isIn(CONTRACT)
     }
 
     assertThat(lifecycleSources).isNotEmpty()
+    assertThat(violations).isEmpty()
+  }
+
+  @Test
+  fun `the lifecycle package has no imports from Compose or AndroidX Nav3`() {
+    val lifecycleSources = sources.filter { it.packageName.isIn(LIFECYCLE) }
+
+    val violations = lifecycleSources.importsMatching {
+      it.isIn("androidx.navigation3") || (it.isIn("androidx") && "compose" in it.split('.'))
+    }
+
+    assertThat(lifecycleSources).isNotEmpty()
+    assertThat(violations).isEmpty()
+  }
+
+  @Test
+  fun `the contract package has no imports from other Sentry navigation3 packages`() {
+    val contractSources = sources.filter { it.packageName.isIn(CONTRACT) }
+
+    val violations = contractSources.importsMatching { it.isIn(ROOT) && !it.isIn(CONTRACT) }
+
+    assertThat(contractSources).isNotEmpty()
     assertThat(violations).isEmpty()
   }
 
@@ -136,6 +156,7 @@ class PackageBoundariesTest {
     const val ROOT = "io.sentry.compose.navigation3"
     const val KOTLINX = "$ROOT.internal.backstack.kotlinx"
     const val LIFECYCLE = "$ROOT.internal.lifecycle"
+    const val CONTRACT = "$ROOT.internal.contract"
     const val MAPPER_FACTORY_PATH =
       "$SOURCE_ROOT/io/sentry/compose/navigation3/internal/backstack/BuiltInBackStackEntryMappers.kt"
 

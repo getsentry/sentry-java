@@ -8,6 +8,7 @@ import io.sentry.Scope
 import io.sentry.SentryOptions
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 import io.sentry.protocol.App
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.TransactionNameSource
@@ -20,7 +21,7 @@ import org.mockito.kotlin.whenever
 
 class NavTransactionRequestTest {
 
-  private val navigationContext = mapOf("backstack" to listOf(mapOf("route" to "/Checkout")))
+  private val navigationContext = mapOf("Back Stack" to listOf(mapOf("entry" to "/Checkout")))
 
   private val scope = Scope(SentryOptions())
 
@@ -62,11 +63,11 @@ class NavTransactionRequestTest {
     request.start(fixture.scopes, scope)
     request.start(fixture.scopes, scope)
 
+    assertThat(fixture.startedTransactions).hasSize(2)
     fixture.startedTransactions.forEach { transaction ->
       verify(transaction).setData("arguments", mapOf("id" to "1"))
       verify(transaction).setData("unknown_entry_reason", "unmapped")
     }
-    assertThat(fixture.startedTransactions).hasSize(2)
   }
 
   @Test

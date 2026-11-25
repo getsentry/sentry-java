@@ -5,10 +5,19 @@ import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
-import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
-import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
-import io.sentry.compose.navigation3.internal.backstack.UnknownEntryReason.Companion.UNKNOWN_ENTRY_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
+import io.sentry.compose.navigation3.internal.contract.ArgumentConstraints.MAX_ARGUMENT_DEPTH
+import io.sentry.compose.navigation3.internal.contract.ArgumentConstraints.MAX_ARGUMENT_VALUES
+import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason
+import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.BACK_STACK_ENTRY_ARGUMENTS_KEY
+import io.sentry.compose.navigation3.internal.contract.BACK_STACK_ENTRY_KEY
+import io.sentry.compose.navigation3.internal.contract.TRANSACTION_ARGUMENTS_KEY
+import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason.Companion.UNKNOWN_ENTRY_REASON_KEY
 import io.sentry.util.ExceptionUtils
+import java.util.IdentityHashMap
 
 /**
  * Converts the host app back stack into a list of [NormalizedSentryBackStackEntry]s.
@@ -66,9 +75,13 @@ internal class BackStackConverter<T : Any>(
     sanitizer: ArgumentSanitizer,
     warningState: WarningState,
   ): NormalizedSentryBackStackEntry {
-    val (info, reportedReason) =
+    var reportedReason: UnknownEntryReason? = null
+    val info =
       try {
-        UnknownEntryReasonReports.collect { entryMapper.map(backStackEntry) }
+        UnknownEntryReasonReporter.collect(
+          map = { entryMapper.map(backStackEntry) },
+          onCollected = { reportedReason = it },
+        )
       } catch (t: Throwable) {
         // Back stack entry mappers are host app callbacks.
         ExceptionUtils.rethrowIfFatal(t)
@@ -140,25 +153,24 @@ internal class BackStackConverter<T : Any>(
   )
 
   /**
-   * Sanitizes a back stack entry's raw argument inputs and returns them in a
-   * [serializable form][SanitizedArguments.values].
+   * Sanitizes the arguments the [entryMapper] returns for back stack entries and returns them in a
+   * [serializable form][SanitizedArguments.values]. It bounds depth and total value count, and it
+   * rejects cyclic structures.
    *
-   * Internally, this class processes argument inputs returned by the [entryMapper] passed to the
-   * outer converter instance. Those inputs can come from built-in or custom
-   * [BackStackEntryMapper]s.
-   *
-   * Built-in mappers supply their own [ArgumentSource], while custom mappers typically supply an
-   * ordinary map. [HostArgumentSource] adapts ordinary maps to the [ArgumentSource] contract, so
-   * both paths can be handled by the same processing pipeline.
+   * One instance is shared across every entry in a single [convert] call, so the value and
+   * character budgets span the whole update.
    */
   internal class ArgumentSanitizer(
     private val logger: ILogger,
     private val warningState: WarningState,
   ) {
 
-    // One instance per sanitizer, so the budgets span every entry of a back stack update.
-    private val budget = ArgumentBudget()
+    private var remainingValues = MAX_ARGUMENT_VALUES
+    private var remainingCharacters = MAX_ARGUMENT_CHARACTERS
     private var dropReason: ArgumentDropReason? = null
+
+    /** The maps and lists currently being sanitized, so that one containing itself is rejected. */
+    private val activeContainers = IdentityHashMap<Any, Unit>()
 
     /**
      * Sanitizes one entry's raw argument inputs and returns the result.
@@ -178,37 +190,142 @@ internal class BackStackConverter<T : Any>(
         return SanitizedArguments(emptyMap(), reason)
       }
 
-      // Use the raw inputs' own source implementation when available; otherwise, provide them with
-      // an adapter.
-      val source =
-        raw as? ArgumentSource
-          ?: HostArgumentSource(raw) { warningState.logUnsupportedValueWarning(it, logger) }
-      val sink = TreeArgumentWriter(budget, rootIdentity = raw)
-
-      // A constraint violation the sink recorded takes precedence over whatever the source threw,
-      // as for ArgumentSink.throwIfFailed. Here it's the reason the arguments are dropped with.
       return try {
-        source.writeTo(sink)
-        SanitizedArguments(sink.argumentsOrThrow())
+        SanitizedArguments(sanitizeMap(raw, depth = 0))
       } catch (drop: DropArguments) {
-        drop(sink.failure ?: drop)
+        if (drop.reason.exhaustsUpdateBudget) {
+          dropReason = drop.reason
+        }
+        logger.log(WARNING, drop.warning)
+        SanitizedArguments(emptyMap(), drop.reason)
       } catch (t: Throwable) {
         // Extracted maps may invoke host app code while iterating or stringifying values.
         ExceptionUtils.rethrowIfFatal(t)
-        sink.failure?.let {
-          return drop(it)
-        }
-        logger.log(WARNING, DropArguments.STRUCTURE_WARNING, t)
+        logger.log(WARNING, STRUCTURE_WARNING, t)
         SanitizedArguments(emptyMap(), ArgumentDropReason.SANITIZATION_FAILED)
+      } finally {
+        // A drop or failure leaves the containers it was inside of open.
+        activeContainers.clear()
       }
     }
 
-    private fun drop(drop: DropArguments): SanitizedArguments {
-      if (drop.reason.exhaustsUpdateBudget) {
-        dropReason = drop.reason
+    /** Sanitizes [map], whose values are at [depth] + 1. The entry's root map has depth 0. */
+    private fun sanitizeMap(map: Map<*, *>, depth: Int): Map<String, Any?> {
+      enter(map)
+      val sanitized = LinkedHashMap<String, Any?>()
+      for ((key, value) in map) {
+        val name = spendText(key.toString())
+        if (sanitized.containsKey(name)) {
+          throw duplicateKey(map, key, name)
+        }
+        sanitized[name] = sanitizeValue(value, depth + 1)
       }
-      drop.warning?.let { logger.log(WARNING, it) }
-      return SanitizedArguments(emptyMap(), drop.reason)
+      activeContainers.remove(map)
+      return sanitized
+    }
+
+    private fun sanitizeValue(value: Any?, depth: Int): Any? {
+      // A value at depth n is nested in n containers, counting the entry's root map.
+      if (depth > MAX_ARGUMENT_DEPTH) {
+        throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, STRUCTURE_WARNING)
+      }
+      if (--remainingValues < 0) {
+        throw DropArguments(ArgumentDropReason.MAX_COUNT, MAX_COUNT_WARNING)
+      }
+
+      if (value is Map<*, *>) {
+        return sanitizeMap(value, depth)
+      }
+      val collection = value?.asCollectionOrNull() ?: return sanitizeScalar(value)
+
+      enter(value)
+      // Iterated without reading the collection's size, which the host app controls.
+      val sanitized = ArrayList<Any?>()
+      for (element in collection) {
+        sanitized += sanitizeValue(element, depth + 1)
+      }
+      activeContainers.remove(value)
+      return sanitized
+    }
+
+    private fun sanitizeScalar(value: Any?): Any? =
+      when (value) {
+        null,
+        is Boolean -> value
+        // JSON has no NaN or infinity, and Sentry's JSON writer throws for them, which would drop
+        // the whole event these arguments are attached to. We record them as strings instead.
+        is Number -> if (value.isNonFinite()) spendText(value.toString()) else value
+        is CharSequence -> spendText(value)
+        is Char -> spendText(value.toString())
+        is Enum<*> -> spendText(value.name)
+        else -> {
+          warningState.logUnsupportedValueWarning(value::class.simpleName, logger)
+          spendText(value.toString())
+        }
+      }
+
+    /**
+     * Returns [text] as a [String] after spending its characters.
+     *
+     * Checks [text]'s length before converting it, so that host app text that doesn't fit isn't
+     * copied, and again after, in case a custom [CharSequence]'s length doesn't match its text.
+     */
+    private fun spendText(text: CharSequence): String {
+      checkFits(text.length)
+      val string = text.toString()
+      checkFits(string.length)
+      remainingCharacters -= string.length
+      return string
+    }
+
+    private fun checkFits(characters: Int) {
+      if (characters > remainingCharacters) {
+        throw DropArguments(ArgumentDropReason.CHARACTER_LIMIT, MAX_CHARACTER_WARNING)
+      }
+    }
+
+    private fun enter(container: Any) {
+      if (activeContainers.put(container, Unit) != null) {
+        throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, STRUCTURE_WARNING)
+      }
+    }
+
+    /**
+     * Names only the colliding keys' types, as the keys themselves may contain host data.
+     * Collisions are rare, so we re-scan [map] instead of tracking the original keys of every map.
+     */
+    private fun duplicateKey(map: Map<*, *>, key: Any?, name: String): DropArguments {
+      val otherKey = map.keys.firstOrNull { it !== key && it.toString() == name }
+      return DropArguments(
+        ArgumentDropReason.DUPLICATE_KEY,
+        "A Nav3 map key (${key?.let { it::class.simpleName }}) stringifies to the same string " +
+          "as another key (${otherKey?.let { it::class.simpleName }}). Dropping this entry's " +
+          "arguments.",
+      )
+    }
+
+    /**
+     * Control-flow signal to drop an entry's arguments, logging [warning]. Overrides
+     * [fillInStackTrace] to skip stack-trace capture.
+     */
+    private class DropArguments(val reason: ArgumentDropReason, val warning: String) :
+      RuntimeException() {
+      override fun fillInStackTrace(): Throwable = this
+    }
+
+    companion object {
+
+      const val MAX_CHARACTER_WARNING =
+        "Nav3 back stack update exceeded the argument character limit. Dropping arguments for " +
+          "this and older entries."
+
+      const val MAX_COUNT_WARNING =
+        "Nav3 back stack update exceeded the argument value limit. Dropping arguments for this " +
+          "and older entries."
+
+      const val STRUCTURE_WARNING =
+        "Nav3 argument sanitization failed (possibly cyclic or too deeply nested). Dropping this " +
+          "entry's arguments."
     }
   }
 
@@ -276,8 +393,6 @@ internal data class NormalizedSentryBackStackEntry(
 
   companion object {
 
-    const val UNKNOWN_ENTRY_NAME = "/unknown"
-
     /**
      * Trims [name] and adds a "/" prefix if one isn't already present.
      *
@@ -318,43 +433,44 @@ internal data class NormalizedSentryBackStackEntry(
    * ```
    *  {
    *    "entry": "/unknown"
-   *    "unknown_entry_reason": "not_serializable"
+   *    "unknown_entry_reason": "entry_not_annotated"
    *  }
    * ```
    */
   fun serialize(): Map<String, Any?> = buildMap {
-    put("entry", name)
+    put(BACK_STACK_ENTRY_KEY, name)
     unknownEntryReason?.let { put(UNKNOWN_ENTRY_REASON_KEY, it.serializedValue) }
-    argumentsWithMetadata().takeIf { it.isNotEmpty() }?.let { put("entry_arguments", it) }
+    argumentsWithMetadata()
+      .takeIf { it.isNotEmpty() }
+      ?.let { put(BACK_STACK_ENTRY_ARGUMENTS_KEY, it) }
   }
 }
 
-/**
- * Returns the data to set on the nav transaction of a destination this entry is the top of: its
- * `arguments`, as for [NormalizedSentryBackStackEntry.argumentsWithMetadata], and its
- * `unknown_entry_reason`, each if it has any.
- */
+/** Returns the data to set on the nav transaction of a destination this entry is the top of. */
 internal fun NormalizedSentryBackStackEntry.transactionData(): Map<String, Any> = buildMap {
-  argumentsWithMetadata().takeIf { it.isNotEmpty() }?.let { put("arguments", it) }
+  argumentsWithMetadata().takeIf { it.isNotEmpty() }?.let { put(TRANSACTION_ARGUMENTS_KEY, it) }
   unknownEntryReason?.let { put(UNKNOWN_ENTRY_REASON_KEY, it.serializedValue) }
 }
 
 internal fun List<NormalizedSentryBackStackEntry>.serialize(): List<Map<String, Any?>> =
   map(NormalizedSentryBackStackEntry::serialize)
 
-/** Why host-provided arguments were unavailable in emitted nav state. */
-internal enum class ArgumentDropReason(
-  val serializedValue: String,
-  val exhaustsUpdateBudget: Boolean = false,
-) {
-
-  CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
-  DUPLICATE_KEY("duplicate_key"),
-  INVALID_STRUCTURE("invalid_structure"),
-  MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),
-  SANITIZATION_FAILED("sanitization_failed");
-
-  companion object {
-    const val ARGUMENT_DROP_REASON_KEY = "dropped_by_sentry"
+/** Returns this collection, or this array as a list, or `null` if it's neither. */
+private fun Any.asCollectionOrNull(): Collection<*>? =
+  when (this) {
+    is Collection<*> -> this
+    is Array<*> -> asList()
+    is BooleanArray -> asList()
+    is ByteArray -> asList()
+    is ShortArray -> asList()
+    is IntArray -> asList()
+    is LongArray -> asList()
+    is FloatArray -> asList()
+    is DoubleArray -> asList()
+    is CharArray -> asList()
+    else -> null
   }
-}
+
+/** Whether this is a NaN or infinite `Double` or `Float`. */
+private fun Number.isNonFinite(): Boolean =
+  (this is Double && !isFinite()) || (this is Float && !isFinite())

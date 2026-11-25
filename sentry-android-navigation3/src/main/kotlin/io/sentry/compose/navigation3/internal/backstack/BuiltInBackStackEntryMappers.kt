@@ -1,14 +1,16 @@
 package io.sentry.compose.navigation3.internal.backstack
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.snapshots.Snapshot
 import io.sentry.ILogger
 import io.sentry.ScopesAdapter
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
-import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxBackStackEntryMapper
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -20,15 +22,16 @@ internal object BuiltInBackStackEntryMappers {
    * A built-in [BackStackEntryMapper] for apps that use kotlinx.serialization and only need to
    * track the serial name of each of their back stack entries (and not each entry's properties).
    *
-   * The kotlinx mapper is created when this first maps an entry; see
-   * [DeferredBackStackEntryMapper]. Falls back to [UnavailableBackStackEntryMapper] if it can't be
-   * created.
+   * Falls back to [UnavailableBackStackEntryMapper] if the kotlinx mapper can't be created.
    *
    * See [BackStackEntryMapper.SerialName] for more details.
    */
-  val serialName: BackStackEntryMapper<Any> = DeferredBackStackEntryMapper {
-    create(logger) { KotlinxBackStackEntryMapper(logger = logger) }
-  }
+  val serialName: BackStackEntryMapper<Any> =
+    // Uses a deferred map because apps may read this while composing, which Compose can discard.
+    // SentryNavEffect is careful to call serialName.map() only from an effect.
+    DeferredBackStackEntryMapper {
+      create(logger) { KotlinxBackStackEntryMapper(logger = logger) }
+    }
 
   /**
    * Returns the mapper created by [newKotlinxMapper], or an [UnavailableBackStackEntryMapper] if
@@ -42,19 +45,13 @@ internal object BuiltInBackStackEntryMappers {
     return try {
       newKotlinxMapper()
     } catch (e: LinkageError) {
-      // An incompatible kotlinx.serialization version can throw a LinkageError while the mapper is
-      // created, either because a class the mapper uses can't be linked or because the mapper's
-      // compatibility probe failed to look up names. We catch the error here so that every entry
-      // falls back to UNKNOWN_ENTRY_NAME instead of crashing the app.
-      //
-      // Construction runs no host app code, only kotlinx.serialization's and the SDK's, so this
-      // also catches an ExceptionInInitializerError from either. We fall back rather than crash,
-      // and log the error for diagnosis.
+      // A missing or incompatible kotlinx-serialization-core version will throw a LinkageError, as
+      // will a failed initializer in it or in the SDK. Fall back instead of crashing.
       logger()
         .log(
           WARNING,
-          // The compiler inlines INCOMPATIBLE_KOTLINX_ADVICE, and its use here doesn't access any
-          // kotlinx.serialization code.
+          // Note: The compiler inlines INCOMPATIBLE_KOTLINX_ADVICE, and its use here doesn't access
+          // any kotlinx.serialization code.
           "Nav3 built-in mapper creation failed. Using $UNKNOWN_ENTRY_NAME for all entries. See " +
             "the attached error. $INCOMPATIBLE_KOTLINX_ADVICE",
           e,
@@ -65,31 +62,7 @@ internal object BuiltInBackStackEntryMappers {
 }
 
 /**
- * A built-in [BackStackEntryMapper] that creates the mapper it delegates to when it first maps an
- * entry, rather than when the app reads it.
- *
- * Apps read the built-in mappers while composing, e.g., as an argument to `SentryNavEffect`.
- * Creating a mapper looks up serializers by reflection and may log. Deferring that work to the
- * first [map] call keeps it out of composition, which Compose may discard, and runs it where
- * `SentryNavEffect` maps entries: in an effect, after the composition is applied, where a failure
- * only affects the entries being mapped.
- *
- * If [create] throws, [map] throws too, and the next [map] call tries to create the mapper again.
- */
-internal class DeferredBackStackEntryMapper(
-  create: () -> BackStackEntryMapper<Any>,
-) : BackStackEntryMapper<Any> {
-
-  // PUBLICATION avoids holding a lock while mapper creation calls the app's logger. Threads that
-  // race on the first map() may each create and probe a mapper and log warnings, but all of them
-  // use the instance published first.
-  private val mapper by lazy(LazyThreadSafetyMode.PUBLICATION, create)
-
-  override fun map(backStackEntry: Any): SentryBackStackEntry? = mapper.map(backStackEntry)
-}
-
-/**
- * A fallback for when a built-in [BackStackEntryMapper] isn't supported by the host app.
+ * A fallback for situations where the host app doesn't support a built-in [BackStackEntryMapper].
  *
  * Maps every back stack entry to `null`, which Sentry records as [UNKNOWN_ENTRY_NAME] with
  * [UnknownEntryReason.KOTLINX_SERIALIZATION_VERSION]. Logs once per entry type.
@@ -113,7 +86,83 @@ internal class UnavailableBackStackEntryMapper(
         )
     }
 
-    UnknownEntryReasonReports.report(UnknownEntryReason.KOTLINX_SERIALIZATION_VERSION)
+    UnknownEntryReasonReporter.report(UnknownEntryReason.KOTLINX_SERIALIZATION_VERSION)
     return null
+  }
+}
+
+/**
+ * A [BackStackEntryMapper] that creates the mapper it delegates to on its first [map] call, rather
+ * than when it's constructed.
+ *
+ * If [create] throws, [map] throws too and the next [map] call will try to create the mapper again.
+ */
+internal class DeferredBackStackEntryMapper(
+  create: () -> BackStackEntryMapper<Any>,
+) : BackStackEntryMapper<Any> {
+
+  // PUBLICATION avoids holding a lock while mapper creation calls the app's logger.
+  private val mapper by lazy(LazyThreadSafetyMode.PUBLICATION, create)
+
+  override fun map(backStackEntry: Any): SentryBackStackEntry? = mapper.map(backStackEntry)
+}
+
+/**
+ * A Compose-compatible version of [BackStackEntryMapper] that generates [SentryBackStackEntry]s by
+ * forwarding the request to the host app mapper in effect at the time [map] is called.
+ *
+ * Dynamically determining the current mapper lets us separate two concerns:
+ *
+ * 1. the lifetime of a consumer that tracks navigation state over time (e.g., [BackStackObserver]);
+ *    and
+ * 2. the lifetime of the mapper used to generate `SentryBackStackEntry`s.
+ *
+ * Without that separation, a long-lived consumer would have to choose between holding stale mapping
+ * logic or recreating its own state whenever the mapper changed.
+ */
+internal class ForwardingBackStackEntryMapper<T : Any>(
+  private val currentMapper: () -> BackStackEntryMapper<T>,
+) {
+
+  fun map(backStackEntry: T): SentryBackStackEntry? = Snapshot.withoutReadObservation {
+    currentMapper().map(backStackEntry)
+  }
+}
+
+/**
+ * Passes the [UnknownEntryReason] a built-in [BackStackEntryMapper] knows to the back stack
+ * converter, as the mapper reports a failure by returning `null`, which is public API.
+ *
+ * A built-in mapper [report]s the reason right before returning `null`, and the converter
+ * [collect]s it around each call to the app's mapper. So a custom mapper that forwards a built-in
+ * mapper's `null` forwards its reason too, while one that returns `null` itself reports nothing,
+ * and one that returns a name has its reason ignored. If a custom mapper calls built-in mappers
+ * several times for one entry, the last reason reported is kept.
+ *
+ * Kept per thread, as mappers run on the converter's thread.
+ */
+internal object UnknownEntryReasonReporter {
+
+  private val reports = ThreadLocal<UnknownEntryReason?>()
+
+  /** Reports why the built-in mapper that's about to return `null` can't name its entry. */
+  fun report(reason: UnknownEntryReason) {
+    reports.set(reason)
+  }
+
+  /**
+   * Runs [map] and returns its result, passing [onCollected] the last reason reported while it ran,
+   * or `null` if none was. Clears the report before and after, even if [map] throws, so a reason
+   * can't carry over to another entry.
+   */
+  fun <R> collect(map: () -> R, onCollected: (UnknownEntryReason?) -> Unit): R {
+    reports.remove()
+    try {
+      val result = map()
+      onCollected(reports.get())
+      return result
+    } finally {
+      reports.remove()
+    }
   }
 }

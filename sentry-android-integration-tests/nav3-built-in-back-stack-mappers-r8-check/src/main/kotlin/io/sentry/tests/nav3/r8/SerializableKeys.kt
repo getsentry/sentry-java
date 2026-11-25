@@ -62,12 +62,10 @@ enum class TabWithBody {
 @Serializable @JvmInline value class TabId(val id: String)
 
 /**
- * Has a named companion object but no named-companion R8 rules of the app's own.
- * kotlinx.serialization 1.10.0+'s own rules keep what its reflective serializer lookup needs, so
- * the mapper must name it. The floor's rules don't, in R8 full and compat mode alike, so at the
- * floor the mapper must record it as `/unknown`. In between, it depends on the version and R8 mode
- * (e.g., 1.9.x's lookup survives in compat mode only), so either outcome is accepted. See
- * `namedCompanionOutcome` in `build.gradle.kts`.
+ * Has a named companion and no app keep rules for it. kotlinx.serialization 1.10.0+ supplies
+ * the rules needed for serializer lookup, so the mapper must return its name. Older releases
+ * may return the name or `/unknown`; `/unknown` must report `serializer_not_found`.
+ * See `NAMED_COMPANION_ALWAYS_NAMED` in `build.gradle.kts`.
  */
 @Serializable
 data class NamedCompanionKey(val id: String) {
@@ -125,7 +123,9 @@ fun serializableExpectations(): List<Expectation> =
       SerializableEnum.A,
       "$PKG.SerializableEnum",
     ),
-    Expectation("generic class", Generic("x"), null),
+    // In R8 full mode too, as AGP's default ProGuard files keep Signature and
+    // kotlinx.serialization's rules keep @Serializable classes.
+    Expectation("generic class", Generic("x"), null, setOf(GENERIC_ENTRY_TYPE)),
     Expectation("private top-level object", PrivateTopLevelObject, "$PKG.PrivateTopLevelObject"),
     Expectation(
       "private top-level class",
@@ -139,20 +139,12 @@ fun serializableExpectations(): List<Expectation> =
       "$PKG.TabWithBody",
     ),
     Expectation("value class", TabId("feed"), "$PKG.TabId"),
-    if (BuildConfig.NAMED_COMPANION_OUTCOME == "unknown") {
-      Expectation(
-        "named companion without rules (/unknown at the floor)",
-        NamedCompanionKey.of("1"),
-        null,
-      )
-    } else {
-      Expectation(
-        "named companion without rules",
-        NamedCompanionKey.of("1"),
-        "$PKG.NamedCompanionKey",
-        alsoAcceptsUnnamed = BuildConfig.NAMED_COMPANION_OUTCOME == "either",
-      )
-    },
+    Expectation(
+      "named companion without rules",
+      NamedCompanionKey.of("1"),
+      "$PKG.NamedCompanionKey",
+      if (BuildConfig.NAMED_COMPANION_ALWAYS_NAMED) emptySet() else setOf(SERIALIZER_NOT_FOUND),
+    ),
     Expectation(
       "named companion with rules",
       NamedCompanionKeyWithRules.of("1"),

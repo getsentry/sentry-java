@@ -2,12 +2,12 @@ package io.sentry.compose.navigation3.internal.backstack.kotlinx
 
 import com.google.common.truth.Truth.assertThat
 import java.lang.reflect.InvocationTargetException
+import kotlin.test.assertFailsWith
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class KotlinxSerializerLookupTest {
@@ -54,6 +54,19 @@ class KotlinxSerializerLookupTest {
   class InaccessibleInstanceWithoutSerializer private constructor() {
     private companion object {
       @Suppress("unused") private val INSTANCE = InaccessibleInstanceWithoutSerializer()
+    }
+  }
+
+  /**
+   * Looks like a private object to kotlinx.serialization, as for
+   * [InaccessibleInstanceWithoutSerializer], but its `serializer()` method returns something other
+   * than a serializer.
+   */
+  class InaccessibleInstanceWithNonSerializer private constructor() {
+    @Suppress("unused", "FunctionOnlyReturningConstant") fun serializer(): Any = "not a serializer"
+
+    private companion object {
+      @Suppress("unused") private val INSTANCE = InaccessibleInstanceWithNonSerializer()
     }
   }
 
@@ -262,7 +275,7 @@ class KotlinxSerializerLookupTest {
   @Test
   fun `throws a class's serializer initializer error wrapped in an InvocationTargetException`() {
     val thrown =
-      assertThrows(InvocationTargetException::class.java) {
+      assertFailsWith<InvocationTargetException> {
         reflectiveSerializerOrNull(Uninitializable::class.java)
       }
 
@@ -277,7 +290,7 @@ class KotlinxSerializerLookupTest {
   @Test
   fun `throws a class's serializer initializer NoSuchMethodError wrapped in an InvocationTargetException`() {
     val thrown =
-      assertThrows(InvocationTargetException::class.java) {
+      assertFailsWith<InvocationTargetException> {
         reflectiveSerializerOrNull(IncompatiblyUninitializable::class.java)
       }
 
@@ -288,7 +301,7 @@ class KotlinxSerializerLookupTest {
   @Test
   fun `throws a private object's serializer initializer error wrapped in an InvocationTargetException`() {
     val thrown =
-      assertThrows(InvocationTargetException::class.java) {
+      assertFailsWith<InvocationTargetException> {
         reflectiveSerializerOrNull(PrivateUninitializable::class.java)
       }
 
@@ -303,7 +316,7 @@ class KotlinxSerializerLookupTest {
   @Test
   fun `throws an exception from a class's serializer construction wrapped in an InvocationTargetException`() {
     val thrown =
-      assertThrows(InvocationTargetException::class.java) {
+      assertFailsWith<InvocationTargetException> {
         reflectiveSerializerOrNull(FailingConstruction::class.java)
       }
 
@@ -312,10 +325,10 @@ class KotlinxSerializerLookupTest {
   }
 
   @Test
-  fun `restores the interrupt status when a class's serializer construction is interrupted`() {
+  fun `restores the interrupt flag when a class's serializer construction is interrupted`() {
     try {
       val thrown =
-        assertThrows(InvocationTargetException::class.java) {
+        assertFailsWith<InvocationTargetException> {
           reflectiveSerializerOrNull(InterruptedConstruction::class.java)
         }
 
@@ -329,7 +342,7 @@ class KotlinxSerializerLookupTest {
   @Test
   fun `propagates a class's fatal serializer initializer error unwrapped`() {
     val thrown =
-      assertThrows(OutOfMemoryError::class.java) {
+      assertFailsWith<OutOfMemoryError> {
         reflectiveSerializerOrNull(FatallyUninitializable::class.java)
       }
 
@@ -339,22 +352,29 @@ class KotlinxSerializerLookupTest {
   @Test
   fun `propagates a private object's fatal serializer initializer error unwrapped`() {
     val thrown =
-      assertThrows(OutOfMemoryError::class.java) {
+      assertFailsWith<OutOfMemoryError> {
         reflectiveSerializerOrNull(PrivateFatal::class.java)
       }
 
     assertThat(thrown).hasMessageThat().isEqualTo("serializer init failed fatally")
   }
 
-  // Private object lookups that fail
+  // Private object lookups that find no serializer
 
   @Test
   fun `throws the reflection error when a type with an inaccessible INSTANCE field has no serializer method`() {
     val thrown =
-      assertThrows(NoSuchMethodException::class.java) {
+      assertFailsWith<NoSuchMethodException> {
         reflectiveSerializerOrNull(InaccessibleInstanceWithoutSerializer::class.java)
       }
 
     assertThat(thrown).hasMessageThat().contains("serializer")
+  }
+
+  @Test
+  fun `returns null when a type with an inaccessible INSTANCE field has a serializer() that returns no KSerializer`() {
+    val serializer = reflectiveSerializerOrNull(InaccessibleInstanceWithNonSerializer::class.java)
+
+    assertThat(serializer).isNull()
   }
 }

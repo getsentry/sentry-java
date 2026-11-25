@@ -3,13 +3,12 @@ package io.sentry.compose.navigation3.internal.backstack
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.Sentry
-import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxBackStackEntryMapper
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
-import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.MIN_KOTLINX_SERIALIZATION_VERSION
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
 import io.sentry.test.initForTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -19,8 +18,6 @@ import kotlin.concurrent.thread
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
@@ -37,59 +34,21 @@ class BuiltInBackStackEntryMappersTest {
 
   @Serializable @SerialName("Home") data object Home
 
-  @Serializable @SerialName("Detail") data class Detail(val id: String)
-
   data class NotSerializable(val id: String)
 
   private val kotlinxMapper = BackStackEntryMapper<Any> { SentryBackStackEntry("Kotlinx") }
   private val logger = mock<ILogger>()
 
-  @Before
-  fun clearIntegrations() {
-    SentryIntegrationPackageStorage.getInstance().clearStorage()
-  }
-
-  @After
-  fun clearIntegrationsAfterTest() {
-    SentryIntegrationPackageStorage.getInstance().clearStorage()
-  }
-
   // serialName
 
   @Test
-  fun `serialName names entries without recording their properties`() {
-    val mapper = BuiltInBackStackEntryMappers.serialName
-
-    val mapped = listOf(Home, Detail("1")).map(mapper::map)
-
-    assertThat(mapped)
-      .containsExactly(SentryBackStackEntry("Home"), SentryBackStackEntry("Detail"))
-      .inOrder()
-  }
-
-  @Test
-  fun `serialName returns the same mapper on every access`() {
+  fun `serialName - returns the same mapper on every access`() {
     assertThat(BuiltInBackStackEntryMappers.serialName)
       .isSameInstanceAs(BuiltInBackStackEntryMappers.serialName)
   }
 
-  // BackStackEntryMapper's companion mappers
-
   @Test
-  fun `BackStackEntryMapper SerialName returns the built-in mapper`() {
-    assertThat(BackStackEntryMapper.SerialName)
-      .isSameInstanceAs(BuiltInBackStackEntryMappers.serialName)
-  }
-
-  @Test
-  fun `BackStackEntryMapper SerialName can serve as the mapper for any entry type`() {
-    val homeMapper: BackStackEntryMapper<Home> = BackStackEntryMapper.SerialName
-
-    assertThat(homeMapper.map(Home)).isEqualTo(SentryBackStackEntry("Home"))
-  }
-
-  @Test
-  fun `reading BackStackEntryMapper SerialName doesn't create the kotlinx mapper`() {
+  fun `serialName - doesn't create the kotlinx mapper when read`() {
     val classLoader = KotlinxMapperHidingClassLoader()
 
     classLoader.companionMapper("getSerialName")
@@ -98,7 +57,7 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName maps entries to null when the kotlinx mapper can't be loaded`() {
+  fun `serialName - maps entries to null when the kotlinx mapper can't be loaded`() {
     val classLoader = KotlinxMapperHidingClassLoader()
 
     val mapper = classLoader.companionMapper("getSerialName")
@@ -108,7 +67,7 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName maps entries to null when kotlinx serialization is missing`() {
+  fun `serialName - maps entries to null when kotlinx serialization is missing`() {
     val classLoader = KotlinxMapperHidingClassLoader(hidesKotlinx = true)
     val entry = classLoader.notSerializableEntry("1")
 
@@ -119,34 +78,18 @@ class BuiltInBackStackEntryMappersTest {
     assertThat(classLoader.wasKotlinxRequested).isTrue()
   }
 
-  // First mapping from several threads
-
   @Test
-  fun `BackStackEntryMapper SerialName holds no lock while creating the mapper logs on first mapping`() {
+  fun `serialName - holds no lock while logging a mapper creation failure on the first mapping`() {
     val race = raceOnFirstMapping("getSerialName")
 
     assertThat(race.otherThreadLoggerGotAppLock).isTrue()
   }
 
   @Test
-  fun `BackStackEntryMapper SerialName uses the mapper published first for racing and later mappings`() {
+  fun `serialName - uses the mapper created first for racing and later mappings`() {
     val race = raceOnFirstMapping("getSerialName")
 
     assertThat(race.unavailableTypeWarnings).isEqualTo(1)
-  }
-
-  // MIN_KOTLINX_SERIALIZATION_VERSION
-
-  @Test
-  fun `MIN_KOTLINX_SERIALIZATION_VERSION matches kotlinxSerialization-floor in the dependency matrix catalog`() {
-    val floor =
-      checkNotNull(System.getProperty(KOTLINX_SERIALIZATION_FLOOR_PROPERTY)) {
-        "System property $KOTLINX_SERIALIZATION_FLOOR_PROPERTY is missing. Run this test through " +
-          "Gradle, which sets it from kotlinxSerialization-floor in " +
-          "gradle/dependency-matrix.versions.toml."
-      }
-
-    assertThat(MIN_KOTLINX_SERIALIZATION_VERSION).isEqualTo(floor)
   }
 
   // create()
@@ -163,17 +106,20 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `create() - maps entries to null when creating the kotlinx mapper throws NoClassDefFoundError`() {
+  fun `create() - returns a mapper reporting the kotlinx serialization version reason for a NoClassDefFoundError`() {
     val mapper =
       BuiltInBackStackEntryMappers.create(logger = { logger }) {
         throw NoClassDefFoundError("kotlinx/serialization/KSerializer")
       }
 
-    assertThat(mapper.map(Home)).isNull()
+    val (mapped, reason) = collectWithReason { mapper.map(Home) }
+
+    assertThat(mapped).isNull()
+    assertThat(reason).isEqualTo(UnknownEntryReason.KOTLINX_SERIALIZATION_VERSION)
   }
 
   @Test
-  fun `create() - maps entries to null when creating the kotlinx mapper throws ExceptionInInitializerError`() {
+  fun `create() - returns a mapper that maps entries to null for an ExceptionInInitializerError`() {
     val mapper =
       BuiltInBackStackEntryMappers.create(logger = { logger }) {
         throw ExceptionInInitializerError("static initializer failed")
@@ -183,20 +129,7 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
-  fun `create() - reports the kotlinx serialization version as the reason when mapper creation fails`() {
-    val mapper =
-      BuiltInBackStackEntryMappers.create(logger = { logger }) {
-        throw NoClassDefFoundError("kotlinx/serialization/KSerializer")
-      }
-
-    val (mapped, reason) = UnknownEntryReasonReports.collect { mapper.map(Home) }
-
-    assertThat(mapped).isNull()
-    assertThat(reason).isEqualTo(UnknownEntryReason.KOTLINX_SERIALIZATION_VERSION)
-  }
-
-  @Test
-  fun `create() - logs the LinkageError and compatibility advice when mapper creation fails`() {
+  fun `create() - logs the LinkageError and compatibility advice when creating the kotlinx mapper fails`() {
     val error = NoClassDefFoundError("kotlinx/serialization/KSerializer")
 
     BuiltInBackStackEntryMappers.create(logger = { logger }) { throw error }
@@ -204,20 +137,6 @@ class BuiltInBackStackEntryMappersTest {
     val message = argumentCaptor<String>()
     verify(logger, times(1)).log(eq(SentryLevel.WARNING), message.capture(), eq(error))
     assertThat(message.firstValue).contains(INCOMPATIBLE_KOTLINX_ADVICE)
-  }
-
-  @Test
-  fun `create() - adds no Nav3 integration to the SDK when creating the kotlinx mapper throws a LinkageError`() {
-    BuiltInBackStackEntryMappers.create(logger = { logger }) {
-      throw NoClassDefFoundError("kotlinx/serialization/KSerializer")
-    }
-
-    assertThat(
-        SentryIntegrationPackageStorage.getInstance().integrations.filter {
-          it.startsWith(NAV3_INTEGRATION_PREFIX)
-        },
-      )
-      .isEmpty()
   }
 
   @Test
@@ -397,10 +316,5 @@ class BuiltInBackStackEntryMappersTest {
     const val CREATION_FAILED = "Nav3 built-in mapper creation failed."
 
     const val MAPPER_UNAVAILABLE = "Nav3 mapper unavailable for type"
-
-    const val NAV3_INTEGRATION_PREFIX = "ComposeNavigation3"
-
-    /** Set by the module's Gradle build from `kotlinxSerialization-floor`. */
-    const val KOTLINX_SERIALIZATION_FLOOR_PROPERTY = "nav3.kotlinxSerializationFloor"
   }
 }

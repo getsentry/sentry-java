@@ -236,15 +236,13 @@ internal fun SnapshotStateList<Nav3Route>.replacePerformanceTop(generation: Int)
 }
 
 /**
- * The sample's back stack keys. Each is `@Serializable`, so [BackStackEntryMapper.SerialName] can
- * name it: the route's `@SerialName`, which matches the Nav2 sample's [RouteNames], becomes its
- * Sentry name. Every member other than a route's constructor properties is a getter, so it isn't
+ * The sample's serializable back stack keys. Each `@SerialName` supplies its Sentry route name,
+ * using the Nav2 sample's [RouteNames] for shared routes. Only constructor properties are
  * serialized.
  *
- * Screens, tags, and transaction checks use [routeName] and [arguments], which repeat what the
- * sample's mapper records, instead of calling the mapper. Only `SentryNavEffect` runs the mapper,
- * so its one-time setup and any diagnostics stay out of composition, and a route the mapper can't
- * name is recorded as `/unknown` rather than breaking the screen that shows it.
+ * [routeName] and [arguments] mirror the sample's mapper output so screens, tags, and transaction
+ * checks can read them without invoking the mapper. Mapping stays in `SentryNavEffect`, keeping
+ * setup and diagnostics out of composition and screens usable when mapping produces `/unknown`.
  */
 internal sealed interface Nav3Route {
   /**

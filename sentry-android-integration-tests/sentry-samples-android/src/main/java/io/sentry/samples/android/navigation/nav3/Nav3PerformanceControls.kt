@@ -410,7 +410,7 @@ internal class Nav3PerformanceState(
     pendingOperation = null
   }
 
-  fun recordNameExtraction(sectionName: String, block: () -> String): String {
+  fun <T> recordNameExtraction(sectionName: String, block: () -> T): T {
     val startedAt = System.nanoTime()
     Trace.beginSection(sectionName)
     try {
@@ -515,12 +515,10 @@ internal enum class Nav3PerformanceArgumentMode(val label: String) {
 }
 
 /**
- * Which mapper the performance scenario feeds to `SentryNavEffect`.
+ * Selects the performance scenario's mapper.
  *
- * [CUSTOM] times name and argument extraction separately and substitutes the synthetic
- * [Nav3PerformanceArgumentMode] shapes. [SERIAL_NAME] runs the built-in mapper instead, so its name
- * lookups are what `SentryNavEffect.onBackStackChanged` measures. The built-in mapper records no
- * arguments, so the argument-shape control and the per-call extractor timings don't apply.
+ * [CUSTOM] provides synthetic arguments and separate extractor timings. [SERIAL_NAME] uses the
+ * built-in mapper, which extracts names only; each of its calls is timed as name extraction.
  */
 internal enum class Nav3PerformanceMapperMode(val label: String) {
   CUSTOM("Custom"),
@@ -891,6 +889,7 @@ internal fun Nav3PerformancePanel(
       PerfCard(title = "Extractor Inputs") {
         val customExtractorControlsEnabled =
           !state.performanceRunActive && state.mapperMode == Nav3PerformanceMapperMode.CUSTOM
+
         PerfModeRow(
           label = "Mapper",
           selectedLabel = state.mapperMode.label,
@@ -900,6 +899,7 @@ internal fun Nav3PerformancePanel(
               mode.label to { state.mapperMode = mode }
             },
         )
+
         PerfModeRow(
           label = "Extractor cost",
           selectedLabel = state.extractorMode.label,
@@ -909,6 +909,7 @@ internal fun Nav3PerformancePanel(
               mode.label to { state.extractorMode = mode }
             },
         )
+
         PerfModeRow(
           label = "Argument shape",
           selectedLabel = state.argumentMode.label,
@@ -927,16 +928,19 @@ internal fun Nav3PerformancePanel(
         state.recompositionRequests.toString(),
         tag = navPerformanceTag("recomposition_requests"),
       )
+
       PerfInfoRow(
         "Navigation mutations",
         state.navigationMutations.toString(),
         tag = navPerformanceTag("navigation_mutations"),
       )
+
       PerfInfoRow(
         "Destination changes",
         state.destinationChanges.toString(),
         tag = navPerformanceTag("destination_changes"),
       )
+
       if (showExtractorControls) {
         if (state.performanceRunActive) {
           Text("Metrics are published when the fixed run completes.")
@@ -998,6 +1002,7 @@ internal fun Nav3PerformancePanel(
           )
         }
       }
+
       Button(
         enabled = !state.performanceRunActive,
         onClick = { state.resetCounters() },
@@ -1005,6 +1010,7 @@ internal fun Nav3PerformancePanel(
       ) {
         Text("Reset Counters")
       }
+
       Button(
         enabled = !state.performanceRunActive,
         onClick = { state.publishDiagnostics(currentRoute = currentRoute, backStack = backStack) },

@@ -250,9 +250,13 @@ private fun Nav3SampleApp(
           }
         }
       } else if (performanceMapperMode == Nav3PerformanceMapperMode.SERIAL_NAME) {
-        // The built-in mapper itself, so SentryNavEffect.onBackStackChanged measures its real
-        // name lookups. It records no arguments.
-        BackStackEntryMapper.SerialName
+        // Times each call to the built-in mapper, which records no arguments. Its result is
+        // returned as is, so a null keeps the reason the mapper reported.
+        BackStackEntryMapper { route ->
+          performanceState.recordNameExtraction("Nav3Stress.serialNameMapping") {
+            BackStackEntryMapper.SerialName.map(route)
+          }
+        }
       } else {
         // A custom mapper, so the performance scenario can time name and argument extraction
         // separately and substitute synthetic arguments.

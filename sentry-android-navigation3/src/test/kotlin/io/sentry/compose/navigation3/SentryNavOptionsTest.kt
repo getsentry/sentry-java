@@ -8,6 +8,13 @@ import org.junit.Test
 class SentryNavOptionsTest {
 
   @Test
+  fun `captures up to five back stack entries by default`() {
+    val options = SentryNavOptions()
+
+    assertThat(options.maxCapturedBackStackEntries).isEqualTo(5)
+  }
+
+  @Test
   fun `accepts positive max captured backstack entries`() {
     val options = SentryNavOptions { maxCapturedBackStackEntries = 1 }
 

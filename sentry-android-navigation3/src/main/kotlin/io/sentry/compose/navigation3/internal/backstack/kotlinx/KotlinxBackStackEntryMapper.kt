@@ -5,10 +5,9 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
-import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
-import io.sentry.compose.navigation3.internal.backstack.UnknownEntryReason
-import io.sentry.compose.navigation3.internal.backstack.UnknownEntryReasonReports
-import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
+import io.sentry.compose.navigation3.internal.backstack.UnknownEntryReasonReporter
+import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
 import io.sentry.util.ExceptionUtils
 import java.lang.reflect.GenericSignatureFormatError
 import java.lang.reflect.InvocationTargetException
@@ -24,17 +23,21 @@ internal class KotlinxBackStackEntryMapper(
    * Returns the serializer of a back stack entry's `@Serializable` class, or `null` if there's none
    * (e.g. for a generic class). Only called for classes marked `@Serializable`.
    *
-   * May throw, as the lookup can run the app's serializer code for the first time.
+   * May throw, as the lookup can run the app's serializer code for the first time. Must rethrow a
+   * fatal error unwrapped if reflection wrapped it in an [InvocationTargetException], as
+   * [reflectiveSerializerOrNull] does, since the mapper treats every wrapped error as non-fatal.
    */
   private val lookUpSerializer: (Class<*>) -> KSerializer<*>? = ::reflectiveSerializerOrNull,
-  logger: () -> ILogger,
-  probe: KotlinxCompatibilityProbe = KotlinxCompatibilityProbe,
   /**
    * Whether a back stack entry's class is annotated with `@Serializable`.
    *
    * May throw, as reading the class's annotations can fail.
    */
   private val isAnnotatedSerializable: (Class<*>) -> Boolean = serializableAnnotationCheck(),
+  probe: CompatibilityProbe = { onInconclusive ->
+    KotlinxCompatibilityProbe.nameLookupLinkageError(onInconclusive = onInconclusive)
+  },
+  logger: () -> ILogger,
 ) : BackStackEntryMapper<Any> {
 
   // Serializer lookups use reflection and mapping runs on every navigation, so we cache each
@@ -44,14 +47,9 @@ internal class KotlinxBackStackEntryMapper(
   private val diagnostics = KotlinxMapperDiagnostics(logger)
 
   init {
-    // Check name-lookup support during construction so an incompatible kotlinx.serialization
-    // version triggers the use of UnavailableBackStackEntryMapper. Later LinkageErrors likely come
-    // from the entry's own type and are handled per type.
-    probe
-      .nameLookupLinkageError { error ->
-        diagnostics.inconclusiveProbe(NAME_LOOKUP_CAPABILITY, error)
-      }
-      ?.let { throw it }
+    // Throws if the host app uses an incompatible kotlinx-serialization-core version. Causes
+    // creation to fail and every back stack entry to be recorded as "/unknown".
+    probe { error -> diagnostics.inconclusiveProbe(error) }?.let { throw it }
   }
 
   override fun map(backStackEntry: Any): SentryBackStackEntry? {
@@ -62,7 +60,7 @@ internal class KotlinxBackStackEntryMapper(
       when (val cachedType = cachedType(type)) {
         is CachedType.Resolved -> cachedType
         is CachedType.Unresolved -> {
-          UnknownEntryReasonReports.report(cachedType.reason)
+          UnknownEntryReasonReporter.report(cachedType.reason)
           return null
         }
       }
@@ -76,105 +74,85 @@ internal class KotlinxBackStackEntryMapper(
     types.getOrPut(type) { lookUp(type) }
 
   /**
-   * Looks up [type]'s serializer and name. Logs if it can't be named.
+   * Looks up [type]'s serializer and serial name. Logs if the serializer isn't available or the
+   * name can't be resolved.
    *
-   * Never throws for a non-fatal error. Instead, a lookup that fails returns
-   * [CachedType.Unresolved] with the reason, which [cachedType] caches, so each type's failure is
-   * queried and logged only once.
+   * The lookup can run the app's serializer code and fail for the provided `type`. Rather than
+   * throw, this method returns [CachedType.Unresolved] with the reason. That allows the caller to
+   * cache the returned value, so that failing lookups are queried and logged only once per type.
    */
   @OptIn(ExperimentalSerializationApi::class)
   private fun lookUp(type: Class<*>): CachedType {
-    preLookupProblem(type)?.let {
-      return CachedType.Unresolved(it)
+    checkEligibleForLookup(type)?.let {
+      return CachedType.Unresolved(reason = it)
     }
 
-    // Serializer lookup and descriptor access may run host app code. Failures affect only this
-    // type.
-    val serializer =
-      when (val lookup = lookUpSerializerCatching(type)) {
-        is SerializerLookup.Found -> lookup.serializer
-        is SerializerLookup.NotFound -> {
-          diagnostics.unresolved(type, lookup.error)
-          return CachedType.Unresolved(
-            if (lookup.error == null) {
-              UnknownEntryReason.SERIALIZER_NOT_FOUND
-            } else {
-              UnknownEntryReason.SERIALIZER_LOOKUP_THREW
-            },
-          )
-        }
-      }
-
     return try {
-      CachedType.Resolved(serializer.descriptor.serialName)
+      val serializer = lookUpSerializer(type)
+      if (serializer == null) {
+        unresolved(type, error = null)
+      } else {
+        CachedType.Resolved(serializer.descriptor.serialName)
+      }
+    } catch (e: InvocationTargetException) {
+      // The type's serializer() threw, e.g., a custom serializer's ExceptionInInitializerError.
+      unresolved(type, e.cause ?: e)
     } catch (e: LinkageError) {
-      // Treat descriptor linkage errors as type-specific, including incompatibilities caused by a
-      // serializer compiled against another kotlinx.serialization version.
-      diagnostics.unresolved(type, e)
-      CachedType.Unresolved(UnknownEntryReason.SERIALIZER_LOOKUP_THREW)
+      // Construction checks the library itself, so this likely comes from the type's serializer,
+      // e.g., one compiled against another kotlinx.serialization version. It fails only this type.
+      unresolved(type, e)
     } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
-      // Custom descriptors may throw anything. Catch broadly to log once and cache the type as
-      // unresolved, avoiding repeated lookups. Entries use UNKNOWN_ENTRY_NAME.
+      // Broad b/c reflection throws its own unchecked exceptions (e.g., TypeNotPresentException
+      // when R8 removed a custom serializer), and custom descriptors may throw anything. The type
+      // is cached as unresolved to prevent re-failing on every navigation.
       ExceptionUtils.rethrowIfFatal(t)
-      diagnostics.unresolved(type, t)
-      CachedType.Unresolved(UnknownEntryReason.SERIALIZER_LOOKUP_THREW)
+      unresolved(type, t)
     }
   }
 
   /**
-   * Returns why [type] can't be named before looking up its serializer, logging it, or `null` if
-   * the lookup should decide.
+   * Checks whether [type] is eligible for serializer retrieval.
    *
-   * The annotation is checked first, as the lookup would otherwise return serializers for types
-   * that aren't `@Serializable`. Generic types are checked next: the lookup can't find their
-   * serializers either, and this way the reason and the warning say why.
+   * Returns `null` if eligible; otherwise returns the reason for ineligibility and logs.
    */
-  private fun preLookupProblem(type: Class<*>): UnknownEntryReason? =
-    serializableAnnotationProblem(type)
+  private fun checkEligibleForLookup(type: Class<*>): UnknownEntryReason? =
+    checkSerializableAnnotation(type)
       ?: if (isGeneric(type)) {
         diagnostics.genericType(type)
-        UnknownEntryReason.GENERIC_TYPE
+        UnknownEntryReason.GENERIC_ENTRY_TYPE
       } else {
         null
       }
 
   /**
-   * Returns why [type] can't be named if it isn't annotated with `@Serializable` or its annotations
-   * can't be read, logging it, or `null` if it's annotated.
+   * Checks that [type] is annotated with `@Serializable` so that built-in types and unannotated
+   * enums aren't named using unhelpful or potentially obfuscated serial names.
    *
-   * We only name types the host app marks as `@Serializable`. kotlinx.serialization provides
-   * serializers for built-in types (e.g. String, Int) and enums, but their serial names would be
-   * misleading ("kotlin.String") or derived from an obfuscated class name.
+   * Returns `null` if the annotation is present; otherwise returns the failure reason and logs.
    */
-  private fun serializableAnnotationProblem(type: Class<*>): UnknownEntryReason? =
+  private fun checkSerializableAnnotation(type: Class<*>): UnknownEntryReason? =
     try {
       if (isAnnotatedSerializable(type)) {
         null
       } else {
         diagnostics.notSerializable(type)
-        UnknownEntryReason.NOT_SERIALIZABLE
+        UnknownEntryReason.ENTRY_NOT_ANNOTATED
       }
     } catch (e: LinkageError) {
-      // As for the serializer lookup, a LinkageError from reading this type's annotations only
-      // fails this type.
-      diagnostics.unresolved(type, e)
-      UnknownEntryReason.SERIALIZER_LOOKUP_THREW
+      // Fails only this type.
+      unresolved(type, e).reason
     } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
-      // Catch broadly because annotation parsing has undocumented failure modes. Cache failures as
-      // unresolved so the type records UNKNOWN_ENTRY_NAME and logs once, rather than throwing from
-      // map() and retrying on every navigation.
+      // Broad b/c annotation parsing has undocumented failure modes.
       ExceptionUtils.rethrowIfFatal(t)
-      diagnostics.unresolved(type, t)
-      UnknownEntryReason.SERIALIZER_LOOKUP_THREW
+      unresolved(type, t).reason
     }
 
   /**
-   * Whether [type] has type parameters, so its serializer needs type arguments that can't be
-   * recovered from an entry at runtime.
+   * Whether [type] is generic (i.e., has type parameters). If so, serialization requires type
+   * arguments that can't be recovered from an entry at runtime.
    *
-   * `false` if its generic signature can't be read, e.g., because it's malformed, so that the
-   * lookup decides. R8 may also remove generic signatures, which also leaves the lookup to decide,
-   * as it can't find a generic class's serializer either.
+   * Returns `false` if `type`'s generic signature can't be read (e.g., because it's malformed, the
+   * type was removed by R8, etc.).
    */
   private fun isGeneric(type: Class<*>): Boolean =
     try {
@@ -188,44 +166,22 @@ internal class KotlinxBackStackEntryMapper(
     }
 
   /**
-   * Looks up [type]'s serializer, returning the error that made it fail, if any, instead of
-   * throwing it.
+   * Returns an unresolved cached type based on the provided [type], and logs.
+   *
+   * [error] is the exception thrown when trying to read the `type`'s annotations, serializer, or
+   * descriptor.
    */
-  private fun lookUpSerializerCatching(type: Class<*>): SerializerLookup =
-    try {
-      lookUpSerializer(type)?.let(SerializerLookup::Found)
-        ?: SerializerLookup.NotFound(error = null)
-    } catch (e: InvocationTargetException) {
-      // kotlinx.serialization (or our fallback for private objects) calls the type's
-      // generated serializer() method reflectively, and it threw. For instance, a custom
-      // serializer object whose initializer throws arrives here with an
-      // ExceptionInInitializerError as its cause. Only this type is affected.
-      val cause = e.cause ?: e
-      // Reflection wraps everything the method throws, fatal errors included, so we apply the
-      // SDK's fatal-error check to the cause. A LinkageError cause (e.g., that
-      // ExceptionInInitializerError) only fails this type, so it's exempt.
-      if (cause !is LinkageError) {
-        ExceptionUtils.rethrowIfFatal(cause)
-      }
-      SerializerLookup.NotFound(cause)
-    } catch (e: ReflectiveOperationException) {
-      // Any other reflective failure is specific to this type's serializer members.
-      SerializerLookup.NotFound(e)
-    } catch (e: LinkageError) {
-      // The creation-time probe checks library compatibility. A later LinkageError may come
-      // from this type's serializer or its dependencies, so cache it as unresolved without
-      // disabling other types. Catch before rethrowIfFatal, which rethrows LinkageErrors.
-      SerializerLookup.NotFound(e)
-    } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
-      // Broad because the lookup reflects over the app's classes, and the reflection and
-      // annotation APIs it uses can throw unchecked exceptions of their own (e.g., a
-      // TypeNotPresentException when R8 removed the serializer a @Serializable(with = ...)
-      // names). Without this catch, the exception would escape map() uncached and the lookup
-      // would be repeated on every navigation. Instead, the type is cached as unresolved and
-      // recorded as UNKNOWN_ENTRY_NAME, with the error logged once.
-      ExceptionUtils.rethrowIfFatal(t)
-      SerializerLookup.NotFound(t)
-    }
+  private fun unresolved(type: Class<*>, error: Throwable?): CachedType.Unresolved {
+    diagnostics.unresolved(type, error)
+    return CachedType.Unresolved(
+      reason =
+        if (error == null) {
+          UnknownEntryReason.SERIALIZER_NOT_FOUND
+        } else {
+          UnknownEntryReason.SERIALIZER_ACCESS_THREW
+        },
+    )
+  }
 
   /** What [lookUp] found for a back stack entry type, cached so each type is looked up once. */
   private sealed interface CachedType {
@@ -240,21 +196,7 @@ internal class KotlinxBackStackEntryMapper(
     class Unresolved(val reason: UnknownEntryReason) : CachedType
   }
 
-  /** The result of looking up a type's serializer. */
-  private sealed interface SerializerLookup {
-
-    class Found(val serializer: KSerializer<*>) : SerializerLookup
-
-    /**
-     * No serializer was found. [error] is what made the lookup fail, or `null` if the lookup found
-     * none without throwing (e.g., for a generic class).
-     */
-    class NotFound(val error: Throwable?) : SerializerLookup
-  }
-
-  internal companion object {
-    /** The capability the name lookup check verifies, as its inconclusive log names it. */
-    const val NAME_LOOKUP_CAPABILITY: String = "name lookups"
+  private companion object {
 
     /** Returns whether a class is annotated with `@Serializable`. */
     private fun serializableAnnotationCheck(): (Class<*>) -> Boolean {
@@ -268,9 +210,14 @@ internal class KotlinxBackStackEntryMapper(
 }
 
 /**
- * The warnings [KotlinxBackStackEntryMapper] logs when it can't name a back stack entry.
+ * The warnings [KotlinxBackStackEntryMapper] logs if it can't find the serializer for a back stack
+ * entry or resolve the entry's name.
  *
  * Only decides what's logged. Whether a type is looked up again is up to the mapper.
+ *
+ * The R8 check reads each unnamed type's reason from these messages, so rewording one requires
+ * updating the fragments in its `UnknownEntryReasonLogs.kt`
+ * (`sentry-android-integration-tests/nav3-built-in-back-stack-mappers-r8-check`).
  */
 internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
 
@@ -285,10 +232,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
       )
   }
 
-  /**
-   * Logs that entries of [type] can't be named because the type is generic, so its serializer needs
-   * type arguments that can't be recovered from an entry.
-   */
+  /** Logs that serial names for entries of [type] can't be resolved because the type is generic. */
   fun genericType(type: Class<*>) {
     logger()
       .log(
@@ -300,18 +244,17 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
   }
 
   /**
-   * Logs that the probe couldn't verify support for [capability], due to [error] or a missing probe
+   * Logs that the probe couldn't verify support for name lookups, due to [error] or a missing probe
    * serializer if the error is `null`. The mapper handles subsequent failures per type.
    */
-  fun inconclusiveProbe(capability: String, error: Throwable?) {
+  fun inconclusiveProbe(error: Throwable?) {
     // DEBUG b/c an inconclusive probe doesn't affect what's recorded.
     logger()
       .log(
         DEBUG,
         error,
-        "Nav3 couldn't verify kotlinx.serialization support for %s because %s. Handling " +
-          "failures per entry type.",
-        capability,
+        "Nav3 couldn't verify kotlinx.serialization support for name lookups because %s. " +
+          "Handling failures per entry type.",
         if (error != null) PROBE_THREW else PROBE_SERIALIZER_NOT_FOUND,
       )
   }
@@ -320,15 +263,14 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
    * Logs why [type] can't be named. [error] is what reading its annotations, serializer, or
    * descriptor threw, or `null` if the serializer lookup found none without throwing.
    *
-   * [error] is attached as is. Looking up a type's serializer never sees an entry's values, so its
-   * errors can't contain route data, although their messages can be the app's own text (e.g., from
-   * a custom serializer or a static initializer). Like the exceptions the app's `beforeSend`
-   * callback throws, they're logged in full, which only happens with `debug` enabled.
+   * [error] is attached in full. The lookup never sees an entry's values, so it only contains the
+   * app's own messages (e.g., from a custom serializer) rather than nav route info.
    */
   fun unresolved(type: Class<*>, error: Throwable?) {
     val reason = if (error != null) LOOK_UP_FAILED else SERIALIZER_NOT_FOUND
     val advice =
-      if (error is LinkageError) {
+      // An ExceptionInInitializerError only means the app's own initializer threw an exception.
+      if (error is LinkageError && error !is ExceptionInInitializerError) {
         // The probe can miss an incompatible version, which then fails every type one at a time.
         "See the attached error. If all types fail, kotlinx.serialization may be incompatible. " +
           INCOMPATIBLE_KOTLINX_ADVICE
@@ -349,19 +291,6 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
 
   companion object {
 
-    /** Why the compatibility probe was inconclusive, if it threw. */
-    const val PROBE_THREW: String = "the compatibility probe threw (see the attached error)"
-
-    /** Why the compatibility probe was inconclusive, if a probe type's serializer wasn't found. */
-    const val PROBE_SERIALIZER_NOT_FOUND: String = "a probe serializer wasn't found"
-
-    /** Why a type can't be named, if reading its annotations, serializer, or descriptor threw. */
-    const val LOOK_UP_FAILED: String = "reading its annotations, serializer, or descriptor failed"
-
-    /** Why a type can't be named, if its serializer lookup found none without throwing. */
-    const val SERIALIZER_NOT_FOUND: String =
-      "no serializer was found (the type may be generic or require R8 keep rules)"
-
     /**
      * The oldest kotlinx.serialization version [KotlinxBackStackEntryMapper] supports.
      *
@@ -374,5 +303,18 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         "Upgrade kotlinx.serialization or the Sentry SDK. If both are current, report this at " +
         "https://github.com/getsentry/sentry-java/issues/new/choose. Use a custom " +
         "BackStackEntryMapper as a workaround."
+
+    /** Why a type can't be named, if reading its annotations, serializer, or descriptor threw. */
+    const val LOOK_UP_FAILED: String = "reading its annotations, serializer, or descriptor failed"
+
+    /** Why the compatibility probe was inconclusive, if it threw. */
+    const val PROBE_THREW: String = "the compatibility probe threw (see the attached error)"
+
+    /** Why the compatibility probe was inconclusive, if a probe type's serializer wasn't found. */
+    const val PROBE_SERIALIZER_NOT_FOUND: String = "a probe serializer wasn't found"
+
+    /** Why a type can't be named, if its serializer lookup found none without throwing. */
+    const val SERIALIZER_NOT_FOUND: String =
+      "no serializer was found (the type may be generic or require R8 keep rules)"
   }
 }

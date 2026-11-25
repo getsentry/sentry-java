@@ -9,29 +9,23 @@ plugins {
 
 val sentryVersion = libs.versions.sentry.get()
 
-// Defaults to the min version sentry-android-navigation3 supports, whose R8 rules are the most
-// limited. scripts/test-nav3-backstack-entry-mapper-r8.sh overrides it with
-// -Pnav3CheckKotlinxVersion=<version> to test newer versions.
-val kotlinxVersionOverride = providers.gradleProperty("nav3CheckKotlinxVersion").orNull
-val kotlinxFloor = matrixLibs.versions.kotlinxSerialization.floor.get()
-val kotlinxVersion = kotlinxVersionOverride ?: kotlinxFloor
+// Defaults to the oldest supported version, which has the fewest R8 rules. The test script also
+// runs with -Pnav3CheckKotlinx=latestStable.
+val kotlinxVersion =
+  when (val role = providers.gradleProperty("nav3CheckKotlinx").getOrElse("floor")) {
+    "floor" -> matrixLibs.versions.kotlinxSerialization.floor.get()
+    "latestStable" -> matrixLibs.versions.kotlinxSerialization.latestStable.get()
+    else -> error("nav3CheckKotlinx must be floor or latestStable, but was $role.")
+  }
 
-// Whether the mapper can name a @Serializable class with a named companion object and no
-// named-companion R8 rules of the app's own: "named", "unknown", or "either".
-// - kotlinx.serialization's own R8 rules keep what its lookup needs from 1.10.0 on.
-// - The floor's rules don't, in R8 full and compat mode alike (verified on a device), so the floor
-//   must record /unknown. Asserting it means a change in that behavior shows up here.
-// - Between the two, it depends on the version and R8 mode (e.g., 1.9.x's lookup succeeds in
-//   compat mode only), so either outcome is accepted.
-val namedCompanionOutcome =
+
+// kotlinx.serialization 1.10.0+ supplies R8 rules for named companions, so naming must succeed
+// without app keep rules. Older releases may return the name or /unknown, depending on R8.
+val namedCompanionAlwaysNamed =
   kotlinxVersion.split('.', '-').let { parts ->
     val major = parts[0].toInt()
     val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
-    when {
-      major > 1 || (major == 1 && minor >= 10) -> "named"
-      kotlinxVersion == kotlinxFloor -> "unknown"
-      else -> "either"
-    }
+    major > 1 || (major == 1 && minor >= 10)
   }
 
 android {
@@ -45,7 +39,7 @@ android {
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = 1
     versionName = "1.0"
-    buildConfigField("String", "NAMED_COMPANION_OUTCOME", "\"$namedCompanionOutcome\"")
+    buildConfigField("boolean", "NAMED_COMPANION_ALWAYS_NAMED", "$namedCompanionAlwaysNamed")
   }
 
   signingConfigs {

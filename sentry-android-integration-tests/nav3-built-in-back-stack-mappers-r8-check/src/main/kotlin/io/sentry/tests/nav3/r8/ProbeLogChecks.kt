@@ -54,18 +54,15 @@ fun initSentry(context: Context, logger: ILogger) {
   }
 }
 
+
 /**
- * Checks that the mapper's compatibility probe ran conclusively under R8, from the messages
- * [logger] recorded after the mapper mapped every [Expectation].
+ * Checks that the compatibility probe completed conclusively under R8.
  *
- * The names already show whether a probe failed, but not whether the name lookup probe was
- * inconclusive, e.g., because R8 removed what looking up its own fixture needs. The mapper then
- * handles failures one type at a time, so names still come out right, but the probe can't detect an
- * incompatible kotlinx.serialization version in minified apps.
+ * Names alone aren't enough: an inconclusive probe can produce correct names through per-type
+ * fallback while failing to detect an incompatible kotlinx.serialization version.
  *
- * The probe's messages are matched by their fixed prefixes. A positive control, the warning for
- * [NotSerializable], shows the logger receives the mapper's messages, so a probe message that
- * changes its prefix is the only way these checks could pass vacuously.
+ * Inspects [logger]'s messages after mapping every [Expectation]. The [NotSerializable] warning
+ * confirms logging works; probe detection relies on fixed message prefixes.
  */
 fun probeLogChecks(logger: RecordingLogger): List<Check> {
   val messages = logger.messages.toList()
@@ -86,8 +83,9 @@ fun probeLogChecks(logger: RecordingLogger): List<Check> {
 
 /**
  * The prefixes of the messages the mapper logs when its compatibility probe is inconclusive or
- * fails, or a built-in mapper can't be created. See `KotlinxMapperDiagnostics` and
- * `BuiltInBackStackEntryMappers` in sentry-android-navigation3.
+ * fails, or a built-in mapper can't be created.
+ *
+ * See `KotlinxMapperDiagnostics` and `BuiltInBackStackEntryMappers` in sentry-android-navigation3.
  */
 private val PROBE_MESSAGE_PREFIXES =
   listOf(

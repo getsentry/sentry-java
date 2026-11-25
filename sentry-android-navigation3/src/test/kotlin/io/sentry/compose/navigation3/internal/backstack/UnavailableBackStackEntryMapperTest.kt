@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.internal.backstack
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.SentryLevel
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -18,23 +19,20 @@ class UnavailableBackStackEntryMapperTest {
   private data class Detail(val id: String)
 
   private val logger = mock<ILogger>()
+  private val mapper = UnavailableBackStackEntryMapper(logger = { logger })
 
   @Test
-  fun `maps every back stack entry to null`() {
-    val mapper = UnavailableBackStackEntryMapper(logger = { logger })
-
+  fun `map() - maps every back stack entry to null`() {
     val mapped = listOf(Home, Detail("1"), "home").map(mapper::map)
 
     assertThat(mapped).containsExactly(null, null, null)
   }
 
   @Test
-  fun `reports the kotlinx serialization version as the reason for every back stack entry`() {
-    val mapper = UnavailableBackStackEntryMapper(logger = { logger })
-
+  fun `map() - reports the kotlinx serialization version as the reason for every back stack entry`() {
     val reasons =
       listOf(Home, Detail("1"), Home).map { entry ->
-        UnknownEntryReasonReports.collect { mapper.map(entry) }.second
+        collectWithReason { mapper.map(entry) }.second
       }
 
     assertThat(reasons)
@@ -46,9 +44,7 @@ class UnavailableBackStackEntryMapperTest {
   }
 
   @Test
-  fun `logs a warning once per back stack entry type`() {
-    val mapper = UnavailableBackStackEntryMapper(logger = { logger })
-
+  fun `map() - logs a warning once per back stack entry type`() {
     repeat(3) {
       mapper.map(Home)
       mapper.map(Detail("$it"))

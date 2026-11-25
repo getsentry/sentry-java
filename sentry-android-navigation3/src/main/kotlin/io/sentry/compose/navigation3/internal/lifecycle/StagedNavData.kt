@@ -2,6 +2,7 @@ package io.sentry.compose.navigation3.internal.lifecycle
 
 import io.sentry.IScope
 import io.sentry.PropagationContext
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 
 /**
  * Holds nav data (i.e., the screen name and nav context) staged for publication to a shared

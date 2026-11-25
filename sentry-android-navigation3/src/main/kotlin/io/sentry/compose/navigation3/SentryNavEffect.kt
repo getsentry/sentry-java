@@ -55,9 +55,6 @@ import org.jetbrains.annotations.ApiStatus
  * - a screen name
  * - a record of the current back stack (last 5 entries)
  *
- * A destination that can't be named is recorded as "/unknown", with a reason why. See
- * [BackStackEntryMapper].
- *
  * You can configure the above defaults via [SentryNavOptions]. (Screen names can be disabled via
  * [SentryOptions.setEnableScreenTracking].)
  *
@@ -81,10 +78,7 @@ import org.jetbrains.annotations.ApiStatus
  * [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups)
  * for a detailed list of supported vs unsupported configurations.
  *
- * @param backStack The navigation backstack to observe: your list of back stack keys (e.g., the one
- *   you pass to `NavDisplay`'s `backStack`). Don't pass `NavEntry`s, such as those returned by
- *   `rememberDecoratedNavEntries` for `NavDisplay`'s `entries` overload. They aren't your keys, so
- *   [BackStackEntryMapper.SerialName] can't name them and records every screen as "/unknown".
+ * @param backStack The navigation backstack to observe.
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments
  *   for display in Sentry. See the [BackStackEntryMapper] KDoc for best practices.
  * @param options The kinds of navigation info this effect should record.

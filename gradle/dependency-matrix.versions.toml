@@ -1,42 +1,60 @@
-# Dependency test matrices, registered as the `matrixLibs` catalog: compile against the oldest
-# supported version and test against newer releases too.
+# Dependency matrices that let builds compile against a stable oldest supported version, while testing
+# against that version and newer, automatically-updating releases. Helps ensure our source code only uses
+# APIs available in the oldest supported version, while remaining compatible with subsequent releases.
 #
-# Kept apart from libs.versions.toml so that each matrix's tests can run on PRs that change its
-# versions, without also running on every unrelated dependency bump.
+# Each matrix <name> defines two `[versions]`:
 #
-# Each matrix <name> has up to three version keys, named by role:
+# - <name>-floor: The oldest supported version. Only changed manually via a reviewed PR.
+#   Should not be referenced by any `version.ref` so that Dependabot leaves it alone. Instead,
+#   build files should apply it explicitly, e.g., with `version { strictly(...) }`.
 #
-# - <name>-floor: the oldest version we support, which we compile and test against. Only changed
-#   by hand, in a reviewed change. No library entry references it, so Dependabot never bumps it.
-#   Builds apply it explicitly (e.g., `version { strictly(...) }`) instead.
-# - <name>-stable: the latest stable release. Bumped by Dependabot through the <name>-stableTracker
-#   library entry, which references it and is used by no build.
-# - <name>-preview: the latest pre-release, which is tested only while it's newer than
-#   <name>-stable. Bumped by a weekly updater job in .github/workflows/update-deps.yml. No library
-#   entry references it, so Dependabot never bumps it.
+# - <name>-latestStable: The latest stable release. An unused <name>-latestStable entry in `[libraries]`
+#   should point to the <name>-latestStable key so that Dependabot can update it. Build files can
+#   select between floor and latestStable.
 #
-# Rules for adding a matrix:
+# An example:
 #
-# - Never give the floor or preview keys a library entry with `version.ref`, and never protect them
-#   with a Dependabot `ignore` rule: ignore rules match a dependency's group and name, so they would
-#   also stop Dependabot from bumping <name>-stable.
-# - A stableTracker entry mustn't share its module with any entry or build file declaration that
+# // In dependency-matrix.versions.toml
+# [versions]
+# example-floor = "1.0.0"
+# example-latestStable = "1.5.0"
+#
+# [libraries]
+# example-core = { module = "com.example:core" }
+# example-latestStable = { module = "com.example:core", version.ref = "example-latestStable" }
+#
+# // In build.gradle.kts
+# val testVersion =
+#   // CI, etc. can use -PtestExample=<version> to set the desired version.
+#   when (providers.gradleProperty("testExample").getOrElse("floor")) {
+#     "floor" -> matrixLibs.versions.example.floor.get()
+#     "latestStable" -> matrixLibs.versions.example.latestStable.get()
+#     else -> error("testExample must be floor or latestStable")
+#   }
+#
+# dependencies {
+#   testImplementation(matrixLibs.example.core) {
+#     version { strictly(testVersion) }
+#   }
+# }
+#
+# Additional rules:
+#
+# - Never give the floor key a library entry with `version.ref`, and never protect it with a
+#   Dependabot `ignore` rule. Ignore rules match a dependency's group and name, so they'd also
+#   prevent Dependabot from bumping <name>-latestStable.
+#
+# - A latestStable library entry mustn't share its module with any entry or build file declaration that
 #   Dependabot also updates (e.g., in libs.versions.toml). Dependabot merges declarations of one
 #   module and bumps them all to one version. If they would collide, track a sibling artifact
 #   instead (e.g., `-jvm`).
-#
-# scripts/dependency-matrix.sh reads and writes these keys for CI and the updater jobs.
 
 [versions]
-# The oldest kotlinx.serialization version sentry-android-navigation3 supports, which it compiles and
-# tests against. Before changing it, read the rules under "Version floor" in
-# sentry-android-navigation3/src/main/kotlin/io/sentry/compose/navigation3/internal/backstack/kotlinx/README.md.
+# The oldest kotlinx.serialization version sentry-android-navigation3 supports. Before changing it, read the rules under "Version floor" in
+# that module's .kotlinx package README.
 kotlinxSerialization-floor = "1.7.3"
-kotlinxSerialization-stable = "1.13.0"
-# kotlinx.serialization publishes release candidates (-RC), but no alpha or beta releases.
-kotlinxSerialization-preview = "1.12.0-RC"
+kotlinxSerialization-latestStable = "1.13.0"
 
 [libraries]
-# Applied with the floor version by the builds that use it.
 kotlinxSerialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core" }
-kotlinxSerialization-stableTracker = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerialization-stable" }
+kotlinxSerialization-latestStable = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerialization-latestStable" }

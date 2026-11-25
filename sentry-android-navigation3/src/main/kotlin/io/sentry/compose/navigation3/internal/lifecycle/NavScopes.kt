@@ -8,9 +8,7 @@ import io.sentry.IScopes
 import io.sentry.PropagationContext
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-
-/** The key under which nav context (i.e., the captured back stack) is stored in a scope. */
-internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 
 /**
  * An [INavScopes] implementation that lets us coordinate updates to navigation state across

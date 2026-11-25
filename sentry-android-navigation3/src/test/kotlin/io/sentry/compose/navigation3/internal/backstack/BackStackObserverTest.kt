@@ -21,8 +21,8 @@ import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.SentryNavOptions
-import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
-import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
 import io.sentry.compose.navigation3.internal.lifecycle.NavScopes
@@ -35,6 +35,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
+@Suppress("LargeClass")
 class BackStackObserverTest {
 
   private data class HomeScreen(val id: String = "home")
@@ -231,6 +232,78 @@ class BackStackObserverTest {
         "/settings",
         "to_arguments",
         mapOf("section" to "privacy"),
+      )
+  }
+
+  @Test
+  fun `onBackStackChanged records the unknown entry reason of an unnamed new top entry in the breadcrumb`() {
+    val fixture = Fixture()
+    val sut =
+      fixture.getSut(
+        entryMapper = { entry ->
+          if (entry is ProfileScreen) null else SentryBackStackEntry(entry::class.simpleName!!)
+        },
+      )
+    val home = HomeScreen()
+
+    sut.onBackStackChanged(listOf(home))
+    sut.onBackStackChanged(listOf(home, ProfileScreen("123")))
+
+    assertThat(fixture.breadcrumbs.last().data)
+      .isEqualTo(
+        mapOf("from" to "/HomeScreen", "to" to "/unknown", "to_unknown_entry_reason" to "unmapped"),
+      )
+  }
+
+  @Test
+  fun `onBackStackChanged records the unknown entry reason of an unnamed previous top entry in the breadcrumb`() {
+    val fixture = Fixture()
+    val sut =
+      fixture.getSut(
+        entryMapper = { entry ->
+          if (entry is ProfileScreen) null else SentryBackStackEntry(entry::class.simpleName!!)
+        },
+      )
+    val profile = ProfileScreen("123")
+
+    sut.onBackStackChanged(listOf(profile))
+    sut.onBackStackChanged(listOf(profile, SettingsScreen("privacy")))
+
+    assertThat(fixture.breadcrumbs.last().data)
+      .isEqualTo(
+        mapOf(
+          "from" to "/unknown",
+          "from_unknown_entry_reason" to "unmapped",
+          "to" to "/SettingsScreen",
+        ),
+      )
+  }
+
+  @Test
+  fun `onBackStackChanged records the unknown entry reason and the arguments of an unnamed entry in the breadcrumb`() {
+    val fixture = Fixture()
+    val sut =
+      fixture.getSut(
+        entryMapper = { entry ->
+          when (entry) {
+            is ProfileScreen -> SentryBackStackEntry("   ", mapOf("userId" to entry.userId))
+            else -> SentryBackStackEntry(entry::class.simpleName!!)
+          }
+        },
+      )
+    val home = HomeScreen()
+
+    sut.onBackStackChanged(listOf(home))
+    sut.onBackStackChanged(listOf(home, ProfileScreen("123")))
+
+    assertThat(fixture.breadcrumbs.last().data)
+      .isEqualTo(
+        mapOf(
+          "from" to "/HomeScreen",
+          "to" to "/unknown",
+          "to_unknown_entry_reason" to "blank_name",
+          "to_arguments" to mapOf("userId" to "123"),
+        ),
       )
   }
 
@@ -664,7 +737,7 @@ class BackStackObserverTest {
         },
       )
 
-    val unknown = NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME
+    val unknown = UNKNOWN_ENTRY_NAME
     val blankNameEntry = mapOf("entry" to unknown, "unknown_entry_reason" to "blank_name")
     val mappingFailedEntry = mapOf("entry" to unknown, "unknown_entry_reason" to "mapping_failed")
 
@@ -681,8 +754,7 @@ class BackStackObserverTest {
     assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("entry" to "/home")))
 
     // Navigate to the profile screen and verify the invalid route name is recorded as /unknown,
-    // with
-    // the reason why, so the transition history remains intact.
+    // with the reason why, so the transition history remains intact.
     sut.onBackStackChanged(listOf(home, profile))
     assertThat(transaction.isFinished).isTrue()
     assertThat(fixture.startedTransactions).hasSize(2)

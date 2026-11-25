@@ -15,11 +15,17 @@ import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.Reten
 import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackHasNewTop
 import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStackIsEmpty
-import io.sentry.compose.navigation3.internal.backstack.UnknownEntryReason.Companion.UNKNOWN_ENTRY_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.BACK_STACK_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_FROM_ARGUMENTS_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_FROM_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_FROM_UNKNOWN_ENTRY_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_TO_ARGUMENTS_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_TO_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_TO_UNKNOWN_ENTRY_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_OP
 import io.sentry.compose.navigation3.internal.lifecycle.INavScope
 import io.sentry.compose.navigation3.internal.lifecycle.INavScopes
-import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
-import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_OP
 import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
 import io.sentry.compose.navigation3.internal.lifecycle.NavScopes
@@ -294,10 +300,6 @@ private data class BackStackData<T>(
 /** A helper class for updating [nav context][NAVIGATION_CONTEXT_KEY]. */
 private class NavContext(private val options: SentryNavOptions) {
 
-  private companion object {
-    private const val BACKSTACK_KEY = "Back Stack"
-  }
-
   fun update(scope: INavScope, backStackEntries: List<NormalizedSentryBackStackEntry>) {
     if (backStackEntries.isEmpty()) {
       clear(scope)
@@ -328,9 +330,9 @@ private class NavContext(private val options: SentryNavOptions) {
       emptyMap()
     }
 
-  /** Builds the `{"backstack": [...]}` map bound under [NAVIGATION_CONTEXT_KEY]. */
+  /** Builds the `{"Back Stack": [...]}` map bound under [NAVIGATION_CONTEXT_KEY]. */
   private fun List<NormalizedSentryBackStackEntry>.toBackStackMap(): Map<String, Any?> =
-    mapOf(BACKSTACK_KEY to serialize())
+    mapOf(BACK_STACK_KEY to serialize())
 }
 
 /** A helper class for updating the tracked screen name. */
@@ -362,27 +364,27 @@ private class NavBreadcrumbs(private val scopes: INavScopes) {
         category = NAVIGATION_OP
 
         fromEntry?.let { entry ->
-          data["from"] = entry.name
+          data[BREADCRUMB_FROM_KEY] = entry.name
           entry.unknownEntryReason?.let {
-            data["from_$UNKNOWN_ENTRY_REASON_KEY"] = it.serializedValue
+            data[BREADCRUMB_FROM_UNKNOWN_ENTRY_REASON_KEY] = it.serializedValue
           }
           entry
             .argumentsWithMetadata()
             .takeIf { it.isNotEmpty() }
             ?.let { arguments ->
-              data["from_arguments"] = arguments
+              data[BREADCRUMB_FROM_ARGUMENTS_KEY] = arguments
             }
         }
 
-        data["to"] = toEntry.name
+        data[BREADCRUMB_TO_KEY] = toEntry.name
         toEntry.unknownEntryReason?.let {
-          data["to_$UNKNOWN_ENTRY_REASON_KEY"] = it.serializedValue
+          data[BREADCRUMB_TO_UNKNOWN_ENTRY_REASON_KEY] = it.serializedValue
         }
         toEntry
           .argumentsWithMetadata()
           .takeIf { it.isNotEmpty() }
           ?.let { arguments ->
-            data["to_arguments"] = arguments
+            data[BREADCRUMB_TO_ARGUMENTS_KEY] = arguments
           }
 
         level = INFO
