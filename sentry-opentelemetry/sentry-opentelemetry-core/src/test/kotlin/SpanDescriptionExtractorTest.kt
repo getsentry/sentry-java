@@ -10,6 +10,7 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes
+import io.opentelemetry.semconv.incubating.GraphqlIncubatingAttributes
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes
 import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes
 import io.sentry.SentryOptions
@@ -40,6 +41,48 @@ class SpanDescriptionExtractorTest {
   }
 
   private val fixture = Fixture()
+
+  @Test
+  fun `sets op to graphql and preserves query span name as description`() {
+    givenSpanName("query GreetingQuery")
+    givenAttributes(mapOf(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE to "query"))
+
+    val info = whenExtractingSpanInfo()
+
+    assertEquals("graphql", info.op)
+    assertEquals("query GreetingQuery", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `sets op to graphql and preserves mutation span name as description`() {
+    givenSpanName("mutation AddProjectMutation")
+    givenAttributes(mapOf(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE to "mutation"))
+
+    val info = whenExtractingSpanInfo()
+
+    assertEquals("graphql", info.op)
+    assertEquals("mutation AddProjectMutation", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `graphql mapping wins over http when both attributes present`() {
+    givenSpanKind(SpanKind.CLIENT)
+    givenSpanName("query GreetingQuery")
+    givenAttributes(
+      mapOf(
+        GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE to "query",
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo()
+
+    assertEquals("graphql", info.op)
+    assertEquals("query GreetingQuery", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
 
   @Test
   fun `sets op to http server for kind SERVER`() {

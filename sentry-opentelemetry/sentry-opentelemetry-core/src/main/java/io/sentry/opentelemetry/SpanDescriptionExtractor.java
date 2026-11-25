@@ -6,6 +6,7 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
+import io.opentelemetry.semconv.incubating.GraphqlIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import io.sentry.SentryOptions;
@@ -32,6 +33,12 @@ public final class SpanDescriptionExtractor {
       }
     }
 
+    final @Nullable String graphqlOperationType =
+        attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE);
+    if (graphqlOperationType != null) {
+      return descriptionForGraphqlOperation(otelSpan);
+    }
+
     final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
     if (httpMethod != null) {
       return descriptionForHttpMethod(otelSpan, httpMethod);
@@ -47,6 +54,10 @@ public final class SpanDescriptionExtractor {
         sentrySpan != null ? sentrySpan.getDescription() : name;
     final @NotNull String description = maybeDescription != null ? maybeDescription : name;
     return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
+  }
+
+  private OtelSpanInfo descriptionForGraphqlOperation(final @NotNull SpanData otelSpan) {
+    return new OtelSpanInfo("graphql", otelSpan.getName(), TransactionNameSource.TASK);
   }
 
   @SuppressWarnings("deprecation")
