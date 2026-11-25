@@ -13,9 +13,11 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
@@ -128,21 +130,57 @@ class JdkTargetConvention : Plugin<Project> {
 
     project.keepKotlinModuleNameWithoutGroup()
 
-    // Test code isn't published, so it keeps the compiler's default and may use newer features.
-    project.plugins.withId("com.vanniktech.maven.publish") {
-      project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
-        if (!name.contains("Test")) {
-          compilerOptions.languageVersion.set(PUBLISHED_KOTLIN_VERSION)
-          compilerOptions.apiVersion.set(PUBLISHED_KOTLIN_VERSION)
-        }
-      }
-    }
+    project.plugins.withId("com.vanniktech.maven.publish") { project.pinPublishedKotlinVersion() }
 
     // The SDK targets the oldest language/API version its consumers' Kotlin can read, which newer
     // compilers deprecate. That's deliberate, so the warning on every compilation is noise.
     project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
       compilerOptions.freeCompilerArgs.add("-Xsuppress-version-warnings")
     }
+  }
+
+  /**
+   * Sets the published language and API version on the `kotlin` extension rather than on the
+   * compile tasks, so KGP's model sees it too: multiplatform modules check that a source set's
+   * version isn't lower than the one of the source sets it depends on, and that check doesn't see
+   * the options of compile tasks that aren't configured yet. Test code isn't published, so it keeps
+   * the compiler's default and may use newer features.
+   */
+  private fun Project.pinPublishedKotlinVersion() {
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+      extensions.getByType(KotlinJvmProjectExtension::class.java).run {
+        compilerOptions.pinPublishedKotlinVersion()
+        target.useDefaultKotlinVersionForTests()
+      }
+    }
+    plugins.withId("org.jetbrains.kotlin.android") {
+      extensions.getByType(KotlinAndroidProjectExtension::class.java).run {
+        compilerOptions.pinPublishedKotlinVersion()
+        target.useDefaultKotlinVersionForTests()
+      }
+    }
+    plugins.withId("org.jetbrains.kotlin.multiplatform") {
+      extensions.getByType(KotlinMultiplatformExtension::class.java).run {
+        compilerOptions.pinPublishedKotlinVersion()
+        targets.configureEach { useDefaultKotlinVersionForTests() }
+      }
+    }
+  }
+
+  private fun KotlinCommonCompilerOptions.pinPublishedKotlinVersion() {
+    languageVersion.set(PUBLISHED_KOTLIN_VERSION)
+    apiVersion.set(PUBLISHED_KOTLIN_VERSION)
+  }
+
+  private fun KotlinTarget.useDefaultKotlinVersionForTests() {
+    compilations
+      .matching { it.name.contains("test", ignoreCase = true) }
+      .configureEach {
+        compileTaskProvider.configure {
+          compilerOptions.languageVersion.set(KotlinVersion.DEFAULT)
+          compilerOptions.apiVersion.set(KotlinVersion.DEFAULT)
+        }
+      }
   }
 
   /**
