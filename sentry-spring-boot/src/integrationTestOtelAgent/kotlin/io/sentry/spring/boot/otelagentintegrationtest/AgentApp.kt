@@ -14,14 +14,18 @@ import org.springframework.boot.web.client.RestTemplateBuilder
  * The test task decides what initializes Sentry: the agent or, with `SENTRY_AUTO_INIT=false`, the
  * Spring Boot starter.
  */
-class AgentApp(args: List<String> = emptyList()) : Closeable {
+class AgentApp(
+  args: List<String> = emptyList(),
+  additionalJvmArgs: List<String> = emptyList(),
+) : Closeable {
   val server = MockSentryServer()
 
   private val app =
     ChildJvmApp.start(
       mainClass = "io.sentry.spring.boot.agentfixture.AgentFixtureApplicationKt",
       classpath = requiredTestProperty("sentry.test.appClasspath"),
-      jvmArgs = listOf("-javaagent:${requiredTestProperty("sentry.test.agentJar")}"),
+      jvmArgs =
+        listOf("-javaagent:${requiredTestProperty("sentry.test.agentJar")}") + additionalJvmArgs,
       // Environment variables, because the agent doesn't read Spring Boot's properties.
       env =
         mapOf(
