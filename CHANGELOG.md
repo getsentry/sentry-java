@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Improvements
+
+- Android: Remove consumer keep rules that had no effect, so R8 can optimize more of your app ([#6778](https://github.com/getsentry/sentry-java/pull/6778))
+
 ### Fixes
 
 - Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
