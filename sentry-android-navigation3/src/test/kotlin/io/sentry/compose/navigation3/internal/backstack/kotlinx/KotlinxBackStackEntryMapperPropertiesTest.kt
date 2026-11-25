@@ -671,14 +671,9 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   }
 
   @Test
-  fun `attaches the LinkageError itself to the warning for a type whose property encoding throws it`() {
-    // Unlike serializer exceptions, a LinkageError comes from linking or initializing a class,
-    // which
-    // never sees the entry being encoded, so it's attached as is, message and cause included.
-    val error =
-      NoClassDefFoundError("Could not initialize class com.example.Config").apply {
-        initCause(ExceptionInInitializerError(IllegalStateException("config init failed")))
-      }
+  fun `attaches a cause-free LinkageError the JVM raises as is when property encoding throws it`() {
+    // Its message only names the symbol that couldn't be linked, which helps diagnose the version.
+    val error = NoSuchMethodError("com.example.Encoder.encodeInline(Lkotlin/Any;)V")
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
     fixture.detailSerializer.error = error
     val mapper = fixture.mapper
@@ -689,14 +684,49 @@ class KotlinxBackStackEntryMapperPropertiesTest {
     verify(fixture.logger)
       .log(eq(SentryLevel.WARNING), logged.capture(), any<String>(), eq(Detail::class.java.name))
     assertThat(logged.firstValue).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `attaches a JVM LinkageError's symbol but not its cause when property encoding throws it`() {
+    // A class initializer that runs during encoding may put app data in the cause's message.
+    val error =
+      NoClassDefFoundError("Could not initialize class com.example.Config").apply {
+        initCause(ExceptionInInitializerError(IllegalStateException("route id=ROUTE-SECRET")))
+      }
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.detailSerializer.error = error
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail("1"))
+
+    val logged = argumentCaptor<Throwable>()
+    verify(fixture.logger)
+      .log(eq(SentryLevel.WARNING), logged.capture(), any<String>(), eq(Detail::class.java.name))
     assertThat(logged.firstValue)
       .hasMessageThat()
-      .isEqualTo("Could not initialize class com.example.Config")
+      .isEqualTo("java.lang.NoClassDefFoundError: Could not initialize class com.example.Config")
+    assertThat(logged.firstValue).hasCauseThat().isNull()
+    assertThat(logged.firstValue.stackTrace).isEqualTo(error.stackTrace)
+    assertThat(logged.firstValue.stackTraceToString()).doesNotContain("ROUTE-SECRET")
+  }
+
+  @Test
+  fun `attaches only the class name of another LinkageError when a type's property encoding throws it`() {
+    // E.g., an app serializer that throws its own LinkageError with route data in its message.
+    val error = ExceptionInInitializerError("route id=ROUTE-SECRET")
+    val fixture = KotlinxMapperFixture.create(includeProperties = true)
+    fixture.detailSerializer.error = error
+    val mapper = fixture.mapper
+
+    mapper.mapAndReadArguments(Detail("1"))
+
+    val logged = argumentCaptor<Throwable>()
+    verify(fixture.logger)
+      .log(eq(SentryLevel.WARNING), logged.capture(), any<String>(), eq(Detail::class.java.name))
     assertThat(logged.firstValue)
-      .hasCauseThat()
-      .hasCauseThat()
       .hasMessageThat()
-      .isEqualTo("config init failed")
+      .isEqualTo("java.lang.ExceptionInInitializerError")
+    assertThat(logged.firstValue.stackTraceToString()).doesNotContain("ROUTE-SECRET")
   }
 
   // Property encoding that throws other exceptions

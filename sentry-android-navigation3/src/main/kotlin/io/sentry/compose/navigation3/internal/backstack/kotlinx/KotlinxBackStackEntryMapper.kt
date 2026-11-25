@@ -412,9 +412,10 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
    * once per type and limit, as each limit's warning describes a different fix.
    *
    * Serializer exceptions can contain route data in their messages or causes, so for those we log
-   * only the entry type and the failure category. Only a [LinkageError] is attached, as is: linking
-   * and class initialization don't see the entry being encoded, so it can't contain route data, as
-   * for [unresolved].
+   * only the entry type and the failure category. A [LinkageError] is attached as
+   * [linkageDiagnostic] makes it, as its symbol helps diagnose an incompatible version. Unlike for
+   * [unresolved], the error is thrown while the entry's serializers run, so an app's serializer may
+   * have thrown it or a class initializer may have put app data in its cause.
    */
   fun propertyFailure(type: Class<*>, error: Throwable) {
     when (error) {
@@ -444,7 +445,7 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         logOncePerType(type, PropertyFailure.UNLOADABLE) {
           log(
             WARNING,
-            error,
+            linkageDiagnostic(error),
             "Nav3 couldn't encode properties for type %s because a required class couldn't be " +
               "linked, initialized, or found. Recording names without arguments. See the " +
               "attached error. If all types fail, kotlinx.serialization may be incompatible. " +
@@ -483,6 +484,34 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
           "values directly.",
         type.name,
       )
+    }
+  }
+
+  /**
+   * Returns what [propertyFailure] attaches for [error], a [LinkageError] thrown while an entry's
+   * serializers ran.
+   *
+   * An error the JVM raises when it can't link a class or member names only that symbol in its
+   * message, so one without a cause is attached as is. Otherwise, the attached error keeps the
+   * class name and stack trace, which name only code, and the message only if the JVM raises such
+   * errors. It drops the cause, e.g., the [ExceptionInInitializerError] behind a
+   * [NoClassDefFoundError], whose message is the app's own text.
+   */
+  private fun linkageDiagnostic(error: LinkageError): Throwable {
+    val namesSymbol = error is IncompatibleClassChangeError || error is NoClassDefFoundError
+    if (namesSymbol && error.cause == null) {
+      return error
+    }
+    return RedactedLinkageError(error, keepMessage = namesSymbol)
+  }
+
+  /** A [LinkageError]'s class name, stack trace, and optionally its message, without its cause. */
+  private class RedactedLinkageError(error: LinkageError, keepMessage: Boolean) :
+    RuntimeException(
+      listOfNotNull(error.javaClass.name, error.message?.takeIf { keepMessage }).joinToString(": "),
+    ) {
+    init {
+      stackTrace = error.stackTrace
     }
   }
 
