@@ -66,3 +66,6 @@ rules breaks kotlinx.serialization as well as our mappers.
 We also don't ship rules for `@Serializable` classes with named companion objects. kotlinx.serialization's rules only cover those from
 1.10.0 on. A generic rule set that fixes older versions exists, but we don't apply it because it would keep `InnerClasses` and
 named-companion class names in every host app.
+
+The [R8 check](../../../../../../../../../../../sentry-android-integration-tests/nav3-backstack-entry-mapper-r8-check/README.md)
+verifies `SerialName` after minification, including named-companion lookups.
