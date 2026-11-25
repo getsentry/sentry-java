@@ -12,25 +12,25 @@ import io.sentry.SentryOptions;
 import io.sentry.internal.ManifestVersionReader;
 import io.sentry.protocol.SdkVersion;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryAutoConfigurationCustomizerProvider
     implements AutoConfigurationCustomizerProvider {
 
-  private static final Logger logger =
-      Logger.getLogger(SentryAutoConfigurationCustomizerProvider.class.getName());
+  private static final String GRAPHQL_OPERATION_NAME_PROPERTY =
+      "otel.instrumentation.graphql.operation-name-in-span-name.enabled";
+  private static final String DEPRECATED_GRAPHQL_OPERATION_NAME_PROPERTY =
+      "otel.instrumentation.graphql.add-operation-name-to-span-name.enabled";
 
   public static volatile boolean skipInit = false;
 
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
     ensureSentryOtelStorageIsInitialized();
-    customizeOpenTelemetryDefaults();
     final @Nullable ManifestVersionReader.VersionInfoHolder versionInfoHolder =
         ManifestVersionReader.getInstance().readOpenTelemetryVersion();
 
@@ -46,8 +46,9 @@ public final class SentryAutoConfigurationCustomizerProvider
     }
 
     autoConfiguration
-        .addTracerProviderCustomizer(this::configureSdkTracerProvider)
-        .addPropertiesSupplier(this::getDefaultProperties);
+        .addPropertiesSupplier(this::getDefaultProperties)
+        .addPropertiesCustomizer(this::customizeOpenTelemetryDefaults)
+        .addTracerProviderCustomizer(this::configureSdkTracerProvider);
   }
 
   private static void ensureSentryOtelStorageIsInitialized() {
@@ -59,16 +60,16 @@ public final class SentryAutoConfigurationCustomizerProvider
     Sentry.getGlobalScope();
   }
 
-  private void customizeOpenTelemetryDefaults() {
-    try {
-      if (System.getProperty("otel.instrumentation.graphql.operation-name-in-span-name.enabled")
-          == null) {
-        System.setProperty(
-            "otel.instrumentation.graphql.operation-name-in-span-name.enabled", "true");
-      }
-    } catch (Exception e) {
-      logger.log(Level.WARNING, "Unable to change OpenTelemetry defaults for use with Sentry.", e);
+  Map<String, String> customizeOpenTelemetryDefaults(final @NotNull ConfigProperties config) {
+    final @Nullable String configuredValue = config.getString(GRAPHQL_OPERATION_NAME_PROPERTY);
+    if (configuredValue != null) {
+      return Collections.emptyMap();
     }
+
+    final @Nullable String deprecatedValue =
+        config.getString(DEPRECATED_GRAPHQL_OPERATION_NAME_PROPERTY);
+    return Collections.singletonMap(
+        GRAPHQL_OPERATION_NAME_PROPERTY, deprecatedValue != null ? deprecatedValue : "true");
   }
 
   private boolean isSentryAutoInitEnabled() {

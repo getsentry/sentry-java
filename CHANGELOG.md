@@ -9,7 +9,7 @@
 
 ### Fixes
 
-- OpenTelemetry: Apply the GraphQL span-naming property rename from OpenTelemetry 2.33.1, so enabling v3 semantic conventions no longer drops operation names from GraphQL span names ([#6750](https://github.com/getsentry/sentry-java/pull/6750))
+- OpenTelemetry: Apply the GraphQL span-naming property rename from OpenTelemetry 2.33.1. Enabling v3 semantic conventions no longer drops operation names, and explicit settings using either property name remain honored ([#6750](https://github.com/getsentry/sentry-java/pull/6750))
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 
 ### Dependencies
