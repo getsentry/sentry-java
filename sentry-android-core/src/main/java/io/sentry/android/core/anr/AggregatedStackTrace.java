@@ -3,6 +3,7 @@ package io.sentry.android.core.anr;
 import java.util.Arrays;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class AggregatedStackTrace {
@@ -27,12 +28,16 @@ public final class AggregatedStackTrace {
   // last time the stacktrace occurred
   private long endTimeMs;
 
+  // the thread state of the first sample of this stacktrace
+  private final @Nullable Thread.State state;
+
   public AggregatedStackTrace(
       final StackTraceElement[] stack,
       final int stackStartIdx,
       final int stackEndIdx,
       final long timestampMs,
-      final float quality) {
+      final float quality,
+      final @Nullable Thread.State state) {
     this.stack = stack;
     this.stackStartIdx = stackStartIdx;
     this.stackEndIdx = stackEndIdx;
@@ -41,12 +46,21 @@ public final class AggregatedStackTrace {
     this.endTimeMs = timestampMs;
     this.count = 1;
     this.quality = quality;
+    this.state = state;
   }
 
   public void addOccurrence(final long timestampMs) {
     this.startTimeMs = Math.min(startTimeMs, timestampMs);
     this.endTimeMs = Math.max(endTimeMs, timestampMs);
     this.count++;
+  }
+
+  /**
+   * The thread state of the first sample of this stacktrace, or null if that sample has no state.
+   * The state rarely changes during a hang.
+   */
+  public @Nullable Thread.State getState() {
+    return state;
   }
 
   @NotNull

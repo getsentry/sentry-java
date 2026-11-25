@@ -22,7 +22,7 @@ class AnrCulpritEventHelperTest {
         StackTraceElement("com.example.Foo", "bar", "Foo.java", 12),
         StackTraceElement("android.os.Looper", "loop", "Looper.java", 200),
       )
-    val culprit = AggregatedStackTrace(stack, 0, stack.size - 1, 1000L, 0.5f)
+    val culprit = AggregatedStackTrace(stack, 0, stack.size - 1, 1000L, 0.5f, null)
 
     val exceptions = helper.toSentryExceptions(culprit, Mechanism().apply { type = "ANR" })
 
@@ -38,7 +38,7 @@ class AnrCulpritEventHelperTest {
 
   @Test
   fun `returns null for an empty culprit stack`() {
-    val culprit = AggregatedStackTrace(emptyArray(), 0, -1, 1000L, 0f)
+    val culprit = AggregatedStackTrace(emptyArray(), 0, -1, 1000L, 0f, null)
 
     assertThat(helper.toSentryExceptions(culprit, Mechanism())).isNull()
   }
