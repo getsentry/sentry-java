@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- Attachments: A file attachment added by path is now streamed into the envelope when it's sent or cached, instead of being read into memory and held until the envelope is gone. `SentryEnvelopeItem.getData()` still returns its bytes, but reads the file on each call ([#6777](https://github.com/getsentry/sentry-java/pull/6777))
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 - Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
 
