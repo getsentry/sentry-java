@@ -16,15 +16,20 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -44,16 +49,25 @@ public final class SentryEnvelopeItem {
 
   private static final int WRITER_BUFFER_SIZE = 512;
 
+  // Copy buffer for streaming file payloads, same as BufferedInputStream's default.
+  private static final int FILE_COPY_BUFFER_SIZE = 8192;
+
   private final SentryEnvelopeItemHeader header;
-  // Either dataFactory is set or data needs to be set.
+  // Exactly one of dataFactory, data or file is set.
   private final @Nullable Callable<byte[]> dataFactory;
   // TODO: Can we have a slice or a reader here instead?
   private @Nullable byte[] data;
+  // The payload is read from this file each time the item is serialized and is never kept in
+  // memory.
+  private final @Nullable File file;
+  private final long maxFileSize;
 
   SentryEnvelopeItem(final @NotNull SentryEnvelopeItemHeader header, final byte[] data) {
     this.header = Objects.requireNonNull(header, "SentryEnvelopeItemHeader is required.");
     this.data = data;
     this.dataFactory = null;
+    this.file = null;
+    this.maxFileSize = 0;
   }
 
   SentryEnvelopeItem(
@@ -62,6 +76,19 @@ public final class SentryEnvelopeItem {
     this.header = Objects.requireNonNull(header, "SentryEnvelopeItemHeader is required.");
     this.dataFactory = Objects.requireNonNull(dataFactory, "DataFactory is required.");
     this.data = null;
+    this.file = null;
+    this.maxFileSize = 0;
+  }
+
+  private SentryEnvelopeItem(
+      final @NotNull SentryEnvelopeItemHeader header,
+      final @NotNull File file,
+      final long maxFileSize) {
+    this.header = Objects.requireNonNull(header, "SentryEnvelopeItemHeader is required.");
+    this.file = file;
+    this.maxFileSize = maxFileSize;
+    this.dataFactory = null;
+    this.data = null;
   }
 
   // TODO: Should be a Stream
@@ -69,10 +96,123 @@ public final class SentryEnvelopeItem {
   // always provide non-null values.
   @SuppressWarnings("NullAway")
   public @NotNull byte[] getData() throws Exception {
+    if (file != null) {
+      // Not cached, so the file content isn't held for the lifetime of the envelope.
+      return readBytesFromFile(file.getPath(), maxFileSize);
+    }
     if (data == null && dataFactory != null) {
       data = dataFactory.call();
     }
     return data;
+  }
+
+  /**
+   * Opens the payload for one serialization of this item. A file payload is checked and its size is
+   * taken here, so a missing, unreadable or too large file fails before anything is written.
+   */
+  @NotNull
+  Payload openPayload() throws Exception {
+    if (file == null) {
+      return new BytesPayload(getData());
+    }
+    // A file that grows after this point is cut at this length.
+    final int length = checkedFileLength(file, maxFileSize);
+    return new FilePayload(file, length, new FileInputStream(file));
+  }
+
+  private static int checkedFileLength(final @NotNull File file, final long maxFileSize)
+      throws IOException {
+    FileUtils.ensureReadableFile(file, maxFileSize);
+    return (int) Math.min(file.length(), maxFileSize);
+  }
+
+  interface Payload extends Closeable {
+    int getLength();
+
+    /** Writes exactly {@link #getLength()} bytes. */
+    void writeTo(@NotNull OutputStream outputStream, @NotNull ILogger logger) throws IOException;
+  }
+
+  private static final class BytesPayload implements Payload {
+    private final @NotNull byte[] bytes;
+
+    BytesPayload(final @NotNull byte[] bytes) {
+      this.bytes = bytes;
+    }
+
+    @Override
+    public int getLength() {
+      return bytes.length;
+    }
+
+    @Override
+    public void writeTo(final @NotNull OutputStream outputStream, final @NotNull ILogger logger)
+        throws IOException {
+      outputStream.write(bytes);
+    }
+
+    @Override
+    public void close() {}
+  }
+
+  private static final class FilePayload implements Payload {
+    private final @NotNull File file;
+    private final int length;
+    private final @NotNull InputStream inputStream;
+
+    FilePayload(
+        final @NotNull File file, final int length, final @NotNull InputStream inputStream) {
+      this.file = file;
+      this.length = length;
+      this.inputStream = inputStream;
+    }
+
+    @Override
+    public int getLength() {
+      return length;
+    }
+
+    @Override
+    public void writeTo(final @NotNull OutputStream outputStream, final @NotNull ILogger logger)
+        throws IOException {
+      final byte[] buffer = new byte[FILE_COPY_BUFFER_SIZE];
+      int remaining = length;
+      while (remaining > 0) {
+        final int read;
+        try {
+          read = inputStream.read(buffer, 0, Math.min(buffer.length, remaining));
+        } catch (IOException e) {
+          logger.log(SentryLevel.ERROR, e, "Failed to read file '%s'.", file.getName());
+          break;
+        }
+        if (read < 0) {
+          break;
+        }
+        outputStream.write(buffer, 0, read);
+        remaining -= read;
+      }
+      if (remaining > 0) {
+        // The item header already promised `length` bytes, and writing fewer would make the rest
+        // of the envelope unreadable, so the missing tail is filled with zeros.
+        logger.log(
+            SentryLevel.ERROR,
+            "File '%s' ended %d bytes before the length in its envelope item header. Padding"
+                + " with zeros.",
+            file.getName(),
+            remaining);
+        Arrays.fill(buffer, (byte) 0);
+        while (remaining > 0) {
+          final int chunk = Math.min(buffer.length, remaining);
+          outputStream.write(buffer, 0, chunk);
+          remaining -= chunk;
+        }
+      }
+    }
+
+    @Override
+    public void close() throws IOException {
+      inputStream.close();
+    }
   }
 
   public @NotNull SentryEnvelopeItemHeader getHeader() {
@@ -230,6 +370,11 @@ public final class SentryEnvelopeItem {
       final @NotNull Attachment attachment,
       final long maxAttachmentSize) {
 
+    final @Nullable String pathname = attachment.getPathname();
+    if (attachment.getBytes() == null && attachment.getSerializable() == null && pathname != null) {
+      return fromAttachmentFile(attachment, new File(pathname), maxAttachmentSize);
+    }
+
     final CachedItem cachedItem =
         new CachedItem(() -> {
           if (attachment.getBytes() != null) {
@@ -246,8 +391,6 @@ public final class SentryEnvelopeItem {
               ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
               return data;
             }
-          } else if (attachment.getPathname() != null) {
-            return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);
           } else if (attachment.getByteProvider() != null) {
             @SuppressWarnings("NullableProblems")
             final @Nullable byte[] data = attachment.getByteProvider().call();
@@ -274,6 +417,23 @@ public final class SentryEnvelopeItem {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  private static @NotNull SentryEnvelopeItem fromAttachmentFile(
+      final @NotNull Attachment attachment,
+      final @NotNull File file,
+      final long maxAttachmentSize) {
+    // The item header stores the length as an int.
+    final long maxFileSize = Math.min(maxAttachmentSize, Integer.MAX_VALUE);
+    final SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.Attachment,
+            () -> checkedFileLength(file, maxFileSize),
+            attachment.getContentType(),
+            attachment.getFilename(),
+            attachment.getAttachmentType());
+
+    return new SentryEnvelopeItem(itemHeader, file, maxFileSize);
   }
 
   private static void ensureAttachmentSizeLimit(

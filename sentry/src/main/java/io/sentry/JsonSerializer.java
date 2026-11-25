@@ -245,16 +245,17 @@ public final class JsonSerializer implements ISerializer {
       writer.write("\n");
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
-        try {
-          // When this throws we don't write anything and continue with the next item.
-          final byte[] data = item.getData();
-
+        // When openPayload throws we don't write anything and continue with the next item.
+        try (final @NotNull SentryEnvelopeItem.Payload payload = item.openPayload()) {
           item.getHeader()
-              .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
+              .serialize(
+                  new JsonObjectWriter(writer, options.getMaxDepth()),
+                  options.getLogger(),
+                  payload.getLength());
           writer.write("\n");
           writer.flush();
 
-          outputStream.write(data);
+          payload.writeTo(outputStream, options.getLogger());
 
           writer.write("\n");
         } catch (Exception exception) {

@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.SentryId
@@ -14,6 +15,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.io.RandomAccessFile
 import java.io.StringWriter
 import java.nio.charset.Charset
 import java.nio.file.Files
@@ -159,6 +161,115 @@ class SentryEnvelopeItemTest {
       )
 
     assertAttachment(attachment, fixture.bytesAllowed, item)
+  }
+
+  @Test
+  fun `fromAttachment with file sets the header length to the file size`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeBytes(fixture.bytes)
+
+    val item =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+
+    assertThat(item.header.length).isEqualTo(fixture.bytes.size)
+  }
+
+  @Test
+  fun `fromAttachment with file reads the file each time the envelope is serialized`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeText("first")
+    val item =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(SentryId()), listOf(item))
+
+    val first = serializeEnvelope(envelope)
+    file.writeText("second!")
+    val second = serializeEnvelope(envelope)
+
+    assertThat(first).contains("\"length\":5}\nfirst\n")
+    assertThat(second).contains("\"length\":7}\nsecond!\n")
+  }
+
+  @Test
+  fun `fromAttachment with file deleted before serialization drops only that item`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeBytes(fixture.bytes)
+    val fileItem =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+    val bytesItem =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment("bytes".toByteArray(), "bytes.txt"),
+        fixture.maxAttachmentSize,
+      )
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(SentryId()), listOf(fileItem, bytesItem))
+
+    file.delete()
+    val serialized = serializeEnvelope(envelope)
+
+    assertThat(serialized).doesNotContain("attachment.txt")
+    assertThat(serialized).contains("\"filename\":\"bytes.txt\"")
+    assertThat(serialized).contains("\"length\":5}\nbytes\n")
+  }
+
+  @Test
+  fun `fromAttachment with file pads with zeros when the file shrinks while it is written`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeText("hello")
+    val item =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+    val output = ByteArrayOutputStream()
+
+    item.openPayload().use { payload ->
+      RandomAccessFile(file, "rw").use { it.setLength(2) }
+      payload.writeTo(output, fixture.options.logger)
+      assertThat(payload.length).isEqualTo(5)
+    }
+
+    assertThat(output.toByteArray())
+      .isEqualTo(byteArrayOf('h'.code.toByte(), 'e'.code.toByte(), 0, 0, 0))
+  }
+
+  @Test
+  fun `fromAttachment with file stops at the opened length when the file grows`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeText("hello")
+    val item =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+    val output = ByteArrayOutputStream()
+
+    item.openPayload().use { payload ->
+      file.appendText(" world")
+      payload.writeTo(output, fixture.options.logger)
+    }
+
+    assertThat(output.toString("UTF-8")).isEqualTo("hello")
   }
 
   @Test
@@ -794,6 +905,12 @@ class SentryEnvelopeItemTest {
     assertEquals(attachment.contentType, actualItem.header.contentType)
     assertEquals(attachment.filename, actualItem.header.fileName)
     assertArrayEquals(expectedBytes, actualItem.data)
+  }
+
+  private fun serializeEnvelope(envelope: SentryEnvelope): String {
+    val stream = ByteArrayOutputStream()
+    fixture.serializer.serialize(envelope, stream)
+    return stream.toString("UTF-8")
   }
 
   private fun serialize(serializable: JsonSerializable): ByteArray {
