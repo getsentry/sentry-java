@@ -255,6 +255,7 @@ public final class UncaughtExceptionHandlerIntegration
     }
   }
 
+  @HybridSdkApi
   @Open // open for tests
   @ApiStatus.Internal
   public static class UncaughtExceptionHint extends BlockingFlushHint

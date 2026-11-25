@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+import io.sentry.HybridSdkApi;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
@@ -52,6 +53,7 @@ import org.jetbrains.annotations.TestOnly;
  */
 // temp fix for JDK 21: Constructors call overridable methods; making them final would break the
 // public API.
+@HybridSdkApi
 @SuppressWarnings("this-escape")
 @ApiStatus.Internal
 public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {

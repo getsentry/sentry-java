@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import io.sentry.DateUtils;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.IScope;
 import io.sentry.IScopes;
@@ -47,6 +48,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Sentry SDK internal API methods meant for being used by the Sentry Hybrid SDKs. */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class InternalSentrySdk {
 

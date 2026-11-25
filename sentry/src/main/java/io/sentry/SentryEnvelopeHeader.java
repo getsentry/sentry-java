@@ -11,6 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class SentryEnvelopeHeader implements JsonSerializable, JsonUnknown {
   // Event Id must be set if the envelope holds an event, or an item that is related to the event

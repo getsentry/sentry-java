@@ -15,7 +15,7 @@ public final class TypeCheckHint {
 
   @ApiStatus.Internal public static final String SENTRY_CAPTURE_FAILED = "sentry:captureFailed";
 
-  @ApiStatus.Internal
+  @HybridSdkApi @ApiStatus.Internal
   public static final String SENTRY_REPLAY_NETWORK_DETAILS = "sentry:replayNetworkDetails";
 
   @ApiStatus.Internal public static final String SENTRY_JAVASCRIPT_SDK_NAME = "sentry.javascript";

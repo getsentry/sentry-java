@@ -1,8 +1,10 @@
 package io.sentry.android.core.performance;
 
+import io.sentry.HybridSdkApi;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class ActivityLifecycleTimeSpan implements Comparable<ActivityLifecycleTimeSpan> {
   private final @NotNull TimeSpan onCreate = new TimeSpan();

@@ -1,5 +1,6 @@
 package io.sentry.util.network;
 
+import io.sentry.HybridSdkApi;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">Javascript
  * types</a>
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class NetworkBody {
 

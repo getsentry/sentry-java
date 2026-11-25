@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -19,35 +20,35 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "gpu";
 
   /** The name of the graphics device. */
-  private @Nullable String name;
+  @HybridSdkApi private @Nullable String name;
 
   /** The PCI identifier of the graphics device. */
-  private @Nullable Integer id;
+  @HybridSdkApi private @Nullable Integer id;
 
   /** The PCI vendor identifier of the graphics device. */
-  private @Nullable String vendorId;
+  @HybridSdkApi private @Nullable String vendorId;
 
   /** The vendor name as reported by the graphics device. */
-  private @Nullable String vendorName;
+  @HybridSdkApi private @Nullable String vendorName;
 
   /** The total GPU memory available in Megabytes. */
-  private @Nullable Integer memorySize;
+  @HybridSdkApi private @Nullable Integer memorySize;
 
   /**
    * The device low-level API type.
    *
    * <p>Examples: `"Apple Metal"` or `"Direct3D11"`
    */
-  private @Nullable String apiType;
+  @HybridSdkApi private @Nullable String apiType;
 
   /** Whether the GPU has multi-threaded rendering or not. */
-  private @Nullable Boolean multiThreadedRendering;
+  @HybridSdkApi private @Nullable Boolean multiThreadedRendering;
 
   /** The Version of the graphics device. */
-  private @Nullable String version;
+  @HybridSdkApi private @Nullable String version;
 
   /** The Non-Power-Of-Two support. */
-  private @Nullable String npotSupport;
+  @HybridSdkApi private @Nullable String npotSupport;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;

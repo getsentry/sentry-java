@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import androidx.annotation.Nullable;
+import io.sentry.HybridSdkApi;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
 import io.sentry.android.core.performance.WindowContentChangedCallback;
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
  * OnDrawListener that unregisters itself and invokes callback when the next draw is done. This API
  * 16+ implementation is an approximation of the initial-display-time defined by Android Vitals.
  */
+@HybridSdkApi
 public final class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final @NotNull Handler mainThreadHandler = new Handler(Looper.getMainLooper());
   private final @NotNull AtomicReference<View> viewReference;

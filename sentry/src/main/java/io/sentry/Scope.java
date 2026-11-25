@@ -1043,6 +1043,7 @@ public final class Scope implements IScope {
   }
 
   /** The IWithSession callback */
+  @HybridSdkApi
   @ApiStatus.Internal
   public interface IWithSession {
 

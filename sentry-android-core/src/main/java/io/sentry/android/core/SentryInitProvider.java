@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
+import io.sentry.HybridSdkApi;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class SentryInitProvider extends EmptySecureContentProvider {
 

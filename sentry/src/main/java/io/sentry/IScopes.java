@@ -484,6 +484,7 @@ public interface IScopes {
    *
    * @return isolation scope
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   @NotNull
   IScope getIsolationScope();
@@ -493,6 +494,7 @@ public interface IScopes {
    *
    * @return global scope
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   @NotNull
   IScope getGlobalScope();

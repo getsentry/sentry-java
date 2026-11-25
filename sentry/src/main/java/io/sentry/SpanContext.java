@@ -178,6 +178,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return spanId;
   }
 
+  @HybridSdkApi
   @Nullable
   @TestOnly
   public SpanId getParentSpanId() {

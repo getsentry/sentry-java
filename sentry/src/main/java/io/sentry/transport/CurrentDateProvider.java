@@ -1,7 +1,9 @@
 package io.sentry.transport;
 
+import io.sentry.HybridSdkApi;
 import org.jetbrains.annotations.ApiStatus;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class CurrentDateProvider implements ICurrentDateProvider {
 

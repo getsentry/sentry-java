@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public interface JsonUnknown {
   @Nullable

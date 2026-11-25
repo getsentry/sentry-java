@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.HybridSdkApi;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class FileUtils {
 

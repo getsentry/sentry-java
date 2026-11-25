@@ -9,6 +9,7 @@ import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
 import io.sentry.DataCategory.Replay
 import io.sentry.Hint
+import io.sentry.HybridSdkApi
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IConnectionStatusProvider.IConnectionStatusObserver
@@ -67,7 +68,9 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-public class ReplayIntegration(
+public class ReplayIntegration
+@HybridSdkApi
+constructor(
   private val context: Context,
   private val dateProvider: ICurrentDateProvider,
   private val recorderProvider: (() -> Recorder)? = null,
@@ -474,6 +477,7 @@ public class ReplayIntegration(
     )
   }
 
+  @HybridSdkApi
   override fun onScreenshotRecorded(bitmap: Bitmap) {
     var screen: String? = null
     scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
@@ -744,6 +748,7 @@ public class ReplayIntegration(
     }
   }
 
+  @HybridSdkApi
   public fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
     val current = state.get()
     if (!isEnabled.get() || !current.isRecording) {

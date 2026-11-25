@@ -2,6 +2,7 @@ package io.sentry.android.replay
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
+import io.sentry.HybridSdkApi
 import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -15,6 +16,7 @@ import io.sentry.util.network.NetworkRequestData
 import java.util.Collections
 import kotlin.LazyThreadSafetyMode.NONE
 
+@HybridSdkApi
 public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter {
   private var options: SentryOptions? = null
 

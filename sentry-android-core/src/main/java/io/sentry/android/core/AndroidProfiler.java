@@ -5,6 +5,7 @@ import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class AndroidProfiler {
   public static final class ProfileStartData {

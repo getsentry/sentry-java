@@ -1,5 +1,6 @@
 package io.sentry.profilemeasurements;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class ProfileMeasurement implements JsonUnknown, JsonSerializable {
 

@@ -5,6 +5,7 @@ import static io.sentry.SentryLevel.INFO;
 import static io.sentry.cache.CacheUtils.ensureCacheDir;
 
 import io.sentry.Breadcrumb;
+import io.sentry.HybridSdkApi;
 import io.sentry.IScope;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
@@ -49,8 +50,8 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   /** Sentinel value marking a breadcrumb clear in the pending breadcrumb operations. */
   private static final Object CLEAR_MARKER = new Object();
 
-  public static final String SCOPE_CACHE = ".scope-cache";
-  public static final String USER_FILENAME = "user.json";
+  @HybridSdkApi public static final String SCOPE_CACHE = ".scope-cache";
+  @HybridSdkApi public static final String USER_FILENAME = "user.json";
   public static final String BREADCRUMBS_FILENAME = "breadcrumbs.json";
   public static final String TAGS_FILENAME = "tags.json";
   public static final String EXTRAS_FILENAME = "extras.json";
@@ -60,7 +61,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String ENVIRONMENT_FILENAME = "environment.json";
   public static final String FINGERPRINT_FILENAME = "fingerprint.json";
   public static final String TRANSACTION_FILENAME = "transaction.json";
-  public static final String TRACE_FILENAME = "trace.json";
+  @HybridSdkApi public static final String TRACE_FILENAME = "trace.json";
   public static final String REPLAY_FILENAME = "replay.json";
 
   private @NotNull SentryOptions options;

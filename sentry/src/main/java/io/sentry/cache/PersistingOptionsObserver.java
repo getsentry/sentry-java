@@ -1,5 +1,6 @@
 package io.sentry.cache;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.IOptionsObserver;
 import io.sentry.JsonDeserializer;
 import io.sentry.SentryOptions;
@@ -9,12 +10,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class PersistingOptionsObserver implements IOptionsObserver {
-  public static final String OPTIONS_CACHE = ".options-cache";
-  public static final String RELEASE_FILENAME = "release.json";
+  @HybridSdkApi public static final String OPTIONS_CACHE = ".options-cache";
+  @HybridSdkApi public static final String RELEASE_FILENAME = "release.json";
   public static final String PROGUARD_UUID_FILENAME = "proguard-uuid.json";
   public static final String SDK_VERSION_FILENAME = "sdk-version.json";
-  public static final String ENVIRONMENT_FILENAME = "environment.json";
-  public static final String DIST_FILENAME = "dist.json";
+  @HybridSdkApi public static final String ENVIRONMENT_FILENAME = "environment.json";
+  @HybridSdkApi public static final String DIST_FILENAME = "dist.json";
   public static final String TAGS_FILENAME = "tags.json";
   public static final String REPLAY_ERROR_SAMPLE_RATE_FILENAME = "replay-error-sample-rate.json";
 

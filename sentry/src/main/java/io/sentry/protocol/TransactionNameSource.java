@@ -1,8 +1,10 @@
 package io.sentry.protocol;
 
+import io.sentry.HybridSdkApi;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public enum TransactionNameSource {
   /**

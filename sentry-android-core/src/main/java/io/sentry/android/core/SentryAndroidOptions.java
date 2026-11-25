@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import io.sentry.Hint;
+import io.sentry.HybridSdkApi;
 import io.sentry.IScope;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
@@ -640,11 +641,13 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param nativeSdkName the native sdk name
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   public void setNativeSdkName(final @Nullable String nativeSdkName) {
     this.nativeSdkName = nativeSdkName;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public void setNativeHandlerStrategy(final @NotNull NdkHandlerStrategy ndkHandlerStrategy) {
     this.ndkHandlerStrategy = ndkHandlerStrategy;
@@ -917,6 +920,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableStandaloneAppStartTracing = enableStandaloneAppStartTracing;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public @Nullable SentryFrameMetricsCollector getFrameMetricsCollector() {
     return frameMetricsCollector;
@@ -1025,6 +1029,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
   }
 
+  @HybridSdkApi
   @Override
   @ApiStatus.Internal
   public @NotNull MonotonicTicker getMonotonicTicker() {

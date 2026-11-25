@@ -4,6 +4,7 @@ import static io.sentry.util.DebugMetaPropertiesApplier.DEBUG_META_PROPERTIES_FI
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.ContextUtils;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class AssetsDebugMetaLoader implements IDebugMetaLoader {
   private final @NotNull Context context;

@@ -194,6 +194,7 @@ public abstract class SentryBaseEvent {
     this.throwable = throwable;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public @Nullable Map<String, String> getTags() {
     return tags;

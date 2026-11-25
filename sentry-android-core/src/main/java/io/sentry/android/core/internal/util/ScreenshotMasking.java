@@ -3,6 +3,7 @@ package io.sentry.android.core.internal.util;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.view.View;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.SentryScreenshotOptions;
@@ -23,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * Applies screenshot masking using the Session Replay view hierarchy approach. Requires the
  * `sentry-android-replay` module at runtime, callers must check {@link #isAvailable} first.
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class ScreenshotMasking {
 

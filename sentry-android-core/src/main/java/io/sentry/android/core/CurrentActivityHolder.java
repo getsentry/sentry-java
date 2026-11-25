@@ -1,11 +1,13 @@
 package io.sentry.android.core;
 
 import android.app.Activity;
+import io.sentry.HybridSdkApi;
 import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class CurrentActivityHolder {
 

@@ -1,6 +1,7 @@
 package io.sentry.util;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** An Adapter for making Class.forName testable */
+@HybridSdkApi
 @Open
 public class LoadClass {
 

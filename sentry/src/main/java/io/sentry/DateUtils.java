@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Utilities to deal with dates */
+@HybridSdkApi
 @ApiStatus.Internal
 @SuppressWarnings("JavaUtilDate")
 public final class DateUtils {

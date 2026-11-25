@@ -1,5 +1,6 @@
 package io.sentry.time;
 
+import io.sentry.HybridSdkApi;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
  * the CPU was awake. On the JVM there is no comparable suspend state, so {@link System#nanoTime()}
  * is equivalent.
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public interface MonotonicTicker {
   long tickNanos();

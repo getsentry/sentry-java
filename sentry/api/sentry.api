@@ -874,6 +874,9 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
 
+public abstract interface annotation class io/sentry/HybridSdkApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface class io/sentry/IAppStartExtender {
 	public abstract fun extendAppStart ()V
 	public abstract fun finishExtendedAppStart ()V

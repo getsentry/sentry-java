@@ -6,6 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Used for performing operations when a transaction is started or ended. */
+@HybridSdkApi
 @ApiStatus.Internal
 public interface IContinuousProfiler {
   boolean isRunning();

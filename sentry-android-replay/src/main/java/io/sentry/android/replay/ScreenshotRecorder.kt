@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewTreeObserver
+import io.sentry.HybridSdkApi
 import io.sentry.ScreenshotStrategyType
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.WARNING
@@ -150,7 +151,9 @@ internal class ScreenshotRecorder(
   }
 }
 
-public data class ScreenshotRecorderConfig(
+public data class ScreenshotRecorderConfig
+@HybridSdkApi
+constructor(
   val recordingWidth: Int,
   val recordingHeight: Int,
   val scaleFactorX: Float,

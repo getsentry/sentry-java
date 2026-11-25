@@ -284,6 +284,7 @@ public interface ISpan {
    *
    * @return true if NOOP
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   boolean isNoOp();
 

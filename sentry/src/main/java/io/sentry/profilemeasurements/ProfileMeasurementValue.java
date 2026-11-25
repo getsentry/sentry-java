@@ -3,6 +3,7 @@ package io.sentry.profilemeasurements;
 import static io.sentry.DateUtils.doubleToBigDecimal;
 
 import io.sentry.DateUtils;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializable {
 

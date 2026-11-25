@@ -9,6 +9,7 @@ import static io.sentry.TypeCheckHint.SENTRY_JAVASCRIPT_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_TYPE_CHECK_HINT;
 
 import io.sentry.Hint;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Util class dealing with Hint as not to pollute the Hint API with internal functionality */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class HintUtils {
 

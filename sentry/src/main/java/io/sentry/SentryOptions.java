@@ -1758,6 +1758,7 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param sdkVersion the SdkVersion object or null
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
     final @Nullable SdkVersion replaySdkVersion = getSessionReplay().getSdkVersion();
@@ -2769,6 +2770,7 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @return the performance collector.
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   public @NotNull CompositePerformanceCollector getCompositePerformanceCollector() {
     return compositePerformanceCollector;
@@ -3160,6 +3162,7 @@ public class SentryOptions implements RateLimiterConfig {
    * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed ticker,
    * which this module cannot reference. On the JVM there is no suspend state to account for.
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   public @NotNull MonotonicTicker getMonotonicTicker() {
     return JavaMonotonicTicker.getInstance();
@@ -3318,6 +3321,7 @@ public class SentryOptions implements RateLimiterConfig {
     return replayController;
   }
 
+  @HybridSdkApi
   public void setReplayController(final @Nullable ReplayController replayController) {
     this.replayController =
         replayController != null ? replayController : NoOpReplayController.getInstance();
