@@ -21,9 +21,11 @@ on:
 permissions:
   contents: read
 
+# A new push only cancels a superseded PR run. On main, a run that started finishes, as the API 23
+# job only runs there and would otherwise rarely complete; a newer push waits for it instead.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   APK_DIR: "nav3-r8-check-apks"
