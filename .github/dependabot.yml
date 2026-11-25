@@ -19,6 +19,8 @@ updates:
       - dependency-name: "io.opentelemetry*"
       # Servlet 3.1 is the minimum supported API and must remain the production compile target.
       - dependency-name: "javax.servlet:javax.servlet-api"
+      # Logback 1.2 is the compatibility floor and must remain the production compile target.
+      - dependency-name: "ch.qos.logback:logback-classic"
       # DGS 5+ needs Spring Boot 3; the sample is on Spring Boot 2.
       - dependency-name: "com.netflix.graphql.dgs*"
     commit-message:
