@@ -36,12 +36,18 @@ In addition, the `.kotlinx` subpackage may ***not*** depend on Android framework
 ## Version floor
 
 The floor (`kotlinxSerialization-floor` in `gradle/dependency-matrix.versions.toml`) is the oldest kotlinx.serialization version our
-built-in mappers support. It matches the oldest supported Nav3 release's dependency: 1.7.3 for `navigation3-runtime` 1.0.0. Raising it
-could make existing Nav3 apps fall back to `/unknown` unless they also upgrade kotlinx.serialization.
+built-in mappers support. It matches the oldest supported Nav3 release's dependency: 1.7.3 for `navigation3-runtime` 1.0.0. We publish
+the floor as a minimum, so raising it upgrades kotlinx.serialization in apps on older Nav3 releases.
 
-We compile and test against exactly the floor. `build.gradle.kts` pins it strictly, as other dependencies also bring in
+We compile against exactly the floor. `build.gradle.kts` pins it strictly for compiling, as other dependencies also bring in
 kotlinx.serialization, and `verifyKotlinxSerializationCompileVersion` fails the build if the compile classpath resolves any other version.
 Compiling against a newer version could produce calls the floor's runtime lacks.
+
+The unit tests run against the floor, or the version `-Pnav3TestKotlinxVersion` names, as a minimum rather than strictly, and
+`verifyKotlinxSerializationTestVersion` fails the build if a test dependency raises it. A strict pin would instead silently run that
+dependency on a version it doesn't support, which no real app can have. If a test dependency, e.g., `navigation3-runtime`, starts requiring
+a newer version, test the floor with the newest release of that dependency that accepts the floor, as apps on its older releases still run
+the floor.
 
 Rules for changing the floor:
 

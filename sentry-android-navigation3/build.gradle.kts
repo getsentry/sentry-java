@@ -132,8 +132,10 @@ dependencies {
   testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(matrixLibs.kotlinxSerialization.core) {
-    // Avoid using whatever version test deps happen to pull in transitively.
-    version { strictly(testKotlinxVersion) }
+    // A minimum, not strictly(), so that a test dependency that needs a newer version (e.g., a
+    // future Nav3) raises the resolved version instead of being silently downgraded, and
+    // verifyKotlinxSerializationTestVersion fails.
+    version { require(testKotlinxVersion) }
   }
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
@@ -141,53 +143,108 @@ dependencies {
 }
 
 /**
- * Fails the build if the release compile classpath resolves kotlinx.serialization to any version
- * other than the floor, e.g., because another dependency declared a conflicting strict version. We
- * must compile against the floor, as that's the oldest runtime the module promises to work with.
+ * Registers a task that fails the build if [configurationName] resolves kotlinx-serialization-core
+ * to any version other than [expectedVersion], naming the dependencies that requested another one.
+ * [problem] describes why the version matters, and [fix] what to do if it's wrong.
  */
-val verifyKotlinxSerializationCompileVersion by tasks.registering {
-  val floor = kotlinxSerializationFloor
-  val resolvedVersions =
-    configurations.named("releaseCompileClasspath").flatMap { classpath ->
-      classpath.incoming.resolutionResult.rootComponent.map { root ->
-        val versions = sortedSetOf<String>()
-        val visited = mutableSetOf<ResolvedComponentResult>()
-        fun visit(component: ResolvedComponentResult) {
-          if (!visited.add(component)) return
-          val id = component.id
-          if (
-            id is ModuleComponentIdentifier &&
-              id.group == "org.jetbrains.kotlinx" &&
-              id.module.startsWith("kotlinx-serialization-core")
-          ) {
-            versions += "${id.module}:${id.version}"
-          }
-          for (dependency in component.dependencies) {
-            when (dependency) {
-              is ResolvedDependencyResult -> visit(dependency.selected)
-              is UnresolvedDependencyResult ->
-                if ("kotlinx-serialization-core" in dependency.requested.displayName) {
-                  versions += "${dependency.requested.displayName} (unresolved)"
-                }
+fun registerKotlinxSerializationVersionCheck(
+  name: String,
+  configurationName: String,
+  expectedVersion: String,
+  problem: String,
+  fix: String,
+) =
+  tasks.register(name) {
+    val resolution =
+      configurations.named(configurationName).flatMap { classpath ->
+        classpath.incoming.resolutionResult.rootComponent.map { root ->
+          val resolved = sortedSetOf<String>()
+          val requests = sortedSetOf<String>()
+          val visited = mutableSetOf<ResolvedComponentResult>()
+          fun visit(component: ResolvedComponentResult) {
+            if (!visited.add(component)) return
+            val id = component.id
+            if (
+              id is ModuleComponentIdentifier &&
+                id.group == "org.jetbrains.kotlinx" &&
+                id.module.startsWith("kotlinx-serialization-core")
+            ) {
+              resolved += "${id.module}:${id.version}"
+            }
+            for (dependency in component.dependencies) {
+              val requested = dependency.requested.displayName
+              if (
+                "org.jetbrains.kotlinx:kotlinx-serialization-core" in requested &&
+                  !dependency.isConstraint &&
+                  !requested.endsWith(":$expectedVersion") &&
+                  // kotlinx-serialization-core requests its own -jvm variant.
+                  !id.displayName.startsWith("org.jetbrains.kotlinx:kotlinx-serialization-core")
+              ) {
+                requests += "${dependency.from.id.displayName} requests $requested"
+              }
+              when (dependency) {
+                is ResolvedDependencyResult -> visit(dependency.selected)
+                is UnresolvedDependencyResult ->
+                  if ("kotlinx-serialization-core" in requested) {
+                    resolved += "$requested (unresolved)"
+                  }
+              }
             }
           }
+          visit(root)
+          listOf(resolved.toList(), requests.toList())
         }
-        visit(root)
-        versions.toList()
+      }
+    inputs.property("expectedVersion", expectedVersion)
+    inputs.property("resolution", resolution)
+    doLast {
+      val (resolved, requests) = resolution.get()
+      val unexpected = resolved.filterNot { it.endsWith(":$expectedVersion") }
+      check(resolved.isNotEmpty() && unexpected.isEmpty()) {
+        "$problem, but $configurationName resolved " +
+          "${resolved.ifEmpty { listOf("no kotlinx-serialization-core") }}" +
+          (if (requests.isEmpty()) "" else " (${requests.joinToString("; ")})") +
+          ". $fix"
       }
     }
-  inputs.property("floor", floor)
-  inputs.property("resolvedVersions", resolvedVersions)
-  doLast {
-    val resolved = resolvedVersions.get()
-    val unexpected = resolved.filterNot { it.endsWith(":$floor") }
-    check(resolved.isNotEmpty() && unexpected.isEmpty()) {
-      "sentry-android-navigation3 must compile against kotlinx.serialization $floor (the " +
-        "kotlinxSerialization-floor in gradle/dependency-matrix.versions.toml), but " +
-        "releaseCompileClasspath resolved ${resolved.ifEmpty { "no kotlinx-serialization-core" }}."
-    }
   }
-}
+
+/**
+ * Fails the build if the release compile classpath resolves kotlinx.serialization to any version
+ * other than the floor, e.g., because another dependency declared a conflicting strict version or a
+ * resolution rule forced one. We must compile against the floor, as that's the oldest runtime the
+ * module promises to work with.
+ */
+val verifyKotlinxSerializationCompileVersion =
+  registerKotlinxSerializationVersionCheck(
+    name = "verifyKotlinxSerializationCompileVersion",
+    configurationName = "releaseCompileClasspath",
+    expectedVersion = kotlinxSerializationFloor,
+    problem =
+      "sentry-android-navigation3 must compile against kotlinx.serialization " +
+        "$kotlinxSerializationFloor (the kotlinxSerialization-floor in " +
+        "gradle/dependency-matrix.versions.toml)",
+    fix = "Find what changed the version, e.g., a strict version or a resolution rule.",
+  )
+
+/**
+ * Fails the build if the unit tests would run against a kotlinx.serialization version other than
+ * the one under test, e.g., because a test dependency such as Nav3 now requires a newer one. The
+ * tests would then not test that version, and a pin that downgraded the dependency instead would
+ * run it on a version it doesn't support, which no real app can have.
+ */
+val verifyKotlinxSerializationTestVersion =
+  registerKotlinxSerializationVersionCheck(
+    name = "verifyKotlinxSerializationTestVersion",
+    configurationName = "releaseUnitTestRuntimeClasspath",
+    expectedVersion = testKotlinxVersion,
+    problem = "The unit tests must run against kotlinx.serialization $testKotlinxVersion",
+    fix =
+      "If a test dependency (e.g., navigation3-runtime) now requires a newer version, test the " +
+        "floor with the newest release of that dependency that accepts the floor, as apps on " +
+        "older releases still run the floor. Raise kotlinxSerialization-floor only to drop " +
+        "support for those apps. See \"Version floor\" in the kotlinx package README.",
+  )
 
 tasks
   .named { it == "compileReleaseKotlin" }
@@ -195,7 +252,15 @@ tasks
     dependsOn(verifyKotlinxSerializationCompileVersion)
   }
 
-tasks.named("check") { dependsOn(verifyKotlinxSerializationCompileVersion) }
+tasks
+  .named { it == "testReleaseUnitTest" }
+  .configureEach {
+    dependsOn(verifyKotlinxSerializationTestVersion)
+  }
+
+tasks.named("check") {
+  dependsOn(verifyKotlinxSerializationCompileVersion, verifyKotlinxSerializationTestVersion)
+}
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
