@@ -228,6 +228,27 @@ class KotlinxPropertiesEncoderStructuredMapKeysTest {
     assertThat(unencodableValueCount).isEqualTo(0)
   }
 
+  @Test
+  fun `encode() - records a map with class keys as the Unencodable substitute without iterating over it`() {
+    val counts = IterationCountingMap((1..1_000).associate { Point(it) to it })
+
+    val encoded = encodeKeyedMap(Point.serializer(), counts)
+
+    assertThat(encoded).isEqualTo(unencodableMapArguments)
+    assertThat(counts.entriesRead).isEqualTo(0)
+  }
+
+  @Test
+  fun `encode() - records a top-level map with class keys as the Unencodable substitute without iterating over it`() {
+    val serializer = MapSerializer(Point.serializer(), Int.serializer())
+    val map = IterationCountingMap((1..1_000).associate { Point(it) to it })
+
+    val encoded = encodeToMap(serializer, map)
+
+    assertThat(encoded).isEqualTo(mapOf(VALUE_KEY to UNENCODABLE_SUBSTITUTE))
+    assertThat(map.entriesRead).isEqualTo(0)
+  }
+
   // Maps with scalar keys
 
   @Test

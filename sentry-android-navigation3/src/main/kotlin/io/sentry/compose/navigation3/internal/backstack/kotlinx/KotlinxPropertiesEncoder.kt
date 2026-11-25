@@ -152,8 +152,8 @@ internal object KotlinxPropertiesEncoder {
     override val serializersModule: SerializersModule = EmptySerializersModule()
 
     /**
-     * Whether an element of the structure this encodes can be recorded as [UNENCODABLE_SUBSTITUTE]
-     * if its serializer fails.
+     * Whether an element of the structure this encodes can be recorded as a substitute: as
+     * [UNENCODABLE_SUBSTITUTE] if its serializer fails, or as a map's substitute (see [MapKeys]).
      */
     protected open val canSubstituteElement: Boolean
       get() = true
@@ -237,15 +237,36 @@ internal object KotlinxPropertiesEncoder {
     override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
       nesting.enter()
       try {
-        if (serializer.isCharSequenceSerializer() && value is CharSequence) {
+        when {
           // The sink records text as a String.
-          put(value)
-          return
+          serializer.isCharSequenceSerializer() && value is CharSequence -> put(value)
+          // Checked before the map's serializer runs, as it iterates over every entry even when
+          // beginStructure returns DiscardingEncoder. A map key can't be a substitute.
+          canSubstituteElement && putMapSubstitute(serializer.descriptor) -> Unit
+          else -> serializer.serialize(this, value)
         }
-        serializer.serialize(this, value)
       } finally {
         nesting.exit()
       }
+    }
+
+    /**
+     * If [descriptor] describes a map whose keys can't be recorded as text (see [MapKeys]), records
+     * the map's substitute and returns `true`. Returns `false` for anything else.
+     */
+    private fun putMapSubstitute(descriptor: SerialDescriptor): Boolean {
+      if (descriptor.kind != StructureKind.MAP) {
+        return false
+      }
+      when (descriptor.mapKeys()) {
+        MapKeys.TEXT -> return false
+        MapKeys.SENSITIVE -> put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
+        MapKeys.STRUCTURED -> {
+          context.onUnencodableValue()
+          put(UNENCODABLE_SUBSTITUTE)
+        }
+      }
+      return true
     }
 
     override fun encodeValue(value: Any) {
@@ -280,23 +301,17 @@ internal object KotlinxPropertiesEncoder {
           sink.beginList()
           ListEncoder(sink, context)
         }
-        // Substitutes are recorded before the map writes anything, so they replace the whole map
-        // rather than dropping the entry's arguments.
+        // encodeSerializableValue already records substitutes for maps whose serializers describe
+        // them. This catches the rest (e.g., a custom serializer that encodes a map without
+        // describing itself as one), whose entries the serializer then iterates into
+        // DiscardingEncoder. Substitutes are recorded before the map writes anything, so they
+        // replace the whole map rather than dropping the entry's arguments.
         StructureKind.MAP ->
-          when (descriptor.mapKeys()) {
-            MapKeys.TEXT -> {
-              sink.beginMap()
-              MapEncoder(sink, context)
-            }
-            MapKeys.SENSITIVE -> {
-              put(UrlUtils.SENSITIVE_DATA_SUBSTITUTE)
-              DiscardingEncoder
-            }
-            MapKeys.STRUCTURED -> {
-              context.onUnencodableValue()
-              put(UNENCODABLE_SUBSTITUTE)
-              DiscardingEncoder
-            }
+          if (putMapSubstitute(descriptor)) {
+            DiscardingEncoder
+          } else {
+            sink.beginMap()
+            MapEncoder(sink, context)
           }
         else -> {
           sink.beginMap()

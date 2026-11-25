@@ -57,6 +57,21 @@ private fun standardWarningFor(reason: ArgumentDropReason): String =
     else -> error("$reason has no standard warning.")
   }
 
+/** A map that counts how many of its entries were read by iterating over it. */
+internal class IterationCountingMap<K, V>(private val delegate: Map<K, V>) : AbstractMap<K, V>() {
+  var entriesRead: Int = 0
+    private set
+
+  override val entries: Set<Map.Entry<K, V>> =
+    object : AbstractSet<Map.Entry<K, V>>() {
+      override val size: Int
+        get() = delegate.size
+
+      override fun iterator(): Iterator<Map.Entry<K, V>> =
+        delegate.entries.asSequence().onEach { entriesRead++ }.iterator()
+    }
+}
+
 /**
  * Delegates to [delegate], recording each serialized value and throwing [error], if set, for the
  * values [failsFor] accepts.

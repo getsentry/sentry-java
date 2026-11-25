@@ -518,6 +518,18 @@ class KotlinxPropertiesEncoderFilteringTest {
   }
 
   @Test
+  fun `encode() - filters a map with sensitive value class keys as a whole without iterating over it`() {
+    val headers =
+      IterationCountingMap((1..1_000).associate { SensitiveHeaderName("X-Header-$it") to "$it" })
+    val entry = WithSensitiveValueClassMapKeys(id = "1", headers = headers, page = 2)
+
+    val encoded = encodeToMap(WithSensitiveValueClassMapKeys.serializer(), entry)
+
+    assertThat(encoded).isEqualTo(filteredHeadersArguments)
+    assertThat(headers.entriesRead).isEqualTo(0)
+  }
+
+  @Test
   fun `encode() - filters a map whose value class keys wrap a value class with a sensitive underlying property`() {
     val entry =
       WithOuterSensitiveHeaderNameMapKeys(
