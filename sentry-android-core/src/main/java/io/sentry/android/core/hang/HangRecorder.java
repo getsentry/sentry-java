@@ -106,11 +106,8 @@ final class HangRecorder {
 
   /** Builds the record of this hang. */
   @NotNull
-  HangRecord end(final long endTimeMs, final boolean endedAtMaxRecordingTime) {
-    return record
-        .setDurationMs(endTimeMs - startTimeMs)
-        .setEndedAtMaxRecordingTime(endedAtMaxRecordingTime)
-        .build();
+  HangRecord end(final long endTimeMs) {
+    return record.setDurationMs(endTimeMs - startTimeMs).build();
   }
 
   private void clearStores() {
