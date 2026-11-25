@@ -82,7 +82,6 @@ class ComposeMaskingOptionsTest {
     ComposeMaskingOptionsActivity.textFieldModifierApplier = null
     ComposeMaskingOptionsActivity.containerModifierApplier = null
     ComposeMaskingOptionsActivity.fontSizeApplier = null
-    ComposeMaskingOptionsActivity.useCoil3 = false
   }
 
   @Test
@@ -150,34 +149,8 @@ class ComposeMaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllImages = true }
 
     val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
+    assertEquals(2, imageNodes.size) // [AsyncImage, Coil3AsyncImage]
     assertTrue(imageNodes.all { it.shouldMask })
-  }
-
-  @Test
-  fun `when maskAllImages is set Coil 3 AsyncImage nodes are masked`() {
-    ComposeMaskingOptionsActivity.useCoil3 = true
-    val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
-    shadowOf(Looper.getMainLooper()).idle()
-
-    val options = SentryOptions().apply { sessionReplay.maskAllImages = true }
-
-    val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
-    assertTrue(imageNodes.all { it.shouldMask })
-  }
-
-  @Test
-  fun `when maskAllImages is set to false Coil 3 AsyncImage nodes are unmasked`() {
-    ComposeMaskingOptionsActivity.useCoil3 = true
-    val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
-    shadowOf(Looper.getMainLooper()).idle()
-
-    val options = SentryOptions().apply { sessionReplay.maskAllImages = false }
-
-    val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
-    assertTrue(imageNodes.none { it.shouldMask })
   }
 
   @Test
@@ -231,7 +204,7 @@ class ComposeMaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllImages = false }
 
     val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
+    assertEquals(2, imageNodes.size) // [AsyncImage, Coil3AsyncImage]
     assertTrue(imageNodes.none { it.shouldMask })
   }
 
@@ -430,7 +403,6 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
     var textFieldModifierApplier: (() -> Modifier)? = null
     var containerModifierApplier: (() -> Modifier)? = null
     var fontSizeApplier: (() -> TextUnit)? = null
-    var useCoil3 = false
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -443,20 +415,17 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().then(containerModifierApplier?.invoke() ?: Modifier),
       ) {
-        if (useCoil3) {
-          // Coil 3 loads asynchronously, so without a size the node is empty and invisible
-          Coil3AsyncImage(
-            model = Uri.fromFile(File(image.toURI())),
-            contentDescription = null,
-            modifier = Modifier.padding(vertical = 16.dp).size(100.dp),
-          )
-        } else {
-          AsyncImage(
-            model = Uri.fromFile(File(image.toURI())),
-            contentDescription = null,
-            modifier = Modifier.padding(vertical = 16.dp),
-          )
-        }
+        AsyncImage(
+          model = Uri.fromFile(File(image.toURI())),
+          contentDescription = null,
+          modifier = Modifier.padding(vertical = 16.dp),
+        )
+        // Coil 3 loads asynchronously, so without a size the node is empty and invisible
+        Coil3AsyncImage(
+          model = Uri.fromFile(File(image.toURI())),
+          contentDescription = null,
+          modifier = Modifier.size(10.dp),
+        )
         Text("Random repo", fontSize = fontSizeApplier?.invoke() ?: TextUnit.Unspecified)
         TextField(
           modifier = textFieldModifierApplier?.invoke() ?: Modifier,
