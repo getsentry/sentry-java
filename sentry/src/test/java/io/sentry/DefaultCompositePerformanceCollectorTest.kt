@@ -1,11 +1,14 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
-import io.sentry.test.injectForField
 import io.sentry.util.thread.ThreadChecker
-import java.util.Timer
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -34,7 +37,8 @@ class DefaultCompositePerformanceCollectorTest {
     val id1 = "id1"
     val scopes: IScopes = mock()
     val options = SentryOptions()
-    var mockTimer: Timer? = null
+    // a real executor so scheduled collection tasks actually run, recording schedule delays
+    val executorService = RecordingExecutorService(SentryExecutorService(options))
 
     val mockCpuCollector: IPerformanceSnapshotCollector =
       object : IPerformanceSnapshotCollector {
@@ -47,6 +51,7 @@ class DefaultCompositePerformanceCollectorTest {
 
     init {
       whenever(scopes.options).thenReturn(options)
+      options.setTimerExecutorService(executorService)
     }
 
     fun getSut(
@@ -65,13 +70,22 @@ class DefaultCompositePerformanceCollectorTest {
       optionsConfiguration.configure(options)
       transaction1 = SentryTracer(TransactionContext("", ""), scopes)
       transaction2 = SentryTracer(TransactionContext("", ""), scopes)
-      val collector = DefaultCompositePerformanceCollector(options)
-      val timer: Timer = collector.getProperty("timer") ?: Timer(true)
-      mockTimer = spy(timer)
-      collector.injectForField("timer", mockTimer)
-      return collector
+      return DefaultCompositePerformanceCollector(options)
     }
   }
+
+  private class RecordingExecutorService(private val delegate: ISentryExecutorService) :
+    ISentryExecutorService by delegate {
+    val scheduledDelays = CopyOnWriteArrayList<Long>()
+
+    override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+      scheduledDelays.add(delayMillis)
+      return delegate.schedule(runnable, delayMillis)
+    }
+  }
+
+  private fun CompositePerformanceCollector.collectFuture(): Future<*>? =
+    getProperty<Future<*>?>("collectFuture")
 
   @Test
   fun `when null param is provided, invalid argument is thrown`() {
@@ -85,7 +99,7 @@ class DefaultCompositePerformanceCollectorTest {
     val collector = fixture.getSut(null, null)
     assertTrue(fixture.options.performanceCollectors.isEmpty())
     collector.start(fixture.transaction1)
-    verify(fixture.mockTimer, never())!!.schedule(any(), any<Long>(), any())
+    assertTrue(fixture.executorService.scheduledDelays.isEmpty())
   }
 
   @Test
@@ -100,43 +114,45 @@ class DefaultCompositePerformanceCollectorTest {
   }
 
   @Test
-  fun `when start, timer is scheduled every 100 milliseconds`() {
+  fun `when start, collection is scheduled every 100 milliseconds`() {
     val collector = fixture.getSut()
     collector.start(fixture.transaction1)
-    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
+    Thread.sleep(300)
+    assertTrue(fixture.executorService.scheduledDelays.contains(100L))
   }
 
   @Test
-  fun `when start with a string, timer is scheduled every 100 milliseconds`() {
+  fun `when start with a string, collection is scheduled every 100 milliseconds`() {
     val collector = fixture.getSut()
     collector.start(fixture.id1)
-    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
+    Thread.sleep(300)
+    assertTrue(fixture.executorService.scheduledDelays.contains(100L))
   }
 
   @Test
-  fun `when stop, timer is stopped`() {
+  fun `when stop, collection is stopped`() {
     val collector = fixture.getSut()
     collector.start(fixture.transaction1)
+    assertNotNull(collector.collectFuture())
     collector.stop(fixture.transaction1)
-    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
-    verify(fixture.mockTimer)!!.cancel()
+    assertNull(collector.collectFuture())
   }
 
   @Test
-  fun `when stop with a string, timer is stopped`() {
+  fun `when stop with a string, collection is stopped`() {
     val collector = fixture.getSut()
     collector.start(fixture.id1)
+    assertNotNull(collector.collectFuture())
     collector.stop(fixture.id1)
-    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
-    verify(fixture.mockTimer)!!.cancel()
+    assertNull(collector.collectFuture())
   }
 
   @Test
   fun `stopping a not collected transaction return null`() {
     val collector = fixture.getSut()
     val data = collector.stop(fixture.transaction1)
-    verify(fixture.mockTimer, never())!!.schedule(any(), any<Long>(), eq(100))
-    verify(fixture.mockTimer, never())!!.cancel()
+    assertTrue(fixture.executorService.scheduledDelays.isEmpty())
+    assertNull(collector.collectFuture())
     assertNull(data)
   }
 
@@ -144,8 +160,8 @@ class DefaultCompositePerformanceCollectorTest {
   fun `stopping a not collected id return null`() {
     val collector = fixture.getSut()
     val data = collector.stop(fixture.id1)
-    verify(fixture.mockTimer, never())!!.schedule(any(), any<Long>(), eq(100))
-    verify(fixture.mockTimer, never())!!.cancel()
+    assertTrue(fixture.executorService.scheduledDelays.isEmpty())
+    assertNull(collector.collectFuture())
     assertNull(data)
   }
 
@@ -159,16 +175,16 @@ class DefaultCompositePerformanceCollectorTest {
     Thread.sleep(300)
 
     val data1 = collector.stop(fixture.transaction1)
-    // There is still a transaction and an id running: the timer shouldn't stop now
-    verify(fixture.mockTimer, never())!!.cancel()
+    // There is still a transaction and an id running: the collection shouldn't stop now
+    assertNotNull(collector.collectFuture())
 
     val data2 = collector.stop(fixture.transaction2)
-    // There is still an id running: the timer shouldn't stop now
-    verify(fixture.mockTimer, never())!!.cancel()
+    // There is still an id running: the collection shouldn't stop now
+    assertNotNull(collector.collectFuture())
 
     val data3 = collector.stop(fixture.id1)
-    // There are no more transactions or ids running: the time should stop now
-    verify(fixture.mockTimer)!!.cancel()
+    // There are no more transactions or ids running: the collection should stop now
+    assertNull(collector.collectFuture())
 
     assertNotNull(data1)
     assertNotNull(data2)
@@ -196,14 +212,14 @@ class DefaultCompositePerformanceCollectorTest {
       it.addPerformanceCollector(mockCollector)
     }
     collector.start(fixture.transaction1)
-    verify(fixture.mockTimer, never())!!.cancel()
+    assertNotNull(collector.collectFuture())
 
     // Let's sleep to make the collector get values
     Thread.sleep(300)
 
     // When the collector gets the values, it checks the current date, set 31 seconds after the
     // begin. This means it should stop itself
-    verify(fixture.mockTimer)!!.cancel()
+    assertNull(collector.collectFuture())
 
     // When the collector times out, the data collection for spans is stopped, too
     verify(mockCollector).onSpanFinished(eq(fixture.transaction1))
@@ -224,14 +240,14 @@ class DefaultCompositePerformanceCollectorTest {
     whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
     val collector = fixture.getSut { it.dateProvider = mockDateProvider }
     collector.start(fixture.transaction1)
-    verify(fixture.mockTimer, never())!!.cancel()
+    assertNotNull(collector.collectFuture())
 
     // Let's sleep to make the collector get values
     Thread.sleep(300)
 
     // When the collector gets the values, it checks the current date, set 30 seconds after the
     // begin. This means it should continue without being cancelled
-    verify(fixture.mockTimer, never())!!.cancel()
+    assertNotNull(collector.collectFuture())
 
     // Data is deleted after the collector times out
     val data1 = collector.stop(fixture.transaction1)
@@ -281,6 +297,38 @@ class DefaultCompositePerformanceCollectorTest {
   }
 
   @Test
+  fun `first collect runs a full interval after setup even when the timer thread was busy`() {
+    val setupNanos = AtomicLong()
+    val firstCollectNanos = AtomicLong()
+    val collected = CountDownLatch(1)
+    val timingCollector =
+      object : IPerformanceSnapshotCollector {
+        override fun setup() {
+          setupNanos.set(System.nanoTime())
+        }
+
+        override fun collect(performanceCollectionData: PerformanceCollectionData) {
+          if (firstCollectNanos.compareAndSet(0, System.nanoTime())) {
+            collected.countDown()
+          }
+        }
+      }
+    val collector = fixture.getSut(memoryCollector = null, cpuCollector = timingCollector)
+    val timerThreadBusy = CountDownLatch(1)
+    fixture.executorService.schedule({ timerThreadBusy.await() }, 0L)
+
+    collector.start(fixture.transaction1)
+    // keep the timer thread busy past the collection interval
+    Thread.sleep(200)
+    timerThreadBusy.countDown()
+
+    assertTrue(collected.await(1, TimeUnit.SECONDS))
+    assertThat(firstCollectNanos.get() - setupNanos.get())
+      .isAtLeast(TimeUnit.MILLISECONDS.toNanos(100))
+    collector.stop(fixture.transaction1)
+  }
+
+  @Test
   fun `setup and collect happen on background thread`() {
     val threadCheckerCollector = spy(ThreadCheckerCollector())
     fixture.options.addPerformanceCollector(threadCheckerCollector)
@@ -298,14 +346,14 @@ class DefaultCompositePerformanceCollectorTest {
   }
 
   @Test
-  fun `when close, timer is stopped and data is cleared`() {
+  fun `when close, collection is stopped and data is cleared`() {
     val collector = fixture.getSut()
     collector.start(fixture.transaction1)
     collector.close()
 
-    // Timer was canceled
-    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
-    verify(fixture.mockTimer)!!.cancel()
+    // Collection was canceled
+    assertTrue(fixture.executorService.scheduledDelays.isNotEmpty())
+    assertNull(collector.collectFuture())
 
     // Data was cleared
     assertNull(collector.stop(fixture.transaction1))
