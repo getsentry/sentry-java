@@ -103,8 +103,8 @@ internal class DeferredBackStackEntryMapper(
 /**
  * A fallback for when a built-in [BackStackEntryMapper] isn't supported by the host app.
  *
- * Maps every back stack entry to `null`, which Sentry records as [UNKNOWN_ENTRY_NAME]. Logs once
- * per entry type.
+ * Maps every back stack entry to `null`, which Sentry records as [UNKNOWN_ENTRY_NAME] with
+ * [UnnamedReason.KOTLINX_SERIALIZATION_VERSION]. Logs once per entry type.
  */
 internal class UnavailableBackStackEntryMapper(
   private val logger: () -> ILogger,
@@ -125,6 +125,7 @@ internal class UnavailableBackStackEntryMapper(
         )
     }
 
+    UnnamedReasonReports.report(UnnamedReason.KOTLINX_SERIALIZATION_VERSION)
     return null
   }
 }

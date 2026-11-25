@@ -157,6 +157,23 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   @SerialName("WithNullableMapKeys")
   data class WithNullableMapKeys(val byName: Map<String?, Int>)
 
+  /**
+   * Holds [boxes], nested [Box]es. Its type isn't generic, unlike [Box], so the mapper looks up its
+   * serializer, which tests replace with a [BoxesSerializer].
+   */
+  @Serializable class WithBoxes(@Contextual val boxes: Any)
+
+  /** Serializes a [WithBoxes] as its [WithBoxes.boxes], with [boxesSerializer]. */
+  class BoxesSerializer(private val boxesSerializer: KSerializer<Any>) : KSerializer<WithBoxes> {
+    override val descriptor: SerialDescriptor = boxesSerializer.descriptor
+
+    override fun serialize(encoder: Encoder, value: WithBoxes) {
+      encoder.encodeSerializableValue(boxesSerializer, value.boxes)
+    }
+
+    override fun deserialize(decoder: Decoder): WithBoxes = throw UnsupportedOperationException()
+  }
+
   /** Serializers of this suite's own types, which tests add to the fixture's lookup. */
   private val otherSerializers: Map<Class<*>, KSerializer<*>> =
     mapOf(
@@ -534,15 +551,19 @@ class KotlinxBackStackEntryMapperPropertiesTest {
   @Test
   fun `describes the nesting limits in the warning for an entry that nests values too deep`() {
     val fixture = KotlinxMapperFixture.create(includeProperties = true)
-    val (boxSerializer, entry) =
+    val (boxesSerializer, boxes) =
       boxed(depth = MAX_ARGUMENT_DEPTH + 1, value = "leaf", String.serializer())
-    fixture.lookUp = { if (it == Box::class.java) boxSerializer else null }
+    fixture.lookUp = { if (it == WithBoxes::class.java) BoxesSerializer(boxesSerializer) else null }
     val mapper = fixture.mapper
 
-    mapper.mapAndReadArguments(entry)
+    mapper.mapAndReadArguments(WithBoxes(boxes))
 
     assertThat(
-        overLimitsWarningLimit(fixture, Box::class.java, ArgumentDropReason.INVALID_STRUCTURE),
+        overLimitsWarningLimit(
+          fixture,
+          WithBoxes::class.java,
+          ArgumentDropReason.INVALID_STRUCTURE,
+        ),
       )
       .isEqualTo(
         "it nests values more than $MAX_ARGUMENT_DEPTH levels deep, or serializers or value " +

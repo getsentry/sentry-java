@@ -29,6 +29,23 @@ class UnavailableBackStackEntryMapperTest {
   }
 
   @Test
+  fun `reports the kotlinx serialization version as the reason for every back stack entry`() {
+    val mapper = UnavailableBackStackEntryMapper(logger = { logger })
+
+    val reasons =
+      listOf(Home, Detail("1"), Home).map { entry ->
+        UnnamedReasonReports.collect { mapper.map(entry) }.second
+      }
+
+    assertThat(reasons)
+      .containsExactly(
+        UnnamedReason.KOTLINX_SERIALIZATION_VERSION,
+        UnnamedReason.KOTLINX_SERIALIZATION_VERSION,
+        UnnamedReason.KOTLINX_SERIALIZATION_VERSION,
+      )
+  }
+
+  @Test
   fun `logs a warning once per back stack entry type`() {
     val mapper = UnavailableBackStackEntryMapper(logger = { logger })
 

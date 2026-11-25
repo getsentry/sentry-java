@@ -246,6 +246,19 @@ class BuiltInBackStackEntryMappersTest {
   }
 
   @Test
+  fun `create() - reports the kotlinx serialization version as the reason when mapper creation fails`() {
+    val mapper =
+      BuiltInBackStackEntryMappers.create(logger = { logger }) {
+        throw NoClassDefFoundError("kotlinx/serialization/KSerializer")
+      }
+
+    val (mapped, reason) = UnnamedReasonReports.collect { mapper.map(Home) }
+
+    assertThat(mapped).isNull()
+    assertThat(reason).isEqualTo(UnnamedReason.KOTLINX_SERIALIZATION_VERSION)
+  }
+
+  @Test
   fun `create() - logs the LinkageError and compatibility advice when mapper creation fails`() {
     val error = NoClassDefFoundError("kotlinx/serialization/KSerializer")
 

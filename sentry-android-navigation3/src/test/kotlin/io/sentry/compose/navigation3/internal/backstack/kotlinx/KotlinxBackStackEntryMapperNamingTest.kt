@@ -285,16 +285,27 @@ class KotlinxBackStackEntryMapperNamingTest {
   @Test
   fun `looks up each @Serializable type once, including failed lookups`() {
     val fixture = KotlinxMapperFixture.create()
+    fixture.lookUp = { if (it == Search::class.java) null else fixture.serializers[it] }
     val mapper = fixture.mapper
 
     repeat(3) {
       mapper.map(Home)
       mapper.map(Detail("$it"))
-      mapper.map(Generic("$it"))
+      mapper.map(Search("$it"))
     }
 
     assertThat(fixture.lookedUpTypes)
-      .containsExactly(Home::class.java, Detail::class.java, Generic::class.java)
+      .containsExactly(Home::class.java, Detail::class.java, Search::class.java)
+  }
+
+  @Test
+  fun `doesn't look up generic @Serializable types`() {
+    val fixture = KotlinxMapperFixture.create()
+    val mapper = fixture.mapper
+
+    repeat(3) { mapper.map(Generic("$it")) }
+
+    assertThat(fixture.lookedUpTypes).isEmpty()
   }
 
   @Test
@@ -361,6 +372,38 @@ class KotlinxBackStackEntryMapperNamingTest {
         eq(SERIALIZER_NOT_FOUND),
       )
     verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `logs a warning once per generic @Serializable type`() {
+    val fixture = KotlinxMapperFixture.create()
+    val mapper = fixture.mapper
+
+    repeat(3) {
+      mapper.map(Generic("$it"))
+      mapper.map(Home)
+    }
+
+    verify(fixture.logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        argThat<String> { contains(GENERIC_TYPE) },
+        eq(Generic::class.java.name),
+      )
+    verifyNoMoreInteractions(fixture.logger)
+  }
+
+  @Test
+  fun `advises using a custom mapper when a generic @Serializable type can't be named`() {
+    val fixture = KotlinxMapperFixture.create()
+    val mapper = fixture.mapper
+
+    mapper.map(Generic("1"))
+
+    val message = argumentCaptor<String>()
+    verify(fixture.logger)
+      .log(eq(SentryLevel.WARNING), message.capture(), eq(Generic::class.java.name))
+    assertThat(message.firstValue).contains("Use a custom BackStackEntryMapper")
   }
 
   @Test
@@ -890,5 +933,7 @@ class KotlinxBackStackEntryMapperNamingTest {
     val TEST_CLASS: String = KotlinxBackStackEntryMapperNamingTest::class.java.name
 
     const val NOT_SERIALIZABLE = "because the type is not @Serializable"
+
+    const val GENERIC_TYPE = "because the type has type parameters"
   }
 }

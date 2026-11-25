@@ -400,6 +400,19 @@ class BackStackConverterTest {
   }
 
   @Test
+  fun `convert returns the built-in mapper's reason if a custom mapper forwards SerialName's null`() {
+    val sut = getSut(entryMapper = { entry -> BackStackEntryMapper.SerialName.map(entry) })
+
+    assertThat(sut.convert(HomeScreen()))
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          UNKNOWN_ENTRY_NAME,
+          unnamedReason = UnnamedReason.NOT_SERIALIZABLE,
+        ),
+      )
+  }
+
+  @Test
   fun `convert returns a named entry if a custom mapper names an entry after a reporting mapper's null`() {
     val sut =
       getSut(

@@ -390,7 +390,7 @@ class SentryNavEffectTest {
   }
 
   @Test
-  fun `SerialName records serial names, and unknown names for entries that aren't @Serializable`() {
+  fun `SerialName records serial names, and unknown names with their reason for entries that aren't @Serializable`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(SerializableHomeRoute)
 
@@ -415,8 +415,13 @@ class SentryNavEffectTest {
     assertThat(fixture.breadcrumbs.first().data["to"]).isEqualTo("/SerializableHome")
     assertThat(fixture.transactions.first().name).isEqualTo("/SerializableHome")
     assertThat(fixture.scope.screen).isEqualTo("/unknown")
-    assertThat(fixture.scope.navigationBackStack()?.map { it["entry"] })
-      .containsExactly("/unknown", profileName, "/SerializableHome")
+    assertThat(fixture.breadcrumbs.last().data["to_unnamed_reason"]).isEqualTo("not_serializable")
+    assertThat(fixture.scope.navigationBackStack())
+      .containsExactly(
+        mapOf("entry" to "/unknown", "entry_unnamed_reason" to "not_serializable"),
+        mapOf("entry" to profileName),
+        mapOf("entry" to "/SerializableHome"),
+      )
       .inOrder()
   }
 
