@@ -42,7 +42,7 @@ room2 = "2.8.5"
 room3 = "3.0.3"
 sagp = "6.27.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
-agp = "9.5.1"
+agp = "9.5.2"
 sqlite = "2.6.2"
 sqliteDrivers = "2.7.1"
 slf4j = "1.7.30"
