@@ -14,15 +14,14 @@ public final class HangRecord {
   private final long durationMs;
   private final long startTimestampMs;
   private final @NotNull List<AnrStackTrace> stackTraces;
-  private final boolean endedAtMaxRecordingTime;
 
   private HangRecord(final @NotNull Builder builder) {
     this.durationMs = builder.durationMs;
     this.startTimestampMs = builder.startTimestampMs;
     this.stackTraces = Collections.unmodifiableList(new ArrayList<>(builder.stackTraces));
-    this.endedAtMaxRecordingTime = builder.endedAtMaxRecordingTime;
   }
 
+  /** The full duration of the hang, also when only its start was sampled. */
   public long getDurationMs() {
     return durationMs;
   }
@@ -32,17 +31,12 @@ public final class HangRecord {
     return startTimestampMs;
   }
 
-  /** The stacks of the watched thread, in the order they were sampled. */
+  /**
+   * The stacks of the watched thread, in the order they were sampled. They cover only the start of
+   * a long hang.
+   */
   public @NotNull List<AnrStackTrace> getStackTraces() {
     return stackTraces;
-  }
-
-  /**
-   * Whether the hang was cut at the maximum recording time. The watched thread is then still
-   * blocked when the record is given to the listeners.
-   */
-  public boolean hasEndedAtMaxRecordingTime() {
-    return endedAtMaxRecordingTime;
   }
 
   /** Builds a {@link HangRecord}. */
@@ -50,7 +44,6 @@ public final class HangRecord {
     private long durationMs;
     private long startTimestampMs;
     private final @NotNull List<AnrStackTrace> stackTraces = new ArrayList<>();
-    private boolean endedAtMaxRecordingTime;
 
     public @NotNull Builder setDurationMs(final long durationMs) {
       this.durationMs = durationMs;
@@ -65,11 +58,6 @@ public final class HangRecord {
 
     public @NotNull Builder addStackTrace(final @NotNull AnrStackTrace stackTrace) {
       stackTraces.add(stackTrace);
-      return this;
-    }
-
-    public @NotNull Builder setEndedAtMaxRecordingTime(final boolean endedAtMaxRecordingTime) {
-      this.endedAtMaxRecordingTime = endedAtMaxRecordingTime;
       return this;
     }
 
