@@ -13,6 +13,7 @@
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 - Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
 - Android profiling: Uploading a Perfetto profile chunk now keeps the trace in memory once instead of up to three times, lowering peak memory use for traces up to 50 MB ([#6743](https://github.com/getsentry/sentry-java/pull/6743))
+- Stop a transaction's CPU and memory collection 30 seconds after it starts even when the device's wall clock changes in between ([#6739](https://github.com/getsentry/sentry-java/pull/6739))
 
 ### Dependencies
 
