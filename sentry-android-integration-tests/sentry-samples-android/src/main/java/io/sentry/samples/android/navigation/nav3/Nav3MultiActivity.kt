@@ -54,7 +54,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import io.sentry.compose.SentryModifier.sentryTag
-import io.sentry.compose.navigation3.SentryBackStackEntry
+import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryNavEffect
 import io.sentry.compose.navigation3.SentryNavOptions
 import io.sentry.samples.android.navigation.common.NavigationSampleConfig
@@ -307,9 +307,7 @@ internal fun MultiRootNavDisplay(
   // Keep this before the NavDisplay below: TracedNav3Route's resume tagging relies on it.
   SentryNavEffect(
     backStack = backStack,
-    backStackEntryMapper = { route ->
-      SentryBackStackEntry(name = route.routeName, arguments = route.arguments)
-    },
+    backStackEntryMapper = BackStackEntryMapper.SerialName,
     options = options,
   )
   val onBack: () -> Unit = {

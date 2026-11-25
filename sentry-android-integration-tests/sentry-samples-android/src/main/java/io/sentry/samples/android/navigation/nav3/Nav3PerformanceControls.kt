@@ -52,6 +52,7 @@ internal class Nav3PerformanceState(
   var autoNavigate by mutableStateOf(false)
   var extractorMode by mutableStateOf(Nav3PerformanceExtractorMode.NORMAL)
   var argumentMode by mutableStateOf(Nav3PerformanceArgumentMode.FLAT)
+  var mapperMode by mutableStateOf(Nav3PerformanceMapperMode.CUSTOM)
   var integrationMode by mutableStateOf(Nav3PerformanceIntegrationMode.FULL_STACK)
     private set
 
@@ -321,6 +322,7 @@ internal class Nav3PerformanceState(
     appendLine("status=$performanceStatus")
     appendLine("route=$currentRoute")
     appendLine("tracked_stack=$backStack")
+    appendLine("mapper_mode=${mapperMode.label}")
     appendLine("recomposition_requests=$recompositionRequests")
     appendLine("navigation_mutations=$navigationMutations")
     appendLine("destination_changes=$destinationChanges")
@@ -510,6 +512,19 @@ internal enum class Nav3PerformanceArgumentMode(val label: String) {
   FLAT("Flat"),
   NESTED("Nested"),
   LARGE("Large"),
+}
+
+/**
+ * Which mapper the performance scenario feeds to `SentryNavEffect`.
+ *
+ * [CUSTOM] times name and argument extraction separately and substitutes the synthetic
+ * [Nav3PerformanceArgumentMode] shapes. [SERIAL_NAME] runs the built-in mapper instead, so its name
+ * lookups are what `SentryNavEffect.onBackStackChanged` measures. The built-in mapper records no
+ * arguments, so the argument-shape control and the per-call extractor timings don't apply.
+ */
+internal enum class Nav3PerformanceMapperMode(val label: String) {
+  CUSTOM("Custom"),
+  SERIAL_NAME("SerialName"),
 }
 
 internal enum class Nav3PerformanceIntegrationMode(
@@ -874,10 +889,21 @@ internal fun Nav3PerformancePanel(
 
     if (showExtractorControls) {
       PerfCard(title = "Extractor Inputs") {
+        val customExtractorControlsEnabled =
+          !state.performanceRunActive && state.mapperMode == Nav3PerformanceMapperMode.CUSTOM
+        PerfModeRow(
+          label = "Mapper",
+          selectedLabel = state.mapperMode.label,
+          enabled = !state.performanceRunActive,
+          options =
+            Nav3PerformanceMapperMode.entries.map { mode ->
+              mode.label to { state.mapperMode = mode }
+            },
+        )
         PerfModeRow(
           label = "Extractor cost",
           selectedLabel = state.extractorMode.label,
-          enabled = !state.performanceRunActive,
+          enabled = customExtractorControlsEnabled,
           options =
             Nav3PerformanceExtractorMode.entries.map { mode ->
               mode.label to { state.extractorMode = mode }
@@ -886,7 +912,7 @@ internal fun Nav3PerformancePanel(
         PerfModeRow(
           label = "Argument shape",
           selectedLabel = state.argumentMode.label,
-          enabled = !state.performanceRunActive,
+          enabled = customExtractorControlsEnabled,
           options =
             Nav3PerformanceArgumentMode.entries.map { mode ->
               mode.label to { state.argumentMode = mode }

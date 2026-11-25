@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.SentryNavEffect
 import io.sentry.compose.navigation3.SentryNavOptions
@@ -232,51 +233,65 @@ private fun Nav3SampleApp(
     }
   val performanceExtractorMode = performanceState.extractorMode
   val performanceArgumentMode = performanceState.argumentMode
-  val backStackEntryMapper =
+  val performanceMapperMode = performanceState.mapperMode
+  val backStackEntryMapper: BackStackEntryMapper<Nav3Route> =
     remember(
       isPerformanceScenario,
       performanceExtractorMode,
       performanceArgumentMode,
+      performanceMapperMode,
       integrationMode.includeArguments,
     ) {
-      { route: Nav3Route ->
-        val name =
-          if (isPerformanceScenario) {
+      if (!isPerformanceScenario) {
+        // Names each route after its serial name, and adds the arguments the route selects.
+        BackStackEntryMapper { route ->
+          BackStackEntryMapper.SerialName.map(route)?.let { entry ->
+            SentryBackStackEntry(name = entry.name, arguments = route.arguments)
+          }
+        }
+      } else if (performanceMapperMode == Nav3PerformanceMapperMode.SERIAL_NAME) {
+        // The built-in mapper itself, so SentryNavEffect.onBackStackChanged measures its real
+        // name lookups. It records no arguments.
+        BackStackEntryMapper.SerialName
+      } else {
+        // A custom mapper, so the performance scenario can time name and argument extraction
+        // separately and substitute synthetic arguments.
+        BackStackEntryMapper { route ->
+          val name =
             performanceState.recordNameExtraction("Nav3Stress.nameExtraction") {
               consumeNav3PerformanceExtractorWork(
                 performanceExtractorMode,
                 route.performanceSeed,
               )
-              route.routeName
+              checkNotNull(BackStackEntryMapper.SerialName.map(route)) {
+                  "${route::class.simpleName} can't be named by BackStackEntryMapper.SerialName."
+                }
+                .name
             }
-          } else {
-            route.routeName
-          }
 
-        val arguments =
-          if (isPerformanceScenario && !integrationMode.includeArguments) {
-            null
-          } else if (isPerformanceScenario) {
-            performanceState.recordArgumentExtraction("Nav3Stress.argumentsExtraction") {
-              consumeNav3PerformanceExtractorWork(
-                performanceExtractorMode,
-                route.performanceSeed,
-              )
-              if (route is Nav3Route.Performance) {
-                nav3PerformanceArguments(
-                  performanceArgumentMode,
-                  route.index,
-                  route.generation,
+          val arguments =
+            if (!integrationMode.includeArguments) {
+              null
+            } else {
+              performanceState.recordArgumentExtraction("Nav3Stress.argumentsExtraction") {
+                consumeNav3PerformanceExtractorWork(
+                  performanceExtractorMode,
+                  route.performanceSeed,
                 )
-              } else {
-                route.arguments
+                if (route is Nav3Route.Performance) {
+                  nav3PerformanceArguments(
+                    performanceArgumentMode,
+                    route.index,
+                    route.generation,
+                  )
+                } else {
+                  route.arguments
+                }
               }
             }
-          } else {
-            route.arguments
-          }
 
-        SentryBackStackEntry(name = name, arguments = arguments)
+          SentryBackStackEntry(name = name, arguments = arguments)
+        }
       }
     }
 
