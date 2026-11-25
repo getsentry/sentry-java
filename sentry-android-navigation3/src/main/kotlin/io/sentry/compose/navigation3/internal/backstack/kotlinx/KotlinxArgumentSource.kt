@@ -95,24 +95,20 @@ internal class KotlinxArgumentSource(
     try {
       KotlinxPropertiesEncoder.encode(serializer, backStackEntry, sink, onUnencodableValue)
     } catch (e: DropArguments) {
-      // Prefer the sink's first failure because it determines whether older entries keep their
-      // arguments.
-      throw sink.failure ?: e
+      sink.throwIfFailed()
+      throw e
     } catch (e: LinkageError) {
       // Preserve the entry's name and drop its properties. The creation-time probe checks encoder
       // compatibility but can't exercise every path. This LinkageError may be specific to the
       // entry's serializers, so only this entry's arguments are dropped.
-      sink.failure?.let { throw it }
+      sink.throwIfFailed()
       onFailure(e)
       throw DropArguments(ArgumentDropReason.ENCODING_FAILED, warning = null)
     } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
       // App serializers and map-key toString() calls may throw anything. Catch broadly to log once
       // per type.
       ExceptionUtils.rethrowIfFatal(t)
-
-      // A serializer may replace a constraint violation with its own exception. Prefer the sink's
-      // recorded failure because it determines whether older entries keep their arguments.
-      sink.failure?.let { throw it }
+      sink.throwIfFailed()
       onFailure(t)
       throw DropArguments(ArgumentDropReason.ENCODING_FAILED, warning = null)
     }

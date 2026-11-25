@@ -195,10 +195,7 @@ internal object KotlinxPropertiesEncoder {
         // missing contextual and polymorphic serializers, and savedstate's serializers throw a
         // plain IllegalArgumentException when used with any encoder but its own. Other exceptions
         // and partially written values still drop the entry's arguments.
-        //
-        // A serializer may catch a limit violation and throw its own exception. The sink's
-        // recorded failure takes precedence, as it decides whether older entries keep arguments.
-        sink.failure?.let { throw it }
+        sink.throwIfFailed()
         if (!canSubstituteElement || sink.writes != writesBefore) {
           throw e
         }
@@ -658,7 +655,7 @@ internal object KotlinxPropertiesEncoder {
     private var calls = 0
 
     fun enter() {
-      sink.failure?.let { throw it }
+      sink.throwIfFailed()
       if (++calls > MAX_SERIALIZER_NESTING) {
         sink.reject(ArgumentDropReason.INVALID_STRUCTURE, DropArguments.STRUCTURE_WARNING)
       }

@@ -77,6 +77,18 @@ internal interface ArgumentSink {
   val failure: DropArguments?
 
   /**
+   * Throws [failure], if there is one.
+   *
+   * The recorded failure always wins: code that catches an exception while writing calls this
+   * before handling the exception itself, as a serializer may have caught the original
+   * [DropArguments] and thrown something else, and the recorded reason decides whether older
+   * entries keep their arguments.
+   */
+  fun throwIfFailed() {
+    failure?.let { throw it }
+  }
+
+  /**
    * Starts a map as the next value. [identity] is the object being written, if any, so that one
    * that contains itself is rejected instead of written until a limit is reached.
    *
@@ -199,7 +211,7 @@ internal class TreeArgumentWriter(
   }
 
   override fun reject(reason: ArgumentDropReason, warning: String): Nothing {
-    failure?.let { throw it }
+    throwIfFailed()
     throw DropArguments(reason, warning).also { failure = it }
   }
 
@@ -211,7 +223,7 @@ internal class TreeArgumentWriter(
    * nested map and list.
    */
   fun argumentsOrThrow(): Map<String, Any?> {
-    failure?.let { throw it }
+    throwIfFailed()
     return root
   }
 
@@ -280,7 +292,7 @@ internal class TreeArgumentWriter(
   }
 
   private inline fun guarded(write: () -> Unit) {
-    failure?.let { throw it }
+    throwIfFailed()
     try {
       write()
     } catch (e: DropArguments) {

@@ -181,8 +181,7 @@ internal class BackStackConverter<T : Any>(
       val sink = TreeArgumentWriter(budget, rootIdentity = raw)
 
       // A constraint violation the sink recorded takes precedence over whatever the source threw,
-      // as the source may have caught it and thrown something else, and it decides whether older
-      // entries keep their arguments.
+      // as for ArgumentSink.throwIfFailed. Here it's the reason the arguments are dropped with.
       return try {
         source.writeTo(sink)
         SanitizedArguments(sink.argumentsOrThrow())
