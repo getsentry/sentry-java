@@ -2,7 +2,6 @@
 
 > [!WARNING]
 > SDK 9.0.0 will raise the minimum supported Java and Android versions:
->
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
 > - The Android `minSdk` will be raised from 21 to 24. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
 
@@ -512,7 +511,7 @@
 - Use Android's `ProfilingManager` (Perfetto) for continuous profiling on API 35+ devices ([#5251](https://github.com/getsentry/sentry-java/pull/5251))
   - On API 35+ devices, continuous profiling now automatically uses Android's system `ProfilingManager` with Perfetto-based stack sampling, providing lower-overhead and more accurate profiles. No configuration change is required.
   - Devices below API 35 keep using the legacy `Debug`-based profiler.
-  - Added an `enableLegacyProfiling` option (default `true`) to disable the legacy `Debug`-based profiler. Setting it to `false` disables continuous profiling on API < 35 devices as well as transaction-based profiling (`profilesSampleRate`/`profilesSampler`) on all devices, since transaction-based profiling is not supported by Perfetto.
+  - Added an `enableLegacyProfiling` option (default `true`) to disable the legacy `Debug`-based profiler. Setting it to `false` disables continuous profiling on API < 35 devices as well as transaction-based profiling (`profilesSampleRate`/`profilesSampler`) on all devices, since transaction-based profiling is not supported by Perfetto. 
   - It can also be configured via the `io.sentry.profiling.enable-legacy-profiling` manifest flag.
   - See the [Android profiling docs](https://docs.sentry.io/platforms/android/profiling/) for details.
 
@@ -654,7 +653,6 @@
 
   Sentry.finishExtendedAppStart()
   ```
-
 - Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
 - Expose sentry-native's heartbeat-based app-hang detection through `SentryAndroidOptions` ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
   - Enable via `setEnableNdkAppHangTracking(true)` (disabled by default) and tune the timeout with `setNdkAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.ndk.app-hang.enable` / `io.sentry.ndk.app-hang.timeout-interval-millis` manifest entries
@@ -848,7 +846,6 @@
       }
   }
   ```
-
 - Parse ART memory and garbage collector info from ANR tombstones into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
 
 ## 8.42.0
@@ -858,7 +855,7 @@
 - Add option to attach raw tombstone protobuf on native crash events ([#5446](https://github.com/getsentry/sentry-java/pull/5446))
   - Enable via `options.isAttachRawTombstone = true` or manifest: `<meta-data android:name="io.sentry.tombstone.attach-raw" android:value="true" />`
 - Add API to clear feature flags from scopes ([#5426](https://github.com/getsentry/sentry-java/pull/5426))
-- Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+- Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
 
 ### Dependencies
 
