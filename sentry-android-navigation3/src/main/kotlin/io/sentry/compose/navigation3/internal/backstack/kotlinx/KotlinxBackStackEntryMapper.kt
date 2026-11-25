@@ -6,9 +6,13 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.internal.backstack.UnknownEntryReason
+import io.sentry.compose.navigation3.internal.backstack.UnknownEntryReasonReports
 import io.sentry.compose.navigation3.internal.backstack.kotlinx.KotlinxMapperDiagnostics.Companion.INCOMPATIBLE_KOTLINX_ADVICE
 import io.sentry.util.ExceptionUtils
+import java.lang.reflect.GenericSignatureFormatError
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.MalformedParameterizedTypeException
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -54,7 +58,14 @@ internal class KotlinxBackStackEntryMapper(
     // An enum constant with a body is an instance of an anonymous subclass, which isn't
     // @Serializable itself, so we look up the enum class instead.
     val type = (backStackEntry as? Enum<*>)?.declaringJavaClass ?: backStackEntry.javaClass
-    val cached = cachedType(type) as? CachedType.Resolved ?: return null
+    val cached =
+      when (val cachedType = cachedType(type)) {
+        is CachedType.Resolved -> cachedType
+        is CachedType.Unresolved -> {
+          UnknownEntryReasonReports.report(cachedType.reason)
+          return null
+        }
+      }
 
     return SentryBackStackEntry(cached.name)
   }
@@ -68,15 +79,13 @@ internal class KotlinxBackStackEntryMapper(
    * Looks up [type]'s serializer and name. Logs if it can't be named.
    *
    * Never throws for a non-fatal error. Instead, a lookup that fails returns
-   * [CachedType.Unresolved], which [cachedType] caches, so each type's failure is queried and
-   * logged only once.
+   * [CachedType.Unresolved] with the reason, which [cachedType] caches, so each type's failure is
+   * queried and logged only once.
    */
   @OptIn(ExperimentalSerializationApi::class)
   private fun lookUp(type: Class<*>): CachedType {
-    // Checked before the lookup, which would otherwise return serializers for types that aren't
-    // @Serializable.
-    if (!isMarkedSerializable(type)) {
-      return CachedType.Unresolved
+    preLookupProblem(type)?.let {
+      return CachedType.Unresolved(it)
     }
 
     // Serializer lookup and descriptor access may run host app code. Failures affect only this
@@ -86,7 +95,13 @@ internal class KotlinxBackStackEntryMapper(
         is SerializerLookup.Found -> lookup.serializer
         is SerializerLookup.NotFound -> {
           diagnostics.unresolved(type, lookup.error)
-          return CachedType.Unresolved
+          return CachedType.Unresolved(
+            if (lookup.error == null) {
+              UnknownEntryReason.SERIALIZER_NOT_FOUND
+            } else {
+              UnknownEntryReason.SERIALIZER_LOOKUP_THREW
+            },
+          )
         }
       }
 
@@ -96,42 +111,79 @@ internal class KotlinxBackStackEntryMapper(
       // Treat descriptor linkage errors as type-specific, including incompatibilities caused by a
       // serializer compiled against another kotlinx.serialization version.
       diagnostics.unresolved(type, e)
-      CachedType.Unresolved
+      CachedType.Unresolved(UnknownEntryReason.SERIALIZER_LOOKUP_THREW)
     } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
       // Custom descriptors may throw anything. Catch broadly to log once and cache the type as
       // unresolved, avoiding repeated lookups. Entries use UNKNOWN_ENTRY_NAME.
       ExceptionUtils.rethrowIfFatal(t)
       diagnostics.unresolved(type, t)
-      CachedType.Unresolved
+      CachedType.Unresolved(UnknownEntryReason.SERIALIZER_LOOKUP_THREW)
     }
   }
 
   /**
-   * Whether [type] is annotated with `@Serializable`. Logs why it can't be named if the annotation
-   * is absent or can't be read.
+   * Returns why [type] can't be named before looking up its serializer, logging it, or `null` if
+   * the lookup should decide.
+   *
+   * The annotation is checked first, as the lookup would otherwise return serializers for types
+   * that aren't `@Serializable`. Generic types are checked next: the lookup can't find their
+   * serializers either, and this way the reason and the warning say why.
+   */
+  private fun preLookupProblem(type: Class<*>): UnknownEntryReason? =
+    serializableAnnotationProblem(type)
+      ?: if (isGeneric(type)) {
+        diagnostics.genericType(type)
+        UnknownEntryReason.GENERIC_TYPE
+      } else {
+        null
+      }
+
+  /**
+   * Returns why [type] can't be named if it isn't annotated with `@Serializable` or its annotations
+   * can't be read, logging it, or `null` if it's annotated.
    *
    * We only name types the host app marks as `@Serializable`. kotlinx.serialization provides
    * serializers for built-in types (e.g. String, Int) and enums, but their serial names would be
    * misleading ("kotlin.String") or derived from an obfuscated class name.
    */
-  private fun isMarkedSerializable(type: Class<*>): Boolean =
+  private fun serializableAnnotationProblem(type: Class<*>): UnknownEntryReason? =
     try {
-      isAnnotatedSerializable(type).also { isMarked ->
-        if (!isMarked) {
-          diagnostics.notSerializable(type)
-        }
+      if (isAnnotatedSerializable(type)) {
+        null
+      } else {
+        diagnostics.notSerializable(type)
+        UnknownEntryReason.NOT_SERIALIZABLE
       }
     } catch (e: LinkageError) {
       // As for the serializer lookup, a LinkageError from reading this type's annotations only
       // fails this type.
       diagnostics.unresolved(type, e)
-      false
+      UnknownEntryReason.SERIALIZER_LOOKUP_THREW
     } catch (@Suppress("TooGenericExceptionCaught") t: Throwable) {
       // Catch broadly because annotation parsing has undocumented failure modes. Cache failures as
       // unresolved so the type records UNKNOWN_ENTRY_NAME and logs once, rather than throwing from
       // map() and retrying on every navigation.
       ExceptionUtils.rethrowIfFatal(t)
       diagnostics.unresolved(type, t)
+      UnknownEntryReason.SERIALIZER_LOOKUP_THREW
+    }
+
+  /**
+   * Whether [type] has type parameters, so its serializer needs type arguments that can't be
+   * recovered from an entry at runtime.
+   *
+   * `false` if its generic signature can't be read, e.g., because it's malformed, so that the
+   * lookup decides. R8 may also remove generic signatures, which also leaves the lookup to decide,
+   * as it can't find a generic class's serializer either.
+   */
+  private fun isGeneric(type: Class<*>): Boolean =
+    try {
+      type.typeParameters.isNotEmpty()
+    } catch (_: GenericSignatureFormatError) {
+      false
+    } catch (_: MalformedParameterizedTypeException) {
+      false
+    } catch (_: TypeNotPresentException) {
       false
     }
 
@@ -183,9 +235,9 @@ internal class KotlinxBackStackEntryMapper(
 
     /**
      * A type that can't be named, e.g., because it isn't `@Serializable` or reading its serializer
-     * failed. Its entries are recorded as [UNKNOWN_ENTRY_NAME].
+     * failed. Its entries are recorded as [UNKNOWN_ENTRY_NAME], with [reason].
      */
-    object Unresolved : CachedType
+    class Unresolved(val reason: UnknownEntryReason) : CachedType
   }
 
   /** The result of looking up a type's serializer. */
@@ -229,6 +281,20 @@ internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {
         WARNING,
         "Nav3 can't name entries of type %s because the type is not @Serializable. Using " +
           "$UNKNOWN_ENTRY_NAME. Add @Serializable or use a custom BackStackEntryMapper.",
+        type.name,
+      )
+  }
+
+  /**
+   * Logs that entries of [type] can't be named because the type is generic, so its serializer needs
+   * type arguments that can't be recovered from an entry.
+   */
+  fun genericType(type: Class<*>) {
+    logger()
+      .log(
+        WARNING,
+        "Nav3 can't name entries of type %s because the type has type parameters. Using " +
+          "$UNKNOWN_ENTRY_NAME. Use a custom BackStackEntryMapper.",
         type.name,
       )
   }

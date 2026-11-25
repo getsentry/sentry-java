@@ -11,7 +11,6 @@ import io.sentry.SentryOptions
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.ArgumentConstraints.MAX_ARGUMENT_CHARACTERS
-import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import java.io.StringWriter
@@ -55,6 +54,13 @@ class BackStackConverterTest {
   private val defaultEntryMapper =
     BackStackEntryMapper<Any> { entry ->
       SentryBackStackEntry(entry::class.simpleName ?: "<unknown>")
+    }
+
+  /** Reports a reason and returns `null`, like a built-in mapper that can't name an entry. */
+  private val notSerializableMapper =
+    BackStackEntryMapper<Any> {
+      UnknownEntryReasonReports.report(UnknownEntryReason.NOT_SERIALIZABLE)
+      null
     }
 
   private fun getSut(
@@ -329,12 +335,23 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert returns unknown name if mapper name is blank`() {
+  fun `convert returns a named entry without an unnamed reason if mapper returns a name`() {
+    val sut = getSut()
+
+    assertThat(sut.convert(HomeScreen()).unknownEntryReason).isNull()
+  }
+
+  @Test
+  fun `convert returns unknown name with the blank name reason and arguments if mapper name is blank`() {
     val sut = getSut(entryMapper = { SentryBackStackEntry("   ", mapOf("userId" to "123")) })
 
     assertThat(sut.convert(HomeScreen()))
       .isEqualTo(
-        NormalizedSentryBackStackEntry(name = "/unknown", arguments = mapOf("userId" to "123")),
+        NormalizedSentryBackStackEntry(
+          name = "/unknown",
+          arguments = mapOf("userId" to "123"),
+          unknownEntryReason = UnknownEntryReason.BLANK_NAME,
+        ),
       )
     verify(logger)
       .log(
@@ -353,22 +370,106 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert returns unknown name without arguments if mapper returns null`() {
+  fun `convert returns unknown name with the unmapped reason if mapper returns null without a report`() {
     val sut = getSut(entryMapper = { null })
 
     assertThat(sut.convert(HomeScreen()))
-      .isEqualTo(NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME))
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          UNKNOWN_ENTRY_NAME,
+          unknownEntryReason = UnknownEntryReason.UNMAPPED,
+        ),
+      )
   }
 
   @Test
-  fun `convert returns unknown name without arguments if mapper throws`() {
+  fun `convert returns unknown name with the reported reason if mapper reports one and returns null`() {
+    val sut = getSut(entryMapper = notSerializableMapper)
+
+    assertThat(sut.convert(HomeScreen()))
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          UNKNOWN_ENTRY_NAME,
+          unknownEntryReason = UnknownEntryReason.NOT_SERIALIZABLE,
+        ),
+      )
+  }
+
+  @Test
+  fun `convert returns the reported reason if a custom mapper forwards a reporting mapper's null`() {
+    val sut = getSut(entryMapper = { entry -> notSerializableMapper.map(entry) })
+
+    assertThat(sut.convert(HomeScreen()).unknownEntryReason)
+      .isEqualTo(UnknownEntryReason.NOT_SERIALIZABLE)
+  }
+
+  @Test
+  fun `convert returns the built-in mapper's reason if a custom mapper forwards SerialName's null`() {
+    val sut = getSut(entryMapper = { entry -> BackStackEntryMapper.SerialName.map(entry) })
+
+    assertThat(sut.convert(HomeScreen()))
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          UNKNOWN_ENTRY_NAME,
+          unknownEntryReason = UnknownEntryReason.NOT_SERIALIZABLE,
+        ),
+      )
+  }
+
+  @Test
+  fun `convert returns a named entry if a custom mapper names an entry after a reporting mapper's null`() {
+    val sut =
+      getSut(
+        entryMapper = { entry ->
+          notSerializableMapper.map(entry) ?: SentryBackStackEntry("fallback")
+        },
+      )
+
+    assertThat(sut.convert(HomeScreen()))
+      .isEqualTo(NormalizedSentryBackStackEntry(name = "/fallback"))
+  }
+
+  @Test
+  fun `convert returns the unmapped reason if a custom mapper returns null after another mapper names the entry`() {
+    val sut =
+      getSut(
+        entryMapper = { entry ->
+          defaultEntryMapper.map(entry)
+          null
+        },
+      )
+
+    assertThat(sut.convert(HomeScreen()).unknownEntryReason).isEqualTo(UnknownEntryReason.UNMAPPED)
+  }
+
+  @Test
+  fun `convert does not carry a reported reason over to the next back stack entry`() {
+    val sut =
+      getSut(
+        entryMapper = { entry ->
+          when (entry) {
+            is HomeScreen -> notSerializableMapper.map(entry)
+            else -> null
+          }
+        },
+      )
+
+    val routes = sut.convert(listOf(HomeScreen(), ProfileScreen("123")), RetentionPolicy.KEEP_FIRST)
+
+    assertThat(routes.map { it.unknownEntryReason })
+      .containsExactly(UnknownEntryReason.NOT_SERIALIZABLE, UnknownEntryReason.UNMAPPED)
+      .inOrder()
+  }
+
+  @Test
+  fun `convert returns unknown name with the mapping failed reason and no arguments if mapper throws`() {
     val sut = getSut(entryMapper = { error("boom") })
 
     assertThat(sut.convert(HomeScreen()))
       .isEqualTo(
         NormalizedSentryBackStackEntry(
           UNKNOWN_ENTRY_NAME,
-          argumentDropReason = ArgumentDropReason.MAPPING_FAILED,
+          unknownEntryReason = UnknownEntryReason.MAPPING_FAILED,
         ),
       )
     verify(logger)
@@ -377,6 +478,20 @@ class BackStackConverterTest {
         eq(MAPPER_FAILURE_WARNING),
         any<Throwable>(),
       )
+  }
+
+  @Test
+  fun `convert returns the mapping failed reason if mapper throws after reporting a reason`() {
+    val sut =
+      getSut(
+        entryMapper = { entry ->
+          notSerializableMapper.map(entry)
+          error("boom")
+        },
+      )
+
+    assertThat(sut.convert(HomeScreen()).unknownEntryReason)
+      .isEqualTo(UnknownEntryReason.MAPPING_FAILED)
   }
 
   @Test
@@ -559,23 +674,6 @@ class BackStackConverterTest {
     assertThat(json.toString())
       .isEqualTo(
         """{"entry":"/HomeScreen","entry_arguments":{"price":"NaN","limits":["Infinity","-Infinity"]}}""",
-      )
-  }
-
-  @Test
-  fun `serialize includes the reason arguments were dropped`() {
-    val entry =
-      NormalizedSentryBackStackEntry(
-        name = "/HomeScreen",
-        argumentDropReason = ArgumentDropReason.MAX_COUNT,
-      )
-
-    assertThat(entry.serialize())
-      .isEqualTo(
-        mapOf(
-          "entry" to "/HomeScreen",
-          "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
-        ),
       )
   }
 }

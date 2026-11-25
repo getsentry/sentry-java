@@ -88,6 +88,13 @@ public class SentryBackStackEntry(
  * `/detail` throws, the back stack record will be `/home -> /unknown -> /settings` rather than
  * `/home -> /settings`.
  *
+ * Each "/unknown" entry records why it has no name, as `unknown_entry_reason` in the back stack
+ * record and navigation transactions, and as `to_unknown_entry_reason` or
+ * `from_unknown_entry_reason` on breadcrumbs (e.g., `"unknown_entry_reason": "unmapped"`):
+ * `mapping_failed` if [map] threw, `blank_name` for a blank name, and `unmapped` if [map] returned
+ * `null`. The built-in mappers record more specific reasons when they return `null` (see
+ * [SerialName]), and so does a custom mapper that returns the `null` a built-in mapper returned.
+ *
  * **Choosing appropriate arguments**
  *
  * Argument values may be any of the following scalar types:
@@ -155,23 +162,29 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * **Unknown names**
      *
-     * This mapper returns `null` for an entry, which Sentry displays as `"/unknown"`, if:
+     * This mapper returns `null` for an entry, which Sentry displays as `"/unknown"`, with the
+     * `unknown_entry_reason` in parentheses, if:
      *
      * - the entry class isn't annotated with `@Serializable` itself, even if kotlinx.serialization
      *   can serialize it without the annotation (e.g., `String`, `List`, an unannotated enum, or a
-     *   class marked with a custom `@MetaSerializable` annotation);
+     *   class marked with a custom `@MetaSerializable` annotation) (`not_serializable`);
      *
      * - the entry class is generic (e.g., `SettingsScreen<T>`), as its serializer needs type
-     *   arguments that can't be recovered from the entry at runtime; or
+     *   arguments that can't be recovered from the entry at runtime (`generic_type`);
      *
-     * - looking up the entry's serializer fails, e.g., because a custom serializer throws, R8
-     *   removed what the lookup needs, or the app's kotlinx.serialization version is incompatible
-     *   with this SDK. In particular, if the app is minified by R8 and uses a kotlinx.serialization
-     *   version below 1.10.0, an entry class with a named companion object (e.g., `companion object
-     *   Factory`) may be named in unminified debug builds but not in minified release builds,
-     *   depending on the kotlinx.serialization version and R8 mode. To fix this, upgrade
-     *   kotlinx.serialization to 1.10.0 or later, or add the keep rules from Troubleshooting
-     *   (linked below).
+     * - looking up the entry's serializer finds none, e.g., because R8 removed what the lookup
+     *   needs (`serializer_not_found`), or throws, e.g., because a custom serializer throws
+     *   (`serializer_lookup_threw`); or
+     *
+     * - the app's kotlinx.serialization version is incompatible with this SDK, in which case every
+     *   entry is unnamed (`kotlinx_serialization_version`).
+     *
+     * `serializer_not_found` often only happens in minified release builds. In particular, if the
+     * app is minified by R8 and uses a kotlinx.serialization version below 1.10.0, an entry class
+     * with a named companion object (e.g., `companion object Factory`) may be named in unminified
+     * debug builds but not in minified release builds, depending on the kotlinx.serialization
+     * version and R8 mode. To fix this, upgrade kotlinx.serialization to 1.10.0 or later, or add
+     * the keep rules from Troubleshooting (linked below).
      *
      * The first entry of each class that can't be named logs a warning explaining why, visible when
      * the SDK's `debug` option is enabled. For fixes, see

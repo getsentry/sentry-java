@@ -31,7 +31,7 @@ class NavTransactionRequestTest {
     val request =
       NavTransactionRequest.forDestination(
         name = "/Checkout",
-        arguments = mapOf("id" to "1"),
+        data = emptyMap(),
         contexts = emptyMap(),
         viewNames = null,
         options = options,
@@ -45,7 +45,45 @@ class NavTransactionRequestTest {
     assertThat(fixture.startedOptions.map { it.idleTimeout }).containsExactly(200L, 300L).inOrder()
     assertThat(fixture.startedOptions.map { it.origin })
       .containsExactly("auto.navigation.nav3", "auto.navigation.nav3")
-    verify(fixture.startedTransactions.first()).setData("arguments", mapOf("id" to "1"))
+  }
+
+  @Test
+  fun `forDestination() - sets the given data on each transaction`() {
+    val fixture = Fixture.create()
+    val request =
+      NavTransactionRequest.forDestination(
+        name = "/unknown",
+        data = mapOf("arguments" to mapOf("id" to "1"), "unknown_entry_reason" to "unmapped"),
+        contexts = emptyMap(),
+        viewNames = null,
+        options = SentryOptions(),
+      )
+
+    request.start(fixture.scopes, scope)
+    request.start(fixture.scopes, scope)
+
+    fixture.startedTransactions.forEach { transaction ->
+      verify(transaction).setData("arguments", mapOf("id" to "1"))
+      verify(transaction).setData("unknown_entry_reason", "unmapped")
+    }
+    assertThat(fixture.startedTransactions).hasSize(2)
+  }
+
+  @Test
+  fun `forDestination() - sets no data on transactions when given empty data`() {
+    val fixture = Fixture.create()
+    val request =
+      NavTransactionRequest.forDestination(
+        name = "/Checkout",
+        data = emptyMap(),
+        contexts = emptyMap(),
+        viewNames = null,
+        options = SentryOptions(),
+      )
+
+    val transaction = request.start(fixture.scopes, scope)!!
+
+    verify(transaction, never()).setData(any(), any())
   }
 
   @Test

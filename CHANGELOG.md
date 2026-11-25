@@ -10,6 +10,8 @@
 ### Features
 
 - Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their kotlinx.serialization serial names ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
+- Nav3: Record why a back stack entry is `/unknown`, as `unknown_entry_reason` next to it in the back stack record and navigation transactions, and as `to_unknown_entry_reason` and `from_unknown_entry_reason` on breadcrumbs (e.g., `not_serializable` or `serializer_not_found` for the built-in mappers, `unmapped` if a custom mapper returns `null`) ([#6781](https://github.com/getsentry/sentry-java/pull/6781))
+  - A mapper that throws now records `"unknown_entry_reason": "mapping_failed"` instead of `"dropped_by_sentry": "mapping_failed"` in the entry's arguments
 
 ### Fixes
 

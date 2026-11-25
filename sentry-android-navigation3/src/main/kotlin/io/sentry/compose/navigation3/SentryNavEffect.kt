@@ -55,6 +55,9 @@ import org.jetbrains.annotations.ApiStatus
  * - a screen name
  * - a record of the current back stack (last 5 entries)
  *
+ * A destination that can't be named is recorded as "/unknown", with a reason why. See
+ * [BackStackEntryMapper].
+ *
  * You can configure the above defaults via [SentryNavOptions]. (Screen names can be disabled via
  * [SentryOptions.setEnableScreenTracking].)
  *
