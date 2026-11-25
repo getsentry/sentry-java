@@ -179,15 +179,9 @@ internal class TreeArgumentWriter(
   override var failure: DropArguments? = null
     private set
 
-  override fun beginMap(identity: Any?) = guarded {
-    val map = LinkedHashMap<String, Any?>()
-    begin(map, map, identity)
-  }
+  override fun beginMap(identity: Any?) = guarded { begin(LinkedHashMap<String, Any?>(), identity) }
 
-  override fun beginList(identity: Any?) = guarded {
-    val list = ArrayList<Any?>()
-    begin(list, list, identity)
-  }
+  override fun beginList(identity: Any?) = guarded { begin(ArrayList<Any?>(), identity) }
 
   override fun key(name: String, describeDuplicate: (() -> String)?) = guarded {
     pendingKey = budget.spendText(name)
@@ -221,12 +215,13 @@ internal class TreeArgumentWriter(
     return root
   }
 
-  private fun begin(container: Any, value: Any, identity: Any?) {
+  /** Adds [container] as the next value, and makes it the container that later writes fill. */
+  private fun begin(container: Any, identity: Any?) {
     visitValue()
     if (identity != null && activeIdentities.put(identity, Unit) != null) {
       throw DropArguments(ArgumentDropReason.INVALID_STRUCTURE, DropArguments.STRUCTURE_WARNING)
     }
-    add(value)
+    add(container)
     containers += container
     identities += identity
   }
