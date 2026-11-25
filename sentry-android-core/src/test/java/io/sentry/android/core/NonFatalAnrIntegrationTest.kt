@@ -288,7 +288,7 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
-  fun `main thread is current and has no thread state`() {
+  fun `main thread is current and has the state of the first culprit sample`() {
     val listener = subscribed()
 
     listener.onHangRecorded(record())
@@ -298,7 +298,7 @@ class NonFatalAnrIntegrationTest {
     assertThat(thread.name).isEqualTo("main")
     assertThat(thread.isCurrent).isTrue()
     assertThat(thread.isMain).isTrue()
-    assertThat(thread.state).isNull()
+    assertThat(thread.state).isEqualTo("RUNNABLE")
     assertThat(thread.stacktrace!!.frames).isNotEmpty()
   }
 

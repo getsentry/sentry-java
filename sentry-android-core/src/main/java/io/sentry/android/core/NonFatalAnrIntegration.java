@@ -186,6 +186,10 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       thread.setMain(true);
       if (culprit != null) {
         thread.setStacktrace(exceptions.get(0).getStacktrace());
+        final @Nullable Thread.State state = culprit.getState();
+        if (state != null) {
+          thread.setState(state.name());
+        }
       }
       return thread;
     }

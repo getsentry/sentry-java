@@ -134,7 +134,8 @@ public final class AnrCulpritIdentifier {
                   i,
                   stackTrace.stack.length - 1,
                   stackTrace.timestampMs,
-                  quality);
+                  quality,
+                  stackTrace.state);
           stackTraceMap.put(key, aggregatedStackTrace);
         } else {
           aggregatedStackTrace.addOccurrence(stackTrace.timestampMs);

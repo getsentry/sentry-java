@@ -1,5 +1,6 @@
 package io.sentry.android.core.anr
 
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -12,6 +13,46 @@ class AnrCulpritIdentifierTest {
     val dumps = emptyList<AnrStackTrace>()
     val result = AnrCulpritIdentifier.identify(dumps)
     assertNull(result)
+  }
+
+  private fun appStack(vararg methods: String) =
+    methods.map { StackTraceElement("com.example.App", it, "App.java", 1) }.toTypedArray()
+
+  @Test
+  fun `culprit state is the state of its first sample`() {
+    val stack = appStack("slow", "main")
+    val dumps =
+      listOf(
+        AnrStackTrace(1000, stack, Thread.State.RUNNABLE),
+        AnrStackTrace(2000, stack, Thread.State.BLOCKED),
+        AnrStackTrace(3000, stack, Thread.State.BLOCKED),
+      )
+
+    assertThat(AnrCulpritIdentifier.identify(dumps)!!.state).isEqualTo(Thread.State.RUNNABLE)
+  }
+
+  @Test
+  fun `culprit state comes from a sample of the culprit`() {
+    val culpritStack = appStack("a", "b", "c", "main")
+    val otherStack = appStack("x", "run")
+    val dumps =
+      listOf(
+        AnrStackTrace(1000, otherStack, Thread.State.BLOCKED),
+        AnrStackTrace(2000, culpritStack, Thread.State.RUNNABLE),
+        AnrStackTrace(3000, culpritStack, Thread.State.RUNNABLE),
+      )
+
+    val culprit = AnrCulpritIdentifier.identify(dumps)!!
+
+    assertThat(culprit.stack.first().methodName).isEqualTo("a")
+    assertThat(culprit.state).isEqualTo(Thread.State.RUNNABLE)
+  }
+
+  @Test
+  fun `culprit of samples without a state has no state`() {
+    val dumps = listOf(AnrStackTrace(1000, appStack("slow", "main")))
+
+    assertThat(AnrCulpritIdentifier.identify(dumps)!!.state).isNull()
   }
 
   @Test
