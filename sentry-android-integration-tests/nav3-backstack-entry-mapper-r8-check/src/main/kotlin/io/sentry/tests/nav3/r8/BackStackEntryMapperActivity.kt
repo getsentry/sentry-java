@@ -19,6 +19,10 @@ class BackStackEntryMapperActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    // Before the mappers' first map() call, which runs their compatibility probes.
+    val logger = RecordingLogger()
+    initSentry(this, logger)
+
     val nameMapper = BackStackEntryMapper.SerialName
     val propertiesMapper = BackStackEntryMapper.SerialNameAndProperties
     val expectations =
@@ -52,7 +56,7 @@ class BackStackEntryMapperActivity : Activity() {
           if (fellBack) " (INFO: fell back to /unknown, also accepted)" else ""
     }
 
-    for (check in minificationChecks()) {
+    for (check in minificationChecks() + probeLogChecks(logger)) {
       if (!check.passed) failures++
       lines += "${if (check.passed) "PASS" else "FAIL"} ${check.description}"
     }

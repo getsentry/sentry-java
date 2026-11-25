@@ -5,7 +5,9 @@ The SDK ships no kotlinx.serialization keep rules; this app uses the library's c
 
 The tests check serialization names, argument encoding (including values recorded as `[Unencodable]`), and sensitive-value filtering,
 which also shows that the mappers' compatibility probes passed: a failed probe records `/unknown` names or
-`incompatible_kotlinx_serialization` arguments. They also check that R8 actually renamed representative classes and fields.
+`incompatible_kotlinx_serialization` arguments. The app initializes Sentry with a logger that records the mappers' messages, and checks
+that neither probe was inconclusive or failed (`ProbeLogChecks.kt`): an inconclusive name-lookup probe leaves names right but can't detect
+an incompatible kotlinx.serialization version in minified apps. They also check that R8 actually renamed representative classes and fields.
 
 ## How to run it
 

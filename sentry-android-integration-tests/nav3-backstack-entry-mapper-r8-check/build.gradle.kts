@@ -77,6 +77,8 @@ android {
 
 dependencies {
   implementation("io.sentry:sentry-android-navigation3:$sentryVersion")
+  // Lets the check initialize Sentry with a logger that records the mappers' messages.
+  implementation("io.sentry:sentry-android-core:$sentryVersion")
   // compileOnly in sentry-android-navigation3; always available for apps that use Nav3.
   implementation(libs.androidx.compose.runtime)
 
