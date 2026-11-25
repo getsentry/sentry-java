@@ -83,7 +83,7 @@ springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
-gretty = { id = "org.gretty", version = "4.0.0" }
+gretty = { id = "org.gretty", version = "5.1.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version.ref = "animalsniffer" }
 sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
 shadow = { id = "com.gradleup.shadow", version = "9.6.1" }
