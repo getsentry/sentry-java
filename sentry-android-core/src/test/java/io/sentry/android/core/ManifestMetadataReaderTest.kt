@@ -585,6 +585,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads ANR warning breadcrumbs to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_ANR_WARNINGS_ENABLE to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isEnableAnrWarningBreadcrumbs)
+  }
+
+  @Test
+  fun `applyMetadata reads ANR warning breadcrumbs and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableAnrWarningBreadcrumbs)
+  }
+
+  @Test
   fun `applyMetadata reads system events breadcrumbs to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_SYSTEM_EVENTS_ENABLE to false)

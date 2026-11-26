@@ -188,6 +188,22 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
+  fun `ANR warning breadcrumbs are enabled by default`() {
+    assertTrue(SentryAndroidOptions().isEnableAnrWarningBreadcrumbs)
+  }
+
+  @Test
+  fun `enableAllAutoBreadcrumbs also switches ANR warning breadcrumbs`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    sentryOptions.enableAllAutoBreadcrumbs(false)
+    assertFalse(sentryOptions.isEnableAnrWarningBreadcrumbs)
+
+    sentryOptions.enableAllAutoBreadcrumbs(true)
+    assertTrue(sentryOptions.isEnableAnrWarningBreadcrumbs)
+  }
+
+  @Test
   fun `system event breadcrumbs extras disabled by default`() {
     val sentryOptions = SentryAndroidOptions()
 

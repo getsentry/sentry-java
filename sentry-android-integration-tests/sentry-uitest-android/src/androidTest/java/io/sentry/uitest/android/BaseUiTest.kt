@@ -50,7 +50,7 @@ abstract class BaseUiTest {
   /** Mock relay server that receives all envelopes sent during the test. */
   protected val relay = MockRelay(false, relayIdlingResource)
 
-  private fun runCommand(cmd: String) {
+  protected fun runCommand(cmd: String) {
     val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
     val pfd = automation.executeShellCommand(cmd)
     try {

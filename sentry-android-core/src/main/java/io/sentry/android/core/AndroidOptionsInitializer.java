@@ -474,6 +474,7 @@ final class AndroidOptionsInitializer {
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
     options.addIntegration(new AnrProfilingIntegration());
+    options.addIntegration(new AnrWarningListenerIntegration(context, buildInfoProvider));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {

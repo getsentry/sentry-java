@@ -75,6 +75,7 @@ final class ManifestMetadataReader {
   static final String BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE =
       "io.sentry.breadcrumbs.activity-lifecycle";
   static final String BREADCRUMBS_APP_LIFECYCLE_ENABLE = "io.sentry.breadcrumbs.app-lifecycle";
+  static final String BREADCRUMBS_ANR_WARNINGS_ENABLE = "io.sentry.breadcrumbs.anr-warnings";
   static final String BREADCRUMBS_SYSTEM_EVENTS_ENABLE = "io.sentry.breadcrumbs.system-events";
   static final String BREADCRUMBS_NETWORK_EVENTS_ENABLE = "io.sentry.breadcrumbs.network-events";
   static final String BREADCRUMBS_APP_COMPONENTS_ENABLE = "io.sentry.breadcrumbs.app-components";
@@ -400,6 +401,13 @@ final class ManifestMetadataReader {
                 logger,
                 BREADCRUMBS_APP_LIFECYCLE_ENABLE,
                 options.isEnableAppLifecycleBreadcrumbs()));
+
+        options.setEnableAnrWarningBreadcrumbs(
+            readBool(
+                metadata,
+                logger,
+                BREADCRUMBS_ANR_WARNINGS_ENABLE,
+                options.isEnableAnrWarningBreadcrumbs()));
 
         options.setEnableSystemEventBreadcrumbs(
             readBool(

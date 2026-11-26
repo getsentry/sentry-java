@@ -26,14 +26,15 @@ import org.gradle.work.DisableCachingByDefault
  */
 private val ANDROID_ALL_VERSIONS =
   mapOf(
-    21 to "5.0.2_r3-robolectric-r0",
+    23 to "6.0.1_r3-robolectric-r1",
     24 to "7.0.0_r1-robolectric-r1",
     28 to "9-robolectric-4913185-2",
     29 to "10-robolectric-5803371",
     30 to "11-robolectric-6757853",
     31 to "12-robolectric-7732740",
     33 to "13-robolectric-9030017",
-    35 to "15-robolectric-12650502",
+    35 to "15-robolectric-13954326",
+    37 to "17-robolectric-15733970",
   )
 
 /** The instrumentation revision Robolectric appends to every android-all version. */

@@ -11,6 +11,12 @@
 
 - Android: A crash long after `Sentry.init` is no longer marked as a startup crash when the device slept in between, because the time since init now counts deep sleep ([#6738](https://github.com/getsentry/sentry-java/pull/6738))
 
+### Features
+
+- Record ANR warnings from the system as `app.anr` breadcrumbs on Android 17 (API 37) and above ([#6245](https://github.com/getsentry/sentry-java/pull/6245))
+  - The breadcrumb contains the ANR type, the system description, the timeout, and how much of the timeout was already used.
+  - It is enabled by default. To disable it, set `options.isEnableAnrWarningBreadcrumbs = false` or add `<meta-data android:name="io.sentry.breadcrumbs.anr-warnings" android:value="false" />` to your `AndroidManifest.xml`.
+
 ### Dependencies
 
 - Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
