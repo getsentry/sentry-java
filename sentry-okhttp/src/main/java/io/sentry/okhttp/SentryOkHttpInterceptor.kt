@@ -20,7 +20,6 @@ import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS
 import io.sentry.clientreport.DiscardReason
-import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
@@ -109,7 +108,7 @@ public open class SentryOkHttpInterceptor(
         )
     }
 
-    val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
+    val startTimestamp = scopes.options.epochClock.now().epochMillis()
 
     urlDetails.applyToSpan(span)
 
@@ -269,7 +268,7 @@ public open class SentryOkHttpInterceptor(
     breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, startTimestamp)
     breadcrumb.setData(
       SpanDataConvention.HTTP_END_TIMESTAMP,
-      CurrentDateProvider.getInstance().currentTimeMillis,
+      scopes.options.epochClock.now().epochMillis(),
     )
 
     scopes.addBreadcrumb(breadcrumb, hint)

@@ -105,7 +105,6 @@
     <ID>MaxLineLength:ComposeMaskingOptionsTest.kt$ComposeMaskingOptionsTest$"Flaky: Robolectric intermittently reports zero bounds for nodes, causing isVisible=false and making the assertion non-deterministic"</ID>
     <ID>NestedBlockDepth:CaptureStrategy.kt$CaptureStrategy.Companion$@Suppress("NewApi") private fun buildReplay( options: SentryOptions, video: File, currentReplayId: SentryId, segmentTimestamp: Date, segmentId: Int, height: Int, width: Int, frameCount: Int, frameRate: Int, videoDuration: Long, replayType: ReplayType, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String>, segmentNames: List&lt;String>, ): ReplaySegment</ID>
     <ID>NestedBlockDepth:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent</ID>
-    <ID>NestedBlockDepth:Nodes.kt$internal fun LayoutNode.findPainter(): Painter?</ID>
     <ID>NestedBlockDepth:Nodes.kt$internal fun LayoutNode.findTextColor(): Color?</ID>
     <ID>NestedBlockDepth:ReplayGestureConverter.kt$ReplayGestureConverter$fun convert( event: MotionEvent, recorderConfig: ScreenshotRecorderConfig, ): List&lt;RRWebIncrementalSnapshotEvent>?</ID>
     <ID>NestedBlockDepth:SimpleVideoEncoder.kt$SimpleVideoEncoder$private fun drainCodec(endOfStream: Boolean)</ID>
@@ -116,7 +115,7 @@
     <ID>ReturnCount:ReplayGestureConverter.kt$ReplayGestureConverter$fun convert( event: MotionEvent, recorderConfig: ScreenshotRecorderConfig, ): List&lt;RRWebIncrementalSnapshotEvent>?</ID>
     <ID>ReturnCount:ReplayIntegration.kt$ReplayIntegration$override fun captureReplay(isTerminating: Boolean?): SentryId</ID>
     <ID>ReturnCount:ScreenshotRecorder.kt$ScreenshotRecorder$fun capture()</ID>
-    <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$@Suppress("UNCHECKED_CAST") fun getChildren(node: LayoutNode): List&lt;LayoutNode></ID>
+    <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$@JvmStatic @Suppress("UNCHECKED_CAST") fun getChildren(node: LayoutNode): List&lt;LayoutNode></ID>
     <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$fun isTransparent(node: LayoutNode): Boolean</ID>
     <ID>ReturnCount:ViewHierarchyNode.kt$ViewHierarchyNode.Companion$@JvmStatic fun fromView( view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryMaskingOptions, ): ViewHierarchyNode</ID>
     <ID>ReturnCount:ViewHierarchyNode.kt$ViewHierarchyNode.Companion$private fun View.shouldMask(options: SentryMaskingOptions): Boolean</ID>

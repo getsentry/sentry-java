@@ -9,7 +9,6 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.jvm.JvmTestSuite
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
-import org.gradle.language.base.plugins.LifecycleBasePlugin
 import org.gradle.testing.base.TestingExtension
 
 private const val AGENT_FIXTURE = "agentFixture"
@@ -24,9 +23,9 @@ private const val WITHOUT_AUTO_INIT = "${SUITE}WithoutAutoInit"
  * The agent must not run in the test's JVM, because it would instrument the test's own HTTP client
  * and server. So the app lives in the `agentFixture` source set and runs on its own classpath, like
  * a real app. The `integrationTestOtelAgent` suite's task runs the tests with the agent
- * initializing Sentry, and `integrationTestOtelAgentWithoutAutoInit` runs them with the Spring Boot
- * starter doing it. Each test JVM starts one app, so the second mode needs a task of its own, which
- * Gradle runs in parallel with the suite's.
+ * initializing Sentry, and its second target, `integrationTestOtelAgentWithoutAutoInit`, runs them
+ * with the Spring Boot starter doing it. Each test JVM starts one app, so the second mode needs a
+ * task of its own, which Gradle runs in parallel with the suite's.
  *
  * The module adds the app's and the suite's dependencies, which differ per Spring Boot line.
  */
@@ -64,19 +63,15 @@ class OtelAgentTestsPlugin : Plugin<Project> {
     val testing = project.extensions.getByType(TestingExtension::class.java)
     testing.suites.register(SUITE, JvmTestSuite::class.java) {
       useJUnit()
-      targets.all {
+      targets.named(SUITE) {
         testTask.configure { runAgentFixture(autoInit = true, agentFixture.runtimeClasspath) }
       }
-    }
-
-    project.tasks.register(WITHOUT_AUTO_INIT, Test::class.java) {
-      description = "Runs the OpenTelemetry agent tests with SENTRY_AUTO_INIT=false."
-      group = LifecycleBasePlugin.VERIFICATION_GROUP
-      val sources = sourceSets.getByName(SUITE)
-      testClassesDirs = sources.output.classesDirs
-      classpath = sources.runtimeClasspath
-      useJUnit()
-      runAgentFixture(autoInit = false, agentFixture.runtimeClasspath)
+      targets.register(WITHOUT_AUTO_INIT) {
+        testTask.configure {
+          description = "Runs the OpenTelemetry agent tests with SENTRY_AUTO_INIT=false."
+          runAgentFixture(autoInit = false, agentFixture.runtimeClasspath)
+        }
+      }
     }
   }
 }

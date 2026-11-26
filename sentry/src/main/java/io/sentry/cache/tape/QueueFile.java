@@ -529,7 +529,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   }
 
   /** Reads the eldest element. Returns null if the queue is empty. */
-  public @Nullable byte[] peek() throws IOException {
+  public byte @Nullable [] peek() throws IOException {
     if (closed) throw new IllegalStateException("closed");
     if (isEmpty()) return null;
     int length = first.length;

@@ -14,6 +14,7 @@ plugins {
   id("io.sentry.publish")
   id("io.sentry.api-validation")
   id("io.sentry.robolectric")
+  id("io.sentry.dependency-matrix")
 }
 
 android {
@@ -100,6 +101,28 @@ dependencies {
   testImplementation(libs.androidx.compose.foundation.layout)
   testImplementation(libs.androidx.compose.material3)
   testImplementation(libs.coil.compose)
+  testImplementation(libs.coil3.compose)
+}
+
+// Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
+// .github/workflows/replay-dependency-matrix.yml runs each version's task. The oldest entry pins
+// material3 and Coil 3 to versions that run on that Compose UI, because the catalog's need a newer
+// one.
+dependencyMatrix {
+  matrix(
+    name = "composeUi",
+    groups =
+      listOf(
+        "androidx.compose.ui",
+        "androidx.compose.foundation",
+        "androidx.compose.animation",
+        "androidx.compose.runtime",
+      ),
+    versionsFile = "compose-ui-versions.json",
+  )
+  // Compose image masking detects Coil's painter modifier by reflection, and Coil 3.1 changed it.
+  // Coil 2 is a different artifact and package, so it's covered by the default unit tests instead.
+  matrix(name = "coil3", groups = listOf("io.coil-kt.coil3"), versionsFile = "coil3-versions.json")
 }
 
 tasks.withType<Detekt>().configureEach {

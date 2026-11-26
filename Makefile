@@ -2,7 +2,6 @@
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check
 publish: clean dryRelease
 
 # deep clean
@@ -29,14 +28,12 @@ update:
 format:
 	./gradlew spotlessApply
 	./gradlew -p sentry-samples spotlessApply
-	./gradlew -p sentry-samples/sentry-samples-android spotlessApply
 	./gradlew -p sentry-android-integration-tests spotlessApply
 
 # Spotless check's code
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
 	./gradlew -p sentry-samples spotlessJavaCheck spotlessKotlinCheck
-	./gradlew -p sentry-samples/sentry-samples-android spotlessJavaCheck spotlessKotlinCheck
 	./gradlew -p sentry-android-integration-tests spotlessJavaCheck spotlessKotlinCheck
 
 # Binary compatibility validator
@@ -58,3 +55,7 @@ runUiTestCritical:
 # Run tests and lint
 check:
 	./gradlew check
+
+# CI's Build job. Spotless is skipped because the Format Code workflow already runs it.
+preMerge:
+	./gradlew check -x spotlessCheck

@@ -1,4 +1,4 @@
-# Android performance-impact and integration tests
+# Android sample, performance-impact and integration tests
 
 This directory is a separate Gradle build that includes the SDK build, so run its tasks with
 `./gradlew -p sentry-android-integration-tests <task>`. The SDK build doesn't include it, so
@@ -6,5 +6,8 @@ This directory is a separate Gradle build that includes the SDK build, so run it
 `gradle.properties`, `gradlew`, `gradle/wrapper` and `gradle/gradle-daemon-jvm.properties` are
 symlinks to the SDK build's, so both builds use the same Gradle, JDK and settings.
 
-* [Espresso-based UI tests](./sentry-uitest-android) - run within SauceLabs (see /.sauce/*.yml)
-  * Also used for compatibility test matrix against new AGP versions
+* [Sample app](./sentry-samples-android)
+* [Macrobenchmark](./sentry-uitest-android-macrobenchmark) - cold start of the sample app, run locally on a connected device
+* [Espresso-based UI tests](./sentry-uitest-android) - run on an emulator in the AGP matrix workflow
+* [Maestro-based critical UI tests](./sentry-uitest-android-critical) - run by the UI Tests Critical workflow
+* [App size test](./test-app-size) - built by the SDK Size Analysis workflow

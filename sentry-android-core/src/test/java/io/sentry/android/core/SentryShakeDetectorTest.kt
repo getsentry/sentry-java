@@ -57,6 +57,24 @@ class SentryShakeDetectorTest {
   }
 
   @Test
+  fun `resolves SensorManager from the application context`() {
+    val activityContext = mock<Context>()
+    whenever(activityContext.applicationContext).thenReturn(fixture.context)
+
+    val sut = fixture.getSut()
+    sut.start(activityContext, fixture.listener)
+
+    verify(activityContext, never()).getSystemService(any<String>())
+    verify(fixture.sensorManager)
+      .registerListener(
+        eq(sut),
+        eq(fixture.accelerometer),
+        eq(SensorManager.SENSOR_DELAY_NORMAL),
+        isA<Handler>(),
+      )
+  }
+
+  @Test
   fun `unregisters sensor listener on stop`() {
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
