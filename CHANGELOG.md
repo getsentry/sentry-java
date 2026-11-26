@@ -5,6 +5,18 @@
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
 > - The Android `minSdk` will be raised from 21 to 24. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
 
+## Unreleased
+
+### Dependencies
+
+- Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
+  - `opentelemetry` to `1.68.0` (was `1.67.0`)
+  - `opentelemetry-alpha` to `1.68.0-alpha` (was `1.67.0-alpha`)
+  - `opentelemetry-instrumentation` to `2.34.0` (was `2.33.1`)
+  - `opentelemetry-instrumentation-alpha` to `2.34.0-alpha` (was `2.33.1-alpha`)
+  - `opentelemetry-semconv` to `1.45.0` (was `1.44.0`)
+  - `opentelemetry-semconv-alpha` to `1.45.0-alpha` (was `1.44.0-alpha`)
+
 ## 8.66.0
 
 ### Fixes
@@ -30,16 +42,6 @@
 - Shake-to-report no longer leaks the first Activity that resumes after `Sentry.init` ([#6686](https://github.com/getsentry/sentry-java/pull/6686))
 - Android app start: Reopening the app within a minute of process start is now reported as a warm start timed from the reopened screen, instead of reusing the cold start's timing. In standalone app start mode, this no longer sends the cold start a second time, as a warm start ([#6687](https://github.com/getsentry/sentry-java/pull/6687))
 - Android app start: On Android 10+, a warm start now begins when the screen starts being created, matching its `activity.load` span ([#6719](https://github.com/getsentry/sentry-java/pull/6719))
-
-### Dependencies
-
-- Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
-  - `opentelemetry` to `1.68.0` (was `1.67.0`)
-  - `opentelemetry-alpha` to `1.68.0-alpha` (was `1.67.0-alpha`)
-  - `opentelemetry-instrumentation` to `2.34.0` (was `2.33.1`)
-  - `opentelemetry-instrumentation-alpha` to `2.34.0-alpha` (was `2.33.1-alpha`)
-  - `opentelemetry-semconv` to `1.45.0` (was `1.44.0`)
-  - `opentelemetry-semconv-alpha` to `1.45.0-alpha` (was `1.44.0-alpha`)
 
 ## 8.65.0
 
