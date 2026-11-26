@@ -131,6 +131,7 @@
 
 ### Fixes
 
+- OpenTelemetry: Align database span operations and descriptions with JDBC instrumentation by mapping query spans to `db.query`, preferring `db.query.text`, and recognizing `db.system.name` ([#6791](https://github.com/getsentry/sentry-java/pull/6791))
 - Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
 - Preserve independent Netty read and write timeout events when exception singletons are reused. These exceptions now bypass event deduplication by default, so applications with multiple capture integrations may report the same timeout more than once. Use `SentryOptions.setIgnoredErrorsForDeduplication(...)` or `ignored-errors-for-deduplication` to customize or clear the default exclusions. ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
 - Prevent changes to reused tracing options from affecting spans and transactions after creation ([#6417](https://github.com/getsentry/sentry-java/pull/6417))
