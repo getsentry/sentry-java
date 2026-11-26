@@ -11,6 +11,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
@@ -112,7 +113,8 @@ public final class AppState implements Closeable {
           SentryLevel.WARNING,
           "androidx.lifecycle is not available, some features might not be properly working,"
               + "e.g. Session Tracking, Network and System Events breadcrumbs, etc.");
-    } catch (Throwable e) {
+    } catch (LinkageError e) {
+      // androidx.lifecycle has an incompatible version
       logger.log(SentryLevel.ERROR, "AppState could not register lifecycle observer", e);
     }
   }
@@ -124,7 +126,7 @@ public final class AppState implements Closeable {
       if (observerRef != null) {
         ProcessLifecycleOwner.get().getLifecycle().addObserver(observerRef);
       }
-    } catch (Throwable e) {
+    } catch (LinkageError e) {
       // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
       // connection with conflicting dependencies of the androidx.lifecycle.
       // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
@@ -133,6 +135,13 @@ public final class AppState implements Closeable {
           SentryLevel.ERROR,
           "AppState failed to get Lifecycle and could not install lifecycle observer.",
           e);
+    } catch (Throwable t) {
+      // addObserver dispatches ON_START synchronously to the app state listeners that are already
+      // registered, such as session tracking and the scope observers of hybrid SDKs, so we can't
+      // know what it throws. Posted from a background init, nothing else would catch it on the
+      // main looper. The listeners miss this ON_START.
+      ExceptionUtils.rethrowIfFatal(t);
+      logger.log(SentryLevel.ERROR, "AppState failed to notify the app state listeners.", t);
     }
   }
 

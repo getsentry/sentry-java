@@ -196,6 +196,11 @@ public final class Scopes implements IScopes {
         callback.run(localScope);
         return localScope;
       } catch (Throwable t) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated
+        // like any other exception. The event is captured with the unchanged scope.
+        if (!(t instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(t);
+        }
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
@@ -421,7 +426,6 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void close(final boolean isRestarting) {
     if (!isEnabled()) {
       getOptions()
@@ -433,7 +437,16 @@ public final class Scopes implements IScopes {
           if (integration instanceof Closeable) {
             try {
               ((Closeable) integration).close();
+            } catch (LinkageError e) {
+              // The integration needs an optional dependency that is missing or has an
+              // incompatible version. The remaining integrations are still closed.
+              getOptions()
+                  .getLogger()
+                  .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
             } catch (Throwable e) {
+              // Integrations can be user-provided, so we can't know what they throw. The
+              // remaining integrations are still closed.
+              ExceptionUtils.rethrowIfFatal(e);
               getOptions()
                   .getLogger()
                   .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
@@ -444,7 +457,20 @@ public final class Scopes implements IScopes {
           if (eventProcessor instanceof Closeable) {
             try {
               ((Closeable) eventProcessor).close();
+            } catch (LinkageError e) {
+              // The event processor needs an optional dependency that is missing or has an
+              // incompatible version. The remaining event processors are still closed.
+              getOptions()
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Failed to close the event processor {}.",
+                      eventProcessor,
+                      e);
             } catch (Throwable e) {
+              // Event processors can be user-provided, so we can't know what they throw. The
+              // remaining event processors are still closed.
+              ExceptionUtils.rethrowIfFatal(e);
               getOptions()
                   .getLogger()
                   .log(
@@ -458,42 +484,77 @@ public final class Scopes implements IScopes {
 
         configureScope(scope -> scope.clear());
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
-        getOptions().getBackpressureMonitor().close();
-        getOptions().getTransactionProfiler().close();
-        getOptions().getContinuousProfiler().close(true);
-        getOptions().getCompositePerformanceCollector().close();
-        getOptions().getConnectionStatusProvider().close();
+        closeComponent("backpressure monitor", () -> getOptions().getBackpressureMonitor().close());
+        closeComponent("transaction profiler", () -> getOptions().getTransactionProfiler().close());
+        closeComponent(
+            "continuous profiler", () -> getOptions().getContinuousProfiler().close(true));
+        closeComponent(
+            "performance collector", () -> getOptions().getCompositePerformanceCollector().close());
+        closeComponent(
+            "connection status provider", () -> getOptions().getConnectionStatusProvider().close());
         // On restart we intentionally leave the timer executor running so that pending idle/
         // deadline timeouts of transactions started before the restart still fire and finish
         // those transactions. It self-terminates once idle (allowCoreThreadTimeOut).
         if (!isRestarting) {
-          getOptions().getTimerExecutorService().close(getOptions().getShutdownTimeoutMillis());
+          closeComponent(
+              "timer executor service",
+              () ->
+                  getOptions()
+                      .getTimerExecutorService()
+                      .close(getOptions().getShutdownTimeoutMillis()));
         }
-        final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
-        if (isRestarting) {
-          try {
-            executorService.submit(
-                () -> executorService.close(getOptions().getShutdownTimeoutMillis()));
-          } catch (RejectedExecutionException e) {
-            getOptions()
-                .getLogger()
-                .log(
-                    SentryLevel.WARNING,
-                    "Failed to submit executor service shutdown task during restart. Shutting down synchronously.",
-                    e);
-            executorService.close(getOptions().getShutdownTimeoutMillis());
-          }
-        } else {
-          executorService.close(getOptions().getShutdownTimeoutMillis());
-        }
+        closeComponent("executor service", () -> closeExecutorService(isRestarting));
 
         // TODO: should we end session before closing client?
         configureScope(ScopeType.CURRENT, scope -> scope.getClient().close(isRestarting));
         configureScope(ScopeType.ISOLATION, scope -> scope.getClient().close(isRestarting));
         configureScope(ScopeType.GLOBAL, scope -> scope.getClient().close(isRestarting));
       } catch (Throwable e) {
+        // A public API entry point: closing shuts down components that integrations and the app
+        // can replace, so we can't know what it throws. The remaining shutdown steps are skipped.
+        ExceptionUtils.rethrowIfFatal(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
       }
+    }
+  }
+
+  private interface ShutdownStep {
+    void run() throws Exception;
+  }
+
+  /**
+   * Integrations and the app can replace these components, so one may need an optional dependency
+   * that is missing or has an incompatible version. Its LinkageError is logged and the remaining
+   * shutdown steps still run, which matters on re-init, where {@link Sentry#init} calls {@link
+   * #close(boolean)}.
+   */
+  private void closeComponent(final @NotNull String component, final @NotNull ShutdownStep step)
+      throws Exception {
+    try {
+      step.run();
+    } catch (LinkageError e) {
+      getOptions().getLogger().log(SentryLevel.ERROR, e, "Failed to close the %s.", component);
+    }
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void closeExecutorService(final boolean isRestarting) {
+    final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
+    if (isRestarting) {
+      try {
+        executorService.submit(
+            () -> executorService.close(getOptions().getShutdownTimeoutMillis()));
+      } catch (RejectedExecutionException e) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Failed to submit executor service shutdown task during restart. Shutting down synchronously.",
+                e);
+        executorService.close(getOptions().getShutdownTimeoutMillis());
+      }
+    } else {
+      executorService.close(getOptions().getShutdownTimeoutMillis());
     }
   }
 
@@ -686,6 +747,11 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated
+        // like any other exception. The rest of the callback is skipped.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
 
@@ -694,6 +760,11 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated
+        // like any other exception. The rest of the callback is skipped.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
     }
@@ -705,6 +776,11 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated
+        // like any other exception. The rest of the callback is skipped.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -715,6 +791,11 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getIsolationScope());
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated
+        // like any other exception. The rest of the callback is skipped.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -735,6 +816,11 @@ public final class Scopes implements IScopes {
       try {
         callback.run(combinedScope.getSpecificScope(scopeType));
       } catch (Throwable e) {
+        // A user callback, so we can't know what it throws. A LinkageError from it is treated
+        // like any other exception. The rest of the callback is skipped.
+        if (!(e instanceof LinkageError)) {
+          ExceptionUtils.rethrowIfFatal(e);
+        }
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);

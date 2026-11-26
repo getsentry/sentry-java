@@ -69,6 +69,12 @@ public final class EventSizeLimitingUtils {
             return reducedEvent;
           }
         } catch (Throwable e) {
+          // A user callback, so we can't know what it throws. A LinkageError from it is treated
+          // like any other exception. Its result is ignored, and the automatic reduction continues
+          // with the original event.
+          if (!(e instanceof LinkageError)) {
+            ExceptionUtils.rethrowIfFatal(e);
+          }
           options
               .getLogger()
               .log(

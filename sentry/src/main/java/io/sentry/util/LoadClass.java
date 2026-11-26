@@ -41,7 +41,8 @@ public class LoadClass {
       if (logger != null) {
         logger.log(SentryLevel.ERROR, "Failed to load (UnsatisfiedLinkError) " + clazz, e);
       }
-    } catch (Throwable e) {
+    } catch (LinkageError e) {
+      // e.g. ExceptionInInitializerError, or NoClassDefFoundError for a dependency of the class
       if (logger != null) {
         logger.log(SentryLevel.ERROR, "Failed to initialize " + clazz, e);
       }

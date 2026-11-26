@@ -4,6 +4,7 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import io.sentry.ScopesAdapter
 import io.sentry.SentryLevel
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 
 /**
@@ -53,17 +54,29 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
       // create() ensures delegate is unwrapped, so we don't need to protect against double-wrapping
       // the connection.
       SentrySQLiteConnection(connection, spans)
+    } catch (e: LinkageError) {
+      // androidx.sqlite is compileOnly, so the app's version may not match the SQLiteConnection
+      // that SentrySQLiteConnection implements. The connection is returned uninstrumented.
+      logInstrumentationFailure(e)
+      connection
     } catch (t: Throwable) {
-      ScopesAdapter.getInstance()
-        .options
-        .logger
-        .log(
-          SentryLevel.ERROR,
-          "Failed to instrument SQLite connection; returning uninstrumented connection.",
-          t,
-        )
+      // Instrumenting must never stop the app from opening its database, so any other failure
+      // also returns the connection uninstrumented.
+      ExceptionUtils.rethrowIfFatal(t)
+      logInstrumentationFailure(t)
       connection
     }
+  }
+
+  private fun logInstrumentationFailure(t: Throwable) {
+    ScopesAdapter.getInstance()
+      .options
+      .logger
+      .log(
+        SentryLevel.ERROR,
+        "Failed to instrument SQLite connection; returning uninstrumented connection.",
+        t,
+      )
   }
 
   public companion object {

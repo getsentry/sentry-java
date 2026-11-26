@@ -20,6 +20,7 @@ import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LoadClass;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -79,6 +80,11 @@ public final class SentryAndroid {
   /**
    * Sentry initialization with a configuration handler that may override the default options
    *
+   * <p>If the configuration handler throws, init continues with the options it set before it
+   * failed. Fatal errors such as {@link OutOfMemoryError} are rethrown instead. The failure is only
+   * logged at ERROR level through the SDK logger, which prints only when debug is enabled, e.g.
+   * through the {@code io.sentry.debug} manifest entry.
+   *
    * @param context Application. context
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
@@ -90,6 +96,11 @@ public final class SentryAndroid {
 
   /**
    * Sentry initialization with a configuration handler and custom logger
+   *
+   * <p>If the configuration handler throws, init continues with the options it set before it
+   * failed. Fatal errors such as {@link OutOfMemoryError} are rethrown instead. The failure is only
+   * logged at ERROR level through the SDK logger, which prints only when debug is enabled, e.g.
+   * through the {@code io.sentry.debug} manifest entry.
    *
    * @param context Application. context
    * @param logger your custom logger that implements ILogger
@@ -150,8 +161,20 @@ public final class SentryAndroid {
 
             try {
               configuration.configure(options);
+            } catch (LinkageError e) {
+              // The callback can touch options of optional modules that are missing or have an
+              // incompatible version, e.g. session replay's masking options. Init continues with
+              // the options set before it failed.
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Error in the 'OptionsConfiguration.configure' callback.",
+                      e);
             } catch (Throwable t) {
-              // let it slip, but log it
+              // The callback is the app's or a hybrid SDK's own code, so we can't know what it
+              // throws. Init continues with the options set before it failed.
+              ExceptionUtils.rethrowIfFatal(t);
               options
                   .getLogger()
                   .log(

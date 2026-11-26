@@ -6,6 +6,7 @@ import android.view.Window;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.util.ExceptionUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,7 +57,16 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
       final MotionEvent copy = motionEventObtainer.obtain(motionEvent);
       try {
         handleTouchEvent(copy);
+      } catch (LinkageError e) {
+        // The Compose gesture locator calls Compose internals, which may not match the app's
+        // Compose version
+        if (options != null) {
+          options.getLogger().log(SentryLevel.ERROR, "Error dispatching touch event", e);
+        }
       } catch (Throwable e) {
+        // Locating the touched view calls into the app's own views, so we can't know what it
+        // throws. The gesture is not recorded, and the touch still reaches the app.
+        ExceptionUtils.rethrowIfFatal(e);
         if (options != null) {
           options.getLogger().log(SentryLevel.ERROR, "Error dispatching touch event", e);
         }
