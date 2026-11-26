@@ -1,5 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 
 plugins {
   id("com.android.library")
@@ -33,8 +32,7 @@ android {
 }
 
 kotlin {
-  compilerOptions.jvmTarget = JVM_1_8
-  compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
+  compilerOptions.jvmTarget = JVM_11
   explicitApi()
 }
 

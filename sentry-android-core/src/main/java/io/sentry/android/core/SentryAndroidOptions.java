@@ -75,6 +75,12 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for Network Events Using NetworkCallback */
   private boolean enableNetworkEventBreadcrumbs = true;
 
+  /** Enable or disable automatic Sentry Logs capture from Timber. Default is disabled. */
+  private boolean timberLogCaptureEnabled = false;
+
+  /** Enable or disable automatic Sentry Logs capture from Logcat. Default is disabled. */
+  private boolean logcatLogCaptureEnabled = false;
+
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
@@ -297,13 +303,11 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean attachRawTombstone = false;
 
-  private boolean enablePerformanceV2 = true;
-
-  private boolean enableStandaloneAppStartTracing = false;
+  private boolean enableStandaloneAppStartTracing = true;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
-  private boolean enableTombstone = false;
+  private boolean enableTombstone = true;
 
   /**
    * The maximum time difference, in milliseconds, between a tombstone from {@link
@@ -461,7 +465,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /**
    * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled
-   * Default is disabled
+   * Default is enabled
    *
    * @return true if enabled or false otherwise
    */
@@ -507,6 +511,22 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableNetworkEventBreadcrumbs(boolean enableNetworkEventBreadcrumbs) {
     this.enableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs;
+  }
+
+  public boolean getTimberLogCaptureEnabled() {
+    return timberLogCaptureEnabled;
+  }
+
+  public void setTimberLogCaptureEnabled(boolean timberLogCaptureEnabled) {
+    this.timberLogCaptureEnabled = timberLogCaptureEnabled;
+  }
+
+  public boolean getLogcatLogCaptureEnabled() {
+    return logcatLogCaptureEnabled;
+  }
+
+  public void setLogcatLogCaptureEnabled(boolean logcatLogCaptureEnabled) {
+    this.logcatLogCaptureEnabled = logcatLogCaptureEnabled;
   }
 
   /**
@@ -851,39 +871,20 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Returns true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
-   * more details.
-   */
-  public boolean isEnablePerformanceV2() {
-    return enablePerformanceV2;
-  }
-
-  /**
-   * Enables or disables the Performance V2 SDK features.
-   *
-   * <p>With this change - Cold app start spans will provide more accurate timings - Cold app start
-   * spans will be enriched with detailed ContentProvider, Application and Activity startup times
-   *
-   * @param enablePerformanceV2 true if enabled or false otherwise
-   */
-  public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
-    this.enablePerformanceV2 = enablePerformanceV2;
-  }
-
-  /**
    * Returns true if standalone app start tracing is enabled. See {@link
    * #setEnableStandaloneAppStartTracing(boolean)} for more details.
    */
-  @ApiStatus.Experimental
   public boolean isEnableStandaloneAppStartTracing() {
     return enableStandaloneAppStartTracing;
   }
 
   /**
-   * Enables or disables standalone app start tracing.
+   * Enables or disables standalone app start tracing. Enabled by default.
    *
    * <p>When enabled, app start is sent as its own transaction instead of an {@code app.start.*}
-   * child span on the first Activity transaction.
+   * child span on the first Activity transaction. To attach app start to the first Activity
+   * transaction instead, set this to false, or set the {@code
+   * io.sentry.standalone-app-start-tracing.enable} manifest metadata to false.
    *
    * <p>The SDK reports app start through these paths:
    *
@@ -912,7 +913,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param enableStandaloneAppStartTracing true if enabled or false otherwise
    */
-  @ApiStatus.Experimental
   public void setEnableStandaloneAppStartTracing(final boolean enableStandaloneAppStartTracing) {
     this.enableStandaloneAppStartTracing = enableStandaloneAppStartTracing;
   }

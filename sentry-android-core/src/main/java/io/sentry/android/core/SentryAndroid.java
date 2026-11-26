@@ -21,6 +21,7 @@ import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.FileUtils;
+import io.sentry.util.LoadClass;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -97,7 +98,6 @@ public final class SentryAndroid {
    * @param logger your custom logger that implements ILogger
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
-  @SuppressLint("NewApi")
   public static void init(
       @NotNull final Context context,
       @NotNull ILogger logger,
@@ -115,7 +115,7 @@ public final class SentryAndroid {
       Sentry.init(
           new SentryAndroidOptionsContainer(),
           options -> {
-            final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
+            final LoadClass classLoader = new LoadClass();
             final boolean isTimberUpstreamAvailable =
                 classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
             final boolean isFragmentUpstreamAvailable =
@@ -133,9 +133,7 @@ public final class SentryAndroid {
                 classLoader.isClassAvailable(SENTRY_DISTRIBUTION_INTEGRATION_CLASS_NAME, options);
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
-            final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
-            final ActivityFramesTracker activityFramesTracker =
-                new ActivityFramesTracker(loadClass, options);
+            final LoadClass loadClass = new LoadClass();
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);
@@ -148,7 +146,6 @@ public final class SentryAndroid {
                 options,
                 buildInfoProvider,
                 loadClass,
-                activityFramesTracker,
                 isFragmentAvailable,
                 isTimberAvailable,
                 isReplayAvailable,
@@ -169,12 +166,9 @@ public final class SentryAndroid {
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead
             final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-            if (options.isEnablePerformanceV2()
-                && buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
-              final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
-              if (appStartTimeSpan.hasNotStarted()) {
-                appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
-              }
+            final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+            if (appStartTimeSpan.hasNotStarted()) {
+              appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
             }
             if (context.getApplicationContext() instanceof Application) {
               appStartMetrics.registerLifecycleCallbacks(
@@ -186,12 +180,7 @@ public final class SentryAndroid {
             }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
-                options,
-                context,
-                buildInfoProvider,
-                loadClass,
-                activityFramesTracker,
-                isReplayAvailable);
+                options, context, buildInfoProvider, loadClass, isReplayAvailable);
 
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },
@@ -295,7 +284,7 @@ public final class SentryAndroid {
 
   @SuppressLint("NewApi")
   private static boolean isNdkCrashServiceProcess() {
-    if (!new io.sentry.util.LoadClass()
+    if (!new LoadClass()
         .isClassAvailable(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME, (ILogger) null)) {
       return false;
     }

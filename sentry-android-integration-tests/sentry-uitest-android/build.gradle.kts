@@ -78,10 +78,6 @@ android {
     // This module is the one lint picks to check the build root's Gradle wrapper, and this check
     // compares it with the latest Gradle release online, so every new release would fail the build.
     disable += "AndroidGradlePluginVersion"
-
-    // Lint 9.5 can't load the custom checks bundled with older androidx.lifecycle releases and
-    // reports that it skips them. They only cover lifecycle APIs this module doesn't call.
-    disable += "ObsoleteLintCustomCheck"
   }
 
   androidComponents.beforeVariants {
@@ -137,6 +133,12 @@ dependencies {
   androidTestImplementation(libs.kotlin.test.junit)
   androidTestImplementation(libs.leakcanary.instrumentation)
   androidTestImplementation(libs.okhttp.mockwebserver4)
+
+  constraints {
+    // Lint 9.5 can't load the custom lint checks of lifecycle releases before 2.10.0. Lifecycle
+    // aligns all its artifacts to one version, so raising this one raises them all.
+    implementation(libs.androidx.lifecycle.runtime.compose)
+  }
 }
 
 // net.ltgt.errorprone only configures Gradle's JVM source sets, not Android variants, so put Error

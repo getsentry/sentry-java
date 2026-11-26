@@ -18,7 +18,7 @@ application. Please see the module [README](sentry-opentelemetry-agent/README.md
 ### `sentry-opentelemetry-agentcustomization`
 
 This contains customizations to the OpenTelemetry Java Agent such as registering the
-`SentrySpanProcessor` and `SentryPropagator` as well as providing default properties that
+`OtelSentrySpanProcessor` and `OtelSentryPropagator` as well as providing default properties that
 enable the `sentry` propagator.
 
 ### `sentry-opentelemetry-bootstrap`
@@ -33,7 +33,7 @@ you also need this module as a dependency.
 
 ### `sentry-opentelemetry-core`
 
-Contains `SentrySpanProcessor` and `SentryPropagator` which are used by our Java Agent but can also
+Contains `OtelSentrySpanProcessor` and `OtelSentryPropagator` which are used by our Java Agent but can also
 be used when manually instrumenting using OpenTelemetry. If you want to use OpenTelemetry without
 the agent but still want some configuration convenience, you should rather use the
 `sentry-opentelemetry-agentless` module or the `sentry-opentelemetry-agentless-spring` module if you are using Spring Boot.
@@ -58,7 +58,7 @@ Alternatively you can initialize OpenTelemetry programmatically like this:
 
 ```java
 // Initialize OpenTelemetry by using the AutoConfiguredOpenTelemetrySdk which automatically
-// registers the `SentrySpanProcessor` and `SentryPropagator` and others.
+// registers the `OtelSentrySpanProcessor` and `OtelSentryPropagator` and others.
 // Also, you need to disable the OTEL exporters if you do not use them.
 AutoConfiguredOpenTelemetrySdk.builder()
   .setResultAsGlobal()

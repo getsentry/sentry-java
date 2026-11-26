@@ -45,10 +45,7 @@ class ShutdownHookEndToEndTest {
 object ExitWithoutFlushApp {
   @JvmStatic
   fun main(args: Array<String>) {
-    Sentry.init {
-      it.dsn = args[0]
-      it.logs.isEnabled = true
-    }
+    Sentry.init { it.dsn = args[0] }
     Sentry.captureMessage("Reported before exit")
     Sentry.logger().info("Logged before exit")
     Sentry.metrics().count("exitMetric")

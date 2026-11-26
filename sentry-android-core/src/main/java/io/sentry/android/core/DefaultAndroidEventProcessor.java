@@ -17,6 +17,7 @@ import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.util.Collections;
@@ -193,6 +194,9 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
               .getContexts()
               .setDevice(deviceInfoUtil.get().collectDeviceInformation(errorEvent, applyScopeData));
         } catch (Throwable e) {
+          // Collecting the device info makes Binder calls into several system services, which can
+          // rethrow any runtime exception from the other side. The device context is left out.
+          ExceptionUtils.rethrowIfFatal(e);
           options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
         }
       } else {
@@ -230,59 +234,39 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
   }
 
   private void setDevice(final @NotNull SentryLogEvent event) {
-    try {
-      event.setAttribute(
-          "device.brand",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
-      event.setAttribute(
-          "device.model",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
-      event.setAttribute(
-          "device.family",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily));
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
-    }
+    event.setAttribute(
+        "device.brand", new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
+    event.setAttribute(
+        "device.model", new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
+    event.setAttribute(
+        "device.family",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily));
   }
 
   private void setOs(final @NotNull SentryLogEvent event) {
-    try {
-      event.setAttribute(
-          "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
-      event.setAttribute(
-          "os.version",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
-    }
+    event.setAttribute(
+        "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
+    event.setAttribute(
+        "os.version",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
   }
 
   private void setDevice(final @NotNull SentryMetricsEvent event) {
-    try {
-      event.setAttribute(
-          "device.brand",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
-      event.setAttribute(
-          "device.model",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
-      event.setAttribute(
-          "device.family",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily));
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
-    }
+    event.setAttribute(
+        "device.brand", new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
+    event.setAttribute(
+        "device.model", new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
+    event.setAttribute(
+        "device.family",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily));
   }
 
   private void setOs(final @NotNull SentryMetricsEvent event) {
-    try {
-      event.setAttribute(
-          "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
-      event.setAttribute(
-          "os.version",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
-    }
+    event.setAttribute(
+        "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
+    event.setAttribute(
+        "os.version",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
   }
 
   // Data to be applied to events that was created in the running process
@@ -350,7 +334,7 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
     app.setAppName(ContextUtils.getApplicationName(context));
     final @NotNull TimeSpan appStartTimeSpan =
-        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
     if (appStartTimeSpan.hasStarted()) {
       app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
     }

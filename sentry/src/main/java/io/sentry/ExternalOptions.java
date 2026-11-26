@@ -40,18 +40,18 @@ public final class ExternalOptions {
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable List<String> ignoredErrors;
+  private @Nullable List<String> ignoredErrorsForDeduplication;
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
   private @Nullable Boolean enableSpotlight;
-  private @Nullable Boolean enableLogs;
-  private @Nullable Boolean enableMetrics;
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
   private @Nullable List<String> ignoredTransactions;
+  private @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes;
 
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
@@ -150,6 +150,8 @@ public final class ExternalOptions {
         propertiesProvider.getLongProperty("session-flush-timeout-millis"));
 
     options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
+    options.setIgnoredErrorsForDeduplication(
+        propertiesProvider.getListOrNull("ignored-errors-for-deduplication"));
 
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
@@ -162,6 +164,7 @@ public final class ExternalOptions {
 
     options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
     options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
+    options.setTraceIgnoreStatusCodes(parseTraceIgnoreStatusCodes(propertiesProvider, logger));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
@@ -177,10 +180,6 @@ public final class ExternalOptions {
 
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
-
-    options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
-
-    options.setEnableMetrics(propertiesProvider.getBooleanProperty("metrics.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -247,6 +246,30 @@ public final class ExternalOptions {
     }
 
     return options;
+  }
+
+  private static @Nullable List<HttpStatusCodeRange> parseTraceIgnoreStatusCodes(
+      final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
+    final String value = propertiesProvider.getProperty("trace-ignore-status-codes");
+    if (value == null) {
+      return null;
+    }
+    if (value.trim().isEmpty()) {
+      return new ArrayList<>();
+    }
+
+    final List<HttpStatusCodeRange> ranges = new ArrayList<>();
+    for (final String token : value.split(",", -1)) {
+      try {
+        ranges.add(HttpStatusCodeRange.valueOf(token));
+      } catch (IllegalArgumentException e) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Ignoring invalid HTTP status code range in trace-ignore-status-codes: %s",
+            token);
+      }
+    }
+    return ranges.isEmpty() ? null : ranges;
   }
 
   private static @Nullable DataCollection parseDataCollection(
@@ -555,6 +578,15 @@ public final class ExternalOptions {
     this.ignoredErrors = ignoredErrors;
   }
 
+  public @Nullable List<String> getIgnoredErrorsForDeduplication() {
+    return ignoredErrorsForDeduplication;
+  }
+
+  public void setIgnoredErrorsForDeduplication(
+      final @Nullable List<String> ignoredErrorsForDeduplication) {
+    this.ignoredErrorsForDeduplication = ignoredErrorsForDeduplication;
+  }
+
   public @Nullable Boolean getSendClientReports() {
     return sendClientReports;
   }
@@ -628,12 +660,19 @@ public final class ExternalOptions {
     return ignoredTransactions;
   }
 
-  @ApiStatus.Experimental
+  public void setTraceIgnoreStatusCodes(
+      final @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes) {
+    this.traceIgnoreStatusCodes = traceIgnoreStatusCodes;
+  }
+
+  public @Nullable List<HttpStatusCodeRange> getTraceIgnoreStatusCodes() {
+    return traceIgnoreStatusCodes;
+  }
+
   public void setEnableBackpressureHandling(final @Nullable Boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
 
-  @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
   }
@@ -716,22 +755,6 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isCaptureOpenTelemetryEvents() {
     return captureOpenTelemetryEvents;
-  }
-
-  public void setEnableLogs(final @Nullable Boolean enableLogs) {
-    this.enableLogs = enableLogs;
-  }
-
-  public @Nullable Boolean isEnableLogs() {
-    return enableLogs;
-  }
-
-  public void setEnableMetrics(final @Nullable Boolean enableMetrics) {
-    this.enableMetrics = enableMetrics;
-  }
-
-  public @Nullable Boolean isEnableMetrics() {
-    return enableMetrics;
   }
 
   public @Nullable Double getProfileSessionSampleRate() {

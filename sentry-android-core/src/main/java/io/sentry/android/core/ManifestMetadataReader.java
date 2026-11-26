@@ -15,6 +15,7 @@ import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,7 +101,6 @@ final class ManifestMetadataReader {
 
   static final String PROFILER_START_ON_APP_START = "io.sentry.traces.profiling.start-on-app-start";
 
-  @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
   static final String WEBVIEW_TRACING_ALLOWED_HOSTS = "io.sentry.webview-tracing.allowed-hosts";
@@ -144,8 +143,6 @@ final class ManifestMetadataReader {
   static final String ENABLE_SENTRY = "io.sentry.enabled";
 
   static final String SEND_MODULES = "io.sentry.send-modules";
-
-  static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
 
   static final String ENABLE_STANDALONE_APP_START_TRACING =
       "io.sentry.standalone-app-start-tracing.enable";
@@ -190,13 +187,16 @@ final class ManifestMetadataReader {
 
   static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
 
+  static final String IGNORED_ERRORS_FOR_DEDUPLICATION =
+      "io.sentry.ignored-errors-for-deduplication";
+
   static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
 
-  static final String ENABLE_LOGS = "io.sentry.logs.enabled";
+  static final String TIMBER_LOG_CAPTURE_ENABLED = "io.sentry.timber.log-capture.enabled";
 
-  static final String ENABLE_METRICS = "io.sentry.metrics.enabled";
+  static final String LOGCAT_LOG_CAPTURE_ENABLED = "io.sentry.logcat.log-capture.enabled";
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
@@ -476,9 +476,6 @@ final class ManifestMetadataReader {
           }
         }
 
-        options.setTraceSampling(
-            readBool(metadata, logger, TRACE_SAMPLING, options.isTraceSampling()));
-
         options.setEnableAutoActivityLifecycleTracing(
             readBool(
                 metadata,
@@ -585,9 +582,6 @@ final class ManifestMetadataReader {
             readBool(metadata, logger, ENABLE_ROOT_CHECK, options.isEnableRootCheck()));
 
         options.setSendModules(readBool(metadata, logger, SEND_MODULES, options.isSendModules()));
-
-        options.setEnablePerformanceV2(
-            readBool(metadata, logger, ENABLE_PERFORMANCE_V2, options.isEnablePerformanceV2()));
 
         options.setEnableStandaloneAppStartTracing(
             readBool(
@@ -744,6 +738,12 @@ final class ManifestMetadataReader {
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
+        final @Nullable List<String> ignoredErrorsForDeduplication =
+            readList(metadata, logger, IGNORED_ERRORS_FOR_DEDUPLICATION);
+        if (ignoredErrorsForDeduplication != null) {
+          options.setIgnoredErrorsForDeduplication(ignoredErrorsForDeduplication);
+        }
+
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
         if (includes != null && !includes.isEmpty()) {
           for (final @NotNull String include : includes) {
@@ -758,14 +758,19 @@ final class ManifestMetadataReader {
           }
         }
 
-        options
-            .getLogs()
-            .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
+        options.setTimberLogCaptureEnabled(
+            readBool(
+                metadata,
+                logger,
+                TIMBER_LOG_CAPTURE_ENABLED,
+                options.getTimberLogCaptureEnabled()));
 
-        options
-            .getMetrics()
-            .setEnabled(
-                readBool(metadata, logger, ENABLE_METRICS, options.getMetrics().isEnabled()));
+        options.setLogcatLogCaptureEnabled(
+            readBool(
+                metadata,
+                logger,
+                LOGCAT_LOG_CAPTURE_ENABLED,
+                options.getLogcatLogCaptureEnabled()));
 
         final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
         feedbackOptions.setNameRequired(
@@ -809,13 +814,12 @@ final class ManifestMetadataReader {
           options.setSpotlightConnectionUrl(spotlightUrl);
         }
 
-        // Screenshot masking options (default to false for backwards compatibility)
         options
             .getScreenshot()
-            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, false));
+            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, true));
         options
             .getScreenshot()
-            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
+            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, true));
 
         if (options.getAnrProfilingSampleRate() == null) {
           final double anrProfilingSampleRate =
@@ -839,6 +843,10 @@ final class ManifestMetadataReader {
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
     } catch (Throwable e) {
+      // A metadata bundle from the package manager is unparceled on first access, and its values
+      // are whatever the app put in its manifest, so we can't know what reading it throws. The
+      // options keep their defaults for every key not read yet.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(
@@ -1131,6 +1139,9 @@ final class ManifestMetadataReader {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
     } catch (Throwable e) {
+      // A metadata bundle from the package manager is unparceled on first access, so we can't know
+      // what reading it throws. Auto-init stays enabled.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
     }
     return autoInit;

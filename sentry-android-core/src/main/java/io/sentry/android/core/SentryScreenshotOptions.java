@@ -6,8 +6,8 @@ import io.sentry.SentryMaskingOptions;
  * Screenshot masking options for error screenshots. Extends the base {@link SentryMaskingOptions}
  * with screenshot-specific defaults.
  *
- * <p>By default, masking is disabled for screenshots. Enable masking by calling {@link
- * #setMaskAllText(boolean)} and/or {@link #setMaskAllImages(boolean)}.
+ * <p>By default, all text and images are masked. Disable masking by calling {@link
+ * #setMaskAllText(boolean)} and/or {@link #setMaskAllImages(boolean)} with {@code false}.
  *
  * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
  * runtime. If masking is enabled but the replay module is not available, no screenshot is captured
@@ -16,8 +16,8 @@ import io.sentry.SentryMaskingOptions;
 public final class SentryScreenshotOptions extends SentryMaskingOptions {
 
   public SentryScreenshotOptions() {
-    // Default to NO masking until next major version.
-    // maskViewClasses starts empty, so nothing is masked by default.
+    setMaskAllText(true);
+    setMaskAllImages(true);
   }
 
   @Override

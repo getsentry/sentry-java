@@ -13,6 +13,7 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.util.LazyEvaluator
+import io.sentry.util.LoadClass
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
@@ -109,7 +110,6 @@ class AndroidProfilerTest {
     context = ApplicationProvider.getApplicationContext()
     val buildInfoProvider = BuildInfoProvider(fixture.mockLogger)
     val loadClass = LoadClass()
-    val activityFramesTracker = ActivityFramesTracker(loadClass, fixture.options)
     AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
       fixture.options,
       context,
@@ -122,7 +122,6 @@ class AndroidProfilerTest {
       fixture.options,
       buildInfoProvider,
       loadClass,
-      activityFramesTracker,
       false,
       false,
       false,
@@ -134,7 +133,6 @@ class AndroidProfilerTest {
       context,
       buildInfoProvider,
       loadClass,
-      activityFramesTracker,
       false,
     )
     // Profiler doesn't start if the folder doesn't exists.

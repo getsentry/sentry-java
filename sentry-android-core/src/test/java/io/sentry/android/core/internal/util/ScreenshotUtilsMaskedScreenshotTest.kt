@@ -36,6 +36,9 @@ class ScreenshotUtilsMaskedScreenshotTest {
       SentryAndroidOptions().apply {
         dsn = "https://key@sentry.io/proj"
         threadChecker = this@Fixture.threadChecker
+        // Tests opt in to masking, so they also run without sentry-android-replay.
+        screenshot.setMaskAllText(false)
+        screenshot.setMaskAllImages(false)
       }
     val buildInfoProvider = BuildInfoProvider(options.logger)
 

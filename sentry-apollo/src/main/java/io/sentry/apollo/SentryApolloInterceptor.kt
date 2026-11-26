@@ -144,7 +144,7 @@ class SentryApolloInterceptor(
   private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
     val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-    if (attachTracingHeaders && scopes.options.isTraceSampling && !isIgnored()) {
+    if (attachTracingHeaders && !isIgnored()) {
       // we have no access to URI, no way to verify tracing origins
       TracingUtils.trace(
           scopes,
@@ -164,7 +164,7 @@ class SentryApolloInterceptor(
   }
 
   private fun isIgnored(): Boolean =
-    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN)
 
   private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
     val operation = request.operation.name().name()

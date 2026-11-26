@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.view.Choreographer;
 import android.view.FrameMetrics;
 import android.view.Window;
-import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
@@ -22,6 +21,7 @@ import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryFramesDelayResult;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -68,7 +68,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final @NotNull ConcurrentSkipListSet<DelayedFrame> delayedFrames =
       new ConcurrentSkipListSet<>();
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -76,7 +75,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, options, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,
@@ -84,7 +82,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, logger, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
+  @SuppressLint("DiscouragedPrivateApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -113,10 +111,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (!(appContext instanceof Application)) {
       return;
     }
-    // FrameMetrics api is only available since sdk version N
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-      return;
-    }
     isAvailable = true;
 
     // The frame metrics HandlerThread is started by prepare() or the first startCollection() call,
@@ -136,6 +130,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           try {
             choreographer = Choreographer.getInstance();
           } catch (Throwable e) {
+            // The first call creates the Choreographer, which connects to the display's vsync
+            // through native code, so we can't know what it throws. Slow and frozen frames are not
+            // reported.
+            ExceptionUtils.rethrowIfFatal(e);
             logger.log(
                 SentryLevel.ERROR,
                 "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
@@ -240,7 +238,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
    * Return time spent on the main thread (cpu) for frame creation. It doesn't consider time spent
    * on the render thread (gpu).
    */
-  @RequiresApi(api = Build.VERSION_CODES.N)
   private long getFrameCpuDuration(final @NotNull FrameMetrics frameMetrics) {
     // Inspired by JankStats
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt;l=74-79;drc=1de6215c6bd9e887e3d94556e9ac55cfb7b8c797
@@ -355,7 +352,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
   }
 
-  @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
     new Handler(Looper.getMainLooper())
         .post(() -> {
@@ -367,6 +363,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                   window, frameMetricsAvailableListener);
             }
           } catch (Throwable e) {
+            // The window hands the listener to its native renderer, so we can't know what this
+            // throws. The listener may stay attached until the window is gone.
+            ExceptionUtils.rethrowIfFatal(e);
             logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
           }
         });
@@ -381,7 +380,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     trackCurrentWindow();
   }
 
-  @SuppressLint("NewApi")
   private void trackCurrentWindow() {
     // read the volatile field once: onActivityStopped may null it concurrently
     final @Nullable WeakReference<Window> windowRef = currentWindow;
@@ -403,6 +401,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                 windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
                     window, frameMetricsAvailableListener, handler);
               } catch (Throwable e) {
+                // The window hands the listener to its native renderer, so we can't know what this
+                // throws, e.g. for a window that isn't hardware accelerated. Frames of this window
+                // are not measured.
+                ExceptionUtils.rethrowIfFatal(e);
                 logger.log(SentryLevel.ERROR, "Failed to add frameMetricsAvailableListener", e);
               }
             }
@@ -540,7 +542,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @ApiStatus.Internal
   public interface WindowFrameMetricsManager {
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void addOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
@@ -551,7 +552,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       window.addOnFrameMetricsAvailableListener(frameMetricsAvailableListener, handler);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void removeOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener) {

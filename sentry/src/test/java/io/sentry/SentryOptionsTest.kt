@@ -10,6 +10,7 @@ import io.sentry.util.LazyEvaluator
 import io.sentry.util.StringUtils
 import java.io.File
 import java.net.Proxy
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -309,6 +310,11 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `traceOptionsRequests defaults to false`() {
+    assertThat(SentryOptions().isTraceOptionsRequests).isFalse()
+  }
+
+  @Test
   fun `when there's no cacheDirPath, outboxPath returns null`() {
     val options = SentryOptions()
     assertNull(options.outboxPath)
@@ -565,7 +571,11 @@ class SentryOptionsTest {
     externalOptions.isSendModules = false
     externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
     externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
+    externalOptions.traceIgnoreStatusCodes =
+      listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
+    externalOptions.ignoredErrorsForDeduplication =
+      listOf("example.FirstException", "example.SecondException")
     externalOptions.isEnableBackpressureHandling = false
     externalOptions.isEnableDatabaseTransactionTracing = true
     externalOptions.isEnableCacheTracing = true
@@ -583,8 +593,6 @@ class SentryOptionsTest {
     externalOptions.isEnableSpotlight = true
     externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
     externalOptions.isGlobalHubMode = true
-    externalOptions.isEnableLogs = true
-    externalOptions.isEnableMetrics = false
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
     externalOptions.profileLifecycle = ProfileLifecycle.TRACE
@@ -623,14 +631,22 @@ class SentryOptionsTest {
     assertFalse(options.isEnabled)
     assertFalse(options.isEnablePrettySerializationOutput)
     assertFalse(options.isSendModules)
-    assertEquals(listOf(FilterString("slug1"), FilterString("slug-B")), options.ignoredCheckIns)
+    assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
     assertEquals(
-      listOf(FilterString("transactionName1"), FilterString("transaction-name-B")),
+      listOf("transactionName1", "transaction-name-B"),
       options.ignoredTransactions,
     )
+    assertThat(options.traceIgnoreStatusCodes).hasSize(2)
+    assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!![1].isInRange(500)).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()
     assertEquals(
-      listOf(FilterString("Some error"), FilterString("Another .*")),
+      listOf("Some error", "Another .*"),
       options.ignoredErrors,
+    )
+    assertEquals(
+      listOf("example.FirstException", "example.SecondException"),
+      options.ignoredErrorsForDeduplication,
     )
     assertFalse(options.isEnableBackpressureHandling)
     assertTrue(options.isEnableDatabaseTransactionTracing)
@@ -647,8 +663,6 @@ class SentryOptionsTest {
     assertTrue(options.isEnableSpotlight)
     assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
     assertTrue(options.isGlobalHubMode!!)
-    assertTrue(options.logs.isEnabled!!)
-    assertFalse(options.metrics.isEnabled)
     assertEquals(0.8, options.profileSessionSampleRate)
     assertEquals("/profiling-traces${File.separator}${hash}", options.profilingTracesDirPath)
     assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
@@ -660,14 +674,6 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.merge(externalOptions)
     assertTrue(options.isEnableUncaughtExceptionHandler)
-  }
-
-  @Test
-  fun `merging options when enableMetrics is not set preserves the default value`() {
-    val externalOptions = ExternalOptions()
-    val options = SentryOptions()
-    options.merge(externalOptions)
-    assertTrue(options.metrics.isEnabled)
   }
 
   @Test
@@ -902,11 +908,6 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `when options are initialized, metrics is enabled by default`() {
-    assertTrue(SentryOptions().metrics.isEnabled)
-  }
-
-  @Test
   fun `when options are initialized, enableSpotlight is set to false by default`() {
     assertFalse(SentryOptions().isEnableSpotlight)
   }
@@ -1062,12 +1063,216 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `ignored errors for deduplication contains Netty timeout exceptions by default`() {
+    assertThat(SentryOptions().ignoredErrorsForDeduplication)
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `ignored errors for deduplication can be replaced and extended`() {
+    val options = SentryOptions()
+
+    options.setIgnoredErrorsForDeduplication(listOf("example.FirstException", ""))
+    options.addIgnoredErrorForDeduplication("example.SecondException")
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly("example.FirstException", "example.SecondException")
+      .inOrder()
+    assertThat(options.ignoredErrorFiltersForDeduplication)
+      .containsExactly(
+        FilterString("example.FirstException"),
+        FilterString("example.SecondException"),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `ignored errors for deduplication getter returns a copy`() {
+    val options = SentryOptions()
+    options.setIgnoredErrorsForDeduplication(listOf("example.FirstException"))
+
+    options.ignoredErrorsForDeduplication!!.clear()
+
+    assertThat(options.ignoredErrorsForDeduplication).containsExactly("example.FirstException")
+  }
+
+  @Test
+  fun `ignored errors for deduplication getters return null when unset`() {
+    val options = SentryOptions()
+    options.setIgnoredErrorsForDeduplication(null)
+
+    assertThat(options.ignoredErrorsForDeduplication).isNull()
+    assertThat(options.ignoredErrorFiltersForDeduplication).isNull()
+  }
+
+  @Test
+  fun `merging options without ignored errors for deduplication preserves the default`() {
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `merging ignored errors for deduplication replaces the default`() {
+    val options = SentryOptions()
+    val externalOptions =
+      ExternalOptions().apply {
+        ignoredErrorsForDeduplication = listOf("example.FirstException", "example.SecondException")
+      }
+
+    options.merge(externalOptions)
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly("example.FirstException", "example.SecondException")
+      .inOrder()
+  }
+
+  @Test
+  fun `merging empty ignored errors for deduplication removes the default`() {
+    val options = SentryOptions()
+    val externalOptions = ExternalOptions().apply { ignoredErrorsForDeduplication = listOf("") }
+
+    options.merge(externalOptions)
+
+    assertThat(options.ignoredErrorsForDeduplication).isEmpty()
+  }
+
+  @Test
+  fun `ignored filter getters return the strings that were set`() {
+    val options = SentryOptions()
+    options.ignoredErrors = listOf("error", "")
+    options.ignoredTransactions = listOf("transaction.*")
+    options.ignoredCheckIns = listOf("slug")
+    options.ignoredSpanOrigins = listOf("auto.http.*")
+    options.addIgnoredSpanOrigin("manual")
+
+    assertEquals(listOf("error"), options.ignoredErrors)
+    assertEquals(listOf("transaction.*"), options.ignoredTransactions)
+    assertEquals(listOf("slug"), options.ignoredCheckIns)
+    assertEquals(listOf("auto.http.*", "manual"), options.ignoredSpanOrigins)
+
+    assertEquals(listOf(FilterString("error")), options.ignoredErrorFilters)
+    assertEquals(listOf(FilterString("transaction.*")), options.ignoredTransactionFilters)
+    assertEquals(listOf(FilterString("slug")), options.ignoredCheckInFilters)
+    assertEquals(
+      listOf(FilterString("auto.http.*"), FilterString("manual")),
+      options.ignoredSpanOriginFilters,
+    )
+  }
+
+  @Test
+  fun `ignored filter getters return null when unset`() {
+    val options = SentryOptions()
+    assertNull(options.ignoredErrors)
+    assertNull(options.ignoredTransactions)
+    assertNull(options.ignoredCheckIns)
+    assertNull(options.ignoredSpanOrigins)
+  }
+
+  @Test
+  fun `ignored server HTTP status codes for tracing use the defaults`() {
+    val ranges = SentryOptions().traceIgnoreStatusCodes!!
+
+    assertThat(ranges).isInstanceOf(CopyOnWriteArrayList::class.java)
+    assertThat(ranges).hasSize(3)
+    listOf(301, 305, 399, 401, 404).forEach {
+      assertThat(ranges.any { range -> range.isInRange(it) }).isTrue()
+    }
+    listOf(300, 302, 303, 304, 400, 405).forEach {
+      assertThat(ranges.any { range -> range.isInRange(it) }).isFalse()
+    }
+  }
+
+  @Test
+  fun `default ignored server HTTP status code lists are independent`() {
+    val first = SentryOptions().traceIgnoreStatusCodes!!
+    val second = SentryOptions().traceIgnoreStatusCodes!!
+
+    first.clear()
+
+    assertThat(second).hasSize(3)
+    assertThat(second.any { it.isInRange(301) }).isTrue()
+    assertThat(second.any { it.isInRange(404) }).isTrue()
+  }
+
+  @Test
+  fun `ignored server HTTP status code iteration uses a stable snapshot`() {
+    val ranges = SentryOptions().traceIgnoreStatusCodes!!
+    val iterator = ranges.iterator()
+
+    ranges.clear()
+
+    assertThat(iterator.asSequence().toList()).hasSize(3)
+  }
+
+  @Test
+  fun `ignored server HTTP status code setter preserves null, empty and custom ranges`() {
+    val options = SentryOptions()
+
+    options.traceIgnoreStatusCodes = null
+    assertThat(options.traceIgnoreStatusCodes).isNull()
+
+    options.traceIgnoreStatusCodes = emptyList()
+    assertThat(options.traceIgnoreStatusCodes).isEmpty()
+
+    options.traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
+    assertThat(options.traceIgnoreStatusCodes).isInstanceOf(CopyOnWriteArrayList::class.java)
+    assertThat(options.traceIgnoreStatusCodes).hasSize(2)
+    assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()
+  }
+
+  @Test
+  fun `merging empty ignored server HTTP status codes clears the default`() {
+    val externalOptions = ExternalOptions()
+    externalOptions.traceIgnoreStatusCodes = emptyList()
+    val options = SentryOptions()
+
+    options.merge(externalOptions)
+
+    assertThat(options.traceIgnoreStatusCodes).isEmpty()
+  }
+
+  @Test
+  fun `merging options when ignored server HTTP status codes are not set preserves previous value`() {
+    val options = SentryOptions()
+    options.traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(410))
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.traceIgnoreStatusCodes).hasSize(1)
+    assertThat(options.traceIgnoreStatusCodes!![0].isInRange(410)).isTrue()
+  }
+
+  @Test
+  fun `merging options when ignored server HTTP status codes are not set preserves default`() {
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.traceIgnoreStatusCodes).hasSize(3)
+    assertThat(options.traceIgnoreStatusCodes!!.any { it.isInRange(301) }).isTrue()
+    assertThat(options.traceIgnoreStatusCodes!!.any { it.isInRange(404) }).isTrue()
+  }
+
+  @Test
   fun `merging options when ignoredErrors is not set preserves the previous value`() {
     val externalOptions = ExternalOptions()
     val options = SentryOptions()
     options.setIgnoredErrors(listOf("error1", "error2"))
     options.merge(externalOptions)
-    assertEquals(listOf(FilterString("error1"), FilterString("error2")), options.ignoredErrors)
+    assertEquals(listOf("error1", "error2"), options.ignoredErrors)
   }
 
   @Test
@@ -1077,7 +1282,7 @@ class SentryOptionsTest {
     options.setIgnoredTransactions(listOf("transaction1", "transaction2"))
     options.merge(externalOptions)
     assertEquals(
-      listOf(FilterString("transaction1"), FilterString("transaction2")),
+      listOf("transaction1", "transaction2"),
       options.ignoredTransactions,
     )
   }
@@ -1089,7 +1294,7 @@ class SentryOptionsTest {
     options.setIgnoredCheckIns(listOf("checkin1", "checkin2"))
     options.merge(externalOptions)
     assertEquals(
-      listOf(FilterString("checkin1"), FilterString("checkin2")),
+      listOf("checkin1", "checkin2"),
       options.ignoredCheckIns,
     )
   }

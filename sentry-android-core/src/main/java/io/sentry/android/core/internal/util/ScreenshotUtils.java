@@ -15,6 +15,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.thread.IThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -41,7 +42,7 @@ public final class ScreenshotUtils {
   // Lint infers a UI-thread constraint from the View calls in captureScreenshot, which clashes with
   // Bitmap.compress's @WorkerThread. captureScreenshot is safe from any thread, as it posts the
   // view draw to the UI thread when it isn't already on it.
-  @SuppressLint({"NewApi", "ThreadConstraint"})
+  @SuppressLint("ThreadConstraint")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IThreadChecker threadChecker,
@@ -88,7 +89,7 @@ public final class ScreenshotUtils {
     final boolean isMaskingConfigured = !options.getScreenshot().getMaskViewClasses().isEmpty();
     if (isMaskingConfigured && !isReplayAvailable) {
       options
-          .getLogger()
+          .getFatalLogger()
           .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
       return null;
     }
@@ -251,6 +252,9 @@ public final class ScreenshotUtils {
       // screenshot png is around ~100-150 kb
       return byteArrayOutputStream.toByteArray();
     } catch (Throwable e) {
+      // compress() runs the native image encoder, so we can't know what it throws. No screenshot is
+      // attached.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Compressing bitmap failed.", e);
     }
     return null;

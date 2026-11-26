@@ -7,6 +7,7 @@ import static io.sentry.SentryLevel.INFO;
 import io.sentry.JsonDeserializer;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.ExceptionUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -46,6 +47,9 @@ public final class CacheUtils {
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       options.getSerializer().serialize(entity, writer);
     } catch (Throwable e) {
+      // Scope values can hold arbitrary app objects that are serialized reflectively, so we can't
+      // know what this throws. The value is not persisted for the next launch.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(ERROR, e, "Error persisting entity: %s", fileName);
     }
   }
@@ -89,6 +93,9 @@ public final class CacheUtils {
           return options.getSerializer().deserializeCollection(reader, clazz, elementDeserializer);
         }
       } catch (Throwable e) {
+        // The file was written by an earlier launch, possibly an older SDK version, and may be
+        // corrupt, so we can't know what deserializing it throws. The value is treated as absent.
+        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(ERROR, e, "Error reading entity from scope cache: %s", fileName);
       }
     } else {

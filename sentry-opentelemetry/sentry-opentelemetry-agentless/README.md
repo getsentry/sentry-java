@@ -29,7 +29,7 @@ Alternatively you can initialize OpenTelemetry programmatically like this:
 
 ```java
 // Initialize OpenTelemetry by using the AutoConfiguredOpenTelemetrySdk which automatically
-// registers the `SentrySpanProcessor` and `SentryPropagator` and others.
+// registers the `OtelSentrySpanProcessor` and `OtelSentryPropagator` and others.
 // Also, you need to disable the OTEL exporters if you do not use them.
 AutoConfiguredOpenTelemetrySdk.builder()
   .setResultAsGlobal()

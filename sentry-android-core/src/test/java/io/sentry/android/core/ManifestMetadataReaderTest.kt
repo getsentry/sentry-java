@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import io.sentry.FilterString
 import io.sentry.HttpBodyType
 import io.sentry.ILogger
 import io.sentry.KeyValueCollectionBehavior
@@ -436,7 +435,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertEquals(false, fixture.options.isTombstoneEnabled)
+    assertEquals(true, fixture.options.isTombstoneEnabled)
   }
 
   @Test
@@ -1032,31 +1031,6 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertTrue(fixture.options.isEnableActivityLifecycleTracingAutoFinish)
-  }
-
-  @Test
-  fun `applyMetadata reads traceSampling to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to false)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertFalse(fixture.options.isTraceSampling)
-  }
-
-  @Test
-  fun `applyMetadata reads traceSampling to options and keeps default`() {
-    // Arrange
-    val context = fixture.getContext()
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.isTraceSampling)
   }
 
   @Test
@@ -1828,32 +1802,8 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads performance-v2 flag to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to false)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertFalse(fixture.options.isEnablePerformanceV2)
-  }
-
-  @Test
-  fun `applyMetadata reads performance-v2 flag to options and keeps default if not found`() {
-    // Arrange
-    val context = fixture.getContext()
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.isEnablePerformanceV2)
-  }
-
-  @Test
   fun `applyMetadata reads standalone app start tracing flag to options`() {
+    fixture.options.isEnableStandaloneAppStartTracing = false
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to true)
     val context = fixture.getContext(metaData = bundle)
 
@@ -1864,7 +1814,6 @@ class ManifestMetadataReaderTest {
 
   @Test
   fun `applyMetadata reads standalone app start tracing false to options`() {
-    fixture.options.isEnableStandaloneAppStartTracing = true
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to false)
     val context = fixture.getContext(metaData = bundle)
 
@@ -1879,7 +1828,7 @@ class ManifestMetadataReaderTest {
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertFalse(fixture.options.isEnableStandaloneAppStartTracing)
+    assertTrue(fixture.options.isEnableStandaloneAppStartTracing)
   }
 
   @Test
@@ -2135,9 +2084,49 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertEquals(
-      listOf(FilterString("Some error"), FilterString("Another .*")),
+      listOf("Some error", "Another .*"),
       fixture.options.ignoredErrors,
     )
+  }
+
+  @Test
+  fun `applyMetadata reads ignored errors for deduplication if found`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.IGNORED_ERRORS_FOR_DEDUPLICATION to
+          "example.FirstException,example.SecondException",
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication)
+      .containsExactly("example.FirstException", "example.SecondException")
+      .inOrder()
+  }
+
+  @Test
+  fun `applyMetadata preserves default ignored errors for deduplication if missing`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication)
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `applyMetadata empty ignored errors for deduplication removes the default`() {
+    val bundle = bundleOf(ManifestMetadataReader.IGNORED_ERRORS_FOR_DEDUPLICATION to "")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication).isEmpty()
   }
 
   @Test
@@ -2203,66 +2192,52 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads logs enabled and keep default value if not found`() {
-    // Arrange
+  fun `applyMetadata keeps Timber log capture disabled if not found`() {
     val context = fixture.getContext()
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertFalse(fixture.options.logs.isEnabled)
+    assertFalse(fixture.options.timberLogCaptureEnabled)
   }
 
   @Test
-  fun `applyMetadata reads logs enabled to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGS to true)
+  fun `applyMetadata reads Timber log capture enabled to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.TIMBER_LOG_CAPTURE_ENABLED to true)
     val context = fixture.getContext(metaData = bundle)
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertTrue(fixture.options.logs.isEnabled)
+    assertTrue(fixture.options.timberLogCaptureEnabled)
   }
 
   @Test
-  fun `applyMetadata reads metrics enabled and keep default value if not found`() {
-    // Arrange
+  fun `applyMetadata keeps Logcat log capture disabled if not found`() {
     val context = fixture.getContext()
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertTrue(fixture.options.metrics.isEnabled)
+    assertThat(fixture.options.logcatLogCaptureEnabled).isFalse()
   }
 
   @Test
-  fun `applyMetadata reads metrics enabled to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to false)
+  fun `applyMetadata reads Logcat log capture enabled to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED to true)
     val context = fixture.getContext(metaData = bundle)
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertFalse(fixture.options.metrics.isEnabled)
+    assertThat(fixture.options.logcatLogCaptureEnabled).isTrue()
   }
 
   @Test
-  fun `applyMetadata reads metrics enabled to options when set to true`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
+  fun `applyMetadata reads Logcat log capture disabled to options`() {
+    fixture.options.logcatLogCaptureEnabled = true
+    val bundle = bundleOf(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED to false)
     val context = fixture.getContext(metaData = bundle)
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertTrue(fixture.options.metrics.isEnabled)
+    assertThat(fixture.options.logcatLogCaptureEnabled).isFalse()
   }
 
   @Test
@@ -2910,33 +2885,8 @@ class ManifestMetadataReaderTest {
   @Test
   fun `applyMetadata reads screenshot mask-all-text to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to true)
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to false)
     val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
-  }
-
-  @Test
-  fun `applyMetadata reads screenshot mask-all-images to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to true)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
-  }
-
-  @Test
-  fun `applyMetadata without specifying screenshot mask-all-text, stays false`() {
-    // Arrange
-    val context = fixture.getContext()
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
@@ -2946,7 +2896,20 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata without specifying screenshot mask-all-images, stays false`() {
+  fun `applyMetadata reads screenshot mask-all-images to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-text, stays true`() {
     // Arrange
     val context = fixture.getContext()
 
@@ -2954,7 +2917,19 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-images, stays true`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
   }
 
   @Test

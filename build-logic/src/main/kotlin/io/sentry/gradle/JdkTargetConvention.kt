@@ -13,27 +13,40 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
 private val BUILD_JDK = JavaLanguageVersion.of(21)
 
-/** The level the SDK publishes, so that Java 8 consumers can still use it. */
-private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_1_8
+/** The level the SDK publishes. */
+private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_11
+
+/**
+ * The Kotlin language and API version the SDK publishes. A Kotlin compiler reads metadata up to one
+ * version newer than its own, so apps that compile Kotlin need Kotlin 2.0 or newer.
+ */
+private val PUBLISHED_KOTLIN_VERSION = KotlinVersion.KOTLIN_2_1
 
 /**
  * Holds every toolchain, bytecode level decision and compilation option of a module. It does the
  * following
  * - sample apps target the build JDK (21)
  * - unit test code will target the build JDK (21) (required for Mockito 5)
- * - published JVM modules main code pins the Java 1.8 release, for Java and for Kotlin
+ * - published JVM modules main code pins the Java 11 release, for Java and for Kotlin
  * - published modules Java code drops the MethodParameters attribute javac 21 adds, and their
  *   archives are checked for it
- * - published Android modules main code targets Java 1.8
+ * - published Android modules main code targets Java 11
  * - minSdk is set for Android libraries
  * - javac warnings fail the build
+ * - Kotlin module names stay the project name
+ * - published modules main code compiles Kotlin with the published language/API version
+ * - Kotlin doesn't warn about the deprecated language/API version the SDK targets
  */
 class JdkTargetConvention : Plugin<Project> {
   override fun apply(project: Project) {
@@ -89,7 +102,7 @@ class JdkTargetConvention : Plugin<Project> {
         }
       }
       // -Xjdk-release is the Kotlin counterpart of release: without it Kotlin resolves against the
-      // build JDK and happily compiles e.g. Files.readString() into Java 8 bytecode. The version
+      // build JDK and happily compiles e.g. Stream.toList() into Java 11 bytecode. The version
       // follows jvmTarget, which the modules that publish a higher level set themselves.
       project.plugins.withId("org.jetbrains.kotlin.jvm") {
         project.tasks.named("compileKotlin", KotlinJvmCompile::class.java) {
@@ -112,6 +125,55 @@ class JdkTargetConvention : Plugin<Project> {
     listOf("com.android.library", "com.android.application").forEach { pluginId ->
       project.plugins.withId(pluginId) { project.targetBuildJdkForUnitTests() }
     }
+
+    project.keepKotlinModuleNameWithoutGroup()
+
+    // Test code isn't published, so it keeps the compiler's default and may use newer features.
+    project.plugins.withId("com.vanniktech.maven.publish") {
+      project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
+        if (!name.contains("Test")) {
+          compilerOptions.languageVersion.set(PUBLISHED_KOTLIN_VERSION)
+          compilerOptions.apiVersion.set(PUBLISHED_KOTLIN_VERSION)
+        }
+      }
+    }
+
+    // The SDK targets the oldest language/API version its consumers' Kotlin can read, which newer
+    // compilers deprecate. That's deliberate, so the warning on every compilation is noise.
+    project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
+      compilerOptions.freeCompilerArgs.add("-Xsuppress-version-warnings")
+    }
+  }
+
+  /**
+   * KGP 2.4 prefixes the Kotlin module name with the group, e.g. `io.sentry:sentry-okhttp`. R8 copies
+   * that name into the names of the `.kotlin_module` entries it writes under `META-INF`, and app
+   * bundles reject the colon, so the module name stays the project name, as before KGP 2.4.
+   *
+   * - Group prefix: https://youtrack.jetbrains.com/issue/KT-69701
+   * - R8 bug: https://issuetracker.google.com/issues/543685256
+   */
+  private fun Project.keepKotlinModuleNameWithoutGroup() {
+    val moduleName = name
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+      extensions.getByType(KotlinJvmProjectExtension::class.java).compilerOptions.moduleName.set(
+        moduleName
+      )
+    }
+    plugins.withId("org.jetbrains.kotlin.android") {
+      extensions.getByType(KotlinAndroidProjectExtension::class.java).compilerOptions.moduleName.set(
+        moduleName
+      )
+    }
+    plugins.withId("org.jetbrains.kotlin.multiplatform") {
+      val targets = extensions.getByType(KotlinMultiplatformExtension::class.java).targets
+      targets.withType(KotlinJvmTarget::class.java).configureEach {
+        compilerOptions.moduleName.set(moduleName)
+      }
+      targets.withType(KotlinAndroidTarget::class.java).configureEach {
+        compilerOptions.moduleName.set(moduleName)
+      }
+    }
   }
 
   private fun Project.minSdk(): Int =
@@ -124,8 +186,8 @@ class JdkTargetConvention : Plugin<Project> {
       .toInt()
 
   /**
-   * Mockito 5 and mockito-kotlin 6 are built for Java 11, so test code - which is never published -
-   * cannot share the Java 8 target of the main code. AGP has no per variant compileOptions, so this
+   * Test code - which is never published - targets the build JDK, as it does in the JVM modules,
+   * instead of the Java 11 target of the main code. AGP has no per variant compileOptions, so this
    * goes through the Kotlin compilations: their compile task providers are configured after AGP
    * wrote its own compileOptions, which an apply time configureEach would lose against.
    */

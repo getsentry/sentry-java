@@ -41,7 +41,6 @@ class OtlpEndToEndTest {
   fun `an event inside an OpenTelemetry span is linked to it`() {
     initForTest {
       it.dsn = server.dsn
-      it.logs.isEnabled = true
       it.addEventProcessor(OpenTelemetryOtlpEventProcessor())
     }
 

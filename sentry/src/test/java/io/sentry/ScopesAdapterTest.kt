@@ -96,13 +96,6 @@ class ScopesAdapterTest {
   }
 
   @Test
-  fun `captureUserFeedback calls Scopes`() {
-    val userFeedback = mock<UserFeedback>()
-    ScopesAdapter.getInstance().captureUserFeedback(userFeedback)
-    verify(scopes).captureUserFeedback(eq(userFeedback))
-  }
-
-  @Test
   fun `captureCheckIn calls Scopes`() {
     val checkIn = mock<CheckIn>()
     ScopesAdapter.getInstance().captureCheckIn(checkIn)
@@ -217,12 +210,6 @@ class ScopesAdapterTest {
   }
 
   @Test
-  fun `popScope calls Scopes`() {
-    ScopesAdapter.getInstance().popScope()
-    verify(scopes).popScope()
-  }
-
-  @Test
   fun `withScope calls Scopes`() {
     val scopeCallback = mock<ScopeCallback>()
     ScopesAdapter.getInstance().withScope(scopeCallback)
@@ -247,12 +234,6 @@ class ScopesAdapterTest {
   fun `flush calls Scopes`() {
     ScopesAdapter.getInstance().flush(1)
     verify(scopes).flush(eq(1))
-  }
-
-  @Test
-  fun `clone calls Scopes`() {
-    ScopesAdapter.getInstance().clone()
-    verify(scopes).clone()
   }
 
   @Test

@@ -130,6 +130,9 @@ public final class PerfettoProfiler {
           Runnable::run,
           this::onProfilingResult);
     } catch (Throwable e) {
+      // A Binder call into the profiling service, which can rethrow any runtime exception from
+      // the other side. This chunk is not profiled.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Failed to request Profiling.", e);
       // No profiling was requested, so a late result from the OS must not write into the record
       this.chunkRecord = null;

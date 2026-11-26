@@ -16,6 +16,7 @@ import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
@@ -151,6 +152,9 @@ public final class MetricsApi implements IMetricsApi {
 
       scopes.getClient().captureMetric(metricsEvent, combinedScope, params.getHint());
     } catch (Throwable e) {
+      // A public API entry point whose capture runs integration and app code, such as event
+      // processors, so we can't know what it throws. The metric is dropped.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing metrics event", e);
     }
   }

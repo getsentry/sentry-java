@@ -10,7 +10,6 @@ import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
-import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
 import io.sentry.NoOpScopesLifecycleToken;
 import io.sentry.NoOpSpan;
@@ -145,7 +144,7 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
-    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+    return startChild(operation, description, timestamp, new SpanOptions());
   }
 
   @Override
@@ -153,35 +152,10 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter) {
-    final @NotNull SpanContext spanContext =
-        context.copyForChild(operation, getSpanContext().getSpanId(), null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setStartTimestamp(timestamp);
-
-    return startChild(spanContext, spanOptions);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions) {
-    if (timestamp != null) {
-      spanOptions.setStartTimestamp(timestamp);
-    }
-
-    final @NotNull SpanContext spanContext =
-        context.copyForChild(operation, getSpanContext().getSpanId(), null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
-    return startChild(spanContext, spanOptions);
+    final @NotNull SpanOptions spanOptionsSnapshot = new SpanOptions(spanOptions);
+    spanOptionsSnapshot.setStartTimestamp(timestamp);
+    return startChild(operation, description, spanOptionsSnapshot);
   }
 
   @Override
@@ -218,12 +192,10 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   @Override
   public @Nullable TraceContext traceContext() {
-    if (scopes.getOptions().isTraceSampling()) {
-      final @Nullable Baggage baggage = context.getBaggage();
-      if (baggage != null) {
-        updateBaggageValues(baggage);
-        return baggage.toTraceContext();
-      }
+    final @Nullable Baggage baggage = context.getBaggage();
+    if (baggage != null) {
+      updateBaggageValues(baggage);
+      return baggage.toTraceContext();
     }
     return null;
   }
@@ -256,12 +228,10 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    if (scopes.getOptions().isTraceSampling()) {
-      final @Nullable Baggage baggage = context.getBaggage();
-      if (baggage != null) {
-        updateBaggageValues(baggage);
-        return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
-      }
+    final @Nullable Baggage baggage = context.getBaggage();
+    if (baggage != null) {
+      updateBaggageValues(baggage);
+      return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
     }
     return null;
   }

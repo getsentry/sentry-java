@@ -1,6 +1,5 @@
 package io.sentry.android.core.internal.util;
 
-import android.annotation.SuppressLint;
 import android.content.ContentProvider;
 import android.os.Build;
 import io.sentry.NoOpLogger;
@@ -42,7 +41,6 @@ public final class ContentProviderSecurityChecker {
    * <p>The vulnerability is specific to un-patched versions of Android 8 and 9 (API 26 to 28).
    * Therefore, this security check is limited to those versions to mitigate risk of regression.
    */
-  @SuppressLint("NewApi")
   public void checkPrivilegeEscalation(@NotNull ContentProvider contentProvider) {
     final int sdkVersion = buildInfoProvider.getSdkInfoVersion();
     if (sdkVersion >= Build.VERSION_CODES.O && sdkVersion <= Build.VERSION_CODES.P) {

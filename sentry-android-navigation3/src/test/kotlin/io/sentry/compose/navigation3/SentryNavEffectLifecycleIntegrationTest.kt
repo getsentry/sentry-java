@@ -35,7 +35,6 @@ import io.sentry.ScopeType
 import io.sentry.Scopes
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.android.core.ActivityFramesTracker
 import io.sentry.android.core.ActivityLifecycleIntegration
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.SentryAndroidOptions
@@ -1502,7 +1501,6 @@ class SentryNavEffectLifecycleIntegrationTest {
         ActivityLifecycleIntegration(
           TracedActivityApplication(application, tracedActivityClass),
           BuildInfoProvider(options.logger),
-          mock<ActivityFramesTracker>(),
         )
       integration.register(UiLoadRecordingScopes(scopes, uiLoadTransactions), options)
       activityLifecycleIntegration = integration

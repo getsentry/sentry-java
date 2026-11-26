@@ -32,7 +32,6 @@ import io.sentry.Session
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
-import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.Retryable
 import io.sentry.protocol.Feedback
@@ -40,6 +39,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.initForTest
+import io.sentry.userReportEnvelopeItem
 import io.sentry.util.HintUtils
 import java.io.File
 import java.time.LocalDateTime
@@ -95,10 +95,7 @@ class ClientReportTest {
         SentryEnvelopeItem.fromEvent(opts.serializer, SentryTransaction(transaction)),
         SentryEnvelopeItem.fromEvent(opts.serializer, SentryEvent()),
         SentryEnvelopeItem.fromSession(opts.serializer, Session("dis", User(), "env", "0.0.1")),
-        SentryEnvelopeItem.fromUserFeedback(
-          opts.serializer,
-          UserFeedback(SentryId(UUID.randomUUID())),
-        ),
+        userReportEnvelopeItem(),
         SentryEnvelopeItem.fromAttachment(
           opts.serializer,
           NoOpLogger.getInstance(),

@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
 
     super.onCreate(savedInstanceState)
     val outboxPath =
-      Sentry.getCurrentHub().options.outboxPath ?: throw RuntimeException("Outbox path is not set.")
+      Sentry.getCurrentScopes().options.outboxPath
+        ?: throw RuntimeException("Outbox path is not set.")
 
     requestPermissionLauncher =
       registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->

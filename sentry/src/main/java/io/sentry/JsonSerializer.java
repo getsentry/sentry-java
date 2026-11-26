@@ -37,6 +37,7 @@ import io.sentry.rrweb.RRWebInteractionMoveEvent;
 import io.sentry.rrweb.RRWebMetaEvent;
 import io.sentry.rrweb.RRWebSpanEvent;
 import io.sentry.rrweb.RRWebVideoEvent;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -143,7 +144,6 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
     deserializersByClass.put(User.class, new User.Deserializer());
     deserializersByClass.put(Geo.class, new Geo.Deserializer());
-    deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
     deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
     deserializersByClass.put(ViewHierarchyNode.class, new ViewHierarchyNode.Deserializer());
     deserializersByClass.put(ViewHierarchy.class, new ViewHierarchy.Deserializer());
@@ -169,6 +169,9 @@ public final class JsonSerializer implements ISerializer {
         return (T) jsonObjectReader.nextObjectOrNull();
       }
     } catch (Throwable e) {
+      // The JSON may be corrupt and the element deserializer is supplied by the caller, so we
+      // can't know what this throws. The collection is treated as absent.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
       return null;
     }
@@ -208,10 +211,16 @@ public final class JsonSerializer implements ISerializer {
 
   @Override
   public <T> void serialize(@NotNull T entity, @NotNull Writer writer) throws IOException {
+    serialize(entity, writer, true);
+  }
+
+  @Override
+  public <T> void serialize(@NotNull T entity, @NotNull Writer writer, boolean enableLogging)
+      throws IOException {
     Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
 
-    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+    if (enableLogging && options.getLogger().isEnabled(SentryLevel.DEBUG)) {
       String serialized = serializeToString(entity, options.isEnablePrettySerializationOutput());
       options.getLogger().log(SentryLevel.DEBUG, "Serializing object: %s", serialized);
     }

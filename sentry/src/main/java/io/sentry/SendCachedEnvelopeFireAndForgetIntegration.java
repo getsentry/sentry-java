@@ -4,6 +4,7 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.File;
@@ -158,6 +159,10 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
               sender.send();
             } catch (Throwable e) {
+              // The sender comes from a factory that integrations and the app can provide, and it
+              // deserializes and captures cached files, so we can't know what it throws. The
+              // cached events stay on disk for the next attempt.
+              ExceptionUtils.rethrowIfFatal(e);
               options.getLogger().log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
             }
           });
@@ -168,10 +173,6 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
               SentryLevel.ERROR,
               "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
               e);
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to call the executor. Cached events will not be sent", e);
     }
   }
 }

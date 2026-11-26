@@ -44,7 +44,7 @@ public final class TracingUtils {
       @Nullable List<String> thirdPartyBaggageHeaders,
       final @Nullable ISpan span) {
     final @NotNull SentryOptions sentryOptions = scopes.getOptions();
-    if (sentryOptions.isTraceSampling() && shouldAttachTracingHeaders(requestUrl, sentryOptions)) {
+    if (shouldAttachTracingHeaders(requestUrl, sentryOptions)) {
       return trace(scopes, thirdPartyBaggageHeaders, span);
     }
 
@@ -182,13 +182,8 @@ public final class TracingUtils {
     }
 
     for (final FilterString ignoredTransaction : ignoredTransactions) {
-
-      try {
-        if (ignoredTransaction.matches(transactionName)) {
-          return true;
-        }
-      } catch (Throwable t) {
-        // ignore invalid regex
+      if (ignoredTransaction.matches(transactionName)) {
+        return true;
       }
     }
 

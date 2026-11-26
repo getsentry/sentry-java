@@ -4,7 +4,6 @@ import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
@@ -53,7 +52,6 @@ public final class AndroidContinuousProfiler
   private final @Nullable String profilingTracesDirPath;
   private final int profilingTracesHz;
   private final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier;
-  private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isInitialized = false;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable AndroidProfiler profiler = null;
@@ -83,7 +81,6 @@ public final class AndroidContinuousProfiler
       final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
-    this.buildInfoProvider = buildInfoProvider;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
     this.executorServiceSupplier = executorServiceSupplier;
@@ -175,10 +172,6 @@ public final class AndroidContinuousProfiler
 
   private void start() {
     initScopes();
-
-    // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
-    // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;
 
     // Let's initialize trace folder and profiling interval
     init();
@@ -278,12 +271,6 @@ public final class AndroidContinuousProfiler
         // ids
         profilerId = SentryId.EMPTY_ID;
         chunkId = SentryId.EMPTY_ID;
-        return;
-      }
-
-      // onTransactionStart() is only available since Lollipop_MR1
-      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) {
         return;
       }
 

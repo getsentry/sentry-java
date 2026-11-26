@@ -9,7 +9,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import io.sentry.ISpan
-import io.sentry.Instrumenter
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SpanOptions
@@ -129,7 +128,6 @@ private fun recordCompositionSpan(
       OP_COMPOSITION_SPAN,
       tag,
       startTimestamp,
-      Instrumenter.SENTRY,
       SpanOptions().apply { origin = OP_TRACE_ORIGIN },
     )
     .run { finish(null, endTimestamp) }
@@ -154,7 +152,6 @@ private fun recordRenderSpan(
       OP_RENDER_SPAN,
       tag,
       startTimestamp,
-      Instrumenter.SENTRY,
       SpanOptions().apply { origin = OP_TRACE_ORIGIN },
     )
     .run { finish(null, endTimestamp) }
@@ -244,7 +241,6 @@ private class BucketSpans {
         operation,
         description,
         startTimestamp,
-        Instrumenter.SENTRY,
         SpanOptions().apply {
           origin = OP_TRACE_ORIGIN
           isTrimStart = true

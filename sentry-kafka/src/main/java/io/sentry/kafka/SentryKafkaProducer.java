@@ -10,6 +10,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.InvocationHandler;
@@ -186,6 +187,9 @@ public final class SentryKafkaProducer {
             span.setStatus(SpanStatus.OK);
           }
         } catch (Throwable t) {
+          // This runs on Kafka's I/O thread for every send, and a tracing failure must not reach
+          // the producer. The span finishes without a status, and the app's callback still runs.
+          ExceptionUtils.rethrowIfFatal(t);
           scopes
               .getOptions()
               .getLogger()
@@ -209,7 +213,7 @@ public final class SentryKafkaProducer {
     }
 
     private boolean isIgnored() {
-      return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), traceOrigin);
+      return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), traceOrigin);
     }
 
     private void maybeInjectHeaders(final @NotNull Headers headers, final @Nullable ISpan span) {
@@ -242,6 +246,10 @@ public final class SentryKafkaProducer {
                 .toString()
                 .getBytes(StandardCharsets.UTF_8));
       } catch (Throwable t) {
+        // The record and its headers come from the app, e.g. read-only headers of a record that
+        // was already sent, so we can't know what they throw. The record is sent without Sentry
+        // headers.
+        ExceptionUtils.rethrowIfFatal(t);
         scopes
             .getOptions()
             .getLogger()

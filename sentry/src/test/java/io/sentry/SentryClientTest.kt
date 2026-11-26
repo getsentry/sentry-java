@@ -89,6 +89,7 @@ class SentryClientTest {
     var loggerBatchProcessorFactory = mock<ILoggerBatchProcessorFactory>()
     var metricsBatchProcessor = mock<IMetricsBatchProcessor>()
     var metricsBatchProcessorFactory = mock<IMetricsBatchProcessorFactory>()
+    val logger = mock<ILogger>()
     val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
     val scopes = mock<IScopes>()
     val sentryTracer: SentryTracer
@@ -102,13 +103,12 @@ class SentryClientTest {
         isDebug = true
         setDiagnosticLevel(SentryLevel.DEBUG)
         setSerializer(JsonSerializer(this))
-        setLogger(mock())
+        setLogger(this@Fixture.logger)
         maxAttachmentSize = this@Fixture.maxAttachmentSize
         setTransportFactory(factory)
         logs.setLoggerBatchProcessorFactory(loggerBatchProcessorFactory)
         metrics.setMetricsBatchProcessorFactory(metricsBatchProcessorFactory)
         release = "0.0.1"
-        isTraceSampling = true
       }
 
     init {
@@ -156,11 +156,8 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when Logs and Metrics options are disabled, batch processors are still created`() {
-    val sut = fixture.getSut {
-      it.logs.isEnabled = false
-      it.metrics.isEnabled = false
-    }
+  fun `when client is created, batch processors are created`() {
+    val sut = fixture.getSut()
 
     verify(fixture.loggerBatchProcessorFactory).create(fixture.sentryOptions, sut)
     verify(fixture.metricsBatchProcessorFactory).create(fixture.sentryOptions, sut)
@@ -194,7 +191,7 @@ class SentryClientTest {
 
   @Test
   fun `when client is closed with isRestarting false, transport waits`() {
-    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
+    val sut = fixture.getSut()
     assertTrue(sut.isEnabled)
     sut.close(false)
     assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
@@ -208,7 +205,7 @@ class SentryClientTest {
 
   @Test
   fun `when client is closed with isRestarting true, transport does not wait`() {
-    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
+    val sut = fixture.getSut()
     assertTrue(sut.isEnabled)
     sut.close(true)
     verify(fixture.transport).flush(eq(0))
@@ -312,7 +309,6 @@ class SentryClientTest {
   @Test
   fun `when beforeSend captures a log, the nested log is dropped`() {
     val scope = createScope()
-    fixture.sentryOptions.logs.isEnabled = true
     lateinit var sut: SentryClient
     fixture.sentryOptions.setBeforeSend { e, _ ->
       sut.captureLog(
@@ -333,7 +329,6 @@ class SentryClientTest {
   @Test
   fun `when beforeSendLog logs again, the nested log is dropped and does not recurse`() {
     val scope = createScope()
-    fixture.sentryOptions.logs.isEnabled = true
     var invocations = 0
     lateinit var sut: SentryClient
     fixture.sentryOptions.logs.setBeforeSend { l ->
@@ -1039,66 +1034,6 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when captureUserFeedback with empty id, envelope is not sent`() {
-    val sut = fixture.getSut()
-
-    sut.captureUserFeedback(UserFeedback(SentryId.EMPTY_ID))
-
-    verify(fixture.transport, never()).send(any(), anyOrNull())
-  }
-
-  @Test
-  fun `when captureUserFeedback, envelope is sent`() {
-    val sut = fixture.getSut()
-
-    sut.captureUserFeedback(userFeedback)
-
-    verify(fixture.transport)
-      .send(
-        check { actual ->
-          assertEquals(userFeedback.eventId, actual.header.eventId)
-          assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
-
-          assertEquals(1, actual.items.count())
-          val item = actual.items.first()
-          assertEquals(SentryItemType.UserFeedback, item.header.type)
-          assertEquals("application/json", item.header.contentType)
-
-          assertEnvelopeItemDataForUserFeedback(item)
-        },
-      )
-  }
-
-  private fun assertEnvelopeItemDataForUserFeedback(item: SentryEnvelopeItem) {
-    val stream = ByteArrayOutputStream()
-    val writer = stream.bufferedWriter(Charset.forName("UTF-8"))
-    fixture.sentryOptions.serializer.serialize(userFeedback, writer)
-    val expectedData = stream.toByteArray()
-    assertTrue(Arrays.equals(expectedData, item.data))
-  }
-
-  @Test
-  fun `when captureUserFeedback and connection throws, log exception`() {
-    val sut = fixture.getSut()
-
-    val exception = IOException("No connection")
-    whenever(fixture.transport.send(any())).thenThrow(exception)
-
-    val logger = mock<ILogger>()
-    fixture.sentryOptions.setLogger(logger)
-
-    sut.captureUserFeedback(userFeedback)
-
-    verify(logger)
-      .log(
-        SentryLevel.WARNING,
-        exception,
-        "Capturing user feedback %s failed.",
-        userFeedback.eventId,
-      )
-  }
-
-  @Test
   fun `when captureCheckIn, envelope is sent`() {
     val sut = fixture.getSut()
 
@@ -1446,6 +1381,170 @@ class SentryClientTest {
     )
 
     assertEquals(SentryId.EMPTY_ID, eventId)
+  }
+
+  @Test
+  fun `server transaction with default ignored HTTP status is dropped before callbacks`() {
+    val processor = mock<EventProcessor>()
+    val beforeSend = mock<SentryOptions.BeforeSendTransactionCallback>()
+    val replayController = mock<ReplayController>()
+    fixture.sentryOptions.addEventProcessor(processor)
+    fixture.sentryOptions.beforeSendTransaction = beforeSend
+    fixture.sentryOptions.setReplayController(replayController)
+    val transaction = createServerTransaction(404)
+
+    val eventId =
+      fixture
+        .getSut()
+        .captureTransaction(
+          transaction,
+          fixture.sentryTracer.traceContext(),
+          null,
+          null,
+          fixture.profilingTraceData,
+        )
+
+    assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(fixture.profilingTraceFile.exists()).isFalse()
+    verify(processor, never()).process(any<SentryTransaction>(), anyOrNull())
+    verify(beforeSend, never()).execute(any(), anyOrNull())
+    verifyNoInteractions(replayController)
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2),
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Profile.category, 1),
+      ),
+    )
+  }
+
+  @Test
+  fun `default HTTP status filter drops the default ranges`() {
+    val sut = fixture.getSut()
+
+    listOf(301, 305, 399, 401, 404).forEach {
+      val eventId =
+        sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+      assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    }
+
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter retains statuses outside the default ranges`() {
+    val sut = fixture.getSut()
+
+    listOf(200, 300, 302, 303, 304, 400, 405).forEach {
+      sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+    }
+
+    verify(fixture.transport, times(7)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `custom HTTP status range replaces default and accepts OTel long value`() {
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(500, 599)))
+    val sut = fixture.getSut()
+
+    val ignoredEventId =
+      sut.captureTransaction(createServerTransaction(503L), fixture.sentryTracer.traceContext())
+    val retainedEventId =
+      sut.captureTransaction(createServerTransaction(404), fixture.sentryTracer.traceContext())
+
+    assertThat(ignoredEventId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(retainedEventId).isNotEqualTo(SentryId.EMPTY_ID)
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `HTTP status filter is disabled for an empty configuration`() {
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(emptyList())
+
+    fixture
+      .getSut()
+      .captureTransaction(createServerTransaction(404), fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter only applies to server transactions`() {
+    val clientTransaction = createServerTransaction(404)
+    clientTransaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "client"
+    val missingKindTransaction = createServerTransaction(404)
+    missingKindTransaction.contexts.trace!!.data.remove(SpanDataConvention.SENTRY_KIND_KEY)
+    val sut = fixture.getSut()
+
+    sut.captureTransaction(clientTransaction, fixture.sentryTracer.traceContext())
+    sut.captureTransaction(missingKindTransaction, fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport, times(2)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter ignores missing and invalid root status values`() {
+    val invalidStatusValues = listOf("404", 404.0, 404.5f, 99, 600, Long.MAX_VALUE)
+    val sut = fixture.getSut()
+
+    invalidStatusValues.forEach { statusCode ->
+      sut.captureTransaction(
+        createServerTransaction(statusCode),
+        fixture.sentryTracer.traceContext(),
+      )
+    }
+    val missingStatusTransaction = createServerTransaction(200)
+    missingStatusTransaction.contexts.trace!!.data.remove(SpanDataConvention.HTTP_STATUS_CODE_KEY)
+    sut.captureTransaction(missingStatusTransaction, fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport, times(invalidStatusValues.size + 1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter does not read child span attributes`() {
+    val tracer =
+      SentryTracer(
+        TransactionContext("child-status-transaction", "op", TracesSamplingDecision(true)),
+        fixture.scopes,
+      )
+    tracer.startChild("child").apply {
+      setData(SpanDataConvention.SENTRY_KIND_KEY, "server")
+      setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, 404)
+      finish()
+    }
+    val transaction = SentryTransaction(tracer)
+
+    fixture.getSut().captureTransaction(transaction, tracer.traceContext())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `profiling trace deletion failure for default ignored transaction is logged`() {
+    val traceFile = mock<File>()
+    whenever(traceFile.delete()).thenReturn(false)
+    whenever(traceFile.path).thenReturn("undeletable.trace")
+    val profilingTraceData = ProfilingTraceData(traceFile, fixture.sentryTracer)
+
+    fixture
+      .getSut()
+      .captureTransaction(
+        createServerTransaction(404),
+        fixture.sentryTracer.traceContext(),
+        null,
+        null,
+        profilingTraceData,
+      )
+
+    verify(traceFile).delete()
+    verify(fixture.logger)
+      .log(
+        SentryLevel.WARNING,
+        "Failed to delete profiling trace file %s for an ignored transaction",
+        "undeletable.trace",
+      )
   }
 
   @Test
@@ -2362,7 +2461,10 @@ class SentryClientTest {
     transaction.finish()
     sut.captureEvent(event, scope)
     assertNotNull(event.contexts.trace)
-    assertEquals(transaction.root.spanContext, event.contexts.trace)
+    assertThat(event.contexts.trace!!.traceId).isEqualTo(transaction.root.spanContext.traceId)
+    assertThat(event.contexts.trace!!.spanId).isEqualTo(transaction.root.spanContext.spanId)
+    assertThat(event.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(transaction.root.spanContext.status).isNull()
   }
 
   @Test
@@ -2375,7 +2477,10 @@ class SentryClientTest {
     val span = transaction.startChild("op")
     sut.captureEvent(event, scope)
     assertNotNull(event.contexts.trace)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertThat(event.contexts.trace!!.traceId).isEqualTo(span.spanContext.traceId)
+    assertThat(event.contexts.trace!!.spanId).isEqualTo(span.spanContext.spanId)
+    assertThat(event.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(span.spanContext.status).isNull()
   }
 
   @Test
@@ -3411,6 +3516,8 @@ class SentryClientTest {
 
     assertEquals(spanContext.traceId, sentryEvent.contexts.trace!!.traceId)
     assertEquals(spanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    assertThat(sentryEvent.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(spanContext.status).isNull()
     assertNotEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
     assertNotEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
   }
@@ -4593,22 +4700,16 @@ class SentryClientTest {
     }
   }
 
+  private fun createServerTransaction(statusCode: Any): SentryTransaction {
+    return SentryTransaction(fixture.sentryTracer).apply {
+      contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "server"
+      contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY] = statusCode
+    }
+  }
+
   private fun createSession(release: String = "rel"): Session {
     return Session("dis", User(), "env", release)
   }
-
-  private val userFeedback: UserFeedback
-    get() {
-      val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-      val userFeedback = UserFeedback(eventId)
-      userFeedback.apply {
-        name = "John"
-        email = "john@me.com"
-        comments = "comment"
-      }
-
-      return userFeedback
-    }
 
   private val checkIn = CheckIn("some_slug", CheckInStatus.OK)
 

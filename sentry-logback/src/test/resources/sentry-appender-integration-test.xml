@@ -3,13 +3,11 @@
     <options>
       <dsn>${dsn}</dsn>
       <contextTag>userId</contextTag>
-      <logs>
-        <enabled>true</enabled>
-      </logs>
     </options>
     <minimumEventLevel>WARN</minimumEventLevel>
     <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
     <minimumLevel>INFO</minimumLevel>
+    <logsEnabled>true</logsEnabled>
   </appender>
 
   <root level="debug">

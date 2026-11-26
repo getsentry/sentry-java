@@ -7,6 +7,7 @@ import static io.sentry.opentelemetry.OtelSpanUtils.getMessagingSystem;
 import static io.sentry.opentelemetry.OtelSpanUtils.maybeTransferOtelAttribute;
 
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -22,14 +23,15 @@ import io.sentry.DefaultSpanFactory;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.Instrumenter;
 import io.sentry.ScopeType;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryDate;
 import io.sentry.SentryInstantDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
+import io.sentry.SentrySpanKind;
 import io.sentry.SpanContext;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
@@ -223,7 +225,6 @@ public final class SentrySpanExporter implements SpanExporter {
                 parentSentrySpan.getSpanContext().getSpanId(),
                 new SpanId(spanId));
     spanContext.setDescription(spanInfo.getDescription());
-    spanContext.setInstrumenter(Instrumenter.SENTRY);
     if (sentrySpanMaybe != null) {
       spanContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       spanOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
@@ -243,6 +244,7 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
     setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
+    setSentrySpanKind(spanData, sentryChildSpan);
     transferMessagingSystem(spanData, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
@@ -341,7 +343,6 @@ public final class SentrySpanExporter implements SpanExporter {
         transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName);
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
-    transactionContext.setInstrumenter(Instrumenter.SENTRY);
     transactionContext.setProfilerId(profilerId);
     if (sentrySpanMaybe != null) {
       transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
@@ -360,6 +361,10 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(span, sentryTransaction);
     setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
+    setSentrySpanKind(span, sentryTransaction);
+    if (SpanKind.SERVER.equals(span.getKind())) {
+      maybeTransferOtelAttribute(span, sentryTransaction, HttpAttributes.HTTP_RESPONSE_STATUS_CODE);
+    }
 
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
@@ -565,6 +570,13 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private void setOtelSpanKind(final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
     sentrySpan.setData("otel.kind", otelSpan.getKind().name());
+  }
+
+  private void setSentrySpanKind(
+      final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
+    if (SpanKind.SERVER.equals(otelSpan.getKind())) {
+      sentrySpan.setData(SpanDataConvention.SENTRY_KIND_KEY, SentrySpanKind.SERVER);
+    }
   }
 
   @Override

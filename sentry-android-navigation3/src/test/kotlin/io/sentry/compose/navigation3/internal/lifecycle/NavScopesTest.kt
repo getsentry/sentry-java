@@ -660,8 +660,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
     covered.startNavTransaction("/Result")
-    fixture.scope.transaction =
-      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    fixture.scope.transaction = mockTransaction().also { whenever(it.isFinished).thenReturn(true) }
 
     fixture.incoming.dispose()
 
@@ -672,8 +671,7 @@ class NavScopesTest {
   fun `a deferred transaction requested while a finished transaction is bound starts in its place`() {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
-    fixture.scope.transaction =
-      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    fixture.scope.transaction = mockTransaction().also { whenever(it.isFinished).thenReturn(true) }
     covered.startNavTransaction("/Result")
 
     fixture.incoming.dispose()
@@ -823,7 +821,7 @@ class NavScopesTest {
             } else {
               val name = (it.arguments[0] as TransactionContext).name
               val contexts = Contexts()
-              mock<ITransaction>()
+              mockTransaction()
                 .also { transaction ->
                   whenever(transaction.name).thenReturn(name)
                   whenever(transaction.contexts).thenReturn(contexts)

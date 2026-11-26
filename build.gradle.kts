@@ -26,6 +26,9 @@ buildscript {
         google()
     }
     dependencies {
+        // Replaces the R8 bundled with AGP when the AGP matrix job overrides AGP. See r8 in
+        // libs.versions.toml.
+        if (System.getenv("VERSION_AGP") != null) classpath(libs.android.r8)
         classpath(libs.commons.compress)
     }
 }

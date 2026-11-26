@@ -40,6 +40,7 @@ import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,6 +78,11 @@ public class SentryOptions implements RateLimiterConfig {
    * have the environment field set.
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
+
+  private static final String DEFAULT_IGNORED_READ_ERROR_FOR_DEDUPLICATION =
+      "io.netty.handler.timeout.ReadTimeoutException";
+  private static final String DEFAULT_IGNORED_WRITE_ERROR_FOR_DEDUPLICATION =
+      "io.netty.handler.timeout.WriteTimeoutException";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -387,6 +393,13 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private boolean enableDeduplication = true;
 
+  /** Exception types that are excluded from event deduplication. */
+  private @Nullable List<FilterString> ignoredErrorsForDeduplication =
+      new ArrayList<>(
+          Arrays.asList(
+              new FilterString(DEFAULT_IGNORED_READ_ERROR_FOR_DEDUPLICATION),
+              new FilterString(DEFAULT_IGNORED_WRITE_ERROR_FOR_DEDUPLICATION)));
+
   /**
    * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
    * exceeding 1MB will have breadcrumbs and stack frames reduced to stay under the limit.
@@ -410,12 +423,6 @@ public class SentryOptions implements RateLimiterConfig {
    * the request body is larger than the accepted size, nothing is sent.
    */
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
-
-  /**
-   * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace`
-   * header is attached to envelopes.
-   */
-  private boolean traceSampling = true;
 
   /**
    * Configures the profiles sample rate as a percentage of sampled transactions to be sent in the
@@ -506,9 +513,6 @@ public class SentryOptions implements RateLimiterConfig {
   /** Enable or disable automatic breadcrumbs for User interactions */
   private boolean enableUserInteractionBreadcrumbs = true;
 
-  /** Which framework is responsible for instrumenting. */
-  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
-
   /** Contains a list of GestureTargetLocator instances used for user interaction tracking */
   private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
@@ -522,9 +526,8 @@ public class SentryOptions implements RateLimiterConfig {
 
   private @Nullable IDebugManager debugManager;
 
-  // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
-  private boolean traceOptionsRequests = true;
+  private boolean traceOptionsRequests = false;
 
   /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
   private boolean enableDatabaseTransactionTracing = false;
@@ -588,19 +591,26 @@ public class SentryOptions implements RateLimiterConfig {
   private boolean enableScopePersistence = true;
 
   /** The monitor slugs for which captured check-ins should not be sent to Sentry. */
-  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
+  private @Nullable List<FilterString> ignoredCheckIns = null;
 
   /**
    * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
    * there is a match, the span/transaction will not be created.
    */
-  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
+  private @Nullable List<FilterString> ignoredSpanOrigins = null;
 
   /**
    * Strings or regex patterns that captured transaction names will be tested against. If there is a
    * match, the transaction will not be sent to Sentry.
    */
   private @Nullable List<FilterString> ignoredTransactions = null;
+
+  private volatile @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes =
+      new CopyOnWriteArrayList<>(
+          Arrays.asList(
+              new HttpStatusCodeRange(301),
+              new HttpStatusCodeRange(305, 399),
+              new HttpStatusCodeRange(401, 404)));
 
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
@@ -624,7 +634,7 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private int profilingTracesHz = 101;
 
-  @ApiStatus.Experimental private @Nullable Cron cron = null;
+  private @Nullable Cron cron = null;
 
   private final @NotNull ExperimentalOptions experimental;
 
@@ -1954,6 +1964,68 @@ public class SentryOptions implements RateLimiterConfig {
   }
 
   /**
+   * Returns the list of exception class names excluded from event deduplication.
+   *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
+   * @return the list of exception class names excluded from event deduplication
+   */
+  public @Nullable List<String> getIgnoredErrorsForDeduplication() {
+    if (ignoredErrorsForDeduplication == null) {
+      return null;
+    }
+    final @NotNull List<String> strings = new ArrayList<>(ignoredErrorsForDeduplication.size());
+    for (final @NotNull FilterString filter : ignoredErrorsForDeduplication) {
+      strings.add(filter.getFilterString());
+    }
+    return strings;
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredErrorsForDeduplication()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredErrorFiltersForDeduplication() {
+    return ignoredErrorsForDeduplication;
+  }
+
+  /**
+   * Sets the list of exception class names excluded from event deduplication. Entries may be exact
+   * class names or regular expressions.
+   *
+   * @param ignoredErrorsForDeduplication exception class names or regular expressions
+   */
+  public void setIgnoredErrorsForDeduplication(
+      final @Nullable List<String> ignoredErrorsForDeduplication) {
+    if (ignoredErrorsForDeduplication == null) {
+      this.ignoredErrorsForDeduplication = null;
+    } else {
+      final @NotNull List<FilterString> patterns = new ArrayList<>();
+      for (final String pattern : ignoredErrorsForDeduplication) {
+        if (pattern != null && !pattern.isEmpty()) {
+          patterns.add(new FilterString(pattern));
+        }
+      }
+      this.ignoredErrorsForDeduplication = patterns;
+    }
+  }
+
+  /**
+   * Adds an exception class name or regular expression to the list excluded from event
+   * deduplication.
+   *
+   * @param pattern the exception class name or regular expression
+   */
+  public void addIgnoredErrorForDeduplication(final @NotNull String pattern) {
+    if (ignoredErrorsForDeduplication == null) {
+      ignoredErrorsForDeduplication = new ArrayList<>();
+    }
+    ignoredErrorsForDeduplication.add(new FilterString(pattern));
+  }
+
+  /**
    * Returns if event size limiting is enabled.
    *
    * @return true if event size limiting is enabled, false otherwise
@@ -2036,11 +2108,23 @@ public class SentryOptions implements RateLimiterConfig {
    * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
    * an event shall be sent to Sentry or ignored.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of strings/regex patterns that `event.message`, `event.formatted`, and
    *     `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine
    *     if an event shall be sent to Sentry or ignored
    */
-  public @Nullable List<FilterString> getIgnoredErrors() {
+  public @Nullable List<String> getIgnoredErrors() {
+    return toFilterStrings(ignoredErrors);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredErrors()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredErrorFilters() {
     return ignoredErrors;
   }
 
@@ -2142,33 +2226,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public void setMaxRequestBodySize(final @NotNull RequestSize maxRequestBodySize) {
     this.maxRequestBodySize = maxRequestBodySize;
-  }
-
-  /**
-   * Returns whether the `baggage` header is attached to HTTP client integrations and the `trace`
-   * header is attached to envelopes.
-   *
-   * <p>Note: this is an experimental API and will be removed without notice.
-   *
-   * @return true if enabled
-   */
-  @ApiStatus.Experimental
-  public boolean isTraceSampling() {
-    return traceSampling;
-  }
-
-  /**
-   * Controls if the `baggage` header is attached HTTP client integrations and if the `trace` header
-   * is attached to envelopes. Defaults to false.
-   *
-   * <p>Note: this is an experimental API and will be removed without notice.
-   *
-   * @deprecated please use {{@link SentryOptions#setTracePropagationTargets(List)}} instead
-   * @param traceSampling - if trace sampling should be enabled
-   */
-  @Deprecated
-  public void setTraceSampling(boolean traceSampling) {
-    this.traceSampling = traceSampling;
   }
 
   /**
@@ -2636,32 +2693,6 @@ public class SentryOptions implements RateLimiterConfig {
   }
 
   /**
-   * Sets the instrumenter used for performance instrumentation.
-   *
-   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
-   * any transactions automatically nor will it create transactions if you call
-   * startTransaction(...), nor will it create child spans if you call startChild(...)
-   *
-   * @param instrumenter - the instrumenter to use
-   * @deprecated this should no longer be needed with our current OpenTelmetry integration. Use
-   *     {@link SentryOptions#setIgnoredSpanOrigins(List)} instead if you need fine grained control
-   *     over what integrations can create spans.
-   */
-  @Deprecated
-  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
-    this.instrumenter = instrumenter;
-  }
-
-  /**
-   * Returns the instrumenter used for performance instrumentation
-   *
-   * @return the configured instrumenter
-   */
-  public @NotNull Instrumenter getInstrumenter() {
-    return instrumenter;
-  }
-
-  /**
    * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
    *
    * @return a client report recorder or NoOp
@@ -2989,10 +3020,21 @@ public class SentryOptions implements RateLimiterConfig {
    * Returns the list of strings/regex patterns the origin of a new span/transaction will be tested
    * against to determine whether the span/transaction shall be created.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of strings or regex patterns
    */
-  @ApiStatus.Experimental
-  public @Nullable List<FilterString> getIgnoredSpanOrigins() {
+  public @Nullable List<String> getIgnoredSpanOrigins() {
+    return toFilterStrings(ignoredSpanOrigins);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredSpanOrigins()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredSpanOriginFilters() {
     return ignoredSpanOrigins;
   }
 
@@ -3002,7 +3044,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredSpanOrigin the string/regex pattern
    */
-  @ApiStatus.Experimental
   public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
     if (ignoredSpanOrigins == null) {
       ignoredSpanOrigins = new ArrayList<>();
@@ -3016,7 +3057,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredSpanOrigins the list of strings/regex patterns
    */
-  @ApiStatus.Experimental
   public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
     if (ignoredSpanOrigins == null) {
       this.ignoredSpanOrigins = null;
@@ -3035,10 +3075,21 @@ public class SentryOptions implements RateLimiterConfig {
   /**
    * Returns the list of monitor slugs for which captured check-ins should not be sent to Sentry.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of monitor slugs
    */
-  @ApiStatus.Experimental
-  public @Nullable List<FilterString> getIgnoredCheckIns() {
+  public @Nullable List<String> getIgnoredCheckIns() {
+    return toFilterStrings(ignoredCheckIns);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredCheckIns()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredCheckInFilters() {
     return ignoredCheckIns;
   }
 
@@ -3048,7 +3099,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredCheckIn the monitor slug
    */
-  @ApiStatus.Experimental
   public void addIgnoredCheckIn(String ignoredCheckIn) {
     if (ignoredCheckIns == null) {
       ignoredCheckIns = new ArrayList<>();
@@ -3061,7 +3111,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredCheckIns the list of monitor slugs for which check-ins should not be sent
    */
-  @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     if (ignoredCheckIns == null) {
       this.ignoredCheckIns = null;
@@ -3081,10 +3130,34 @@ public class SentryOptions implements RateLimiterConfig {
    * Returns the list of strings/regex patterns that captured transaction names are checked against
    * to determine if a transaction shall be sent to Sentry or ignored.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of strings/regex patterns
    */
-  public @Nullable List<FilterString> getIgnoredTransactions() {
+  public @Nullable List<String> getIgnoredTransactions() {
+    return toFilterStrings(ignoredTransactions);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredTransactions()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredTransactionFilters() {
     return ignoredTransactions;
+  }
+
+  private static @Nullable List<String> toFilterStrings(
+      final @Nullable List<FilterString> filters) {
+    if (filters == null) {
+      return null;
+    }
+    final @NotNull List<String> strings = new ArrayList<>(filters.size());
+    for (final @NotNull FilterString filter : filters) {
+      strings.add(filter.getFilterString());
+    }
+    return strings;
   }
 
   /**
@@ -3121,6 +3194,32 @@ public class SentryOptions implements RateLimiterConfig {
 
       this.ignoredTransactions = filtered;
     }
+  }
+
+  /**
+   * Returns the HTTP status codes and inclusive ranges for which incoming server transactions are
+   * not sent to Sentry. Defaults to 301, 305-399, and 401-404. An empty list disables this filter.
+   *
+   * @return the configured HTTP status code ranges, or {@code null} if explicitly set to null
+   */
+  public @Nullable List<HttpStatusCodeRange> getTraceIgnoreStatusCodes() {
+    return traceIgnoreStatusCodes;
+  }
+
+  /**
+   * Sets the HTTP status codes and inclusive ranges for which incoming server transactions are not
+   * sent to Sentry. For example, configure {@code new HttpStatusCodeRange(404)} for one status or
+   * {@code new HttpStatusCodeRange(500, 599)} for an inclusive range. External configuration
+   * accepts comma-separated codes and ranges such as {@code 404,410,500-599}. An empty list or
+   * {@code null} disables this filter.
+   *
+   * @param traceIgnoreStatusCodes the HTTP status code ranges, or {@code null} to disable the
+   *     filter
+   */
+  public void setTraceIgnoreStatusCodes(
+      final @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes) {
+    this.traceIgnoreStatusCodes =
+        traceIgnoreStatusCodes == null ? null : new CopyOnWriteArrayList<>(traceIgnoreStatusCodes);
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
@@ -3212,7 +3311,6 @@ public class SentryOptions implements RateLimiterConfig {
     this.backpressureMonitor = backpressureMonitor;
   }
 
-  @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
@@ -3244,7 +3342,6 @@ public class SentryOptions implements RateLimiterConfig {
     this.profilingTracesHz = profilingTracesHz;
   }
 
-  @ApiStatus.Experimental
   public boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
   }
@@ -3304,7 +3401,6 @@ public class SentryOptions implements RateLimiterConfig {
     return cron;
   }
 
-  @ApiStatus.Experimental
   public void setCron(@Nullable Cron cron) {
     this.cron = cron;
   }
@@ -3802,9 +3898,17 @@ public class SentryOptions implements RateLimiterConfig {
       final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
       setIgnoredTransactions(ignoredTransactions);
     }
+    if (options.getTraceIgnoreStatusCodes() != null) {
+      setTraceIgnoreStatusCodes(options.getTraceIgnoreStatusCodes());
+    }
     if (options.getIgnoredErrors() != null) {
       final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
       setIgnoredErrors(ignoredExceptions);
+    }
+    if (options.getIgnoredErrorsForDeduplication() != null) {
+      final List<String> ignoredErrorsForDeduplication =
+          new ArrayList<>(options.getIgnoredErrorsForDeduplication());
+      setIgnoredErrorsForDeduplication(ignoredErrorsForDeduplication);
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
@@ -3863,14 +3967,6 @@ public class SentryOptions implements RateLimiterConfig {
           getCron().setDefaultRecoveryThreshold(options.getCron().getDefaultRecoveryThreshold());
         }
       }
-    }
-
-    if (options.isEnableLogs() != null) {
-      getLogs().setEnabled(options.isEnableLogs());
-    }
-
-    if (options.isEnableMetrics() != null) {
-      getMetrics().setEnabled(options.isEnableMetrics());
     }
 
     if (options.getProfileSessionSampleRate() != null) {
@@ -3974,12 +4070,10 @@ public class SentryOptions implements RateLimiterConfig {
     this.scopesStorageFactory = scopesStorageFactory;
   }
 
-  @ApiStatus.Experimental
   public @NotNull SentryOptions.Logs getLogs() {
     return logs;
   }
 
-  @ApiStatus.Experimental
   public void setLogs(@NotNull SentryOptions.Logs logs) {
     this.logs = logs;
   }
@@ -4123,9 +4217,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Logs {
 
-    /** Whether automatic logging integrations send Logs to Sentry. */
-    private boolean enable = false;
-
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
@@ -4134,26 +4225,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     private @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory =
         new DefaultLoggerBatchProcessorFactory();
-
-    /**
-     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
-     * calls are always captured when the SDK is enabled.
-     *
-     * @return true if automatic Logs should be enabled
-     */
-    public boolean isEnabled() {
-      return enable;
-    }
-
-    /**
-     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
-     * calls are always captured when the SDK is enabled.
-     *
-     * @param enableLogs true if automatic Logs should be enabled
-     */
-    public void setEnabled(boolean enableLogs) {
-      this.enable = enableLogs;
-    }
 
     /**
      * Returns the BeforeSendLog callback
@@ -4204,9 +4275,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Metrics {
 
-    /** The configured state for automatic Metrics integrations, which currently do not exist. */
-    private boolean enable = true;
-
     /**
      * This function is called with a metric key and tags and can return false to skip sending the
      * metric
@@ -4215,30 +4283,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     private @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory =
         new DefaultMetricsBatchProcessorFactory();
-
-    /**
-     * Returns the configured state for automatic Metrics integrations.
-     *
-     * <p>This option currently has no effect because there are no automatic Metrics integrations.
-     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
-     *
-     * @return the configured value for automatic Metrics integrations
-     */
-    public boolean isEnabled() {
-      return enable;
-    }
-
-    /**
-     * Configures whether automatic Metrics integrations send Metrics to Sentry.
-     *
-     * <p>This option currently has no effect because there are no automatic Metrics integrations.
-     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
-     *
-     * @param enableMetrics whether automatic Metrics integrations should be enabled
-     */
-    public void setEnabled(final boolean enableMetrics) {
-      this.enable = enableMetrics;
-    }
 
     /**
      * Returns the BeforeSendMetric callback

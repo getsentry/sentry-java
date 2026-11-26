@@ -17,6 +17,7 @@ import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.time.MonotonicTicker;
 import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SentryRandom;
 import java.io.Closeable;
@@ -224,6 +225,9 @@ public final class AnrProfilingIntegration
         }
       }
     } catch (Throwable t) {
+      // The root of the profiling thread: anything escaping run() would reach the default
+      // uncaught exception handler and crash the app. Profiling stops until the next foreground.
+      ExceptionUtils.rethrowIfFatal(t);
       logger.log(SentryLevel.WARNING, "Failed to execute AnrStacktraceIntegration", t);
     }
   }

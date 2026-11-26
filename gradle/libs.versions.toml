@@ -16,11 +16,9 @@ dokka = "2.3.0"
 espresso = "3.7.0"
 feign = "13.18"
 gummyBears = "0.16.0"
-java8Signature = "1.0"
 jackson = "2.22.4"
 jetbrainsCompose = "1.6.11"
-kotlin = "2.3.21"
-kotlin-compatible-version = "1.9"
+kotlin = "2.4.21"
 ksp = "2.3.14"
 ktorClient = "3.6.1"
 logback = "1.2.9"
@@ -43,6 +41,9 @@ room3 = "3.0.3"
 sagp = "6.27.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
 agp = "9.5.2"
+# The R8 bundled with AGP 9.0 and 9.2 crashes on androidx.core at minSdk 24, so builds that override
+# AGP (the AGP matrix) put the R8 that ships with the default AGP on their buildscript classpath.
+r8 = "9.5.29"
 sqlite = "2.6.2"
 sqliteDrivers = "2.7.1"
 slf4j = "1.7.30"
@@ -61,7 +62,7 @@ vanniktechMavenPublish = "0.37.0"
 targetSdk = "37"
 compileSdk = "37"
 compileSdkMinor = "2"
-minSdk = "21"
+minSdk = "24"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -117,7 +118,7 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.19.1" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version = "1.3.5" }
 androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "androidxLifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
-androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.3" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.10.0" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidxNavigation" }
@@ -143,6 +144,7 @@ caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.7.0" }
 coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version = "3.4.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
+android-r8 = { module = "com.android.tools:r8", version.ref = "r8" }
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.2.1" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.52.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
@@ -266,7 +268,6 @@ timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # Animalsniffer signature
 gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", version.ref = "gummyBears" }
-java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref = "java8Signature" }
 
 # tomcat libraries
 tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "8.5.100" }

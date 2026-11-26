@@ -1,7 +1,7 @@
 
 object Config {
     val kotlinStdLib = "stdlib-jdk8"
-    val kotlinStdLibVersionAndroid = "1.9.24"
+    val kotlinStdLibVersionAndroid = "2.1.21"
     val kotlinTestJunit = "test-junit"
 
     object Android {

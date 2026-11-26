@@ -16,7 +16,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Experimental
 public final class CheckInUtils {
 
   /**
@@ -131,12 +130,8 @@ public final class CheckInUtils {
     }
 
     for (final FilterString ignoredSlug : ignoredSlugs) {
-      try {
-        if (ignoredSlug.matches(slug)) {
-          return true;
-        }
-      } catch (Throwable t) {
-        // ignore invalid regex
+      if (ignoredSlug.matches(slug)) {
+        return true;
       }
     }
 

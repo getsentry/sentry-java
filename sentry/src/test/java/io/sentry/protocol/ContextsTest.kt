@@ -1,5 +1,6 @@
 package io.sentry.protocol
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ProfileContext
 import io.sentry.SpanContext
 import kotlin.test.Test
@@ -148,5 +149,15 @@ class ContextsTest {
     contexts.clear()
 
     assertTrue(contexts.isEmpty)
+  }
+
+  @Test
+  fun `set null profile removes the previous profile context`() {
+    val contexts = Contexts()
+    contexts.profile = ProfileContext(SentryId())
+
+    contexts.profile = null
+
+    assertThat(contexts.profile).isNull()
   }
 }

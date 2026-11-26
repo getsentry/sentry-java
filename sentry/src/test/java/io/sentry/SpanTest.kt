@@ -28,7 +28,6 @@ class SpanTest {
         .thenReturn(
           SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
-            isTraceSampling = true
           },
         )
     }
@@ -109,6 +108,50 @@ class SpanTest {
   }
 
   @Test
+  fun `starting a child with timestamp does not modify supplied options`() {
+    val parent: ISpan = fixture.getSut()
+    val originalTimestamp = SentryLongDate(1234)
+    val timestamp = SentryLongDate(5678)
+    val spanOptions = SpanOptions().apply { startTimestamp = originalTimestamp }
+
+    val child = parent.startChild("child-op", "description", timestamp, spanOptions) as Span
+
+    assertThat(child.startDate).isSameInstanceAs(timestamp)
+    assertThat(spanOptions.startTimestamp).isSameInstanceAs(originalTimestamp)
+  }
+
+  @Test
+  fun `modifying options after span creation does not change trimming behavior`() {
+    val originalStart = SentryLongDate(1000)
+    val childStart = SentryLongDate(2000)
+    val childEnd = SentryLongDate(3000)
+    val originalEnd = SentryLongDate(4000)
+    val spanOptions = SpanOptions().apply { startTimestamp = originalStart }
+    val span = fixture.getSut(spanOptions)
+    val child = span.startChild("child-op", "description", childStart) as Span
+    child.finish(SpanStatus.OK, childEnd)
+
+    spanOptions.isTrimStart = true
+    spanOptions.isTrimEnd = true
+    span.finish(SpanStatus.OK, originalEnd)
+
+    assertThat(span.startDate).isSameInstanceAs(originalStart)
+    assertThat(span.finishDate).isSameInstanceAs(originalEnd)
+  }
+
+  @Test
+  fun `modifying options after child creation does not make child idle`() {
+    val transaction = getTransaction()
+    val spanOptions = SpanOptions()
+    val child = transaction.startChild("child-op", "description", spanOptions)
+
+    spanOptions.isIdle = true
+    transaction.finish()
+
+    assertThat(child.isFinished).isFalse()
+  }
+
+  @Test
   fun `converts to Sentry trace header`() {
     val traceId = SentryId()
     val parentSpanId = SpanId()
@@ -181,26 +224,6 @@ class SpanTest {
     val span = transaction.startChild("operation", "description")
 
     span.startChild("op")
-    assertEquals(2, transaction.spans.size)
-  }
-
-  @Test
-  fun `starting a child with different instrumenter no-ops`() {
-    val transaction =
-      getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
-    val span = transaction.startChild("operation", "description")
-
-    span.startChild("op")
-    assertEquals(0, transaction.spans.size)
-  }
-
-  @Test
-  fun `starting a child with same instrumenter adds span to transaction`() {
-    val transaction =
-      getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
-    val span = transaction.startChild("operation", "description", null, Instrumenter.OTEL)
-
-    span.startChild("op", "desc", null, Instrumenter.OTEL)
     assertEquals(2, transaction.spans.size)
   }
 
@@ -314,7 +337,6 @@ class SpanTest {
         "op1",
         "desc",
         SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
-        Instrumenter.SENTRY,
         SpanOptions(),
       ) as Span
     child1.finish()

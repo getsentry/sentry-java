@@ -31,7 +31,7 @@ class StagedNavTransactionTest {
   private val updatedContexts = mapOf<String, Any>("Navigation" to "updated")
 
   private val finishedTransaction =
-    mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    mockTransaction().also { whenever(it.isFinished).thenReturn(true) }
   private val hostTransaction = transactionWithOrigin("manual")
   private val uiLoadTransaction = transactionWithOrigin(ACTIVITY_UI_LOAD_ORIGIN)
 
@@ -906,7 +906,7 @@ class StagedNavTransactionTest {
               NoOpTransaction.getInstance()
             } else {
               val name = (it.arguments[0] as TransactionContext).name
-              mock<ITransaction>()
+              mockTransaction()
                 .also { transaction -> whenever(transaction.name).thenReturn(name) }
                 .also(startedTransactions::add)
             }

@@ -45,15 +45,6 @@ public interface ISpan {
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter);
-
-  @ApiStatus.Internal
-  @NotNull
-  ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions);
 
   /**
@@ -77,7 +68,9 @@ public interface ISpan {
   @NotNull
   default ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
-    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setStartTimestamp(timestamp);
+    return startChild(operation, description, spanOptions);
   }
 
   /**
@@ -91,7 +84,7 @@ public interface ISpan {
   /**
    * Returns the trace context.
    *
-   * @return a trace context or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
+   * @return a trace context or {@code null} if there is no baggage.
    */
   @Nullable
   @ApiStatus.Experimental
@@ -100,7 +93,7 @@ public interface ISpan {
   /**
    * Returns the baggage that can be sent as "baggage" header.
    *
-   * @return BaggageHeader or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
+   * @return BaggageHeader or {@code null} if there is no baggage.
    */
   @Nullable
   @ApiStatus.Experimental

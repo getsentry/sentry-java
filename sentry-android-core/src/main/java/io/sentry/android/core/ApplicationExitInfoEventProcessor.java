@@ -18,7 +18,6 @@ import static io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.USER_FILENAME;
 import static io.sentry.protocol.Contexts.REPLAY_ID;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -69,6 +68,7 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.protocol.profiling.SentryProfile;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.SentryRandom;
 import java.io.File;
@@ -449,6 +449,9 @@ public final class ApplicationExitInfoEventProcessor
         }
       }
     } catch (Throwable e) {
+      // The first DeviceInfoUtil.getInstance call queries the package manager over Binder, which
+      // can rethrow any runtime exception from the other side. The split APK info is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
     }
 
@@ -718,6 +721,9 @@ public final class ApplicationExitInfoEventProcessor
         }
       }
     } catch (Throwable e) {
+      // The first DeviceInfoUtil.getInstance call queries the package manager over Binder, which
+      // can rethrow any runtime exception from the other side. The side-loaded tags are left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
     }
   }
@@ -730,7 +736,6 @@ public final class ApplicationExitInfoEventProcessor
 
   // only use static data that does not change between app launches (e.g. timezone, boottime,
   // battery level will change)
-  @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();
     device.setManufacturer(Build.MANUFACTURER);
@@ -979,6 +984,9 @@ public final class ApplicationExitInfoEventProcessor
           options.getLogger().log(SentryLevel.DEBUG, "No ANR profile file found");
         }
       } catch (Throwable t) {
+        // The profile file was written by the previous process, possibly while it was being
+        // killed, so we can't know how reading it fails. The ANR is sent without a profile.
+        ExceptionUtils.rethrowIfFatal(t);
         options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile", t);
       } finally {
         if (!AnrProfileRotationHelper.deleteLastFile(cacheDir)) {

@@ -1,6 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -45,9 +44,7 @@ android {
   testBuildType = "release"
 
   kotlin {
-    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
-    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
+    compilerOptions.jvmTarget = JvmTarget.JVM_11
   }
 
   testOptions {
@@ -127,7 +124,7 @@ dependencyMatrix {
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
-  jvmTarget = JavaVersion.VERSION_1_8.toString()
+  jvmTarget = JavaVersion.VERSION_11.toString()
 }
 
 tasks.withType<KotlinCompilationTask<*>>().configureEach {

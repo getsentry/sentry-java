@@ -34,6 +34,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.time.Deadline;
 import io.sentry.time.MonotonicTicker;
+import io.sentry.util.ExceptionUtils;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -174,9 +175,16 @@ final class ANRWatchDog extends Thread {
     if (am != null) {
       List<ActivityManager.ProcessErrorStateInfo> processesInErrorState = null;
       try {
-        // It can throw RuntimeException or OutOfMemoryError
         processesInErrorState = am.getProcessesInErrorState();
+      } catch (OutOfMemoryError e) {
+        // Unparceling the reply, which lists every process in an error state, can fail to
+        // allocate even when the app itself has memory left, so it's not treated as fatal here
+        // (#2114). The process is treated as responding normally, so no ANR is reported.
+        logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
       } catch (Throwable e) {
+        // A Binder call into the activity manager, which can rethrow any runtime exception from
+        // the other side. The process is treated as responding normally, so no ANR is reported.
+        ExceptionUtils.rethrowIfFatal(e);
         logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
       }
       // if list is null, there's no process in ANR state.

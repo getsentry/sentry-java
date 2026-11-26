@@ -26,7 +26,6 @@ tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
     freeCompilerArgs.add("-Xjsr305=strict")
   }
 }
@@ -36,7 +35,6 @@ dependencies {
   api(projects.sentrySpring7)
   compileOnly(projects.sentryLogback)
   compileOnly(projects.sentryLog4j2)
-  compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryGraphql22)
@@ -77,7 +75,6 @@ dependencies {
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryLog4j2)
   testImplementation(projects.sentryOkhttp)
-  testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
   testImplementation(projects.sentryKafka)
@@ -91,6 +88,7 @@ dependencies {
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.kotlin.reflect)
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
+  testImplementation(libs.apache.httpclient)
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.google.truth)

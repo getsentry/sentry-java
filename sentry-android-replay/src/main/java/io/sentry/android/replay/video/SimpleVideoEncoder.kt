@@ -40,6 +40,7 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.SystemProperties
+import io.sentry.util.ExceptionUtils
 import java.io.File
 import java.nio.ByteBuffer
 import kotlin.LazyThreadSafetyMode.NONE
@@ -100,6 +101,9 @@ internal class SimpleVideoEncoder(
           bitRate = videoCapabilities.bitrateRange.clamp(bitRate)
         }
       } catch (e: Throwable) {
+        // The codec's capabilities come from the device's media framework, so we can't know what
+        // it throws. The bit rate is used without clamping it to the supported range.
+        ExceptionUtils.rethrowIfFatal(e)
         options.logger.log(DEBUG, "Could not retrieve MediaCodec info", e)
       }
 
@@ -349,8 +353,6 @@ internal fun shouldUseSoftwareCanvas(): Boolean =
     Build.HARDWARE.contains("goldfish", ignoreCase = true) ||
     Build.HARDWARE.contains("ranchu", ignoreCase = true)
 
-@SuppressLint("UseRequiresApi")
-@TargetApi(24)
 internal data class MuxerConfig(
   val file: File,
   var recordingWidth: Int,

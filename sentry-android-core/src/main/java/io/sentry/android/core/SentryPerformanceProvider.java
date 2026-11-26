@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import static io.sentry.Sentry.APP_START_PROFILING_CONFIG_FILE_NAME;
 
-import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
@@ -23,6 +22,7 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.util.ExceptionUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -161,6 +161,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
     } catch (Throwable e) {
+      // Runs in a ContentProvider before Application.onCreate: it parses a config file written by
+      // the previous launch and starts a profiler through the platform's tracing, so we can't
+      // know what it throws, and it must not stop the app from starting. App start profiling
+      // doesn't start.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Error reading app start profiling config file. ", e);
     }
   }
@@ -250,7 +255,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartProfiler.start();
   }
 
-  @SuppressLint("NewApi")
   private void onAppLaunched(
       final @Nullable Context context, final @NotNull AppStartMetrics appStartMetrics) {
 
@@ -258,12 +262,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
     sdkInitTimeSpan.setStartedAt(sdkInitMillis);
 
-    // performance v2: Uses Process.getStartUptimeMillis()
-    // requires API level 24+
-    if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
-      final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
-      appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
-    }
+    final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
+    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
 
     if (context instanceof Application) {
       app = (Application) context;

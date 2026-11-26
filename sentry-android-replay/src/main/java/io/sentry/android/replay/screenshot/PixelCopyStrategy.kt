@@ -222,7 +222,6 @@ internal class PixelCopyStrategy(
     }
   }
 
-  @SuppressLint("NewApi")
   private fun captureSurfaceViews(
     root: View,
     surfaceViewNodes: List<ViewHierarchyNode.SurfaceViewHierarchyNode>,

@@ -268,7 +268,9 @@ public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
         node.setIdentifier(identifier);
       }
     } catch (Throwable e) {
-      // ignored
+      // The lookup goes through the view's context and resources, which the app's views can
+      // override, so we can't know what it throws. The node is sent without an identifier.
+      ExceptionUtils.rethrowIfFatal(e);
     }
     node.setX((double) view.getX());
     node.setY((double) view.getY());

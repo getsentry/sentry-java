@@ -57,6 +57,7 @@ import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.LazyEvaluator;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Objects;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -150,24 +151,17 @@ final class AndroidOptionsInitializer {
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
-      final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final @NotNull LoadClass loadClass,
       final boolean isReplayAvailable) {
     initializeIntegrationsAndProcessors(
-        options,
-        context,
-        new BuildInfoProvider(new AndroidLogger()),
-        loadClass,
-        activityFramesTracker,
-        isReplayAvailable);
+        options, context, new BuildInfoProvider(new AndroidLogger()), loadClass, isReplayAvailable);
   }
 
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final @NotNull LoadClass loadClass,
       final boolean isReplayAvailable) {
 
     if (options.getCacheDirPath() != null
@@ -194,7 +188,7 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
-    options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
+    options.addEventProcessor(new PerformanceAndroidEventProcessor(options));
     options.addEventProcessor(
         new ScreenshotEventProcessor(options, buildInfoProvider, isReplayAvailable));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
@@ -268,15 +262,12 @@ final class AndroidOptionsInitializer {
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
-
-      if (options.isEnablePerformanceV2()) {
-        options.addPerformanceCollector(
-            new SpanFrameMetricsCollector(
-                options,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required")));
-      }
+      options.addPerformanceCollector(
+          new SpanFrameMetricsCollector(
+              options,
+              Objects.requireNonNull(
+                  options.getFrameMetricsCollector(),
+                  "options.getFrameMetricsCollector is required")));
     }
     if (options.getCompositePerformanceCollector() instanceof NoOpCompositePerformanceCollector) {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
@@ -417,8 +408,7 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final @NotNull LoadClass loadClass,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable,
       final boolean isReplayAvailable,
@@ -478,8 +468,7 @@ final class AndroidOptionsInitializer {
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
       options.addIntegration(
-          new ActivityLifecycleIntegration(
-              (Application) context, buildInfoProvider, activityFramesTracker));
+          new ActivityLifecycleIntegration((Application) context, buildInfoProvider));
       options.addIntegration(new ActivityBreadcrumbsIntegration((Application) context));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       options.addIntegration(new FeedbackShakeIntegration((Application) context));
@@ -495,7 +484,8 @@ final class AndroidOptionsInitializer {
     }
 
     if (isTimberAvailable) {
-      options.addIntegration(new SentryTimberIntegration());
+      options.addIntegration(
+          new SentryTimberIntegration(() -> options.getTimberLogCaptureEnabled()));
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));

@@ -26,10 +26,10 @@ import io.sentry.android.core.AppStartExtension;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.CurrentActivityHolder;
-import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -150,8 +150,8 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * Returns the SDK init time span, as measured pre-performance-v2. Uses ContentProvider/Sdk init
-   * time as start timestamp.
+   * Returns the SDK init time span. Uses ContentProvider/Sdk init time as start timestamp. It's the
+   * app start fallback below API 24, where the process start time isn't available.
    *
    * <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
    * fallback to {@link io.sentry.android.core.SentryAndroid}. At least the start timestamp should
@@ -345,21 +345,18 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * Returns the app start time span if it was started and perf-2 is enabled, falls back to the sdk
-   * init time span otherwise.
+   * Returns the app start time span if it was started, falls back to the sdk init time span
+   * otherwise.
    */
-  public @NotNull TimeSpan getAppStartTimeSpanWithFallback(
-      final @NotNull SentryAndroidOptions options) {
+  public @NotNull TimeSpan getAppStartTimeSpanWithFallback() {
     // If the app start type was never determined or app wasn't launched in foreground,
     // the app start is considered invalid
     if (appStartType != AppStartType.UNKNOWN && isAppLaunchedInForeground()) {
-      if (options.isEnablePerformanceV2()) {
-        // Only started when sdk version is >= N
-        final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
-        if (appStartSpan.hasStarted()
-            && appStartSpan.getDurationMs() <= TimeUnit.MINUTES.toMillis(1)) {
-          return appStartSpan;
-        }
+      // Only started when sdk version is >= N
+      final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
+      if (appStartSpan.hasStarted()
+          && appStartSpan.getDurationMs() <= TimeUnit.MINUTES.toMillis(1)) {
+        return appStartSpan;
       }
 
       // fallback: use sdk init time span, as it will always have a start time set
@@ -432,6 +429,7 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appStartEndTime = null;
     cachedStartInfo = null;
     appStartExtension.clear();
+    appStartExtension.setExtendAppStartListener(null);
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -562,25 +560,14 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (!headlessAppStartCheckPending.compareAndSet(false, true)) {
       return;
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      Looper.getMainLooper()
-          .getQueue()
-          .addIdleHandler(() -> {
-            firstIdle = SystemClock.uptimeMillis();
-            headlessAppStartCheckPending.set(false);
-            handleHeadlessAppStartIfNeededOnMain();
-            return false;
-          });
-    } else {
-      final Handler handler = new Handler(Looper.getMainLooper());
-      handler.post(() -> {
-        firstIdle = SystemClock.uptimeMillis();
-        handler.post(() -> {
+    Looper.getMainLooper()
+        .getQueue()
+        .addIdleHandler(() -> {
+          firstIdle = SystemClock.uptimeMillis();
           headlessAppStartCheckPending.set(false);
           handleHeadlessAppStartIfNeededOnMain();
+          return false;
         });
-      });
-    }
   }
 
   /**
@@ -648,8 +635,10 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           stopHeadlessAppStartAt(onCreateStartUptimeMs);
           return;
         }
-      } catch (Throwable ignored) {
-        // Best effort: never let optional startup timestamp enrichment break app startup.
+      } catch (Throwable e) {
+        // The start info came from system_server over Binder and the timestamp is optional, so a
+        // malformed record must not break app startup. The process init time is used instead.
+        ExceptionUtils.rethrowIfFatal(e);
       }
     }
 

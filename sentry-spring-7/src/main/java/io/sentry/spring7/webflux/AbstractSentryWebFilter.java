@@ -12,7 +12,9 @@ import io.sentry.IScopes;
 import io.sentry.ITransaction;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
+import io.sentry.SentrySpanKind;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -36,11 +38,6 @@ import org.springframework.web.server.WebFilter;
 public abstract class AbstractSentryWebFilter implements WebFilter {
   private final @NotNull SentryRequestResolver sentryRequestResolver;
   public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
-
-  /**
-   * @deprecated please use {@link AbstractSentryWebFilter#SENTRY_SCOPES_KEY} instead.
-   */
-  @Deprecated public static final String SENTRY_HUB_KEY = SENTRY_SCOPES_KEY;
 
   private static final String TRANSACTION_OP = "http.server";
 
@@ -71,7 +68,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   private boolean isIgnored(final @NotNull IScopes scopes, final @NotNull String origin) {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), origin);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), origin);
   }
 
   protected void doFinally(
@@ -131,6 +128,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     if (response != null) {
       final @Nullable HttpStatusCode statusCode = response.getStatusCode();
       if (statusCode != null) {
+        transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode.value());
         transaction
             .getContexts()
             .withResponse(sentryResponse -> {
@@ -158,16 +156,20 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     transactionOptions.setBindToScope(true);
     transactionOptions.setOrigin(origin);
 
+    final @NotNull ITransaction transaction;
     if (transactionContext != null) {
       transactionContext.setName(name);
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation(TRANSACTION_OP);
 
-      return scopes.startTransaction(transactionContext, transactionOptions);
+      transaction = scopes.startTransaction(transactionContext, transactionOptions);
+    } else {
+      transaction =
+          scopes.startTransaction(
+              new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
+              transactionOptions);
     }
-
-    return scopes.startTransaction(
-        new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
-        transactionOptions);
+    transaction.setData(SpanDataConvention.SENTRY_KIND_KEY, SentrySpanKind.SERVER);
+    return transaction;
   }
 }

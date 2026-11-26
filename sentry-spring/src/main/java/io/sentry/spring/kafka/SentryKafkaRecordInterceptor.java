@@ -12,6 +12,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.kafka.SentryKafkaProducer;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.SpanUtils;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -77,6 +78,9 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
           startTransaction(forkedScopes, record, transactionContext);
       currentContext.set(new SentryRecordContext(lifecycleToken, transaction));
     } catch (Throwable t) {
+      // This parses headers written by whichever producer sent the record, and tracing must never
+      // stop the record from reaching the listener. The record is processed without a transaction.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes.getOptions().getLogger().log(SentryLevel.ERROR, "Unable to wrap Kafka consumer.", t);
     }
     return delegateIntercept(record, consumer);
@@ -135,7 +139,7 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
   }
 
   private boolean isIgnored() {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN);
   }
 
   private @Nullable ConsumerRecord<K, V> delegateIntercept(

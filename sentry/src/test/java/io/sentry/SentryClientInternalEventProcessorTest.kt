@@ -44,8 +44,6 @@ class SentryClientInternalEventProcessorTest(private val onScope: Boolean) {
     options.eventProcessors.clear()
     options.onDiscard = onDiscard
     options.setLogger(logger)
-    options.logs.isEnabled = true
-    options.metrics.isEnabled = true
     if (onScope) {
       scope.addEventProcessor(processor)
       scope.addEventProcessor(nextProcessor)

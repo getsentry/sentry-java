@@ -569,6 +569,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
+	public fun getIgnoredErrorsForDeduplication ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
@@ -590,14 +591,13 @@ public final class io/sentry/ExternalOptions {
 	public fun getShutdownTimeoutMillis ()Ljava/lang/Long;
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
+	public fun getTraceIgnoreStatusCodes ()Ljava/util/List;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun isCaptureOpenTelemetryEvents ()Ljava/lang/Boolean;
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
 	public fun isEnableCacheTracing ()Ljava/lang/Boolean;
 	public fun isEnableDatabaseTransactionTracing ()Ljava/lang/Boolean;
-	public fun isEnableLogs ()Ljava/lang/Boolean;
-	public fun isEnableMetrics ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnableQueueTracing ()Ljava/lang/Boolean;
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
@@ -617,8 +617,6 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableCacheTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDatabaseTransactionTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
-	public fun setEnableLogs (Ljava/lang/Boolean;)V
-	public fun setEnableMetrics (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableQueueTracing (Ljava/lang/Boolean;)V
 	public fun setEnableSpotlight (Ljava/lang/Boolean;)V
@@ -630,6 +628,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredErrorsForDeduplication (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setOrgId (Ljava/lang/String;)V
@@ -651,6 +650,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setStrictTraceContinuation (Ljava/lang/Boolean;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTraceIgnoreStatusCodes (Ljava/util/List;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 }
 
@@ -717,161 +717,8 @@ public final class io/sentry/HttpStatusCodeRange {
 	public fun <init> (I)V
 	public fun <init> (II)V
 	public fun isInRange (I)Z
-}
-
-public final class io/sentry/HubAdapter : io/sentry/IHub {
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
-	public fun bindClient (Lio/sentry/ISentryClient;)V
-	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
-	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureFeedback (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
-	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
-	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
-	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
-	public fun clearBreadcrumbs ()V
-	public fun clone ()Lio/sentry/IHub;
-	public synthetic fun clone ()Ljava/lang/Object;
-	public fun close ()V
-	public fun close (Z)V
-	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
-	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
-	public fun endSession ()V
-	public fun feedback ()Lio/sentry/IFeedbackApi;
-	public fun flush (J)V
-	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun getBaggage ()Lio/sentry/BaggageHeader;
-	public fun getGlobalScope ()Lio/sentry/IScope;
-	public static fun getInstance ()Lio/sentry/HubAdapter;
-	public fun getIsolationScope ()Lio/sentry/IScope;
-	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
-	public fun getOptions ()Lio/sentry/SentryOptions;
-	public fun getParentScopes ()Lio/sentry/IScopes;
-	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
-	public fun getScope ()Lio/sentry/IScope;
-	public fun getSpan ()Lio/sentry/ISpan;
-	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
-	public fun getTransaction ()Lio/sentry/ITransaction;
-	public fun isAncestorOf (Lio/sentry/IScopes;)Z
-	public fun isCrashedLastRun ()Ljava/lang/Boolean;
-	public fun isEnabled ()Z
-	public fun isHealthy ()Z
-	public fun logger ()Lio/sentry/logger/ILoggerApi;
-	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
-	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public fun popScope ()V
-	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
-	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
-	public fun removeAttribute (Ljava/lang/String;)V
-	public fun removeExtra (Ljava/lang/String;)V
-	public fun removeTag (Ljava/lang/String;)V
-	public fun reportFullyDisplayed ()V
-	public fun setActiveSpan (Lio/sentry/ISpan;)V
-	public fun setAttribute (Lio/sentry/SentryAttribute;)V
-	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
-	public fun setAttributes (Lio/sentry/SentryAttributes;)V
-	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setFingerprint (Ljava/util/List;)V
-	public fun setLevel (Lio/sentry/SentryLevel;)V
-	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
-	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setTransaction (Ljava/lang/String;)V
-	public fun setUser (Lio/sentry/protocol/User;)V
-	public fun startProfiler ()V
-	public fun startSession ()V
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun stopProfiler ()V
-	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
-	public fun withScope (Lio/sentry/ScopeCallback;)V
-}
-
-public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
-	public fun <init> (Lio/sentry/IScopes;)V
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
-	public fun bindClient (Lio/sentry/ISentryClient;)V
-	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
-	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
-	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
-	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
-	public fun clearBreadcrumbs ()V
-	public fun clone ()Lio/sentry/IHub;
-	public synthetic fun clone ()Ljava/lang/Object;
-	public fun close ()V
-	public fun close (Z)V
-	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
-	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
-	public fun endSession ()V
-	public fun feedback ()Lio/sentry/IFeedbackApi;
-	public fun flush (J)V
-	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun getBaggage ()Lio/sentry/BaggageHeader;
-	public fun getGlobalScope ()Lio/sentry/IScope;
-	public fun getIsolationScope ()Lio/sentry/IScope;
-	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
-	public fun getOptions ()Lio/sentry/SentryOptions;
-	public fun getParentScopes ()Lio/sentry/IScopes;
-	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
-	public fun getScope ()Lio/sentry/IScope;
-	public fun getScopes ()Lio/sentry/IScopes;
-	public fun getSpan ()Lio/sentry/ISpan;
-	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
-	public fun getTransaction ()Lio/sentry/ITransaction;
-	public fun isAncestorOf (Lio/sentry/IScopes;)Z
-	public fun isCrashedLastRun ()Ljava/lang/Boolean;
-	public fun isEnabled ()Z
-	public fun isHealthy ()Z
-	public fun logger ()Lio/sentry/logger/ILoggerApi;
-	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
-	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public fun popScope ()V
-	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
-	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
-	public fun removeAttribute (Ljava/lang/String;)V
-	public fun removeExtra (Ljava/lang/String;)V
-	public fun removeTag (Ljava/lang/String;)V
-	public fun reportFullyDisplayed ()V
-	public fun setActiveSpan (Lio/sentry/ISpan;)V
-	public fun setAttribute (Lio/sentry/SentryAttribute;)V
-	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
-	public fun setAttributes (Lio/sentry/SentryAttributes;)V
-	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setFingerprint (Ljava/util/List;)V
-	public fun setLevel (Lio/sentry/SentryLevel;)V
-	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
-	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setTransaction (Ljava/lang/String;)V
-	public fun setUser (Lio/sentry/protocol/User;)V
-	public fun startProfiler ()V
-	public fun startSession ()V
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun stopProfiler ()V
-	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
-	public fun withScope (Lio/sentry/ScopeCallback;)V
+	public static fun valueOf (Ljava/lang/Integer;)Lio/sentry/HttpStatusCodeRange;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/HttpStatusCodeRange;
 }
 
 public abstract interface class io/sentry/IAppStartExtender {
@@ -940,9 +787,6 @@ public abstract interface class io/sentry/IFeedbackApi {
 	public abstract fun show ()V
 	public abstract fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public abstract fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
-}
-
-public abstract interface class io/sentry/IHub : io/sentry/IScopes {
 }
 
 public abstract interface class io/sentry/ILogger {
@@ -1126,9 +970,7 @@ public abstract interface class io/sentry/IScopes {
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun clearBreadcrumbs ()V
-	public abstract fun clone ()Lio/sentry/IHub;
 	public abstract fun close ()V
 	public abstract fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeCallback;)V
@@ -1159,7 +1001,6 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun logger ()Lio/sentry/logger/ILoggerApi;
 	public abstract fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
 	public abstract fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public abstract fun popScope ()V
 	public abstract fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public abstract fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public abstract fun removeAttribute (Ljava/lang/String;)V
@@ -1227,7 +1068,6 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun close ()V
 	public abstract fun close (Z)V
 	public abstract fun flush (J)V
@@ -1254,6 +1094,7 @@ public abstract interface class io/sentry/ISerializer {
 	public abstract fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 	public abstract fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
 	public abstract fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
+	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;Z)V
 	public abstract fun serialize (Ljava/util/Map;)Ljava/lang/String;
 }
 
@@ -1295,8 +1136,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
-	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
-	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public abstract fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public abstract fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
@@ -1347,13 +1187,6 @@ public final class io/sentry/InitPriority : java/lang/Enum {
 	public static final field MEDIUM Lio/sentry/InitPriority;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/InitPriority;
 	public static fun values ()[Lio/sentry/InitPriority;
-}
-
-public final class io/sentry/Instrumenter : java/lang/Enum {
-	public static final field OTEL Lio/sentry/Instrumenter;
-	public static final field SENTRY Lio/sentry/Instrumenter;
-	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Instrumenter;
-	public static fun values ()[Lio/sentry/Instrumenter;
 }
 
 public abstract interface class io/sentry/Integration {
@@ -1471,6 +1304,7 @@ public final class io/sentry/JsonSerializer : io/sentry/ISerializer {
 	public fun deserializeEnvelope (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 	public fun serialize (Lio/sentry/SentryEnvelope;Ljava/io/OutputStream;)V
 	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;)V
+	public fun serialize (Ljava/lang/Object;Ljava/io/Writer;Z)V
 	public fun serialize (Ljava/util/Map;)Ljava/lang/String;
 }
 
@@ -1732,83 +1566,6 @@ public final class io/sentry/NoOpFeedbackApi : io/sentry/IFeedbackApi {
 	public fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 }
 
-public final class io/sentry/NoOpHub : io/sentry/IHub {
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
-	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
-	public fun bindClient (Lio/sentry/ISentryClient;)V
-	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
-	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
-	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
-	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
-	public fun clearBreadcrumbs ()V
-	public fun clone ()Lio/sentry/IHub;
-	public synthetic fun clone ()Ljava/lang/Object;
-	public fun close ()V
-	public fun close (Z)V
-	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
-	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
-	public fun endSession ()V
-	public fun feedback ()Lio/sentry/IFeedbackApi;
-	public fun flush (J)V
-	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
-	public fun getBaggage ()Lio/sentry/BaggageHeader;
-	public fun getGlobalScope ()Lio/sentry/IScope;
-	public static fun getInstance ()Lio/sentry/NoOpHub;
-	public fun getIsolationScope ()Lio/sentry/IScope;
-	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
-	public fun getOptions ()Lio/sentry/SentryOptions;
-	public fun getParentScopes ()Lio/sentry/IScopes;
-	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
-	public fun getScope ()Lio/sentry/IScope;
-	public fun getSpan ()Lio/sentry/ISpan;
-	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
-	public fun getTransaction ()Lio/sentry/ITransaction;
-	public fun isAncestorOf (Lio/sentry/IScopes;)Z
-	public fun isCrashedLastRun ()Ljava/lang/Boolean;
-	public fun isEnabled ()Z
-	public fun isHealthy ()Z
-	public fun isNoOp ()Z
-	public fun logger ()Lio/sentry/logger/ILoggerApi;
-	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
-	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public fun popScope ()V
-	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
-	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
-	public fun removeAttribute (Ljava/lang/String;)V
-	public fun removeExtra (Ljava/lang/String;)V
-	public fun removeTag (Ljava/lang/String;)V
-	public fun reportFullyDisplayed ()V
-	public fun setActiveSpan (Lio/sentry/ISpan;)V
-	public fun setAttribute (Lio/sentry/SentryAttribute;)V
-	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
-	public fun setAttributes (Lio/sentry/SentryAttributes;)V
-	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setFingerprint (Ljava/util/List;)V
-	public fun setLevel (Lio/sentry/SentryLevel;)V
-	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
-	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
-	public fun setTransaction (Ljava/lang/String;)V
-	public fun setUser (Lio/sentry/protocol/User;)V
-	public fun startProfiler ()V
-	public fun startSession ()V
-	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun stopProfiler ()V
-	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
-	public fun withScope (Lio/sentry/ScopeCallback;)V
-}
-
 public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public static fun getInstance ()Lio/sentry/NoOpLogger;
 	public fun isEnabled (Lio/sentry/SentryLevel;)Z
@@ -1951,10 +1708,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
-	public fun clone ()Lio/sentry/IHub;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
 	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
@@ -1985,7 +1739,6 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
 	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun removeAttribute (Ljava/lang/String;)V
@@ -2073,8 +1826,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
@@ -2133,8 +1885,7 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
@@ -2706,10 +2457,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
-	public fun clone ()Lio/sentry/IHub;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
 	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
@@ -2741,7 +2489,6 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
 	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun removeAttribute (Ljava/lang/String;)V
@@ -2786,10 +2533,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
-	public fun clone ()Lio/sentry/IHub;
-	public synthetic fun clone ()Ljava/lang/Object;
 	public fun close ()V
 	public fun close (Z)V
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
@@ -2819,7 +2563,6 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
 	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun removeAttribute (Ljava/lang/String;)V
@@ -2905,14 +2648,10 @@ public final class io/sentry/Sentry {
 	public static fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public static fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureException (Ljava/lang/Throwable;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public static fun captureFeedback (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
-	public static fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public static fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public static fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public static fun clearBreadcrumbs ()V
 	public static fun close ()V
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
@@ -2928,7 +2667,6 @@ public final class io/sentry/Sentry {
 	public static fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public static fun forkedScopes (Ljava/lang/String;)Lio/sentry/IScopes;
 	public static fun getBaggage ()Lio/sentry/BaggageHeader;
-	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getCurrentScopes ()Lio/sentry/IScopes;
 	public static fun getCurrentScopes (Z)Lio/sentry/IScopes;
 	public static fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
@@ -2948,7 +2686,6 @@ public final class io/sentry/Sentry {
 	public static fun isHealthy ()Z
 	public static fun logger ()Lio/sentry/logger/ILoggerApi;
 	public static fun metrics ()Lio/sentry/metrics/IMetricsApi;
-	public static fun popScope ()V
 	public static fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public static fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public static fun removeAttribute (Ljava/lang/String;)V
@@ -2959,7 +2696,6 @@ public final class io/sentry/Sentry {
 	public static fun setAttribute (Lio/sentry/SentryAttribute;)V
 	public static fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
 	public static fun setAttributes (Lio/sentry/SentryAttributes;)V
-	public static fun setCurrentHub (Lio/sentry/IHub;)Lio/sentry/ISentryLifecycleToken;
 	public static fun setCurrentScopes (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 	public static fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setFingerprint (Ljava/util/List;)V
@@ -2967,9 +2703,6 @@ public final class io/sentry/Sentry {
 	public static fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setTransaction (Ljava/lang/String;)V
 	public static fun setUser (Lio/sentry/protocol/User;)V
-	public static fun showUserFeedbackDialog ()V
-	public static fun showUserFeedbackDialog (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
-	public static fun showUserFeedbackDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public static fun startProfiler ()V
 	public static fun startSession ()V
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
@@ -3166,7 +2899,6 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
 	public fun close (Z)V
 	public fun flush (J)V
@@ -3250,7 +2982,6 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromReplay (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/SentryReplayEvent;Lio/sentry/ReplayRecording;Z)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
-	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
 	public fun getClientReport (Lio/sentry/ISerializer;)Lio/sentry/clientreport/ClientReport;
 	public fun getData ()[B
 	public fun getEvent (Lio/sentry/ISerializer;)Lio/sentry/SentryEvent;
@@ -3783,6 +3514,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun addIgnoredCheckIn (Ljava/lang/String;)V
 	public fun addIgnoredError (Ljava/lang/String;)V
+	public fun addIgnoredErrorForDeduplication (Ljava/lang/String;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addIgnoredSpanOrigin (Ljava/lang/String;)V
 	public fun addIgnoredTransaction (Ljava/lang/String;)V
@@ -3839,15 +3571,20 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getHostnameCache ()Lio/sentry/HostnameCache;
 	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun getIgnoredCheckInFilters ()Ljava/util/List;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
+	public fun getIgnoredErrorFilters ()Ljava/util/List;
+	public fun getIgnoredErrorFiltersForDeduplication ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
+	public fun getIgnoredErrorsForDeduplication ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getIgnoredSpanOriginFilters ()Ljava/util/List;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
+	public fun getIgnoredTransactionFilters ()Ljava/util/List;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getInitPriority ()Lio/sentry/InitPriority;
-	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
 	public fun getLogger ()Lio/sentry/ILogger;
@@ -3901,6 +3638,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getTags ()Ljava/util/Map;
 	public fun getThreadChecker ()Lio/sentry/util/thread/IThreadChecker;
 	public fun getTimerExecutorService ()Lio/sentry/ISentryExecutorService;
+	public fun getTraceIgnoreStatusCodes ()Ljava/util/List;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
@@ -3946,7 +3684,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun isStartProfilerOnAppStart ()Z
 	public fun isStrictTraceContinuation ()Z
 	public fun isTraceOptionsRequests ()Z
-	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
 	public fun merge (Lio/sentry/ExternalOptions;)V
 	public fun setAppStartExtender (Lio/sentry/IAppStartExtender;)V
@@ -4014,10 +3751,10 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredErrorsForDeduplication (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
-	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
 	public fun setLogs (Lio/sentry/SentryOptions$Logs;)V
 	public fun setMaxAttachmentSize (J)V
@@ -4071,9 +3808,9 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
 	public fun setTimerExecutorService (Lio/sentry/ISentryExecutorService;)V
+	public fun setTraceIgnoreStatusCodes (Ljava/util/List;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
-	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
@@ -4131,9 +3868,7 @@ public final class io/sentry/SentryOptions$Logs {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;
 	public fun getLoggerBatchProcessorFactory ()Lio/sentry/logger/ILoggerBatchProcessorFactory;
-	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;)V
-	public fun setEnabled (Z)V
 	public fun setLoggerBatchProcessorFactory (Lio/sentry/logger/ILoggerBatchProcessorFactory;)V
 }
 
@@ -4145,9 +3880,7 @@ public final class io/sentry/SentryOptions$Metrics {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;
 	public fun getMetricsBatchProcessorFactory ()Lio/sentry/metrics/IMetricsBatchProcessorFactory;
-	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;)V
-	public fun setEnabled (Z)V
 	public fun setMetricsBatchProcessorFactory (Lio/sentry/metrics/IMetricsBatchProcessorFactory;)V
 }
 
@@ -4333,11 +4066,12 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
 
-public final class io/sentry/SentrySpanStorage {
-	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
-	public static fun getInstance ()Lio/sentry/SentrySpanStorage;
-	public fun removeAndGet (Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun store (Ljava/lang/String;Lio/sentry/ISpan;)V
+public final class io/sentry/SentrySpanKind {
+	public static final field CLIENT Ljava/lang/String;
+	public static final field CONSUMER Ljava/lang/String;
+	public static final field INTERNAL Ljava/lang/String;
+	public static final field PRODUCER Ljava/lang/String;
+	public static final field SERVER Ljava/lang/String;
 }
 
 public final class io/sentry/SentryStackTraceFactory {
@@ -4413,8 +4147,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
@@ -4550,8 +4283,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
-	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
@@ -4582,7 +4314,6 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
-	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
@@ -4599,7 +4330,6 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setDescription (Ljava/lang/String;)V
-	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setOrigin (Ljava/lang/String;)V
 	public fun setProfilerId (Lio/sentry/protocol/SentryId;)V
@@ -4661,6 +4391,7 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field MESSAGING_OPERATION_TYPE Ljava/lang/String;
 	public static final field MESSAGING_SYSTEM Ljava/lang/String;
 	public static final field PROFILER_ID Ljava/lang/String;
+	public static final field SENTRY_KIND_KEY Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
 }
@@ -4693,6 +4424,7 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 public class io/sentry/SpanOptions {
 	protected field origin Ljava/lang/String;
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/SpanOptions;)V
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getScopeBindingMode ()Lio/sentry/ScopeBindingMode;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
@@ -4952,36 +4684,6 @@ public final class io/sentry/UpdateStatus$UpdateError : io/sentry/UpdateStatus {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/protocol/SentryId;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun getComments ()Ljava/lang/String;
-	public fun getEmail ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
-	public fun getName ()Ljava/lang/String;
-	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-	public fun setComments (Ljava/lang/String;)V
-	public fun setEmail (Ljava/lang/String;)V
-	public fun setName (Ljava/lang/String;)V
-	public fun setUnknown (Ljava/util/Map;)V
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/UserFeedback$Deserializer : io/sentry/JsonDeserializer {
-	public fun <init> ()V
-	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/UserFeedback;
-	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/UserFeedback$JsonKeys {
-	public static final field COMMENTS Ljava/lang/String;
-	public static final field EMAIL Ljava/lang/String;
-	public static final field EVENT_ID Ljava/lang/String;
-	public static final field NAME Ljava/lang/String;
-	public fun <init> ()V
-}
-
 public final class io/sentry/W3CTraceparentHeader {
 	public static final field TRACEPARENT_HEADER Ljava/lang/String;
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
@@ -5034,16 +4736,13 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public fun iterator ()Ljava/util/Iterator;
 	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V
 	public fun persistCurrentSession (Lio/sentry/Session;)V
-	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 	public fun waitPreviousSessionFlush ()Z
 }
 
 public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Iterable {
 	public abstract fun discard (Lio/sentry/SentryEnvelope;)V
-	public fun store (Lio/sentry/SentryEnvelope;)V
-	public abstract fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
-	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
+	public abstract fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
 public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOptionsObserver {
@@ -5606,13 +5305,6 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
-public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
-	public fun add (Lio/sentry/SentryLogEvent;)V
-	public fun close (Z)V
-	public fun flush (J)V
-	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
-}
-
 public final class io/sentry/logger/SentryLogParameters {
 	public fun <init> ()V
 	public static fun create (Lio/sentry/SentryAttributes;)Lio/sentry/logger/SentryLogParameters;
@@ -5732,13 +5424,6 @@ public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetrics
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
-}
-
-public final class io/sentry/metrics/NoOpMetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
-	public fun add (Lio/sentry/SentryMetricsEvent;)V
-	public fun close (Z)V
-	public fun flush (J)V
-	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsBatchProcessor;
 }
 
 public final class io/sentry/metrics/SentryMetricsParameters {
@@ -7825,7 +7510,6 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 	public fun discard (Lio/sentry/SentryEnvelope;)V
 	public static fun getInstance ()Lio/sentry/transport/NoOpEnvelopeCache;
 	public fun iterator ()Ljava/util/Iterator;
-	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 

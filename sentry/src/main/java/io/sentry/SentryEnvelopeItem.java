@@ -8,6 +8,7 @@ import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.profiling.SentryProfile;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -171,34 +172,6 @@ public final class SentryEnvelopeItem {
         new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
       return serializer.deserialize(eventReader, SentryMetricsEvents.class);
     }
-  }
-
-  @Deprecated
-  public static SentryEnvelopeItem fromUserFeedback(
-      final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
-    Objects.requireNonNull(serializer, "ISerializer is required.");
-    Objects.requireNonNull(userFeedback, "UserFeedback is required.");
-
-    final CachedItem cachedItem =
-        new CachedItem(() -> {
-          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-              final Writer writer =
-                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-            serializer.serialize(userFeedback, writer);
-            return stream.toByteArray();
-          }
-        });
-
-    SentryEnvelopeItemHeader itemHeader =
-        new SentryEnvelopeItemHeader(
-            SentryItemType.UserFeedback,
-            () -> cachedItem.getBytes().length,
-            "application/json",
-            null);
-
-    // avoid method refs on Android due to some issues with older AGP setups
-    // noinspection Convert2MethodRef
-    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
   public static SentryEnvelopeItem fromCheckIn(
@@ -612,6 +585,10 @@ public final class SentryEnvelopeItem {
               return serializeToMsgpack(replayPayload);
             }
           } catch (Throwable t) {
+            // The recording holds data from integrations and the app, such as breadcrumb data and
+            // network details, that is serialized reflectively, so we can't know what this throws.
+            // The item is sent with an empty payload, so the replay segment is lost.
+            ExceptionUtils.rethrowIfFatal(t);
             logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
             return null;
           } finally {

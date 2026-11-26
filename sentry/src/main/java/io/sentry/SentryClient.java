@@ -21,6 +21,7 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.*;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -128,7 +129,7 @@ public final class SentryClient implements ISentryClient {
         return SentryId.EMPTY_ID;
       }
 
-      if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
+      if (ErrorUtils.isIgnored(options.getIgnoredErrorFilters(), event)) {
         options
             .getLogger()
             .log(
@@ -769,47 +770,6 @@ public final class SentryClient implements ISentryClient {
     return feedbackEvent;
   }
 
-  @Deprecated
-  @Override
-  public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    Objects.requireNonNull(userFeedback, "SentryEvent is required.");
-
-    if (SentryId.EMPTY_ID.equals(userFeedback.getEventId())) {
-      options.getLogger().log(SentryLevel.WARNING, "Capturing userFeedback without a Sentry Id.");
-      return;
-    }
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
-
-    try {
-      final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
-      sendEnvelope(envelope, null);
-    } catch (IOException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              e,
-              "Capturing user feedback %s failed.",
-              userFeedback.getEventId());
-    }
-  }
-
-  @Deprecated
-  private @NotNull SentryEnvelope buildEnvelope(final @NotNull UserFeedback userFeedback) {
-    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
-
-    final SentryEnvelopeItem userFeedbackItem =
-        SentryEnvelopeItem.fromUserFeedback(options.getSerializer(), userFeedback);
-    envelopeItems.add(userFeedbackItem);
-
-    final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(userFeedback.getEventId(), options.getSdkVersion());
-
-    return new SentryEnvelope(envelopeHeader, envelopeItems);
-  }
-
   private @NotNull SentryEnvelope buildEnvelope(
       final @NotNull CheckIn checkIn, final @Nullable TraceContext traceContext) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -1044,20 +1004,33 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
-    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+    if (TracingUtils.isIgnored(
+        options.getIgnoredTransactionFilters(), transaction.getTransaction())) {
       options
           .getLogger()
           .log(
               SentryLevel.DEBUG,
               "Transaction was dropped as transaction name %s is ignored",
               transaction.getTransaction());
+      recordLostTransactionAndSpans(transaction);
+      return SentryId.EMPTY_ID;
+    }
+
+    final @Nullable Integer ignoredHttpStatusCode = getIgnoredHttpStatusCode(transaction);
+    if (ignoredHttpStatusCode != null) {
       options
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(
-              DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was dropped as HTTP status code %d is ignored",
+              ignoredHttpStatusCode);
+      recordLostTransactionAndSpans(transaction);
+      if (profilingTraceData != null) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Profile);
+      }
+      deleteProfilingTraceFile(profilingTraceData);
       return SentryId.EMPTY_ID;
     }
 
@@ -1133,6 +1106,73 @@ public final class SentryClient implements ISentryClient {
     return sentryId;
   }
 
+  private void recordLostTransactionAndSpans(final @NotNull SentryTransaction transaction) {
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(
+            DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+  }
+
+  private @Nullable Integer getIgnoredHttpStatusCode(final @NotNull SentryTransaction transaction) {
+    final @Nullable List<HttpStatusCodeRange> ignoredHttpStatusCodes =
+        options.getTraceIgnoreStatusCodes();
+    if (ignoredHttpStatusCodes == null || ignoredHttpStatusCodes.isEmpty()) {
+      return null;
+    }
+
+    final @Nullable SpanContext trace = transaction.getContexts().getTrace();
+    if (trace == null
+        || !SentrySpanKind.SERVER.equals(trace.getData().get(SpanDataConvention.SENTRY_KIND_KEY))) {
+      return null;
+    }
+
+    final @Nullable Object httpStatusCodeValue =
+        trace.getData().get(SpanDataConvention.HTTP_STATUS_CODE_KEY);
+    if (!(httpStatusCodeValue instanceof Integer || httpStatusCodeValue instanceof Long)) {
+      return null;
+    }
+    final long longHttpStatusCode = ((Number) httpStatusCodeValue).longValue();
+    if (longHttpStatusCode < 100 || longHttpStatusCode > 599) {
+      return null;
+    }
+    final int httpStatusCode = (int) longHttpStatusCode;
+    for (final @Nullable HttpStatusCodeRange ignoredHttpStatusCode : ignoredHttpStatusCodes) {
+      if (ignoredHttpStatusCode != null && ignoredHttpStatusCode.isInRange(httpStatusCode)) {
+        return httpStatusCode;
+      }
+    }
+    return null;
+  }
+
+  private void deleteProfilingTraceFile(final @Nullable ProfilingTraceData profilingTraceData) {
+    if (profilingTraceData == null) {
+      return;
+    }
+
+    final @NotNull File traceFile = profilingTraceData.getTraceFile();
+    try {
+      if (!traceFile.delete()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Failed to delete profiling trace file %s for an ignored transaction",
+                traceFile.getPath());
+      }
+    } catch (SecurityException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              e,
+              "Failed to delete profiling trace file %s for an ignored transaction",
+              traceFile.getPath());
+    }
+  }
+
   @ApiStatus.Internal
   @Override
   public @NotNull SentryId captureProfileChunk(
@@ -1203,7 +1243,7 @@ public final class SentryClient implements ISentryClient {
       checkIn.setRelease(options.getRelease());
     }
 
-    if (CheckInUtils.isIgnored(options.getIgnoredCheckIns(), checkIn.getMonitorSlug())) {
+    if (CheckInUtils.isIgnored(options.getIgnoredCheckInFilters(), checkIn.getMonitorSlug())) {
       options
           .getLogger()
           .log(
@@ -1357,7 +1397,6 @@ public final class SentryClient implements ISentryClient {
     return traceContext;
   }
 
-  @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
     // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
@@ -1402,7 +1441,6 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
-  @ApiStatus.Experimental
   @Override
   public void captureMetric(
       @Nullable SentryMetricsEvent metricsEvent,
@@ -1494,7 +1532,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          event.getContexts().setTrace(span.getSpanContext());
+          event.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
 
@@ -1542,7 +1580,7 @@ public final class SentryClient implements ISentryClient {
             .getContexts()
             .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
       } else {
-        event.getContexts().setTrace(span.getSpanContext());
+        event.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
       }
     }
 
@@ -1563,7 +1601,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          checkIn.getContexts().setTrace(span.getSpanContext());
+          checkIn.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
     }
@@ -1607,7 +1645,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          replayEvent.getContexts().setTrace(span.getSpanContext());
+          replayEvent.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
     }

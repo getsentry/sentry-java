@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -77,6 +78,9 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, e, "I/O on file '%s' failed.", file.getAbsolutePath());
     } catch (Throwable e) {
+      // The cached file may be corrupt or come from an older SDK version, so we can't know what
+      // deserializing and capturing it throws. The file is deleted instead of retried.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(
           SentryLevel.ERROR, e, "Failed to capture cached envelope %s", file.getAbsolutePath());
       HintUtils.runIfHasTypeLogIfNot(

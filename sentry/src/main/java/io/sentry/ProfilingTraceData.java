@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.profilemeasurements.ProfileMeasurement;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
@@ -365,8 +366,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   public void readDeviceCpuFrequencies() {
     try {
       this.deviceCpuFrequencies = deviceCpuFrequenciesReader.call();
-    } catch (Throwable ignored) {
-      // should never happen
+    } catch (Throwable t) {
+      // The reader is supplied by the platform integration and declares any Exception, so we
+      // can't know what it throws. The profile is sent without CPU frequencies.
+      ExceptionUtils.rethrowIfFatal(t);
     }
   }
 

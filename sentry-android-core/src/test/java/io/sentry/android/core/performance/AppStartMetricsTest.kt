@@ -18,7 +18,6 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.AppStartExtension
 import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.CurrentActivityHolder
-import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import io.sentry.protocol.SentryId
 import java.util.concurrent.TimeUnit
@@ -90,45 +89,24 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `if perf-2 is enabled and app start time span is started, appStartTimeSpanWithFallback returns it`() {
+  fun `if app start time span is started, appStartTimeSpanWithFallback returns it`() {
     val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
     AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.WARM
     appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())
 
-    val options = SentryAndroidOptions().apply { isEnablePerformanceV2 = true }
-
-    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback()
     assertSame(appStartTimeSpan, timeSpan)
   }
 
   @Test
-  fun `if perf-2 is disabled but app start time span has started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
-    val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
-    AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.COLD
-    AppStartMetrics.getInstance().sdkInitTimeSpan.apply {
-      setStartedAt(123)
-      setStoppedAt(456)
-    }
-    appStartTimeSpan.setStartedAt(123)
-
-    val options = SentryAndroidOptions().apply { isEnablePerformanceV2 = false }
-
-    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
-    val sdkInitSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
-    assertSame(sdkInitSpan, timeSpan)
-  }
-
-  @Test
-  fun `if perf-2 is enabled but app start time span has not started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
+  fun `if app start time span has not started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
     AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.COLD
     AppStartMetrics.getInstance().sdkInitTimeSpan.apply {
       setStartedAt(123)
       setStoppedAt(456)
     }
 
-    val options = SentryAndroidOptions().apply { isEnablePerformanceV2 = true }
-
-    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback()
     val sdkInitSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
     assertSame(sdkInitSpan, timeSpan)
   }
@@ -146,12 +124,8 @@ class AppStartMetricsTest {
     val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
     appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())
     assertTrue(appStartTimeSpan.hasStarted())
-    AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
-    waitForMainLooperIdle()
 
-    val options = SentryAndroidOptions().apply { isEnablePerformanceV2 = false }
-
-    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback()
     assertFalse(timeSpan.hasStarted())
   }
 
@@ -396,9 +370,7 @@ class AppStartMetricsTest {
     assertTrue(appStartTimeSpan.hasStarted())
     AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
 
-    val options = SentryAndroidOptions().apply { isEnablePerformanceV2 = true }
-
-    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback()
     assertTrue(timeSpan.hasStarted())
     assertSame(appStartTimeSpan, timeSpan)
   }
@@ -412,8 +384,7 @@ class AppStartMetricsTest {
     // Job on main thread checks if activity was launched
     waitForMainLooperIdle()
 
-    val timeSpan =
-      AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(SentryAndroidOptions())
+    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback()
     assertFalse(timeSpan.hasStarted())
   }
 
@@ -479,9 +450,7 @@ class AppStartMetricsTest {
     assertTrue(appStartTimeSpan.hasStarted())
     AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
 
-    val options = SentryAndroidOptions().apply { isEnablePerformanceV2 = true }
-
-    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
+    val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback()
     assertFalse(timeSpan.hasStarted())
   }
 

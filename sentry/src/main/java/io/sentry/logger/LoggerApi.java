@@ -17,6 +17,7 @@ import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
@@ -131,6 +132,9 @@ public final class LoggerApi implements ILoggerApi {
 
       scopes.getClient().captureLog(logEvent, combinedScope);
     } catch (Throwable e) {
+      // A public API entry point whose capture runs integration and app code, such as event
+      // processors, so we can't know what it throws. The log is dropped.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }
   }
@@ -144,6 +148,10 @@ public final class LoggerApi implements ILoggerApi {
     try {
       return String.format(message, args);
     } catch (Throwable t) {
+      // Formatting calls the app's toString() and Formattable implementations of the arguments,
+      // and the format string may not match them, so we can't know what this throws. The log is
+      // sent with the unformatted message.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()

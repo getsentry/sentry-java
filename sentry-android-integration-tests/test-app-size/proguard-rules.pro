@@ -40,6 +40,7 @@
 -dontwarn timber.log.Timber$Tree
 -dontwarn kotlin.Deprecated
 -dontwarn kotlin.Function
+-dontwarn kotlin.jvm.JvmField
 -dontwarn kotlin.jvm.JvmStatic
 -dontwarn kotlin.jvm.functions.Function2
 -dontwarn kotlin.jvm.functions.Function3

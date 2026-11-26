@@ -10,6 +10,7 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LifecycleHelper;
 import io.sentry.util.MonitorConfigUtils;
 import io.sentry.util.Objects;
@@ -19,7 +20,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quartz.CronTrigger;
@@ -33,7 +33,6 @@ import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
-@ApiStatus.Experimental
 public final class SentryJobListener implements JobListener {
 
   static {
@@ -94,6 +93,9 @@ public final class SentryJobListener implements JobListener {
       context.put(SENTRY_CHECK_IN_ID_KEY, checkInId);
       context.put(SENTRY_SLUG_KEY, slug);
     } catch (Throwable t) {
+      // This reads the app's job data and trigger, and Quartz doesn't run the job when a listener
+      // throws, so we can't let anything escape. The job runs without a check-in.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()
@@ -283,6 +285,9 @@ public final class SentryJobListener implements JobListener {
         scopes.captureCheckIn(new CheckIn(checkInId, slug, status));
       }
     } catch (Throwable t) {
+      // This runs on Quartz's job thread after the app's job, which a reporting failure must not
+      // disturb. The check-in for this run is not sent.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()
