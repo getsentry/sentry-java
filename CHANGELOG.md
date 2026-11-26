@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- Session Replay: Mask Compose images the same way in debug and release builds. Only `VectorPainter`, `ColorPainter`, and `BrushPainter` are left unmasked, instead of any Painter whose class name contains `Vector`, `Color`, or `Brush` ([#6779](https://github.com/getsentry/sentry-java/pull/6779))
 - Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 - Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))

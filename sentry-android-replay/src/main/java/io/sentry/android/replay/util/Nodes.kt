@@ -28,7 +28,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
+import androidx.compose.ui.graphics.painter.BrushPainter
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.VectorPainter
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.LayoutNode
@@ -111,20 +114,14 @@ internal fun LayoutNode.isMaskableImage(): Boolean? {
 }
 
 /**
- * We heuristically check the known classes that are coming from local assets usually:
- * [androidx.compose.ui.graphics.vector.VectorPainter]
- * [androidx.compose.ui.graphics.painter.ColorPainter]
- * [androidx.compose.ui.graphics.painter.BrushPainter]
+ * Only [VectorPainter], [ColorPainter], and [BrushPainter] are left unmasked, because they draw
+ * local vectors and fills. Every other Painter may draw a remote image, so it is masked.
  *
  * In theory, [androidx.compose.ui.graphics.painter.BitmapPainter] can also come from local assets,
  * but it can as well come from a network resource, so we preemptively mask it.
  */
-internal fun Painter.isMaskable(): Boolean {
-  val className = this::class.java.name
-  return !className.contains("Vector") &&
-    !className.contains("Color") &&
-    !className.contains("Brush")
-}
+internal fun Painter.isMaskable(): Boolean =
+  this !is VectorPainter && this !is ColorPainter && this !is BrushPainter
 
 /**
  * This method is necessary to mask text in Compose.

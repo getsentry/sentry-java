@@ -4,10 +4,9 @@
 
 # Rules to detect Images/Icons and mask them
 -dontwarn androidx.compose.ui.graphics.painter.Painter
-# isMaskable() leaves these Painters unmasked by name and masks every other one
--keepnames class androidx.compose.ui.graphics.vector.VectorPainter
--keepnames class androidx.compose.ui.graphics.painter.ColorPainter
--keepnames class androidx.compose.ui.graphics.painter.BrushPainter
+-dontwarn androidx.compose.ui.graphics.painter.ColorPainter
+-dontwarn androidx.compose.ui.graphics.painter.BrushPainter
+-dontwarn androidx.compose.ui.graphics.vector.VectorPainter
 -keepclasseswithmembernames class * {
     androidx.compose.ui.graphics.painter.Painter painter;
 }
