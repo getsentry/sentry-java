@@ -14,10 +14,27 @@
 ### Fixes
 
 - Session Replay: Mask Compose images the same way in debug and release builds. Only `VectorPainter`, `ColorPainter`, and `BrushPainter` are left unmasked, instead of any Painter whose class name contains `Vector`, `Color`, or `Brush` ([#6779](https://github.com/getsentry/sentry-java/pull/6779))
+- Android: A crash long after `Sentry.init` is no longer marked as a startup crash when the device slept in between, because the time since init now counts deep sleep ([#6738](https://github.com/getsentry/sentry-java/pull/6738))
+
+### Dependencies
+
+- Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
+  - `opentelemetry` to `1.68.0` (was `1.67.0`)
+  - `opentelemetry-alpha` to `1.68.0-alpha` (was `1.67.0-alpha`)
+  - `opentelemetry-instrumentation` to `2.34.0` (was `2.33.1`)
+  - `opentelemetry-instrumentation-alpha` to `2.34.0-alpha` (was `2.33.1-alpha`)
+  - `opentelemetry-semconv` to `1.45.0` (was `1.44.0`)
+  - `opentelemetry-semconv-alpha` to `1.45.0-alpha` (was `1.44.0-alpha`)
+
+## 8.66.0
+
+### Fixes
+
 - Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
 - Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 - Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
 - Android profiling: Uploading a Perfetto profile chunk now keeps the trace in memory once instead of up to three times, lowering peak memory use for traces up to 50 MB ([#6743](https://github.com/getsentry/sentry-java/pull/6743))
+- Stop a transaction's CPU and memory collection 30 seconds after it starts even when the device's wall clock changes in between ([#6739](https://github.com/getsentry/sentry-java/pull/6739))
 
 ### Dependencies
 
