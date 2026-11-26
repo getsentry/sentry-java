@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Resolves effective Data Collection policies for SDK integrations. */
-@SuppressWarnings("deprecation")
 @ApiStatus.Internal
 public final class DataCollectionResolver {
 
@@ -16,127 +15,70 @@ public final class DataCollectionResolver {
     this.options = options;
   }
 
-  public boolean isDataCollectionConfigured() {
-    return options.getDataCollection().isExplicitlyConfigured();
-  }
-
   public boolean isUserInfo() {
-    return explicitOrSendDefaultPii(options.getDataCollection().getUserInfo(), true);
+    return explicitOrDefault(options.getDataCollection().getUserInfo(), true);
   }
 
   public boolean isDatabaseQueryData() {
-    return explicitOrSendDefaultPii(options.getDataCollection().getDatabaseQueryData(), true);
+    return explicitOrDefault(options.getDataCollection().getDatabaseQueryData(), true);
   }
 
   public boolean isFilePaths() {
-    return explicitOrSendDefaultPii(options.getDataCollection().getFilePaths(), true);
+    return explicitOrDefault(options.getDataCollection().getFilePaths(), true);
   }
 
   public boolean isGraphqlDocument() {
-    return explicitOrSendDefaultPii(options.getDataCollection().getGraphql().getDocument(), true);
-  }
-
-  public boolean isGraphqlDocumentWithLegacyBodyGate() {
-    return explicitOrDefault(
-        options.getDataCollection().getGraphql().getDocument(), true, isLegacyGraphqlBodyEnabled());
-  }
-
-  public boolean isGraphqlDocumentWithLegacyAlways() {
-    return explicitOrDefault(options.getDataCollection().getGraphql().getDocument(), true, true);
+    return explicitOrDefault(options.getDataCollection().getGraphql().getDocument(), true);
   }
 
   public boolean isGraphqlVariables() {
-    return explicitOrSendDefaultPii(options.getDataCollection().getGraphql().getVariables(), true);
-  }
-
-  public boolean isGraphqlVariablesWithLegacyBodyGate() {
-    return explicitOrDefault(
-        options.getDataCollection().getGraphql().getVariables(),
-        true,
-        isLegacyGraphqlBodyEnabled());
-  }
-
-  public boolean isGraphqlVariablesWithLegacyAlways() {
-    return explicitOrDefault(options.getDataCollection().getGraphql().getVariables(), true, true);
+    return explicitOrDefault(options.getDataCollection().getGraphql().getVariables(), true);
   }
 
   public @NotNull KeyValueCollectionBehavior getCookies() {
-    final @NotNull DataCollection dataCollection = options.getDataCollection();
-    final @Nullable KeyValueCollectionBehavior cookies = dataCollection.getCookies();
-
-    if (cookies != null) {
-      return cookies;
-    }
-    if (isDataCollectionConfigured()) {
-      return KeyValueCollectionBehavior.denyList();
-    }
-    return options.isSendDefaultPii()
-        ? KeyValueCollectionBehavior.denyList()
-        : KeyValueCollectionBehavior.off();
+    final @Nullable KeyValueCollectionBehavior cookies = options.getDataCollection().getCookies();
+    return cookies != null ? cookies : KeyValueCollectionBehavior.denyList();
   }
 
   public @NotNull KeyValueCollectionBehavior getUrlQueryParams() {
-    return explicitOrEmptyDenyList(options.getDataCollection().getUrlQueryParams());
+    return explicitOrDefault(options.getDataCollection().getUrlQueryParams());
   }
 
   public @NotNull KeyValueCollectionBehavior getHttpRequestHeaders() {
-    return explicitOrEmptyDenyList(options.getDataCollection().getHttpHeaders().getRequest());
+    return explicitOrDefault(options.getDataCollection().getHttpHeaders().getRequest());
   }
 
   public @NotNull KeyValueCollectionBehavior getHttpResponseHeaders() {
-    return explicitOrEmptyDenyList(options.getDataCollection().getHttpHeaders().getResponse());
+    return explicitOrDefault(options.getDataCollection().getHttpHeaders().getResponse());
   }
 
   public boolean isIncomingRequestBody() {
-    return isHttpBodyEnabled(HttpBodyType.INCOMING_REQUEST, options.isSendDefaultPii());
+    return isHttpBodyEnabled(HttpBodyType.INCOMING_REQUEST);
   }
 
   public boolean isOutgoingRequestBody() {
-    return isHttpBodyEnabled(HttpBodyType.OUTGOING_REQUEST, true);
+    return isHttpBodyEnabled(HttpBodyType.OUTGOING_REQUEST);
   }
 
   public boolean isIncomingResponseBody() {
-    return isHttpBodyEnabled(HttpBodyType.INCOMING_RESPONSE, true);
+    return isHttpBodyEnabled(HttpBodyType.INCOMING_RESPONSE);
   }
 
   public boolean isOutgoingResponseBody() {
-    return isHttpBodyEnabled(HttpBodyType.OUTGOING_RESPONSE, options.isSendDefaultPii());
+    return isHttpBodyEnabled(HttpBodyType.OUTGOING_RESPONSE);
   }
 
-  public boolean isOutgoingResponseBodyWithLegacyBodyGate() {
-    return isHttpBodyEnabled(HttpBodyType.OUTGOING_RESPONSE, isLegacyGraphqlBodyEnabled());
+  private boolean explicitOrDefault(final @Nullable Boolean explicit, final boolean defaultValue) {
+    return explicit != null ? explicit : defaultValue;
   }
 
-  private boolean isLegacyGraphqlBodyEnabled() {
-    return options.isSendDefaultPii()
-        && !SentryOptions.RequestSize.NONE.equals(options.getMaxRequestBodySize());
-  }
-
-  private boolean explicitOrSendDefaultPii(
-      final @Nullable Boolean explicit, final boolean defaultValue) {
-    return explicitOrDefault(explicit, defaultValue, options.isSendDefaultPii());
-  }
-
-  private boolean explicitOrDefault(
-      final @Nullable Boolean explicit, final boolean defaultValue, final boolean legacyFallback) {
-    if (explicit != null) {
-      return explicit;
-    }
-    return isDataCollectionConfigured() ? defaultValue : legacyFallback;
-  }
-
-  private @NotNull KeyValueCollectionBehavior explicitOrEmptyDenyList(
+  private @NotNull KeyValueCollectionBehavior explicitOrDefault(
       final @Nullable KeyValueCollectionBehavior explicit) {
     return explicit != null ? explicit : KeyValueCollectionBehavior.denyList();
   }
 
-  private boolean isHttpBodyEnabled(
-      final @NotNull HttpBodyType bodyType, final boolean legacyFallback) {
-    final @NotNull DataCollection dataCollection = options.getDataCollection();
-    final @Nullable Set<HttpBodyType> httpBodies = dataCollection.getHttpBodies();
-    if (httpBodies != null) {
-      return httpBodies.contains(bodyType);
-    }
-    return isDataCollectionConfigured() || legacyFallback;
+  private boolean isHttpBodyEnabled(final @NotNull HttpBodyType bodyType) {
+    final @Nullable Set<HttpBodyType> httpBodies = options.getDataCollection().getHttpBodies();
+    return httpBodies == null || httpBodies.contains(bodyType);
   }
 }

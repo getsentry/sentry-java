@@ -6,7 +6,7 @@ import kotlin.test.assertFailsWith
 
 class DataCollectionTest {
   @Test
-  fun `public constructor does not force Data Collection for empty configuration`() {
+  fun `public constructor has no explicit overrides`() {
     val dataCollection = DataCollection()
 
     assertThat(dataCollection.userInfo).isNull()
@@ -20,15 +20,6 @@ class DataCollectionTest {
     assertThat(dataCollection.graphql.document).isNull()
     assertThat(dataCollection.graphql.variables).isNull()
     assertThat(dataCollection.isExplicitlyConfigured()).isFalse()
-  }
-
-  @Test
-  fun `force Data Collection makes empty configuration explicit`() {
-    val dataCollection = DataCollection()
-
-    dataCollection.forceDataCollection()
-
-    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
   }
 
   @Test

@@ -13,7 +13,6 @@ fun main() {
   Sentry.init { options ->
     options.dsn = "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
     options.isDebug = true
-    options.isSendDefaultPii = true
     options.tracesSampleRate = 1.0
     options.addInAppInclude("io.sentry.samples")
     options.isGlobalHubMode = true

@@ -389,7 +389,6 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 
 public final class io/sentry/DataCollection {
 	public fun <init> ()V
-	public fun forceDataCollection ()V
 	public fun getCookies ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getDatabaseQueryData ()Ljava/lang/Boolean;
 	public fun getFilePaths ()Ljava/lang/Boolean;
@@ -428,20 +427,14 @@ public final class io/sentry/DataCollectionResolver {
 	public fun getHttpRequestHeaders ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getHttpResponseHeaders ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getUrlQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
-	public fun isDataCollectionConfigured ()Z
 	public fun isDatabaseQueryData ()Z
 	public fun isFilePaths ()Z
 	public fun isGraphqlDocument ()Z
-	public fun isGraphqlDocumentWithLegacyAlways ()Z
-	public fun isGraphqlDocumentWithLegacyBodyGate ()Z
 	public fun isGraphqlVariables ()Z
-	public fun isGraphqlVariablesWithLegacyAlways ()Z
-	public fun isGraphqlVariablesWithLegacyBodyGate ()Z
 	public fun isIncomingRequestBody ()Z
 	public fun isIncomingResponseBody ()Z
 	public fun isOutgoingRequestBody ()Z
 	public fun isOutgoingResponseBody ()Z
-	public fun isOutgoingResponseBodyWithLegacyBodyGate ()Z
 	public fun isUserInfo ()Z
 }
 
@@ -604,7 +597,6 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun isForceInit ()Ljava/lang/Boolean;
 	public fun isGlobalHubMode ()Ljava/lang/Boolean;
-	public fun isSendDefaultPii ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
 	public fun isStrictTraceContinuation ()Ljava/lang/Boolean;
 	public fun setCaptureOpenTelemetryEvents (Ljava/lang/Boolean;)V
@@ -642,7 +634,6 @@ public final class io/sentry/ExternalOptions {
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSendClientReports (Ljava/lang/Boolean;)V
-	public fun setSendDefaultPii (Ljava/lang/Boolean;)V
 	public fun setSendModules (Ljava/lang/Boolean;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setSessionFlushTimeoutMillis (Ljava/lang/Long;)V
@@ -3679,7 +3670,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun isProfilingEnabled ()Z
 	public fun isPropagateTraceparent ()Z
 	public fun isSendClientReports ()Z
-	public fun isSendDefaultPii ()Z
 	public fun isSendModules ()Z
 	public fun isStartProfilerOnAppStart ()Z
 	public fun isStrictTraceContinuation ()Z
@@ -3790,7 +3780,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setScopesStorageFactory (Lio/sentry/IScopesStorageFactory;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSendClientReports (Z)V
-	public fun setSendDefaultPii (Z)V
 	public fun setSendModules (Z)V
 	public fun setSentryClientName (Ljava/lang/String;)V
 	public fun setSerializer (Lio/sentry/ISerializer;)V
@@ -7709,7 +7698,6 @@ public abstract interface class io/sentry/util/HintUtils$SentryNullableConsumer 
 
 public final class io/sentry/util/HttpUtils {
 	public fun <init> ()V
-	public static fun containsSensitiveHeader (Ljava/lang/String;)Z
 	public static fun filterHeaders (Ljava/util/Map;Lio/sentry/KeyValueCollectionBehavior;)Ljava/util/Map;
 	public static fun filterQueryParams (Ljava/lang/String;Lio/sentry/KeyValueCollectionBehavior;)Ljava/lang/String;
 	public static fun isHttpClientError (I)Z

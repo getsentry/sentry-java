@@ -32,7 +32,7 @@ class AppInitializer : AbstractAnnotationConfigDispatcherServletInitializer() {
 
 // The DSN and the traces path come from system properties, and the other options from
 // sentry.properties, all of which Sentry reads as external configuration.
-@Configuration @EnableSentry(dsn = "", sendDefaultPii = true) open class AppConfig
+@Configuration @EnableSentry(dsn = "") open class AppConfig
 
 // Declares the controllers rather than scanning for them, which would also pick up AppConfig and
 // initialize Sentry a second time in the servlet's context.

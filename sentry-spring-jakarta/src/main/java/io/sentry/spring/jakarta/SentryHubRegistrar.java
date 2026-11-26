@@ -54,9 +54,6 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     builder.addPropertyValue("sdkVersion", createSdkVersion());
     builder.addPropertyValue("initPriority", InitPriority.LOW);
     addPackageAndIntegrationInfo();
-    if (annotationAttributes.containsKey("sendDefaultPii")) {
-      builder.addPropertyValue("sendDefaultPii", annotationAttributes.getBoolean("sendDefaultPii"));
-    }
     if (annotationAttributes.containsKey("maxRequestBodySize")) {
       builder.addPropertyValue(
           "maxRequestBodySize", annotationAttributes.get("maxRequestBodySize"));

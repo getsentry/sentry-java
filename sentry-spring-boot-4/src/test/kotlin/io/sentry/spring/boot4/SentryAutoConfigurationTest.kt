@@ -654,7 +654,7 @@ class SentryAutoConfigurationTest {
   @Test
   fun `when custom SentryUserProvider bean is configured, it's added after HttpServletRequestSentryUserProvider`() {
     contextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withConfiguration(UserConfigurations.of(SentryUserProviderConfiguration::class.java))
       .run {
         val userProviders = it.getSentryUserProviders()
@@ -668,7 +668,7 @@ class SentryAutoConfigurationTest {
   @Test
   fun `when custom SentryUserProvider bean with higher order is configured, it's added before HttpServletRequestSentryUserProvider`() {
     contextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withConfiguration(
         UserConfigurations.of(SentryHighestOrderUserProviderConfiguration::class.java),
       )
@@ -684,7 +684,7 @@ class SentryAutoConfigurationTest {
   @Test
   fun `when Spring Security is not on the classpath, SpringSecuritySentryUserProvider is not configured`() {
     contextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withClassLoader(FilteredClassLoader(SecurityContextHolder::class.java))
       .run { ctx ->
         val userProviders = ctx.getSentryUserProviders()
@@ -696,7 +696,7 @@ class SentryAutoConfigurationTest {
   @Test
   fun `when Spring MVC is not on the classpath, SentryExceptionResolver is not configured`() {
     contextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
       .run { assertThat(it).doesNotHaveBean(SentryExceptionResolver::class.java) }
   }
@@ -704,7 +704,7 @@ class SentryAutoConfigurationTest {
   @Test
   fun `when Spring MVC is not on the classpath, fallback TransactionNameProvider is configured`() {
     contextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
       .run {
         assertThat(it.getBean(TransactionNameProvider::class.java))

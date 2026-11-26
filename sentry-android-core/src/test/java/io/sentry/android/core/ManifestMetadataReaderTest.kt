@@ -1482,37 +1482,14 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads send default pii and keep default value if not found`() {
-    // Arrange
-    val context = fixture.getContext()
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertFalse(fixture.options.isSendDefaultPii)
-  }
-
-  @Test
-  fun `applyMetadata reads send default pii to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.SEND_DEFAULT_PII to true)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.isSendDefaultPii)
-  }
-
-  @Test
-  fun `applyMetadata preserves legacy data collection when metadata is absent`() {
+  fun `applyMetadata uses data collection defaults when metadata is absent`() {
     val context = fixture.getContext()
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+    assertThat(fixture.options.dataCollectionResolver.isUserInfo).isTrue()
+    assertThat(fixture.options.dataCollectionResolver.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.denyList())
   }
 
   @Test
@@ -1606,31 +1583,13 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata data collection takes precedence over send default pii`() {
-    val bundle =
-      bundleOf(
-        ManifestMetadataReader.SEND_DEFAULT_PII to false,
-        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".mode" to "off",
-      )
-    val context = fixture.getContext(metaData = bundle)
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    assertThat(fixture.options.isSendDefaultPii).isFalse()
-    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isTrue()
-    assertThat(fixture.options.dataCollectionResolver.isUserInfo).isTrue()
-    assertThat(fixture.options.dataCollectionResolver.cookies)
-      .isEqualTo(KeyValueCollectionBehavior.off())
-  }
-
-  @Test
   fun `applyMetadata ignores invalid data collection body type`() {
     val bundle = bundleOf(ManifestMetadataReader.DATA_COLLECTION_HTTP_BODIES to "invalid")
     val context = fixture.getContext(metaData = bundle)
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+    assertThat(fixture.options.dataCollection.httpBodies).isNull()
   }
 
   @Test
@@ -1640,7 +1599,7 @@ class ManifestMetadataReaderTest {
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+    assertThat(fixture.options.dataCollection.cookies).isNull()
   }
 
   @Test

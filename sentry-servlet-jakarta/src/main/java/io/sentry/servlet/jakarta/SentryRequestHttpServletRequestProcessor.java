@@ -5,6 +5,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
 import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.Request;
+import io.sentry.util.CookieUtils;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
@@ -12,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +43,12 @@ final class SentryRequestHttpServletRequestProcessor implements SentryEventProce
         UrlUtils.filterQueryParams(
             httpRequest.getQueryString(), options.getDataCollectionResolver()));
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest));
+    final @Nullable List<String> cookies =
+        CookieUtils.filterCookiesFromHeader(
+            httpRequest.getHeaders(CookieUtils.COOKIE_HEADER_NAME),
+            options.getDataCollectionResolver().getCookies(),
+            Collections.emptyList());
+    sentryRequest.setCookies(cookies == null ? null : String.join(",", cookies));
 
     event.setRequest(sentryRequest);
     return event;
@@ -51,16 +58,10 @@ final class SentryRequestHttpServletRequestProcessor implements SentryEventProce
       final @NotNull HttpServletRequest request) {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
-      if (options.getDataCollectionResolver().isDataCollectionConfigured()
-          || !HttpUtils.containsSensitiveHeader(headerName.toUpperCase(Locale.ROOT))) {
-        headersMap.put(headerName, toString(request.getHeaders(headerName)));
-      }
+      headersMap.put(headerName, toString(request.getHeaders(headerName)));
     }
-    if (options.getDataCollectionResolver().isDataCollectionConfigured()) {
-      return HttpUtils.filterHeaders(
-          headersMap, options.getDataCollectionResolver().getHttpRequestHeaders());
-    }
-    return headersMap;
+    return HttpUtils.filterHeaders(
+        headersMap, options.getDataCollectionResolver().getHttpRequestHeaders());
   }
 
   private static @Nullable String toString(final @Nullable Enumeration<String> enumeration) {

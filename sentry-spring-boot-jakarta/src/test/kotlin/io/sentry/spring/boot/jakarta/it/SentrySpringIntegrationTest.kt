@@ -59,7 +59,6 @@ import org.springframework.web.bind.annotation.RestController
   properties =
     [
       "sentry.dsn=http://key@localhost/proj",
-      "sentry.send-default-pii=true",
       "sentry.traces-sample-rate=1.0",
       "sentry.max-request-body-size=medium",
       "sentry.enable-backpressure-handling=false",

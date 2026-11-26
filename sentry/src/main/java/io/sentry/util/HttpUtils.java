@@ -18,21 +18,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class HttpUtils {
 
-  private static final List<String> SENSITIVE_HEADERS =
-      Arrays.asList(
-          "X-FORWARDED-FOR",
-          "AUTHORIZATION",
-          "COOKIE",
-          "SET-COOKIE",
-          "X-API-KEY",
-          "X-REAL-IP",
-          "REMOTE-ADDR",
-          "FORWARDED",
-          "PROXY-AUTHORIZATION",
-          "X-CSRF-TOKEN",
-          "X-CSRFTOKEN",
-          "X-XSRF-TOKEN");
-
   // Keep these terms lowercase so sensitive-key checks only normalize the input key.
   private static final List<String> SENSITIVE_DATA_KEYS =
       Arrays.asList(
@@ -59,10 +44,6 @@ public final class HttpUtils {
 
   private static final HttpStatusCodeRange SEVER_ERROR_STATUS_CODES =
       new HttpStatusCodeRange(500, 599);
-
-  public static boolean containsSensitiveHeader(final @NotNull String header) {
-    return SENSITIVE_HEADERS.contains(header.toUpperCase(Locale.ROOT));
-  }
 
   public static @Nullable String filterQueryParams(
       final @Nullable String query, final @NotNull KeyValueCollectionBehavior behavior) {

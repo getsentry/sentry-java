@@ -73,8 +73,7 @@ class DefaultAndroidEventProcessorTest {
 
     lateinit var sentryTracer: SentryTracer
 
-    fun getSut(context: Context, isSendDefaultPii: Boolean = false): DefaultAndroidEventProcessor {
-      options.isSendDefaultPii = isSendDefaultPii
+    fun getSut(context: Context): DefaultAndroidEventProcessor {
       whenever(scopes.options).thenReturn(options)
       sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
       return DefaultAndroidEventProcessor(context, buildInfo, options)
@@ -269,16 +268,8 @@ class DefaultAndroidEventProcessorTest {
   }
 
   @Test
-  fun `when event user data does not have ip address set, sets no ip address if sendDefaultPii is false`() {
-    val sut = fixture.getSut(context, isSendDefaultPii = false)
-    val event = SentryEvent().apply { user = User() }
-    sut.process(event, Hint())
-    assertNotNull(event.user) { assertNull(it.ipAddress) }
-  }
-
-  @Test
-  fun `when event user data does not have ip address set, sets {{auto}} if sendDefaultPii is true`() {
-    val sut = fixture.getSut(context, isSendDefaultPii = true)
+  fun `when event user data does not have ip address set, sets {{auto}} by default`() {
+    val sut = fixture.getSut(context)
     val event = SentryEvent().apply { user = User() }
     sut.process(event, Hint())
     assertNotNull(event.user) { assertEquals("{{auto}}", it.ipAddress) }
@@ -287,7 +278,7 @@ class DefaultAndroidEventProcessorTest {
   @Test
   fun `when user info is disabled, sets installation id but not automatic ip`() {
     fixture.options.dataCollection.setUserInfo(false)
-    val sut = fixture.getSut(context, isSendDefaultPii = true)
+    val sut = fixture.getSut(context)
     val event = SentryEvent().apply { user = User() }
 
     sut.process(event, Hint())
@@ -301,7 +292,7 @@ class DefaultAndroidEventProcessorTest {
   @Test
   fun `when user info is enabled, sets automatic user data`() {
     fixture.options.dataCollection.setUserInfo(true)
-    val sut = fixture.getSut(context, isSendDefaultPii = false)
+    val sut = fixture.getSut(context)
     val event = SentryEvent().apply { user = User() }
 
     sut.process(event, Hint())

@@ -388,7 +388,6 @@ class SentrySpringIntegrationTest {
 @SpringBootApplication
 @EnableSentry(
   dsn = "http://key@localhost/proj",
-  sendDefaultPii = true,
   maxRequestBodySize = SentryOptions.RequestSize.MEDIUM,
 )
 @Import(SentryTracingConfiguration::class, SentryCaptureExceptionParameterConfiguration::class)

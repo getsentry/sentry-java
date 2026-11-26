@@ -15,14 +15,14 @@ import org.mockito.kotlin.verify
 
 class UrlUtilsTest {
   @Test
-  fun `resolver aware helpers preserve legacy query values`() {
+  fun `resolver aware helpers filter query values by default`() {
     val resolver = SentryOptions().dataCollectionResolver
     val details = UrlUtils.parse("https://example.com?token=secret", resolver)
     val request = Request()
 
     details.applyToRequest(request)
 
-    assertThat(request.queryString).isEqualTo("token=secret")
+    assertThat(request.queryString).isEqualTo("token=[Filtered]")
   }
 
   @Test

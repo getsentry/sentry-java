@@ -88,7 +88,6 @@ class SentryOkHttpInterceptorTest {
         listOf(
           HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX),
         ),
-      sendDefaultPii: Boolean = false,
       eventListener: EventListener? = null,
       additionalInterceptors: List<Interceptor> = emptyList(),
       isReplayRecording: Boolean = true,
@@ -104,7 +103,6 @@ class SentryOkHttpInterceptorTest {
           } else if (!keepDefaultTracePropagationTargets) {
             it.setTracePropagationTargets(listOf("other-api"))
           }
-          it.isSendDefaultPii = sendDefaultPii
         }
       scope = Scope(options)
       whenever(scopes.options).thenReturn(options)
@@ -661,7 +659,6 @@ class SentryOkHttpInterceptorTest {
         captureFailedRequests = true,
         httpStatusCode = statusCode,
         responseBody = "fail",
-        sendDefaultPii = true,
       )
 
     val request = getRequest(url = "/hello?myQuery=myValue#myFragment")
@@ -676,7 +673,6 @@ class SentryOkHttpInterceptorTest {
           assertEquals("myFragment", sentryRequest.fragment)
           assertEquals("GET", sentryRequest.method)
 
-          // because of isSendDefaultPii
           assertNotNull(sentryRequest.headers)
           assertNull(sentryRequest.cookies)
 
@@ -684,7 +680,6 @@ class SentryOkHttpInterceptorTest {
           assertEquals(statusCode, sentryResponse.statusCode)
           assertEquals(response.body!!.contentLength(), sentryResponse.bodySize)
 
-          // because of isSendDefaultPii
           assertNotNull(sentryResponse.headers)
           assertNull(sentryResponse.cookies)
 
@@ -734,8 +729,7 @@ class SentryOkHttpInterceptorTest {
 
   @Test
   fun `captures an error event with headers`() {
-    val sut =
-      fixture.getSut(captureFailedRequests = true, httpStatusCode = 500, sendDefaultPii = true)
+    val sut = fixture.getSut(captureFailedRequests = true, httpStatusCode = 500)
 
     sut.newCall(getRequest()).execute()
 

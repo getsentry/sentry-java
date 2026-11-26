@@ -38,10 +38,7 @@ import org.mockito.kotlin.whenever
 class ExceptionReporterTest {
   class Fixture {
     val defaultOptions =
-      SentryOptions().also {
-        it.isSendDefaultPii = true
-        it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS
-      }
+      SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS }
     val exception = IllegalStateException("some exception")
     val scopes = mock<IScopes>()
     lateinit var instrumentationExecutionParameters: InstrumentationExecutionParameters
@@ -199,9 +196,8 @@ class ExceptionReporterTest {
   }
 
   @Test
-  fun `does not attach query or variables if no max body size is set`() {
-    val exceptionReporter =
-      fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, false)
+  fun `attaches query and variables by default regardless of max body size`() {
+    val exceptionReporter = fixture.getSut(SentryOptions())
     exceptionReporter.captureThrowable(
       fixture.exception,
       ExceptionReporter.ExceptionDetails(
@@ -221,7 +217,9 @@ class ExceptionReporterTest {
           assertEquals("GraphqlInstrumentation", ex.exceptionMechanism.type)
           assertNotNull(it.request)
           val request = it.request!!
-          assertNull(request.data)
+          val data = request.data as Map<Any, Any>
+          assertEquals(fixture.query, data["query"])
+          assertEquals(fixture.variables, data["variables"])
           assertEquals("graphql", request.apiTarget)
         },
         any<Hint>(),
@@ -260,7 +258,7 @@ class ExceptionReporterTest {
   }
 
   @Test
-  fun `legacy options can disable outgoing response data`() {
+  fun `legacy max request body option does not disable outgoing response data`() {
     val options = SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS }
     val exceptionReporter = fixture.getSut(options)
 
@@ -276,14 +274,14 @@ class ExceptionReporterTest {
 
     verify(fixture.scopes)
       .captureEvent(
-        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        org.mockito.kotlin.check { assertNotNull(it.contexts.response?.data) },
         any<Hint>(),
       )
   }
 
   @Test
-  fun `legacy request body size can disable outgoing response data`() {
-    val options = SentryOptions().also { it.isSendDefaultPii = true }
+  fun `default request body size does not disable outgoing response data`() {
+    val options = SentryOptions()
     val exceptionReporter = fixture.getSut(options)
 
     exceptionReporter.captureThrowable(
@@ -298,7 +296,7 @@ class ExceptionReporterTest {
 
     verify(fixture.scopes)
       .captureEvent(
-        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        org.mockito.kotlin.check { assertNotNull(it.contexts.response?.data) },
         any<Hint>(),
       )
   }
@@ -378,11 +376,13 @@ class ExceptionReporterTest {
   }
 
   @Test
-  fun `does not attach query or variables if sendDefaultPii is false`() {
+  fun `does not attach query or variables if data collection disables them`() {
     val exceptionReporter =
       fixture.getSut(
-        SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS },
-        false,
+        SentryOptions().also {
+          it.dataCollection.graphql.setDocument(false)
+          it.dataCollection.graphql.setVariables(false)
+        },
       )
     exceptionReporter.captureThrowable(
       fixture.exception,

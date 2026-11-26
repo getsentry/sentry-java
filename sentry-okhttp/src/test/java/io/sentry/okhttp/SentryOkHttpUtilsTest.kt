@@ -36,14 +36,12 @@ class SentryOkHttpUtilsTest {
       httpStatusCode: Int = 500,
       responseBody: String = "success",
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-      sendDefaultPii: Boolean = false,
       configureOptions: SentryOptions.() -> Unit = {},
     ): OkHttpClient {
       val options =
         SentryOptions().apply {
           dsn = "https://key@sentry.io/proj"
           setTracePropagationTargets(listOf(server.hostName))
-          isSendDefaultPii = sendDefaultPii
           configureOptions()
         }
       whenever(scopes.options).thenReturn(options)
@@ -100,8 +98,8 @@ class SentryOkHttpUtilsTest {
   }
 
   @Test
-  fun `captureClientError with sendDefaultPii sends headers`() {
-    val sut = fixture.getSut(sendDefaultPii = true)
+  fun `captureClientError sends headers and cookies by default`() {
+    val sut = fixture.getSut()
     val request = getRequest()
     val response = sut.newCall(request).execute()
 
@@ -163,8 +161,8 @@ class SentryOkHttpUtilsTest {
   }
 
   @Test
-  fun `data collection cookie defaults ignore sendDefaultPii`() {
-    val sut = fixture.getSut(sendDefaultPii = false) { dataCollection.setUserInfo(false) }
+  fun `data collection uses cookie defaults`() {
+    val sut = fixture.getSut()
     val request = getRequest()
     val response = sut.newCall(request).execute()
 
@@ -246,30 +244,5 @@ class SentryOkHttpUtilsTest {
 
     verify(fixture.scopes)
       .captureEvent(check { assertTrue(it.contexts.response!!.headers!!.isEmpty()) }, any<Hint>())
-  }
-
-  @Test
-  fun `captureClientError without sendDefaultPii does not send headers`() {
-    val sut = fixture.getSut(sendDefaultPii = false)
-    val request = getRequest()
-    val response = sut.newCall(request).execute()
-
-    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
-    verify(fixture.scopes)
-      .captureEvent(
-        check {
-          val req = it.request
-          val resp = it.contexts.response
-
-          assertIs<io.sentry.protocol.Request>(req)
-          assertNull(req.headers)
-          assertNull(req.cookies)
-
-          assertIs<io.sentry.protocol.Response>(resp)
-          assertNull(resp.headers)
-          assertNull(resp.cookies)
-        },
-        any<Hint>(),
-      )
   }
 }

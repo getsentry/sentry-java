@@ -10,8 +10,6 @@ import org.jetbrains.annotations.Nullable;
 /** Configures data that the SDK collects automatically. */
 public final class DataCollection {
 
-  // Forces Data Collection to be used even when no individual option has been configured.
-  private boolean forceDataCollection;
   private @Nullable Boolean userInfo;
   private @Nullable KeyValueCollectionBehavior cookies;
   private @Nullable KeyValueCollectionBehavior urlQueryParams;
@@ -22,11 +20,6 @@ public final class DataCollection {
   private final @NotNull Graphql graphql = new Graphql();
 
   public DataCollection() {}
-
-  /** Opts into the documented Data Collection defaults when no individual option is configured. */
-  public void forceDataCollection() {
-    forceDataCollection = true;
-  }
 
   public @Nullable Boolean getUserInfo() {
     return userInfo;
@@ -91,8 +84,7 @@ public final class DataCollection {
 
   @ApiStatus.Internal
   public boolean isExplicitlyConfigured() {
-    return forceDataCollection
-        || userInfo != null
+    return userInfo != null
         || cookies != null
         || urlQueryParams != null
         || httpBodies != null

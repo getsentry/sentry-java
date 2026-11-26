@@ -115,8 +115,6 @@ final class ManifestMetadataReader {
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
   static final String COLLECT_EXTERNAL_STORAGE_CONTEXT = "io.sentry.external-storage-context";
 
-  static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
-
   static final String DATA_COLLECTION_USER_INFO = "io.sentry.data-collection.user-info";
   static final String DATA_COLLECTION_HTTP_BODIES = "io.sentry.data-collection.http-bodies";
   static final String DATA_COLLECTION_COOKIES = "io.sentry.data-collection.cookies";
@@ -563,9 +561,6 @@ final class ManifestMetadataReader {
         sdkInfo.setName(readStringNotNull(metadata, logger, SDK_NAME, sdkInfo.getName()));
         sdkInfo.setVersion(readStringNotNull(metadata, logger, SDK_VERSION, sdkInfo.getVersion()));
         options.setSdkVersion(sdkInfo);
-
-        options.setSendDefaultPii(
-            readBool(metadata, logger, SEND_DEFAULT_PII, options.isSendDefaultPii()));
 
         // sdkInfo.addIntegration();
 

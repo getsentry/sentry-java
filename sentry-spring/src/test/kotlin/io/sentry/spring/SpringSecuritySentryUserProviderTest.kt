@@ -14,15 +14,10 @@ import org.springframework.security.core.context.SecurityContextHolder
 class SpringSecuritySentryUserProviderTest {
   class Fixture {
     fun getSut(
-      isSendDefaultPii: Boolean = true,
       username: String? = null,
       userInfo: Boolean? = null,
     ): SpringSecuritySentryUserProvider {
-      val options =
-        SentryOptions().apply {
-          this.isSendDefaultPii = isSendDefaultPii
-          userInfo?.let { dataCollection.setUserInfo(it) }
-        }
+      val options = SentryOptions().apply { userInfo?.let { dataCollection.setUserInfo(it) } }
       val securityContext = mock<SecurityContext>()
       if (username != null) {
         val authentication = mock<Authentication>()
@@ -39,36 +34,29 @@ class SpringSecuritySentryUserProviderTest {
   private val fixture = Fixture()
 
   @Test
-  fun `when send default pii is set to true, returns user with username set`() {
-    val provider = fixture.getSut(true, "name")
+  fun `returns user with username set by default`() {
+    val provider = fixture.getSut(username = "name")
     val user = provider.provideUser()
     assertNotNull(user) { assertEquals("name", it.username) }
   }
 
   @Test
-  fun `when send default pii is set to false, returns null`() {
-    val provider = fixture.getSut(false)
-    val user = provider.provideUser()
-    assertNull(user)
-  }
-
-  @Test
-  fun `when user info is disabled, returns null even if sendDefaultPii is true`() {
-    val provider = fixture.getSut(isSendDefaultPii = true, username = "name", userInfo = false)
+  fun `when user info is disabled, returns null`() {
+    val provider = fixture.getSut(username = "name", userInfo = false)
 
     assertNull(provider.provideUser())
   }
 
   @Test
-  fun `when user info is enabled, returns user even if sendDefaultPii is false`() {
-    val provider = fixture.getSut(isSendDefaultPii = false, username = "name", userInfo = true)
+  fun `when user info is enabled, returns user`() {
+    val provider = fixture.getSut(username = "name", userInfo = true)
 
     assertNotNull(provider.provideUser()) { assertEquals("name", it.username) }
   }
 
   @Test
-  fun `when send default pii is set to true and security context is not set, returns null`() {
-    val provider = fixture.getSut(true)
+  fun `when security context is not set, returns null`() {
+    val provider = fixture.getSut()
     val user = provider.provideUser()
     assertNull(user)
   }

@@ -181,7 +181,7 @@ constructor(
 
       operationId?.let { setData("operationId", it) }
 
-      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+      if (scopes.options.dataCollectionResolver.isGraphqlVariables) {
         variables?.let { setData("variables", it) }
       }
       setData(HTTP_METHOD_KEY, method.uppercase())
@@ -291,56 +291,28 @@ constructor(
     return STREAMING_MEDIA_TYPES.any { it.equals(mediaType, ignoreCase = true) }
   }
 
-  private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      val requestHeaders = mutableMapOf<String, String>()
-      for (header in headers) {
-        requestHeaders[header.name] = header.value
-      }
-      return HttpUtils.filterHeaders(
-          requestHeaders,
-          scopes.options.dataCollectionResolver.httpRequestHeaders,
-        )
-        .toMutableMap()
+  private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String> {
+    val requestHeaders = mutableMapOf<String, String>()
+    for (header in headers) {
+      requestHeaders[header.name] = header.value
     }
-    return getHeaders(headers)
+    return HttpUtils.filterHeaders(
+        requestHeaders,
+        scopes.options.dataCollectionResolver.httpRequestHeaders,
+      )
+      .toMutableMap()
   }
 
-  private fun getResponseHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      val responseHeaders = mutableMapOf<String, String>()
-      for (header in headers) {
-        responseHeaders[header.name] = header.value
-      }
-      return HttpUtils.filterHeaders(
-          responseHeaders,
-          scopes.options.dataCollectionResolver.httpResponseHeaders,
-        )
-        .toMutableMap()
+  private fun getResponseHeaders(headers: List<HttpHeader>): MutableMap<String, String> {
+    val responseHeaders = mutableMapOf<String, String>()
+    for (header in headers) {
+      responseHeaders[header.name] = header.value
     }
-    return getHeaders(headers)
-  }
-
-  @Suppress("DEPRECATION")
-  private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
-    // Headers are only sent if isSendDefaultPii is enabled due to PII
-    if (!scopes.options.isSendDefaultPii) {
-      return null
-    }
-
-    val headersMap = mutableMapOf<String, String>()
-
-    for (item in headers) {
-      val name = item.name
-
-      // header is only sent if isn't sensitive
-      if (HttpUtils.containsSensitiveHeader(name)) {
-        continue
-      }
-
-      headersMap[name] = item.value
-    }
-    return headersMap.ifEmpty { null }
+    return HttpUtils.filterHeaders(
+        responseHeaders,
+        scopes.options.dataCollectionResolver.httpResponseHeaders,
+      )
+      .toMutableMap()
   }
 
   private fun captureEvent(

@@ -57,15 +57,12 @@ public final class ExceptionReporter {
 
   private boolean isAllowedToAttachRequestBody(final @NotNull IScopes scopes) {
     final @NotNull SentryOptions options = scopes.getOptions();
-    return options.getDataCollectionResolver().isGraphqlDocumentWithLegacyBodyGate()
-        || options.getDataCollectionResolver().isGraphqlVariablesWithLegacyBodyGate();
+    return options.getDataCollectionResolver().isGraphqlDocument()
+        || options.getDataCollectionResolver().isGraphqlVariables();
   }
 
   private boolean isAllowedToAttachResponseBody(final @NotNull IScopes scopes) {
-    return scopes
-        .getOptions()
-        .getDataCollectionResolver()
-        .isOutgoingResponseBodyWithLegacyBodyGate();
+    return scopes.getOptions().getDataCollectionResolver().isOutgoingResponseBody();
   }
 
   private void setRequestDetailsOnEvent(
@@ -91,11 +88,11 @@ public final class ExceptionReporter {
       final @NotNull Map<String, Object> data = new HashMap<>();
       final @NotNull SentryOptions options = scopes.getOptions();
 
-      if (options.getDataCollectionResolver().isGraphqlDocumentWithLegacyBodyGate()) {
+      if (options.getDataCollectionResolver().isGraphqlDocument()) {
         data.put("query", exceptionDetails.getQuery());
       }
 
-      if (options.getDataCollectionResolver().isGraphqlVariablesWithLegacyBodyGate()) {
+      if (options.getDataCollectionResolver().isGraphqlVariables()) {
         final @Nullable Map<String, Object> variables = exceptionDetails.getVariables();
         if (variables != null && !variables.isEmpty()) {
           data.put("variables", variables);

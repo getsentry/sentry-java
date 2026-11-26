@@ -38,13 +38,13 @@ class SentryFileInputStreamTest {
       tmpFile: File? = null,
       activeTransaction: Boolean = true,
       fileDescriptor: FileDescriptor? = null,
-      sendDefaultPii: Boolean = false,
+      filePaths: Boolean? = null,
     ): FileInputStream {
       tmpFile?.writeText("Text")
       whenever(scopes.options)
         .thenReturn(
           options.apply {
-            isSendDefaultPii = sendDefaultPii
+            filePaths?.let { dataCollection.setFilePaths(it) }
             threadChecker = ThreadChecker.getInstance()
             addInAppInclude("org.junit")
           },
@@ -113,8 +113,8 @@ class SentryFileInputStreamTest {
   }
 
   @Test
-  fun `captures file name in description and file path when isSendDefaultPii is true`() {
-    val fis = fixture.getSut(tmpFile, sendDefaultPii = true)
+  fun `captures file name in description and file path by default`() {
+    val fis = fixture.getSut(tmpFile)
     fis.close()
 
     val fileIOSpan = fixture.sentryTracer.children.first()
@@ -123,8 +123,8 @@ class SentryFileInputStreamTest {
   }
 
   @Test
-  fun `captures only file extension in description when isSendDefaultPii is false`() {
-    val fis = fixture.getSut(tmpFile, sendDefaultPii = false)
+  fun `captures only file extension in description when file paths are disabled`() {
+    val fis = fixture.getSut(tmpFile, filePaths = false)
     fis.close()
 
     val fileIOSpan = fixture.sentryTracer.children.first()
@@ -133,8 +133,8 @@ class SentryFileInputStreamTest {
   }
 
   @Test
-  fun `captures only file size if no extension is available when isSendDefaultPii is false`() {
-    val fis = fixture.getSut(tmpFileWithoutExtension, sendDefaultPii = false)
+  fun `captures only file size if no extension is available and file paths are disabled`() {
+    val fis = fixture.getSut(tmpFileWithoutExtension, filePaths = false)
     fis.close()
 
     val fileIOSpan = fixture.sentryTracer.children.first()
@@ -154,7 +154,7 @@ class SentryFileInputStreamTest {
     fixture.getSut(tmpFile).use { it.read() }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (1 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (1 B)")
     assertEquals(fileIOSpan.data["file.size"], 1L)
   }
 
@@ -163,7 +163,7 @@ class SentryFileInputStreamTest {
     fixture.getSut(tmpFile).use { it.read(ByteArray(10)) }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (4 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (4 B)")
     assertEquals(fileIOSpan.data["file.size"], 4L)
   }
 
@@ -172,7 +172,7 @@ class SentryFileInputStreamTest {
     fixture.getSut(tmpFile).use { it.read(ByteArray(10), 1, 3) }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (3 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (3 B)")
     assertEquals(fileIOSpan.data["file.size"], 3L)
   }
 
@@ -181,7 +181,7 @@ class SentryFileInputStreamTest {
     fixture.getSut(tmpFile).use { it.skip(10) }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (10 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (10 B)")
     assertEquals(fileIOSpan.data["file.size"], 10L)
   }
 
@@ -190,7 +190,7 @@ class SentryFileInputStreamTest {
     fixture.getSut(tmpFile).use { it.reader().readText() }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (4 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (4 B)")
     assertEquals(fileIOSpan.data["file.size"], 4L)
   }
 
@@ -236,9 +236,9 @@ class SentryFileInputStreamTest {
   }
 
   @Test
-  fun `when run on JVM and sendDefaultPii is enabled reports file path`() {
+  fun `when run on JVM reports file path by default`() {
     val file = tmpFile
-    fixture.getSut(file, sendDefaultPii = true).use { it.readAllBytes() }
+    fixture.getSut(file).use { it.readAllBytes() }
     val fileIOSpan = fixture.sentryTracer.children.first()
     assertEquals(fileIOSpan.data["file.path"], file.absolutePath)
   }

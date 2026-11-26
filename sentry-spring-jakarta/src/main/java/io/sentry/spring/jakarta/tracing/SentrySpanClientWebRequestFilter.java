@@ -51,9 +51,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     final @NotNull String method = request.method().name();
     span.setDescription(method + " " + urlDetails.getUrlOrFallback());
     span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
-    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
-      urlDetails.applyToSpan(span);
-    }
+    urlDetails.applyToSpan(span);
 
     final @NotNull ClientRequest modifiedRequest = maybeAddTracingHeaders(request, span);
 

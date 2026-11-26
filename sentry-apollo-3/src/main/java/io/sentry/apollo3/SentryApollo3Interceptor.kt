@@ -32,7 +32,7 @@ constructor(private val scopes: IScopes = ScopesAdapter.getInstance()) : ApolloI
           Base64.encodeToString(operationType(request).toByteArray(), Base64.NO_WRAP),
         )
 
-    if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+    if (scopes.options.dataCollectionResolver.isGraphqlVariables) {
       request.scalarAdapters?.let {
         builder.addHttpHeader(
           SENTRY_APOLLO_3_VARIABLES,

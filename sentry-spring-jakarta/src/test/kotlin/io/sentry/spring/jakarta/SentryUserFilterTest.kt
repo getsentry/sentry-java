@@ -25,15 +25,10 @@ class SentryUserFilterTest {
     val chain = mock<FilterChain>()
 
     fun getSut(
-      isSendDefaultPii: Boolean = false,
       userInfo: Boolean? = null,
       userProviders: List<SentryUserProvider>,
     ): SentryUserFilter {
-      val options =
-        SentryOptions().apply {
-          this.isSendDefaultPii = isSendDefaultPii
-          userInfo?.let { dataCollection.setUserInfo(it) }
-        }
+      val options = SentryOptions().apply { userInfo?.let { dataCollection.setUserInfo(it) } }
       whenever(scopes.options).thenReturn(options)
       return SentryUserFilter(scopes, userProviders)
     }
@@ -101,10 +96,9 @@ class SentryUserFilterTest {
   }
 
   @Test
-  fun `when isSendDefaultPii is true and user is set with custom ip address, user ip is unchanged`() {
+  fun `when user is set with custom ip address, user ip is unchanged`() {
     val filter =
       fixture.getSut(
-        isSendDefaultPii = true,
         userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "192.168.0.1" } }),
       )
 
@@ -114,10 +108,9 @@ class SentryUserFilterTest {
   }
 
   @Test
-  fun `when isSendDefaultPii is true and user is set with {{auto}} ip address, user ip is set to null`() {
+  fun `when user is set with {{auto}} ip address, user ip is set to null`() {
     val filter =
       fixture.getSut(
-        isSendDefaultPii = true,
         userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
       )
 
@@ -130,7 +123,6 @@ class SentryUserFilterTest {
   fun `when user info is disabled, preserves auto ip from a custom provider`() {
     val filter =
       fixture.getSut(
-        isSendDefaultPii = true,
         userInfo = false,
         userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
       )
@@ -144,7 +136,6 @@ class SentryUserFilterTest {
   fun `when user info is enabled, removes auto ip from a custom provider`() {
     val filter =
       fixture.getSut(
-        isSendDefaultPii = false,
         userInfo = true,
         userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
       )

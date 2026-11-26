@@ -104,7 +104,8 @@ class SentryFileOutputStreamTest {
 
     assertEquals(fixture.sentryTracer.children.size, 1)
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (0 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (0 B)")
+    assertNotNull(fileIOSpan.data["file.path"])
     assertEquals(fileIOSpan.data["file.size"], 0L)
     assertEquals(fileIOSpan.throwable, null)
     assertEquals(fileIOSpan.isFinished, true)
@@ -112,18 +113,8 @@ class SentryFileOutputStreamTest {
   }
 
   @Test
-  fun `captures file name in description and file path when isSendDefaultPii is true`() {
-    val fos = fixture.getSut(tmpFile) { it.isSendDefaultPii = true }
-    fos.close()
-
-    val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "test.txt (0 B)")
-    assertNotNull(fileIOSpan.data["file.path"])
-  }
-
-  @Test
-  fun `captures only file extension in description when isSendDefaultPii is false`() {
-    val fos = fixture.getSut(tmpFile) { it.isSendDefaultPii = false }
+  fun `captures only file extension in description when file paths are disabled`() {
+    val fos = fixture.getSut(tmpFile) { it.dataCollection.setFilePaths(false) }
     fos.close()
 
     val fileIOSpan = fixture.sentryTracer.children.first()
@@ -132,8 +123,11 @@ class SentryFileOutputStreamTest {
   }
 
   @Test
-  fun `captures only file size if no extension is available when isSendDefaultPii is false`() {
-    val fos = fixture.getSut(tmpFileWithoutExtension) { it.isSendDefaultPii = false }
+  fun `captures only file size if no extension is available and file paths are disabled`() {
+    val fos =
+      fixture.getSut(tmpFileWithoutExtension) {
+        it.dataCollection.setFilePaths(false)
+      }
     fos.close()
 
     val fileIOSpan = fixture.sentryTracer.children.first()
@@ -153,7 +147,7 @@ class SentryFileOutputStreamTest {
     fixture.getSut(tmpFile).use { it.write(29) }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (1 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (1 B)")
     assertEquals(fileIOSpan.data["file.size"], 1L)
   }
 
@@ -162,7 +156,7 @@ class SentryFileOutputStreamTest {
     fixture.getSut(tmpFile).use { it.write(ByteArray(10)) }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (10 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (10 B)")
     assertEquals(fileIOSpan.data["file.size"], 10L)
   }
 
@@ -171,7 +165,7 @@ class SentryFileOutputStreamTest {
     fixture.getSut(tmpFile).use { it.write(ByteArray(10), 1, 3) }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (3 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (3 B)")
     assertEquals(fileIOSpan.data["file.size"], 3L)
   }
 
@@ -180,7 +174,7 @@ class SentryFileOutputStreamTest {
     fixture.getSut(tmpFile).use { it.write("Text".toByteArray()) }
 
     val fileIOSpan = fixture.sentryTracer.children.first()
-    assertEquals(fileIOSpan.spanContext.description, "***.txt (4 B)")
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (4 B)")
     assertEquals(fileIOSpan.data["file.size"], 4L)
   }
 

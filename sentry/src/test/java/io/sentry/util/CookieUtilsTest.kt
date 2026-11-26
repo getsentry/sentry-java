@@ -12,20 +12,13 @@ import kotlin.test.assertNull
 
 class CookieUtilsTest {
   @Test
-  fun `options cookie filters omit cookies in legacy mode without default pii`() {
+  fun `options cookie filters use default deny list`() {
     val options = SentryOptions()
 
-    assertThat(CookieUtils.filterCookies("sessionId=secret", options)).isNull()
-    assertThat(CookieUtils.filterSetCookie("sessionId=secret; Path=/", options)).isNull()
-  }
-
-  @Test
-  fun `options cookie filters preserve cookies in legacy mode with default pii`() {
-    val options = SentryOptions().apply { isSendDefaultPii = true }
-
-    assertThat(CookieUtils.filterCookies("sessionId=secret", options)).isEqualTo("sessionId=secret")
+    assertThat(CookieUtils.filterCookies("theme=dark; sessionId=secret", options))
+      .isEqualTo("theme=dark; sessionId=[Filtered]")
     assertThat(CookieUtils.filterSetCookie("sessionId=secret; Path=/", options))
-      .isEqualTo("sessionId=secret; Path=/")
+      .isEqualTo("sessionId=[Filtered]; Path=/")
   }
 
   @Test
@@ -44,10 +37,7 @@ class CookieUtilsTest {
   @Test
   fun `options cookie filters honor explicitly disabled collection`() {
     val options =
-      SentryOptions().apply {
-        isSendDefaultPii = true
-        dataCollection.cookies = KeyValueCollectionBehavior.off()
-      }
+      SentryOptions().apply { dataCollection.cookies = KeyValueCollectionBehavior.off() }
 
     assertThat(CookieUtils.filterCookies("theme=dark", options)).isNull()
     assertThat(CookieUtils.filterSetCookie("theme=dark; Path=/", options)).isNull()

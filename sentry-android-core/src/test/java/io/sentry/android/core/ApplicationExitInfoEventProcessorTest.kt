@@ -106,11 +106,9 @@ class ApplicationExitInfoEventProcessorTest {
       populateScopeCache: Boolean = false,
       populateOptionsCache: Boolean = false,
       replayErrorSampleRate: Double? = null,
-      isSendDefaultPii: Boolean = true,
     ): ApplicationExitInfoEventProcessor {
       options.cacheDirPath = dir.newFolder().absolutePath
       options.environment = "release"
-      options.isSendDefaultPii = isSendDefaultPii
       options.addScopeObserver(PersistingScopeObserver(options))
 
       whenever(buildInfo.sdkInfoVersion).thenReturn(currentSdk)
@@ -248,7 +246,7 @@ class ApplicationExitInfoEventProcessorTest {
     fixture.options.dataCollection.setUserInfo(true)
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
 
-    val processed = processEvent(hint, isSendDefaultPii = false)
+    val processed = processEvent(hint)
 
     assertNotNull(processed.contexts.device!!.id)
   }
@@ -370,9 +368,10 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `when backfillable event is enrichable, does not backfill user ip`() {
+  fun `when user info is disabled, does not backfill user ip`() {
+    fixture.options.dataCollection.setUserInfo(false)
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
-    val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
+    val processed = processEvent(hint, populateScopeCache = true)
     assertNull(processed.user!!.ipAddress)
   }
 
@@ -380,7 +379,7 @@ class ApplicationExitInfoEventProcessorTest {
   fun `when user info is disabled, does not backfill automatic user data`() {
     fixture.options.dataCollection.setUserInfo(false)
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
-    val processed = processEvent(hint, isSendDefaultPii = true, populateScopeCache = true)
+    val processed = processEvent(hint, populateScopeCache = true)
 
     assertEquals("bot", processed.user!!.username)
     assertEquals("bot@me.com", processed.user!!.id)
@@ -391,7 +390,7 @@ class ApplicationExitInfoEventProcessorTest {
   fun `when user info is enabled, backfills automatic user data`() {
     fixture.options.dataCollection.setUserInfo(true)
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
-    val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
+    val processed = processEvent(hint, populateScopeCache = true)
 
     assertEquals("bot", processed.user!!.username)
     assertEquals("bot@me.com", processed.user!!.id)
@@ -1214,7 +1213,6 @@ class ApplicationExitInfoEventProcessorTest {
         tmpDir,
         populateScopeCache = false,
         populateOptionsCache = false,
-        isSendDefaultPii = false,
       )
 
     val hintTimestamp = System.currentTimeMillis()
@@ -1271,7 +1269,6 @@ class ApplicationExitInfoEventProcessorTest {
         tmpDir,
         populateScopeCache = false,
         populateOptionsCache = false,
-        isSendDefaultPii = false,
       )
     fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
     setLastUpdateTime(2_000)
@@ -1441,7 +1438,6 @@ class ApplicationExitInfoEventProcessorTest {
     hint: Hint,
     populateScopeCache: Boolean = false,
     populateOptionsCache: Boolean = false,
-    isSendDefaultPii: Boolean = true,
     configureEvent: SentryEvent.() -> Unit = {},
   ): SentryEvent {
     val original = SentryEvent().apply(configureEvent)
@@ -1451,7 +1447,6 @@ class ApplicationExitInfoEventProcessorTest {
         tmpDir,
         populateScopeCache = populateScopeCache,
         populateOptionsCache = populateOptionsCache,
-        isSendDefaultPii = isSendDefaultPii,
       )
     return processor.process(original, hint)!!
   }

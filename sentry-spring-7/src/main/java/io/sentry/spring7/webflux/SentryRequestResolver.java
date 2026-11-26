@@ -40,19 +40,12 @@ public class SentryRequestResolver {
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
     final @NotNull String headerName = CookieUtils.COOKIE_HEADER_NAME;
-    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
-      sentryRequest.setCookies(
-          toString(
-              CookieUtils.filterCookiesFromHeader(
-                  httpRequest.getHeaders().get(headerName),
-                  scopes.getOptions().getDataCollectionResolver().getCookies(),
-                  Collections.emptyList())));
-    } else if (scopes.getOptions().isSendDefaultPii()) {
-      sentryRequest.setCookies(
-          toString(
-              CookieUtils.filterOutSecurityCookiesFromHeader(
-                  httpRequest.getHeaders().get(headerName), headerName, Collections.emptyList())));
-    }
+    sentryRequest.setCookies(
+        toString(
+            CookieUtils.filterCookiesFromHeader(
+                httpRequest.getHeaders().get(headerName),
+                scopes.getOptions().getDataCollectionResolver().getCookies(),
+                Collections.emptyList())));
     return sentryRequest;
   }
 
@@ -60,22 +53,15 @@ public class SentryRequestResolver {
   Map<String, String> resolveHeadersMap(final HttpHeaders request) {
     final Map<String, String> headersMap = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : request.headerSet()) {
-      String headerName = entry.getKey();
-      if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()
-          || scopes.getOptions().isSendDefaultPii()
-          || !HttpUtils.containsSensitiveHeader(headerName)) {
-        headersMap.put(
-            headerName,
-            toString(
-                CookieUtils.filterOutSecurityCookiesFromHeader(
-                    entry.getValue(), headerName, Collections.emptyList())));
-      }
+      final String headerName = entry.getKey();
+      headersMap.put(
+          headerName,
+          toString(
+              CookieUtils.filterOutSecurityCookiesFromHeader(
+                  entry.getValue(), headerName, Collections.emptyList())));
     }
-    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
-      return HttpUtils.filterHeaders(
-          headersMap, scopes.getOptions().getDataCollectionResolver().getHttpRequestHeaders());
-    }
-    return headersMap;
+    return HttpUtils.filterHeaders(
+        headersMap, scopes.getOptions().getDataCollectionResolver().getHttpRequestHeaders());
   }
 
   private static @Nullable String toString(final @Nullable List<String> enumeration) {
