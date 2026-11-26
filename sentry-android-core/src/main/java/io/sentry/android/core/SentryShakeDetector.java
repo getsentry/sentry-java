@@ -11,6 +11,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.HandlerThread;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import org.jetbrains.annotations.ApiStatus;
@@ -29,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>Sensor events are delivered on a background {@link HandlerThread} to avoid polluting the main
  * thread.
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class SentryShakeDetector implements SensorEventListener {
 

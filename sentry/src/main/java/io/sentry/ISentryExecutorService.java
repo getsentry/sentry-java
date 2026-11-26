@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * queued task from a dropped one, so a Future that will never complete and never reports
  * cancellation leaves them waiting on a task that is never coming.
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public interface ISentryExecutorService {
 

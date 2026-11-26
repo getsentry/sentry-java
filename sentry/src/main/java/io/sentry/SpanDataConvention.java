@@ -2,6 +2,7 @@ package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public interface SpanDataConvention {
   // Keys that should respect the span data conventions, as described in

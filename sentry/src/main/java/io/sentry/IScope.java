@@ -64,6 +64,7 @@ public interface IScope {
   @Nullable
   ISpan getSpan();
 
+  @HybridSdkApi
   @ApiStatus.Internal
   void setActiveSpan(@Nullable ISpan span);
 
@@ -103,6 +104,7 @@ public interface IScope {
    *
    * @param screen the name of the screen
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   void setScreen(final @Nullable String screen);
 
@@ -111,6 +113,7 @@ public interface IScope {
    *
    * @return the id of the current session replay
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   @NotNull
   SentryId getReplayId();
@@ -143,6 +146,7 @@ public interface IScope {
    *
    * @return the fingerprint list
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   @NotNull
   List<String> getFingerprint();
@@ -202,6 +206,7 @@ public interface IScope {
    *
    * @return the tags map
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   @SuppressWarnings("NullAway") // tags are never null
   @NotNull
@@ -227,6 +232,7 @@ public interface IScope {
    *
    * @return the extra map
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   @NotNull
   Map<String, Object> getExtras();
@@ -396,12 +402,15 @@ public interface IScope {
   @Nullable
   Session getSession();
 
+  @HybridSdkApi
   @ApiStatus.Internal
   void clearSession();
 
+  @HybridSdkApi
   @ApiStatus.Internal
   void setPropagationContext(final @NotNull PropagationContext propagationContext);
 
+  @HybridSdkApi
   @ApiStatus.Internal
   @NotNull
   PropagationContext getPropagationContext();

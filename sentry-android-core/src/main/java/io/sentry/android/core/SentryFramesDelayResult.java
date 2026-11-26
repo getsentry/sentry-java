@@ -1,8 +1,10 @@
 package io.sentry.android.core;
 
+import io.sentry.HybridSdkApi;
 import org.jetbrains.annotations.ApiStatus;
 
 /** Result of querying frame delay for a given time range. */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class SentryFramesDelayResult {
 

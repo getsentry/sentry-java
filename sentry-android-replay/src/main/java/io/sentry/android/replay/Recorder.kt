@@ -1,7 +1,9 @@
 package io.sentry.android.replay
 
+import io.sentry.HybridSdkApi
 import java.io.Closeable
 
+@HybridSdkApi
 public interface Recorder : Closeable {
   /**
    * @param recorderConfig a [ScreenshotRecorderConfig] that can be used to determine frame rate at

@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** No-op implementation of ILogger */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class NoOpLogger implements ILogger {
 

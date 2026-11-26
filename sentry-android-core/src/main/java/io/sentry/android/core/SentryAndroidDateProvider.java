@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.SentryDate;
 import io.sentry.SentryDateProvider;
 import io.sentry.SentryNanotimeDateProvider;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * offered higher precision. More info can be found here:
  * https://github.com/getsentry/sentry-java/pull/2451
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class SentryAndroidDateProvider implements SentryDateProvider {
 

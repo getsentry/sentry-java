@@ -18,16 +18,19 @@ public final class SentryEnvelope {
   private final @NotNull SentryEnvelopeHeader header;
   private final @NotNull Iterable<SentryEnvelopeItem> items;
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public @NotNull Iterable<SentryEnvelopeItem> getItems() {
     return items;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public @NotNull SentryEnvelopeHeader getHeader() {
     return header;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public SentryEnvelope(
       final @NotNull SentryEnvelopeHeader header,

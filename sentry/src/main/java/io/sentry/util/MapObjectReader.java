@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.ObjectReader;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @ApiStatus.Internal
 @SuppressWarnings("unchecked")
 public final class MapObjectReader implements ObjectReader {

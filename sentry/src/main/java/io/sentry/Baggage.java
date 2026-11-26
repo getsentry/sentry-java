@@ -202,6 +202,7 @@ public final class Baggage {
     return baggage;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
     this(new ConcurrentHashMap<>(), null, null, null, true, false, logger);
@@ -437,6 +438,7 @@ public final class Baggage {
     return sampleRand;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public void setSampleRand(final @Nullable Double sampleRand) {
     if (isMutable()) {

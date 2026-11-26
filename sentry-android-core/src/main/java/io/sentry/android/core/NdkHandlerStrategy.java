@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
+import io.sentry.HybridSdkApi;
 import org.jetbrains.annotations.ApiStatus;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public enum NdkHandlerStrategy {
   SENTRY_HANDLER_STRATEGY_DEFAULT(0),

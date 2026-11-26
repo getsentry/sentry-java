@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -26,16 +27,16 @@ import org.jetbrains.annotations.Nullable;
 public final class User implements JsonUnknown, JsonSerializable {
 
   /** Email address of the user. */
-  private @Nullable String email;
+  @HybridSdkApi private @Nullable String email;
 
   /** Unique identifier of the user. */
-  private @Nullable String id;
+  @HybridSdkApi private @Nullable String id;
 
   /** Username of the user. */
-  private @Nullable String username;
+  @HybridSdkApi private @Nullable String username;
 
   /** Remote IP address of the user. */
-  private @Nullable String ipAddress;
+  @HybridSdkApi private @Nullable String ipAddress;
 
   /**
    * @deprecated please use {@link User#username} Human readable name.

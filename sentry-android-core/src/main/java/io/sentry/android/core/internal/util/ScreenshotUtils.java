@@ -11,6 +11,7 @@ import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
 import androidx.annotation.Nullable;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class ScreenshotUtils {
 

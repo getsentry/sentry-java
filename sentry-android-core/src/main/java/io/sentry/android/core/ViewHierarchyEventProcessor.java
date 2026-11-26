@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import io.sentry.Attachment;
 import io.sentry.Hint;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.ISerializer;
 import io.sentry.SentryEvent;
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** ViewHierarchyEventProcessor responsible for taking a snapshot of the current view hierarchy. */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
 

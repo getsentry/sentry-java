@@ -1,6 +1,7 @@
 package io.sentry.transport;
 
 import io.sentry.Hint;
+import io.sentry.HybridSdkApi;
 import io.sentry.SentryEnvelope;
 import io.sentry.cache.IEnvelopeCache;
 import java.util.Collections;
@@ -8,6 +9,7 @@ import java.util.Iterator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class NoOpEnvelopeCache implements IEnvelopeCache {
   private static final NoOpEnvelopeCache instance = new NoOpEnvelopeCache();

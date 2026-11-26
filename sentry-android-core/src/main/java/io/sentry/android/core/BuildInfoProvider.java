@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import android.os.Build;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.util.Objects;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** The Android Impl. of BuildInfoProvider which returns the Build class info. */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class BuildInfoProvider {
 

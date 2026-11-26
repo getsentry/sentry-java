@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class SentryExecutorService implements ISentryExecutorService {
 

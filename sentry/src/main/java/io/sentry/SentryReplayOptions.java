@@ -374,6 +374,7 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     return trackConfiguration;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public void setTrackConfiguration(final boolean trackConfiguration) {
     this.trackConfiguration = trackConfiguration;
@@ -384,6 +385,7 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     return sdkVersion;
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
     this.sdkVersion = sdkVersion;

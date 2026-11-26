@@ -9,6 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
  * nullable types, because an instance is created every 100ms for as long as a transaction or
  * profile chunk is running.
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class PerformanceCollectionData {
   private double cpuUsagePercentage;

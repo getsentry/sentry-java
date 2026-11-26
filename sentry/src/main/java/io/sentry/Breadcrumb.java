@@ -29,10 +29,10 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   private final @NotNull Long nanos;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
-  private @Nullable String message;
+  @HybridSdkApi private @Nullable String message;
 
   /** The type of breadcrumb. */
-  private @Nullable String type;
+  @HybridSdkApi private @Nullable String type;
 
   private static final @NotNull Map<String, @NotNull Object> EMPTY_DATA = Collections.emptyMap();
 
@@ -40,7 +40,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   private volatile @NotNull Map<String, @NotNull Object> data = EMPTY_DATA;
 
   /** Dotted strings that indicate what the crumb is or where it comes from. */
-  private @Nullable String category;
+  @HybridSdkApi private @Nullable String category;
 
   /**
    * Origin of the breadcrumb that is used to identify source of the breadcrumb. For example hybrid
@@ -49,7 +49,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   private @Nullable String origin;
 
   /** The level of the event. */
-  private @Nullable SentryLevel level;
+  @HybridSdkApi private @Nullable SentryLevel level;
 
   /** the unknown fields of breadcrumbs, internal usage only */
   private @Nullable Map<String, Object> unknown;
@@ -651,6 +651,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    *
    * @return the data map
    */
+  @HybridSdkApi
   @ApiStatus.Internal
   @NotNull
   public Map<String, Object> getData() {

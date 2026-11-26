@@ -1,5 +1,6 @@
 package io.sentry.protocol;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -28,13 +29,13 @@ public final class App implements JsonUnknown, JsonSerializable {
    *
    * <p>Formatted UTC timestamp when the user started the application.
    */
-  private @Nullable Date appStartTime;
+  @HybridSdkApi private @Nullable Date appStartTime;
 
   /** Application-specific device identifier. */
   private @Nullable String deviceAppHash;
 
   /** String identifying the kind of build. For example, `testflight`. */
-  private @Nullable String buildType;
+  @HybridSdkApi private @Nullable String buildType;
 
   /** Application name as it appears on the platform. */
   private @Nullable String appName;

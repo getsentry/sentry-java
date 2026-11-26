@@ -13,6 +13,7 @@ import android.view.Choreographer;
 import android.view.FrameMetrics;
 import android.view.Window;
 import androidx.annotation.RequiresApi;
+import io.sentry.HybridSdkApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
@@ -37,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
+@HybridSdkApi
 @ApiStatus.Internal
 public final class SentryFrameMetricsCollector implements Application.ActivityLifecycleCallbacks {
   private static final long oneSecondInNanos = TimeUnit.SECONDS.toNanos(1);

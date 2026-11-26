@@ -1,5 +1,6 @@
 package io.sentry.util.network;
 
+import io.sentry.HybridSdkApi;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">JS
  * SDK types</a>
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class ReplayNetworkRequestOrResponse {
   private final @Nullable Integer statusCode;

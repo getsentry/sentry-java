@@ -2,6 +2,7 @@ package io.sentry.android.core.performance;
 
 import android.os.SystemClock;
 import io.sentry.DateUtils;
+import io.sentry.HybridSdkApi;
 import io.sentry.SentryDate;
 import io.sentry.SentryLongDate;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.TestOnly;
  * time. The stop unix time is artificial, it gets projected based on the start time + duration of
  * the time span.
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class TimeSpan implements Comparable<TimeSpan> {
 

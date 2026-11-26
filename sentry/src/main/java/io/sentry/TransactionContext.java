@@ -84,6 +84,7 @@ public final class TransactionContext extends SpanContext {
     this.baggage = TracingUtils.ensureBaggage(null, samplingDecision);
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   public TransactionContext(
       final @NotNull SentryId traceId,

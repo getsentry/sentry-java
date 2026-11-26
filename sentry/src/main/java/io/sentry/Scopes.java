@@ -36,6 +36,7 @@ public final class Scopes implements IScopes {
   private final @NotNull IMetricsApi metrics;
   private final @NotNull IFeedbackApi feedbackApi;
 
+  @HybridSdkApi
   public Scopes(
       final @NotNull IScope scope,
       final @NotNull IScope isolationScope,

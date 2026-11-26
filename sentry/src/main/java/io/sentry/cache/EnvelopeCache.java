@@ -9,6 +9,7 @@ import static java.lang.String.format;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
+import io.sentry.HybridSdkApi;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryCrashLastRunState;
 import io.sentry.SentryEnvelope;
@@ -54,6 +55,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@HybridSdkApi
 @Open
 @ApiStatus.Internal
 public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {

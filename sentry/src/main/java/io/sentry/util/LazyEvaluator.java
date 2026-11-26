@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.HybridSdkApi;
 import io.sentry.ISentryLifecycleToken;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * Class that evaluates a function lazily. It means the evaluator function is called only when
  * getValue is called, and it's cached.
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class LazyEvaluator<T> {
 

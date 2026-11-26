@@ -1,9 +1,11 @@
 package io.sentry.android.core.internal.util;
 
+import io.sentry.HybridSdkApi;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /** The connection type and the generation of the cellular network technology, if any. */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class NetworkConnection {
   /** Maps to the {@code network.connection.type} attribute, {@code null} when unknown. */

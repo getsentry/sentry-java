@@ -13,6 +13,7 @@ import io.sentry.CompositePerformanceCollector;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultCompositePerformanceCollector;
 import io.sentry.DefaultVersionDetector;
+import io.sentry.HybridSdkApi;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
@@ -570,6 +571,7 @@ final class AndroidOptionsInitializer {
    *
    * @param context the Application context
    */
+  @HybridSdkApi
   static @NotNull File getCacheDir(final @NotNull Context context) {
     return new File(context.getCacheDir(), "sentry");
   }

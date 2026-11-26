@@ -91,6 +91,7 @@ public final class Sentry {
    * @deprecated please use {@link Sentry#getCurrentScopes()} instead
    * @return the hub
    */
+  @HybridSdkApi
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
   @SuppressWarnings("deprecation")
   @Deprecated
@@ -98,6 +99,7 @@ public final class Sentry {
     return new HubScopesWrapper(getCurrentScopes());
   }
 
+  @HybridSdkApi
   @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {

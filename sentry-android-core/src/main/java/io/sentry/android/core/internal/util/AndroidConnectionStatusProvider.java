@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.telephony.TelephonyManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import io.sentry.HybridSdkApi;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
@@ -80,6 +81,7 @@ import org.jetbrains.annotations.TestOnly;
  *       registration state.
  * </ul>
  */
+@HybridSdkApi
 @ApiStatus.Internal
 public final class AndroidConnectionStatusProvider
     implements IConnectionStatusProvider, AppState.AppStateListener {
