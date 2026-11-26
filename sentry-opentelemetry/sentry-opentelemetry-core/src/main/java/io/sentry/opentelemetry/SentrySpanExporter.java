@@ -3,6 +3,7 @@ package io.sentry.opentelemetry;
 import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
 import static io.sentry.opentelemetry.OtelInternalSpanDetectionUtil.isSentryRequest;
+import static io.sentry.opentelemetry.OtelSpanUtils.getMessagingSystem;
 import static io.sentry.opentelemetry.OtelSpanUtils.maybeTransferOtelAttribute;
 
 import io.opentelemetry.api.common.Attributes;
@@ -242,6 +243,7 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
     setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
+    transferMessagingSystem(spanData, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
       createAndFinishSpanForOtelSpan(childNode, sentryChildSpan, remaining);
@@ -381,22 +383,10 @@ public final class SentrySpanExporter implements SpanExporter {
     return sentryTransaction;
   }
 
-  /**
-   * OpenTelemetry deprecated {@code messaging.system} in favor of {@code messaging.system.name},
-   * but Sentry only supports {@code messaging.system}. Instrumentation may set either, so the value
-   * is transferred to {@code messaging.system}, preferring {@code messaging.system} if both are
-   * set.
-   */
   @SuppressWarnings("deprecation")
   private static void transferMessagingSystem(
       final @NotNull SpanData span, final @NotNull ISpan sentrySpan) {
-    final @NotNull Attributes attributes = span.getAttributes();
-    final @Nullable String deprecatedMessagingSystem =
-        attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM);
-    final @Nullable String messagingSystem =
-        deprecatedMessagingSystem != null
-            ? deprecatedMessagingSystem
-            : attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME);
+    final @Nullable String messagingSystem = getMessagingSystem(span.getAttributes());
     if (messagingSystem != null) {
       sentrySpan.setData(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), messagingSystem);
     }
