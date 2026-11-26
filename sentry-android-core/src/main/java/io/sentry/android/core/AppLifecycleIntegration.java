@@ -210,8 +210,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       return;
     }
 
-    final @NotNull AnrWarningBreadcrumbConsumer consumer =
-        new AnrWarningBreadcrumbConsumer(scopes, options.getDataCollectionResolver().isUserInfo());
+    final @NotNull AnrWarningBreadcrumbConsumer consumer = new AnrWarningBreadcrumbConsumer(scopes);
 
     try (final ISentryLifecycleToken ignored = lock.acquire()) {
       if (isClosed || anrWarningConsumer != null) {
@@ -292,8 +291,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.CINNAMON_BUN)
-  static @NotNull Breadcrumb createAnrBreadcrumb(
-      final @NotNull AnrWarningResult result, final boolean includeDescription) {
+  static @NotNull Breadcrumb createAnrBreadcrumb(final @NotNull AnrWarningResult result) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setType("system");
     breadcrumb.setCategory("app.anr");
@@ -303,9 +301,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     breadcrumb.setData("anr_id", result.getAnrId());
     breadcrumb.setData("timeout_ms", result.getTimeoutMillis());
     breadcrumb.setData("consumed_ms", result.getConsumedMillis());
-    if (!includeDescription) {
-      return breadcrumb;
-    }
+    // The system already strips sensitive data: a broadcast ANR describes its Intent with
+    // Intent.toString(), which redacts the data URI (Uri.toSafeString()) and omits extra values.
     // The system leaves this empty for some ANR types, so do not carry a blank value.
     final @Nullable String description = result.getDescription();
     if (description != null && !description.isEmpty()) {
@@ -346,18 +343,11 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     }
   }
 
-  /**
-   * The description is only added when user info may be collected, because for broadcast ANRs it is
-   * an {@code Intent} dump whose data URI can contain phone numbers, emails or {@code content://}
-   * paths.
-   */
   static final class AnrWarningBreadcrumbConsumer implements Consumer<AnrWarningResult> {
     private volatile @Nullable IScopes scopes;
-    private final boolean includeDescription;
 
-    AnrWarningBreadcrumbConsumer(final @NotNull IScopes scopes, final boolean includeDescription) {
+    AnrWarningBreadcrumbConsumer(final @NotNull IScopes scopes) {
       this.scopes = scopes;
-      this.includeDescription = includeDescription;
     }
 
     void detach() {
@@ -369,7 +359,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     public void accept(final @NotNull AnrWarningResult result) {
       final @Nullable IScopes scopesRef = scopes;
       if (scopesRef != null) {
-        scopesRef.addBreadcrumb(createAnrBreadcrumb(result, includeDescription));
+        scopesRef.addBreadcrumb(createAnrBreadcrumb(result));
       }
     }
   }
