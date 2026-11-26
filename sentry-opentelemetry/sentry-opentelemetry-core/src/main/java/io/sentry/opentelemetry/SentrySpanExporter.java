@@ -3,6 +3,7 @@ package io.sentry.opentelemetry;
 import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
 import static io.sentry.opentelemetry.OtelInternalSpanDetectionUtil.isSentryRequest;
+import static io.sentry.opentelemetry.OtelSpanUtils.getMessagingSystem;
 import static io.sentry.opentelemetry.OtelSpanUtils.maybeTransferOtelAttribute;
 
 import io.opentelemetry.api.common.Attributes;
@@ -242,6 +243,7 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
     setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
+    transferMessagingSystem(spanData, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
       createAndFinishSpanForOtelSpan(childNode, sentryChildSpan, remaining);
@@ -362,8 +364,7 @@ public final class SentrySpanExporter implements SpanExporter {
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
 
-    maybeTransferOtelAttribute(
-        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+    transferMessagingSystem(span, sentryTransaction);
     maybeTransferOtelAttribute(
         span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME);
     maybeTransferOtelAttribute(
@@ -380,6 +381,15 @@ public final class SentrySpanExporter implements SpanExporter {
         scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
+  }
+
+  @SuppressWarnings("deprecation")
+  private static void transferMessagingSystem(
+      final @NotNull SpanData span, final @NotNull ISpan sentrySpan) {
+    final @Nullable String messagingSystem = getMessagingSystem(span.getAttributes());
+    if (messagingSystem != null) {
+      sentrySpan.setData(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), messagingSystem);
+    }
   }
 
   private List<SpanNode> findCompletedRootNodes(final @NotNull List<SpanNode> grouped) {
