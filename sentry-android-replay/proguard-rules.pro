@@ -4,7 +4,9 @@
 
 # Rules to detect Images/Icons and mask them
 -dontwarn androidx.compose.ui.graphics.painter.Painter
--keepnames class * extends androidx.compose.ui.graphics.painter.Painter
+-dontwarn androidx.compose.ui.graphics.painter.ColorPainter
+-dontwarn androidx.compose.ui.graphics.painter.BrushPainter
+-dontwarn androidx.compose.ui.graphics.vector.VectorPainter
 -keepclasseswithmembernames class * {
     androidx.compose.ui.graphics.painter.Painter painter;
 }
@@ -32,7 +34,7 @@
 -dontwarn androidx.camera.view.PreviewView
 -keepnames class androidx.camera.view.PreviewView
 # Rules to walk the Compose Node tree.
--keep class androidx.compose.ui.node.LayoutNode {
+-keepclassmembers class androidx.compose.ui.node.LayoutNode {
     *** getChildren*(...);
     *** getOuterCoordinator*(...);
     *** getCollapsedSemantics*(...);

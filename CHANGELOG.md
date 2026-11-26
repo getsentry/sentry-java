@@ -7,8 +7,13 @@
 
 ## Unreleased
 
+### Improvements
+
+- Android: Narrow consumer keep rules to the classes and members the SDK reads by reflection, so R8 can optimize more of your app ([#6779](https://github.com/getsentry/sentry-java/pull/6779))
+
 ### Fixes
 
+- Session Replay: Mask Compose images the same way in debug and release builds. Only `VectorPainter`, `ColorPainter`, and `BrushPainter` are left unmasked, instead of any Painter whose class name contains `Vector`, `Color`, or `Brush` ([#6779](https://github.com/getsentry/sentry-java/pull/6779))
 - Android: A crash long after `Sentry.init` is no longer marked as a startup crash when the device slept in between, because the time since init now counts deep sleep ([#6738](https://github.com/getsentry/sentry-java/pull/6738))
 
 ### Dependencies
