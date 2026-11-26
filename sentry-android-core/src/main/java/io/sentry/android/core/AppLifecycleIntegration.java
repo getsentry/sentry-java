@@ -45,7 +45,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
   // Both null when created through the deprecated no-arg constructor, which skips ANR warnings.
   private final @Nullable Context context;
   private final @Nullable BuildInfoProvider buildInfoProvider;
-  private @Nullable Consumer<AnrWarningResult> anrWarningConsumer;
+  private @Nullable AnrWarningBreadcrumbConsumer anrWarningConsumer;
   private boolean isClosed;
 
   /**
@@ -120,6 +120,11 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       isClosed = true;
       watcherRef = watcher;
       watcher = null;
+      // Detached here, not in the unregister task: if executor shutdown drops that task, the
+      // system keeps the listener, but it no longer holds the scopes of the closed SDK.
+      if (anrWarningConsumer != null) {
+        anrWarningConsumer.detach();
+      }
     }
 
     if (watcherRef != null) {
@@ -205,8 +210,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       return;
     }
 
-    final @NotNull Consumer<AnrWarningResult> consumer =
-        result -> scopes.addBreadcrumb(createAnrBreadcrumb(result));
+    final @NotNull AnrWarningBreadcrumbConsumer consumer =
+        new AnrWarningBreadcrumbConsumer(scopes, options.getDataCollectionResolver().isUserInfo());
 
     try (final ISentryLifecycleToken ignored = lock.acquire()) {
       if (isClosed || anrWarningConsumer != null) {
@@ -235,6 +240,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       }
     }
     if (closedDuringRegistration) {
+      consumer.detach();
       unregisterAnrWarningListener(activityManager, consumer, options);
       return;
     }
@@ -286,7 +292,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.CINNAMON_BUN)
-  static @NotNull Breadcrumb createAnrBreadcrumb(final @NotNull AnrWarningResult result) {
+  static @NotNull Breadcrumb createAnrBreadcrumb(
+      final @NotNull AnrWarningResult result, final boolean includeDescription) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setType("system");
     breadcrumb.setCategory("app.anr");
@@ -296,6 +303,9 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     breadcrumb.setData("anr_id", result.getAnrId());
     breadcrumb.setData("timeout_ms", result.getTimeoutMillis());
     breadcrumb.setData("consumed_ms", result.getConsumedMillis());
+    if (!includeDescription) {
+      return breadcrumb;
+    }
     // The system leaves this empty for some ANR types, so do not carry a blank value.
     final @Nullable String description = result.getDescription();
     if (description != null && !description.isEmpty()) {
@@ -333,6 +343,34 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
         return "application_start";
       default:
         return "unknown (" + anrType + ")";
+    }
+  }
+
+  /**
+   * The description is only added when user info may be collected, because for broadcast ANRs it is
+   * an {@code Intent} dump whose data URI can contain phone numbers, emails or {@code content://}
+   * paths.
+   */
+  static final class AnrWarningBreadcrumbConsumer implements Consumer<AnrWarningResult> {
+    private volatile @Nullable IScopes scopes;
+    private final boolean includeDescription;
+
+    AnrWarningBreadcrumbConsumer(final @NotNull IScopes scopes, final boolean includeDescription) {
+      this.scopes = scopes;
+      this.includeDescription = includeDescription;
+    }
+
+    void detach() {
+      scopes = null;
+    }
+
+    @SuppressLint("NewApi")
+    @Override
+    public void accept(final @NotNull AnrWarningResult result) {
+      final @Nullable IScopes scopesRef = scopes;
+      if (scopesRef != null) {
+        scopesRef.addBreadcrumb(createAnrBreadcrumb(result, includeDescription));
+      }
     }
   }
 

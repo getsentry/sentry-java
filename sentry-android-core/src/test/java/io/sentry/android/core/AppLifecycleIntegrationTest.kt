@@ -85,6 +85,7 @@ class AppLifecycleIntegrationTest {
   fun `ANR warning listener adds a breadcrumb and is unregistered on close`() {
     val activityManager = mock<ActivityManager>()
     val sut = getSutWithActivityManager(activityManager)
+    fixture.options.dataCollection.setUserInfo(true)
 
     sut.register(fixture.scopes, fixture.options)
 
@@ -114,6 +115,47 @@ class AppLifecycleIntegrationTest {
     sut.close()
 
     verify(activityManager).unregisterAnrWarningListener(consumerCaptor.firstValue)
+  }
+
+  @Test
+  @Config(sdk = [37])
+  fun `the ANR description is left out when user info is not collected`() {
+    val activityManager = mock<ActivityManager>()
+    val sut = getSutWithActivityManager(activityManager)
+
+    sut.register(fixture.scopes, fixture.options)
+
+    val consumerCaptor = argumentCaptor<Consumer<AnrWarningResult>>()
+    verify(activityManager).registerAnrWarningListener(any(), consumerCaptor.capture())
+    consumerCaptor.firstValue.accept(anrWarningResult())
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> {
+          assertEquals("broadcast_of_intent", it.getData("anr_type"))
+          assertNull(it.getData("description"))
+        },
+      )
+  }
+
+  @Test
+  @Config(sdk = [37])
+  fun `a listener left registered after close no longer adds breadcrumbs`() {
+    val activityManager = mock<ActivityManager>()
+    val executorService = DeferredExecutorService()
+    val sut = getSutWithActivityManager(activityManager, executorService = executorService)
+
+    sut.register(fixture.scopes, fixture.options)
+    executorService.runAll()
+    val consumerCaptor = argumentCaptor<Consumer<AnrWarningResult>>()
+    verify(activityManager).registerAnrWarningListener(any(), consumerCaptor.capture())
+
+    // The unregister task is never run, as when executor shutdown drops it.
+    sut.close()
+    consumerCaptor.firstValue.accept(anrWarningResult())
+
+    verify(activityManager, never()).unregisterAnrWarningListener(any())
+    verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
   }
 
   @Test
