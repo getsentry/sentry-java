@@ -1,6 +1,7 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
+import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -11,6 +12,7 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
+import io.sentry.time.AnchoredClock
 import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import java.util.Date
@@ -33,11 +35,12 @@ internal class SessionCaptureStrategy
 constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
-  private val dateProvider: ICurrentDateProvider,
+  dateProvider: ICurrentDateProvider,
   ticker: MonotonicTicker,
   executor: ScheduledExecutorService,
   persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
+  continuedTimeline: AnchoredClock? = null,
 ) :
   BaseCaptureStrategy(
     options,
@@ -47,6 +50,7 @@ constructor(
     executor,
     persistingExecutor,
     replayCacheProvider,
+    continuedTimeline,
   ) {
   internal companion object {
     private const val TAG = "SessionCaptureStrategy"
@@ -114,10 +118,20 @@ constructor(
     // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
     // reflecting the exact time of when it was captured
     val currentConfig = recorderConfig
-    val frameTimestamp = dateProvider.currentTimeMillis
-    val deadlineExceeded = replayDeadline?.hasPassed() == true
+    val frame = stampFrame(maxForwardJumpMillis = options.sessionReplay.sessionDuration)
+    val frameTimestamp = frame.timestamp
+    // a recording can't span a forward jump longer than its cap, so one ends it like the cap does
+    val deadlineExceeded = replayDeadline?.hasPassed() == true || frame.jumpedTooFar
     replayExecutor.submit(
       ReplayRunnable("$TAG.add_frame") {
+        if (frame.jumped) {
+          // first, so this frame isn't dropped with the old timeline's
+          dropOldTimeline()
+          // a stopped recording has none, and must stay stopped
+          if (segmentTimestamp != null) {
+            segmentTimestamp = DateUtils.getDateTime(frameTimestamp)
+          }
+        }
         cache?.store(frameTimestamp)
 
         val currentSegmentTimestamp = segmentTimestamp
@@ -198,7 +212,7 @@ constructor(
       return
     }
 
-    val requestedAt = dateProvider.currentTimeMillis
+    val requestedAt = clock.nowMillis()
     val replayId = currentReplayId
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {

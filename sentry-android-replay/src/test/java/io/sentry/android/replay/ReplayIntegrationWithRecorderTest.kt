@@ -18,10 +18,13 @@ import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.time.MonotonicTicker
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.thread.NoOpThreadChecker
 import java.io.File
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
@@ -45,7 +48,12 @@ class ReplayIntegrationWithRecorderTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
   internal class Fixture {
-    val options = SentryOptions().apply { threadChecker = NoOpThreadChecker.getInstance() }
+    val ticker = TestMonotonicTicker()
+    val options =
+      object : SentryOptions() {
+          override fun getMonotonicTicker(): MonotonicTicker = ticker
+        }
+        .apply { threadChecker = NoOpThreadChecker.getInstance() }
     val scopes = mock<IScopes>()
 
     fun getSut(
@@ -83,11 +91,8 @@ class ReplayIntegrationWithRecorderTest {
   fun `works with different recorder`() {
     val captured = AtomicBoolean(false)
     whenever(fixture.scopes.captureReplay(any(), anyOrNull())).then { captured.set(true) }
-    // fake current time to trigger segment creation, CurrentDateProvider.getInstance() should
-    // be used in prod
-    val dateProvider = ICurrentDateProvider {
-      System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
-    }
+    var now = System.currentTimeMillis()
+    val dateProvider = ICurrentDateProvider { now }
 
     fixture.options.sessionReplay.isTrackConfiguration = false
     fixture.options.sessionReplay.sessionSampleRate = 1.0
@@ -165,6 +170,9 @@ class ReplayIntegrationWithRecorderTest {
     val flutterConfig = ScreenshotRecorderConfig(100, 200, 1f, 1f, 1, 20_000)
     replay.onConfigurationChanged(flutterConfig)
 
+    // a whole segment later, so the frame closes it
+    now += fixture.options.sessionReplay.sessionSegmentDuration
+    fixture.ticker.advance(fixture.options.sessionReplay.sessionSegmentDuration, MILLISECONDS)
     replay.onScreenshotRecorded(screenshot, frameTimestamp = 1)
 
     // verify

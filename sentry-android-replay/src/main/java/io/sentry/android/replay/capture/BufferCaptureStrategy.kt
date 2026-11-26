@@ -135,13 +135,18 @@ constructor(
   ) {
     // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
     // reflecting the exact time of when it was captured
-    val frameTimestamp = dateProvider.currentTimeMillis
+    val frame = stampFrame()
+    // a later frame may move the clock onto a new timeline before this task runs
+    val bufferLimit = frame.timestamp - options.sessionReplay.errorReplayDuration
     replayExecutor.submit(
       ReplayRunnable("$TAG.add_frame") {
-        cache?.store(frameTimestamp)
+        if (frame.jumped) {
+          // first, so this frame isn't dropped with the old timeline's
+          dropOldTimeline()
+          bufferedSegments.rotate(bufferLimit = Long.MAX_VALUE)
+        }
+        cache?.store(frame.timestamp)
 
-        val now = dateProvider.currentTimeMillis
-        val bufferLimit = now - options.sessionReplay.errorReplayDuration
         screenAtStart = cache?.rotate(bufferLimit)
         bufferedSegments.rotate(bufferLimit)
       },
@@ -175,7 +180,7 @@ constructor(
       return this
     }
     // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
-    // execution
+    // execution, and the timeline, which the segments about to be flushed are on
     val captureStrategy =
       SessionCaptureStrategy(
         options,
@@ -184,6 +189,7 @@ constructor(
         ticker,
         replayExecutor,
         persistingExecutor,
+        continuedTimeline = clock.timeline,
       )
     captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
@@ -196,7 +202,7 @@ constructor(
 
   override fun onTouchEvent(event: MotionEvent) {
     super.onTouchEvent(event)
-    val bufferLimit = dateProvider.currentTimeMillis - options.sessionReplay.errorReplayDuration
+    val bufferLimit = clock.nowMillis() - options.sessionReplay.errorReplayDuration
     rotateEvents(currentEvents, bufferLimit)
   }
 
@@ -260,17 +266,19 @@ constructor(
       return
     }
     val errorReplayDuration = options.sessionReplay.errorReplayDuration
-    val now = dateProvider.currentTimeMillis
-    val currentSegmentTimestamp =
-      cache?.firstFrameTimestamp()?.let {
-        // in buffer mode we have to set the timestamp of the first frame as the actual start
-        DateUtils.getDateTime(it)
-      } ?: DateUtils.getDateTime(now - errorReplayDuration)
-    val duration = now - currentSegmentTimestamp.time
+    val now = clock.nowMillis()
     val replayId = currentReplayId
 
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {
+        // read here, behind queued frames, so a frame that followed a wall-clock jump has dropped
+        // the old timeline's frames already
+        val currentSegmentTimestamp =
+          cache?.firstFrameTimestamp()?.let {
+            // in buffer mode we have to set the timestamp of the first frame as the actual start
+            DateUtils.getDateTime(it)
+          } ?: DateUtils.getDateTime(now - errorReplayDuration)
+        val duration = now - currentSegmentTimestamp.time
         val segment =
           createSegmentInternal(
             duration,
