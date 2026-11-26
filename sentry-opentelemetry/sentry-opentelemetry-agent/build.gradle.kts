@@ -134,15 +134,6 @@ tasks {
     mergeServiceFiles()
     exclude("**/module-info.class")
     relocatePackages(this)
-
-    // exclude known bootstrap dependencies - they can't appear in the inst/ directory
-    dependencies {
-      exclude("org.slf4j:slf4j-api")
-      exclude("io.opentelemetry:opentelemetry-api")
-      exclude("io.opentelemetry:opentelemetry-api-logs")
-      exclude("io.opentelemetry:opentelemetry-context")
-      exclude("io.opentelemetry:opentelemetry-semconv")
-    }
   }
 
   // 2. the distro javaagent libs are then isolated - moved to the inst/ directory

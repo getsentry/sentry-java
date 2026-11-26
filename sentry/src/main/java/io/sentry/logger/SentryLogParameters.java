@@ -10,6 +10,7 @@ public final class SentryLogParameters {
   private @Nullable SentryDate timestamp;
   private @Nullable SentryAttributes attributes;
   private @NotNull String origin = "manual";
+  private boolean messageAlreadyFormatted = false;
 
   public @Nullable SentryDate getTimestamp() {
     return timestamp;
@@ -33,6 +34,14 @@ public final class SentryLogParameters {
 
   public void setOrigin(final @NotNull String origin) {
     this.origin = origin;
+  }
+
+  public boolean isMessageAlreadyFormatted() {
+    return messageAlreadyFormatted;
+  }
+
+  public void setMessageAlreadyFormatted(final boolean messageAlreadyFormatted) {
+    this.messageAlreadyFormatted = messageAlreadyFormatted;
   }
 
   public static @NotNull SentryLogParameters create(

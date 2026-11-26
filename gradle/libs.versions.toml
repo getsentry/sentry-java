@@ -12,12 +12,12 @@ composeCompiler = "1.5.14"
 coroutines = "1.11.0"
 dgs = "4.9.2"
 detekt = "1.23.8"
-dokka = "2.0.0"
+dokka = "2.3.0"
 espresso = "3.7.0"
 feign = "13.18"
 gummyBears = "0.16.0"
 java8Signature = "1.0"
-jackson = "2.18.3"
+jackson = "2.22.4"
 jetbrainsCompose = "1.6.11"
 kotlin = "2.3.21"
 kotlin-compatible-version = "1.9"
@@ -40,19 +40,21 @@ otelSemanticConventionsAlpha = "1.45.0-alpha"
 retrofit = "3.0.0"
 room2 = "2.8.5"
 room3 = "3.0.3"
-sagp = "6.13.0"
+sagp = "6.27.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
-agp = "9.5.1"
+agp = "9.5.2"
 sqlite = "2.6.2"
 sqliteDrivers = "2.7.1"
 slf4j = "1.7.30"
 spotless = "8.11.0"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
-springboot4 = "4.1.0"
+springboot4 = "4.2.0"
 springKafka2 = "2.8.11"
 springKafka3 = "3.3.5"
 sqldelight = "2.4.1"
+tomcat9 = "9.0.108"
+tomcat11 = "11.0.27"
 vanniktechMavenPublish = "0.37.0"
 
 # Android
@@ -73,7 +75,7 @@ buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
 errorprone = { id = "net.ltgt.errorprone", version = "5.2.0" }
-gradle-versions = { id = "com.github.ben-manes.versions", version = "0.67.0" }
+gradle-versions = { id = "io.github.ben-manes.versions", version = "0.67.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechMavenPublish" }
@@ -81,10 +83,10 @@ springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
-gretty = { id = "org.gretty", version = "4.0.0" }
+gretty = { id = "org.gretty", version = "5.1.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version.ref = "animalsniffer" }
 sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
-shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
+shadow = { id = "com.gradleup.shadow", version = "9.6.1" }
 
 [libraries]
 animalsniffer-gradle-plugin = { module = "ru.vyarus:gradle-animalsniffer-plugin", version.ref = "animalsniffer" }
@@ -139,8 +141,9 @@ async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", versio
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
 caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "3.3.1" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.7.0" }
+coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version = "3.4.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
-context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
+context-propagation = { module = "io.micrometer:context-propagation", version = "1.2.1" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.52.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
 feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" }
@@ -197,7 +200,7 @@ reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.6" }
-sentry-native-ndk-outproc = { module = "io.sentry:sentry-native-ndk-outproc", version = "1.0.0-beta.1" }
+sentry-native-ndk-outproc = { module = "io.sentry:sentry-native-ndk-outproc", version = "1.0.0-beta.2" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet4-api = { module = "javax.servlet:javax.servlet-api", version = "4.0.1" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
@@ -266,10 +269,12 @@ gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", versio
 java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref = "java8Signature" }
 
 # tomcat libraries
-tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
-tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
-tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.27" }
-tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
+tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "8.5.100" }
+tomcat9-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat9" }
+tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat9" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat9" }
+tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat11" }
+tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat11" }
 # The version comes from the Spring Boot BOM of whichever Spring line uses it.
 tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core" }
 

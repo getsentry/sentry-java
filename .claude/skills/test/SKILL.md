@@ -57,13 +57,22 @@ If the user picks a specific method, use `--tests="*ClassName.methodName"` as th
 
 With a test class filter:
 ```bash
-./gradlew ':<module>:<task>' --tests="*<filter>*" --info
+./gradlew ':<module>:<task>' --tests="*<filter>*"
 ```
 
-Without a filter:
+Without a filter, only when the user asks for the whole module (CI runs full suites):
 ```bash
-./gradlew ':<module>:<task>' --info
+./gradlew ':<module>:<task>'
 ```
+
+When you choose the tests yourself, filter to the classes or packages the change touches, plus the
+tests of direct callers. Pass `--tests` once per pattern:
+```bash
+./gradlew ':<module>:<task>' --tests="io.sentry.foo.*" --tests="*BarTest*"
+```
+
+Don't add `--rerun` or `--no-build-cache` by default. An `UP-TO-DATE` test task already passed on the
+same inputs. Use them only for a named doubt, such as a suspected flaky test.
 
 ## Step 3b: Run an Integration Test Suite
 

@@ -33,7 +33,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher

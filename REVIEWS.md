@@ -1,0 +1,138 @@
+# PR Review Guidelines
+
+Applies to any agent reviewing a pull request for the Sentry Java/Android SDK.
+
+Read [`AGENTS.md`](AGENTS.md) for build commands and contributing rules, and the matching
+rule file in [`.cursor/rules/`](.cursor/rules) for the area the diff touches (`api`, `options`, `scopes`,
+`offline`, `opentelemetry`, ...).
+
+## Critical
+
+### Never crash or hang the host application
+
+- While we don't want to crash or hang the host application, we also don't want to leave the host
+  application in a bad or unrecoverable state. Therefore catch the narrowest type the guarded code
+  can throw.
+- Flag any new broad catch (`Throwable`, `Error`, `Exception`, `RuntimeException`) outside a
+  boundary where we can't know what the other side throws, e.g. public API entry points like
+  `captureException`, or Android framework calls that cross into another process
+  (`ContentResolver`, system services). Existing broad catches are legacy, not precedent. See the
+  Exception Handling section in `AGENTS.md`.
+- A broad catch at a boundary must call `ExceptionUtils.rethrowIfFatal(t)` first and requires a
+  code comment saying why the catch is broad and what happens on failure (event dropped, feature
+  disabled, ...).
+- A broad catch that wraps user code requires documentation, both in code and in sentry-docs,
+  explaining how the user is expected to discover that the code they wrote isn't working.
+  sentry-docs is a separate repository, so ask the author to link the docs PR.
+- Code probing for an optional `compileOnly` dependency must catch the specific `LinkageError`
+  subclass (`NoClassDefFoundError`, `NoSuchMethodError`, ...). Flag a probe guarded only by a broad
+  catch with `rethrowIfFatal`: it rethrows every `LinkageError`, crashing the host app when the
+  dependency is missing.
+- Logging is not handling: `options.getLogger()` is silent unless `debug` is enabled. When a catch
+  only logs, ask the author what the customer sees when it fires.
+- The SDK must never `captureException`/`captureMessage` for its own failures or for exceptions
+  thrown inside user callbacks (`beforeSend`, `beforeBreadcrumb`, `tracesSampler`, ...) — capturing
+  here loops. See
+  [Never capture your own exceptions](https://develop.sentry.dev/sdk/getting-started/principles/#never-capture-your-own-exceptions).
+- Flag `System.out`/`System.err`, `printStackTrace()`, and `android.util.Log` in SDK source; use
+  `options.getLogger().log(...)`.
+- Flag resources acquired but not released: streams, files, `ExecutorService`s,
+  `BroadcastReceiver`s, lifecycle/activity callbacks, sensors, timers. Anything registered during
+  init must be undone in the integration's `close()`.
+- Errors in instrumented user code should bubble up so the host app's handlers see them. Flag
+  instrumentation that swallows an error without recording it, and instrumentation that captures an
+  error that would also reach the global handlers (double reporting).
+
+### Security and privacy
+
+- Real secrets, tokens, or DSNs in code, logs, or configs. Obviously-fake DSNs in tests, samples,
+  and docs are expected — do not flag those.
+- New code that collects user-identifiable data (headers, cookies, request/response bodies, URL
+  query strings, IPs, usernames, file paths, device identifiers) must be gated behind
+  `options.isSendDefaultPii()`, and must not be on by default otherwise.
+- Debug flags, verbose logging, or sampling overrides accidentally left enabled in production
+  defaults.
+
+### Public API and compatibility
+
+- New public API must be intentional: new classes/methods not for public use need
+  `@ApiStatus.Internal`, new unstable API needs `@ApiStatus.Experimental`.
+- Removing or changing the signature of public API, or silently changing a default, sampling rate,
+  or feature toggle, without a deprecation and a `CHANGELOG.md`/`MIGRATION.md` note.
+- New features must be **opt-in by default** via `SentryOptions` (or a namespaced options class).
+  If a feature is added without this, ask "are you sure" as a PR comment.
+- New fields on `io.sentry.protocol` classes need both serialization and deserialization, plus a
+  round-trip test.
+- Raising `minSdk`, the Java level, or a supported framework version without an explicit callout.
+- Ensure dependency bumps are intentional. For example if a dependency is bumped in part of a
+  matrix that isn't the newest version.
+
+## Java and Android specifics
+
+- The core `sentry` module is Java 8 and must not reference Android or JVM-only APIs. Reach optional
+  platform code through `Platform`, `LoadClass`, or a separate module.
+- Android code calling an API newer than `minSdk` must be guarded by
+  `BuildInfoProvider.getSdkInfoVersion()`.
+- `Sentry.init` can be called from any thread, and on Android it runs on the main thread during app
+  startup. Flag disk I/O, network calls, reflection, class loading, regex compilation, or eager
+  allocation newly added to an init path — and static mutable state that is not thread-safe.
+- Ensure any new reflection calls are mirrored in the proguard keep rules.
+
+## Instrumentation conventions
+
+- Every started span must be finished on all paths, including error paths.
+- Automatically instrumented spans set an origin (`SpanOptions.setOrigin`) and a standard
+  [span op](https://develop.sentry.dev/sdk/telemetry/traces/span-operations/). Origins must match
+  `[A-Za-z0-9_.]` — see the
+  [trace origin spec](https://develop.sentry.dev/sdk/telemetry/traces/trace-origin/).
+- New integrations register themselves with `IntegrationUtils.addIntegrationToSdkVersion(...)`.
+- If we're adding a feature that requires bytecode manipulation from the
+  sentry-android-gradle-plugin, make sure the code is properly commented as such to ensure it isn't
+  accidentally changed in the future.
+
+## Concurrency
+
+- The SDK uses raw java concurrency primitives. Ensure we are using them correctly.
+- Ensure that atomic actions are atomic.
+- Watch for possible deadlocks in general but especially when two locks are held and another thread
+  can grab them in the opposite order.
+- Prefer using existing executors over creating new threads.
+- Do not block the main thread on Android with locking, synchronization or I/O calls.
+- Watch for ordering issues when classes can be called from different threads.
+- Flag a lock held across a callback into user code, an I/O call, or an `ExecutorService`
+  submission.
+- Mark a field `volatile` when it is written on one thread and read on another without a lock. A
+  plain field read is a data race, not merely a stale value.
+- Read mutable shared state once per operation. Re-reading the same field for several decisions in
+  one pass lets it change mid-pass, so the results disagree with each other.
+- In JVM and shared modules, including `sentry` core, use `AutoClosableReentrantLock`, not
+  `synchronized`, which pins virtual threads on JDK 21–23. In Android-only modules
+  (`sentry-android-*`), use `synchronized`. Don't flag existing locks that predate this rule.
+- New classes have a clear and defined threading and concurrency model as part of the javadoc if
+  needed.
+
+## Clocks
+
+- Ensure we are using a monotonic clock to measure time intervals.
+- Ensure we are using a wall clock for dates and timestamps.
+- Ensure that time manipulations are not being misused e.g. adding or subtracting wall clocks to
+  get a duration.
+
+## Tests
+
+- Public behavior (customer facing) changes need tests. A `fix` PR should include a regression test
+  that fails without the fix; if the diff doesn't make that clear, ask the author to confirm.
+- Prefer tests against contracts. Avoid testing implementation details.
+- Flag hollow tests: assertions that only prove "did not throw", or that assert on a payload without
+  checking the newly added data.
+- New assertions should use Google Truth (`com.google.common.truth.Truth.assertThat`); `kotlin.test`
+  stays for structure (`@Test`, `assertFailsWith`). Don't flag existing `kotlin.test` assertions.
+- Flag likely flakes: `Thread.sleep`, wall-clock or ordering assumptions, real network or filesystem
+  access, and shared static state left dirty between tests.
+
+## What NOT to flag
+
+- Formatting and import order — Spotless owns it.
+- Contents of generated `.api` files, beyond confirming `updateKotlinAbi` was run.
+- Conventional commit / PR title format, and missing changelog entries — CI and Danger check both.
+- Speculative refactors or improvements unrelated to the diff.
