@@ -7,6 +7,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
+import io.sentry.exception.SentryEnvelopeAbortedException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -151,11 +152,16 @@ final class HttpConnection {
   public @NotNull TransportResult send(final @NotNull SentryEnvelope envelope) throws IOException {
     options.getSocketTagger().tagSockets();
     final HttpURLConnection connection = createConnection();
-    TransportResult result;
 
     try (final OutputStream outputStream = connection.getOutputStream();
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
       options.getSerializer().serialize(envelope, gzip);
+    } catch (SentryEnvelopeAbortedException e) {
+      // Without a streaming mode the request body is buffered until the response is read, so
+      // disconnecting now sends nothing.
+      connection.disconnect();
+      options.getSocketTagger().untagSockets();
+      throw e;
     } catch (Throwable e) {
       options
           .getLogger()
@@ -163,11 +169,12 @@ final class HttpConnection {
               ERROR,
               e,
               "An exception occurred while submitting the envelope to the Sentry server.");
+    }
+    try {
+      return readAndLog(connection);
     } finally {
-      result = readAndLog(connection);
       options.getSocketTagger().untagSockets();
     }
-    return result;
   }
 
   /**

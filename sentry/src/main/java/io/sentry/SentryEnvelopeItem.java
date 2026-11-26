@@ -5,6 +5,7 @@ import static io.sentry.vendor.Base64.NO_PADDING;
 import static io.sentry.vendor.Base64.NO_WRAP;
 
 import io.sentry.clientreport.ClientReport;
+import io.sentry.exception.SentryEnvelopeAbortedException;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.profiling.SentryProfile;
@@ -29,10 +30,10 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -61,6 +62,8 @@ public final class SentryEnvelopeItem {
   // memory.
   private final @Nullable File file;
   private final long maxFileSize;
+  // The same envelope is serialized more than once, for the disk cache and for sending.
+  private final @NotNull AtomicBoolean dropRecorded = new AtomicBoolean(false);
 
   SentryEnvelopeItem(final @NotNull SentryEnvelopeItemHeader header, final byte[] data) {
     this.header = Objects.requireNonNull(header, "SentryEnvelopeItemHeader is required.");
@@ -115,9 +118,13 @@ public final class SentryEnvelopeItem {
     if (file == null) {
       return new BytesPayload(getData());
     }
-    // A file that grows after this point is cut at this length.
     final int length = checkedFileLength(file, maxFileSize);
     return new FilePayload(file, length, new FileInputStream(file));
+  }
+
+  /** Returns true only for the first call, so an item that is dropped is recorded once. */
+  boolean markDropRecorded() {
+    return dropRecorded.compareAndSet(false, true);
   }
 
   private static int checkedFileLength(final @NotNull File file, final long maxFileSize)
@@ -129,8 +136,14 @@ public final class SentryEnvelopeItem {
   interface Payload extends Closeable {
     int getLength();
 
-    /** Writes exactly {@link #getLength()} bytes. */
-    void writeTo(@NotNull OutputStream outputStream, @NotNull ILogger logger) throws IOException;
+    /**
+     * Writes exactly {@link #getLength()} bytes.
+     *
+     * @throws SentryEnvelopeAbortedException if that's no longer possible, for example because a
+     *     file changed. The item header was already written with the length, so the envelope is
+     *     invalid.
+     */
+    void writeTo(@NotNull OutputStream outputStream) throws IOException;
   }
 
   private static final class BytesPayload implements Payload {
@@ -146,8 +159,7 @@ public final class SentryEnvelopeItem {
     }
 
     @Override
-    public void writeTo(final @NotNull OutputStream outputStream, final @NotNull ILogger logger)
-        throws IOException {
+    public void writeTo(final @NotNull OutputStream outputStream) throws IOException {
       outputStream.write(bytes);
     }
 
@@ -173,39 +185,33 @@ public final class SentryEnvelopeItem {
     }
 
     @Override
-    public void writeTo(final @NotNull OutputStream outputStream, final @NotNull ILogger logger)
-        throws IOException {
+    public void writeTo(final @NotNull OutputStream outputStream) throws IOException {
       final byte[] buffer = new byte[FILE_COPY_BUFFER_SIZE];
       int remaining = length;
       while (remaining > 0) {
-        final int read;
-        try {
-          read = inputStream.read(buffer, 0, Math.min(buffer.length, remaining));
-        } catch (IOException e) {
-          logger.log(SentryLevel.ERROR, e, "Failed to read file '%s'.", file.getName());
-          break;
-        }
+        final int read = read(buffer, Math.min(buffer.length, remaining));
         if (read < 0) {
-          break;
+          throw new SentryEnvelopeAbortedException(
+              String.format(
+                  "File '%s' shrank by at least %d bytes while it was written to the envelope.",
+                  file.getName(), remaining));
         }
         outputStream.write(buffer, 0, read);
         remaining -= read;
       }
-      if (remaining > 0) {
-        // The item header already promised `length` bytes, and writing fewer would make the rest
-        // of the envelope unreadable, so the missing tail is filled with zeros.
-        logger.log(
-            SentryLevel.ERROR,
-            "File '%s' ended %d bytes before the length in its envelope item header. Padding"
-                + " with zeros.",
-            file.getName(),
-            remaining);
-        Arrays.fill(buffer, (byte) 0);
-        while (remaining > 0) {
-          final int chunk = Math.min(buffer.length, remaining);
-          outputStream.write(buffer, 0, chunk);
-          remaining -= chunk;
-        }
+      if (read(buffer, 1) >= 0) {
+        throw new SentryEnvelopeAbortedException(
+            String.format("File '%s' grew while it was written to the envelope.", file.getName()));
+      }
+    }
+
+    private int read(final @NotNull byte[] buffer, final int count)
+        throws SentryEnvelopeAbortedException {
+      try {
+        return inputStream.read(buffer, 0, count);
+      } catch (IOException e) {
+        throw new SentryEnvelopeAbortedException(
+            String.format("Failed to read file '%s'.", file.getName()), e);
       }
     }
 

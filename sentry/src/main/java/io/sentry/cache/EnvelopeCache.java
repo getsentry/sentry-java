@@ -363,6 +363,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       options
           .getLogger()
           .log(ERROR, e, "Error writing Envelope %s to offline storage", file.getAbsolutePath());
+      // A partially written envelope can't be read back, so it must not stay in the cache.
+      if (file.exists() && !file.delete()) {
+        options.getLogger().log(ERROR, "Failed to delete: %s", file.getAbsolutePath());
+      }
       return false;
     }
     return true;

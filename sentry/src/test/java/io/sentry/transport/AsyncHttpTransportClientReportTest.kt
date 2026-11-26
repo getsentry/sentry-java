@@ -11,6 +11,7 @@ import io.sentry.clientreport.ClientReportTestHelper.Companion.uncaughtException
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.dsnString
+import io.sentry.exception.SentryEnvelopeAbortedException
 import io.sentry.hints.Retryable
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
@@ -300,6 +301,32 @@ class AsyncHttpTransportClientReportTest {
         same(fixture.envelopeAfterAttachingClientReport),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `records lost envelope as invalid and does not retry when serialization is aborted`() {
+    // given
+    givenSetup()
+    whenever(fixture.connection.send(any())).thenThrow(SentryEnvelopeAbortedException("changed"))
+
+    // when
+    val retryableHint = retryableHint()
+    assertFailsWith(java.lang.IllegalStateException::class) {
+      fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableHint)
+    }
+
+    // then
+    verify(fixture.clientReportRecorder, times(1))
+      .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelope(
+        eq(DiscardReason.INVALID),
+        same(fixture.envelopeAfterAttachingClientReport),
+      )
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+    val sentrySdkHint = HintUtils.getSentrySdkHint(retryableHint)
+    assertFalse((sentrySdkHint as Retryable).isRetry)
+    verify(fixture.envelopeCache).discard(fixture.envelopeBeforeAttachingClientReport)
   }
 
   @Test

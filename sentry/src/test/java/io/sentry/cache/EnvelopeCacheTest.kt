@@ -17,6 +17,7 @@ import io.sentry.Session.State.Ok
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE
 import io.sentry.cache.EnvelopeCache.SUFFIX_SESSION_FILE
+import io.sentry.exception.SentryEnvelopeAbortedException
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.NativeCrashExit
 import io.sentry.hints.SessionEndHint
@@ -24,6 +25,7 @@ import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import java.io.File
+import java.io.OutputStream
 import java.io.Writer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -119,6 +121,22 @@ class EnvelopeCacheTest {
     cache.discard(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
 
     assertFalse(file.exists())
+  }
+
+  @Test
+  fun `deletes the partially written envelope file when serialization fails`() {
+    val serializer = mock<ISerializer>()
+    val cache = fixture.getSUT { it.setSerializer(serializer) }
+    val envelope = SentryEnvelope(SentryId(), null, emptyList())
+    whenever(serializer.serialize(same(envelope), any<OutputStream>())).thenAnswer {
+      it.getArgument<OutputStream>(1).write("partial".toByteArray())
+      throw SentryEnvelopeAbortedException("changed")
+    }
+
+    val didStore = cache.storeEnvelope(envelope, Hint())
+
+    assertFalse(didStore)
+    assertThat(File(fixture.options.cacheDirPath!!).listFiles()).isEmpty()
   }
 
   @Test
