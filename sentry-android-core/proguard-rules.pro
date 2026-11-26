@@ -48,6 +48,10 @@
 # Keep Classnames for integrations
 -keepnames class * implements io.sentry.Integration
 
+# SentryClient logs the processor's class name when it throws
+-keepnames class io.sentry.android.core.ScreenshotEventProcessor
+-keepnames class io.sentry.android.core.ViewHierarchyEventProcessor
+
 # Keep any custom option classes like SentryAndroidOptions, as they're loaded via reflection
 # Also keep method names, as they're e.g. used by native via JNI calls
 -keep class * extends io.sentry.SentryOptions { *; }
