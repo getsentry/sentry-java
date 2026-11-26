@@ -19,8 +19,7 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class SystemEpochClock implements EpochClock {
 
-  private static final boolean INSTANT_IS_SUB_MILLISECOND =
-      Platform.isJvm() && Platform.isJavaNinePlus();
+  private static final boolean INSTANT_IS_SUB_MILLISECOND = Platform.isJvm();
 
   private static final SystemEpochClock instance = new SystemEpochClock();
 

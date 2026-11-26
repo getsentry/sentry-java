@@ -7869,7 +7869,6 @@ public final class io/sentry/util/Pair {
 public final class io/sentry/util/Platform {
 	public fun <init> ()V
 	public static fun isAndroid ()Z
-	public static fun isJavaNinePlus ()Z
 	public static fun isJvm ()Z
 }
 

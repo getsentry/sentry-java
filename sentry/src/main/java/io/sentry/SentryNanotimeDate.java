@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * precision leading to an end timestamp with ns precision that can be used to gain ns precision
  * transaction durations.
  *
- * <p>This is a workaround for older versions of Java (before 9) and Android API (lower than 26)
- * that allows for higher precision than a millisecond timestamp alone would.
+ * <p>This is a workaround for Android, where {@link java.time.Instant} offers only millisecond
+ * precision, that allows for higher precision than a millisecond timestamp alone would.
  */
 @ApiStatus.Internal
 public final class SentryNanotimeDate extends SentryDate {

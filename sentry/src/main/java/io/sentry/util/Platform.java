@@ -1,12 +1,10 @@
 package io.sentry.util;
 
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class Platform {
   static boolean isAndroid;
-  static boolean isJavaNinePlus;
 
   static {
     // System#getProperty can throw an exception if there is a security manager is configured and
@@ -18,23 +16,6 @@ public final class Platform {
     } catch (Throwable e) {
       isAndroid = false;
     }
-
-    if (isAndroid) {
-      // Android is never Java 9+, skip the system property lookup + parse on the startup path.
-      isJavaNinePlus = false;
-    } else {
-      try {
-        final @Nullable String javaStringVersion = System.getProperty("java.specification.version");
-        if (javaStringVersion != null) {
-          final double javaVersion = Double.parseDouble(javaStringVersion);
-          isJavaNinePlus = javaVersion >= 9.0;
-        } else {
-          isJavaNinePlus = false;
-        }
-      } catch (Throwable e) {
-        isJavaNinePlus = false;
-      }
-    }
   }
 
   public static boolean isAndroid() {
@@ -43,9 +24,5 @@ public final class Platform {
 
   public static boolean isJvm() {
     return !isAndroid;
-  }
-
-  public static boolean isJavaNinePlus() {
-    return isJavaNinePlus;
   }
 }
