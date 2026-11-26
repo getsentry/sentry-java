@@ -4369,8 +4369,13 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field CALL_STACK_KEY Ljava/lang/String;
 	public static final field CONTRIBUTES_TTFD Ljava/lang/String;
 	public static final field CONTRIBUTES_TTID Ljava/lang/String;
+	public static final field DB_NAMESPACE_KEY Ljava/lang/String;
 	public static final field DB_NAME_KEY Ljava/lang/String;
+	public static final field DB_QUERY_SUMMARY_KEY Ljava/lang/String;
+	public static final field DB_QUERY_TEXT_KEY Ljava/lang/String;
+	public static final field DB_STORED_PROCEDURE_NAME_KEY Ljava/lang/String;
 	public static final field DB_SYSTEM_KEY Ljava/lang/String;
+	public static final field DB_SYSTEM_NAME_KEY Ljava/lang/String;
 	public static final field FRAMES_DELAY Ljava/lang/String;
 	public static final field FRAMES_FROZEN Ljava/lang/String;
 	public static final field FRAMES_SLOW Ljava/lang/String;
@@ -8062,6 +8067,23 @@ public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/sentry/util/sql/SqlQuery {
+	public fun getQuerySummary ()Ljava/lang/String;
+	public fun getQueryText ()Ljava/lang/String;
+	public fun getStoredProcedureName ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/sql/SqlQueryAnalyzer {
+	public static fun analyze (Ljava/lang/String;Ljava/lang/String;I)Lio/sentry/util/sql/SqlQuery;
+}
+
+public final class io/sentry/util/sql/SqlSpanData {
+	public static fun analyze (Ljava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/sql/SqlSpanData;
+	public fun applyTo (Lio/sentry/ISpan;)V
+	public fun getDescription ()Ljava/lang/String;
+	public static fun toDbSystemName (Ljava/lang/String;)Ljava/lang/String;
+}
+
 public abstract interface class io/sentry/util/thread/IThreadChecker {
 	public abstract fun currentThreadSystemId ()J
 	public abstract fun getCurrentThreadName ()Ljava/lang/String;
@@ -8191,5 +8213,40 @@ public final class io/sentry/vendor/gson/stream/MalformedJsonException : java/io
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public final class io/sentry/vendor/otel/sql/OtelSqlSanitizer {
+	public static fun sanitize (Ljava/lang/String;Lio/sentry/vendor/otel/sql/SqlDialect;)Lio/sentry/vendor/otel/sql/SqlQuery;
+}
+
+public abstract class io/sentry/vendor/otel/sql/SqlDialect {
+	public static final field DOUBLE_QUOTES_ARE_IDENTIFIERS Lio/sentry/vendor/otel/sql/SqlDialect;
+	public static final field DOUBLE_QUOTES_ARE_STRING_LITERALS Lio/sentry/vendor/otel/sql/SqlDialect;
+	public static final field UNKNOWN Lio/sentry/vendor/otel/sql/SqlDialect;
+	public static fun builder ()Lio/sentry/vendor/otel/sql/SqlDialect$Builder;
+	public static fun forDbSystemName (Ljava/lang/String;)Lio/sentry/vendor/otel/sql/SqlDialect;
+}
+
+public abstract class io/sentry/vendor/otel/sql/SqlDialect$Builder {
+	public abstract fun build ()Lio/sentry/vendor/otel/sql/SqlDialect;
+	public abstract fun setDoubleQuotesAreIdentifiers (Z)Lio/sentry/vendor/otel/sql/SqlDialect$Builder;
+}
+
+public abstract class io/sentry/vendor/otel/sql/SqlQuery {
+	public fun <init> ()V
+	public static fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/vendor/otel/sql/SqlQuery;
+	public static fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/vendor/otel/sql/SqlQuery;
+	public abstract fun getCollectionName ()Ljava/lang/String;
+	public abstract fun getOperationName ()Ljava/lang/String;
+	public abstract fun getQuerySummary ()Ljava/lang/String;
+	public abstract fun getQueryText ()Ljava/lang/String;
+	public abstract fun getStoredProcedureName ()Ljava/lang/String;
+}
+
+public final class io/sentry/vendor/otel/sql/StringUtils {
+	public static fun appendTruncated (Ljava/lang/StringBuilder;Ljava/lang/String;I)V
+	public static fun truncate (Ljava/lang/String;I)Ljava/lang/String;
+	public static fun truncate (Ljava/lang/StringBuffer;I)V
+	public static fun truncate (Ljava/lang/StringBuilder;I)V
 }
 

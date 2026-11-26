@@ -19,7 +19,11 @@ tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
+// Build-time only: JFlex generates the SQL lexer; the generated code has no runtime dependency.
+val jflex: Configuration = configurations.create("jflex")
+
 dependencies {
+  jflex(libs.jflex)
   errorprone(libs.errorprone.core)
   errorprone(libs.nopen.checker)
   errorprone(libs.nullaway)
@@ -66,6 +70,48 @@ tasks {
   }
 }
 
+// Generates the SQL lexer from OpenTelemetry's grammar, vendored by scripts/sync-otel-sql.sh.
+val jflexSourceFile = layout.projectDirectory.file("src/main/jflex/SqlSanitizer.jflex")
+val jflexOutputDir = layout.buildDirectory.dir("generated/sources/jflex")
+
+val generateJflex =
+  tasks.register<JavaExec>("generateJflex") {
+    description = "Generates the SQL lexer from src/main/jflex/SqlSanitizer.jflex."
+    classpath(jflex)
+    mainClass.set("jflex.Main")
+    inputs.file(jflexSourceFile)
+    outputs.dir(jflexOutputDir)
+    // Locals, not the script's vals: lambdas that reference script vals capture the script object,
+    // which the configuration cache cannot serialize.
+    val sourceFile = jflexSourceFile
+    val outputDir = jflexOutputDir
+    argumentProviders.add(
+      CommandLineArgumentProvider {
+        listOf(
+          "--quiet",
+          "--nobak",
+          "-d",
+          outputDir.get().dir("io/sentry/vendor/otel/sql").asFile.absolutePath,
+          sourceFile.asFile.absolutePath,
+        )
+      },
+    )
+    doFirst { outputDir.get().asFile.deleteRecursively() }
+  }
+
+sourceSets { main { java.srcDir(generateJflex) } }
+
+// The vendored OpenTelemetry files are internal and keep upstream's Javadoc, which links classes
+// that are not vendored; the generated lexer has none.
+tasks.javadoc {
+  exclude(
+    "io/sentry/vendor/otel/sql/SqlQuery.java",
+    "io/sentry/vendor/otel/sql/SqlDialect.java",
+    "io/sentry/vendor/otel/sql/StringUtils.java",
+    "io/sentry/vendor/otel/sql/AutoSqlSanitizer.java",
+  )
+}
+
 buildConfig {
   useJavaOutput()
   packageName("io.sentry")
@@ -79,7 +125,12 @@ tasks.withType<JavaCompile>().configureEach {
     check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
     option("NullAway:AnnotatedPackages", "io.sentry")
   }
-  options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/io/sentry/vendor/.*")
+  // Vendored code is not checked. In io/sentry/vendor/otel/sql only the upstream files and the
+  // generated lexer are excluded, so our own classes there are checked. Error Prone matches with
+  // RE2J, which has no lookahead, hence the explicit list.
+  options.errorprone.errorproneArgs.add(
+    "-XepExcludedPaths:.*/io/sentry/vendor/([^/]+\\.java|gson/.*|otel/sql/(SqlQuery|SqlDialect|StringUtils|AutoSqlSanitizer)\\.java)",
+  )
 }
 
 tasks.jar {
