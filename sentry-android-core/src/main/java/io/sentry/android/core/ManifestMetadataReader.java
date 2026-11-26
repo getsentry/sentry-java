@@ -49,6 +49,8 @@ final class ManifestMetadataReader {
   static final String NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS =
       "io.sentry.ndk.app-hang.timeout-interval-millis";
 
+  static final String NDK_APP_HANG_ATTACH_ALL_THREADS = "io.sentry.ndk.app-hang.attach-all-threads";
+
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
   static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
   static final String TOMBSTONE_REPORT_HISTORICAL = "io.sentry.tombstone.report-historical";
@@ -341,6 +343,13 @@ final class ManifestMetadataReader {
                 logger,
                 NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS,
                 options.getNdkAppHangTimeoutIntervalMillis()));
+
+        options.setNdkAppHangAttachAllThreads(
+            readBool(
+                metadata,
+                logger,
+                NDK_APP_HANG_ATTACH_ALL_THREADS,
+                options.isNdkAppHangAttachAllThreads()));
 
         final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());

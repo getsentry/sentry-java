@@ -474,6 +474,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isMemoryLimiterEnabled ()Z
+	public fun isNdkAppHangAttachAllThreads ()Z
 	public fun isReportHistoricalAnrs ()Z
 	public fun isReportHistoricalMemoryLimiterExits ()Z
 	public fun isReportHistoricalTombstones ()Z
@@ -512,6 +513,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setMemoryLimiterEnabled (Z)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
+	public fun setNdkAppHangAttachAllThreads (Z)V
 	public fun setNdkAppHangTimeoutIntervalMillis (J)V
 	public fun setReportHistoricalAnrs (Z)V
 	public fun setReportHistoricalMemoryLimiterExits (Z)V

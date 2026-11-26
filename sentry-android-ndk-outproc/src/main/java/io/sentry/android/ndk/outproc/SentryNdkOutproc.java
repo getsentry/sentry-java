@@ -104,6 +104,7 @@ public final class SentryNdkOutproc {
 
         ndkOptions.setEnableAppHangTracking(options.isEnableNdkAppHangTracking());
         ndkOptions.setAppHangTimeoutMillis(options.getNdkAppHangTimeoutIntervalMillis());
+        ndkOptions.setAppHangAttachAllThreads(options.isNdkAppHangAttachAllThreads());
 
         final @Nullable SentryNdkCrashService.Connection connection =
             SentryNdkCrashService.start(context, options);

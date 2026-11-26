@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Features
+
+- NDK: Attach the stack traces of all threads to sentry-native's app-hang events, opt-in through `SentryAndroidOptions.setNdkAppHangAttachAllThreads(true)` or the `io.sentry.ndk.app-hang.attach-all-threads` manifest entry ([#6770](https://github.com/getsentry/sentry-java/pull/6770))
+
 ### Fixes
 
 - Android: A crash long after `Sentry.init` is no longer marked as a startup crash when the device slept in between, because the time since init now counts deep sleep ([#6738](https://github.com/getsentry/sentry-java/pull/6738))
