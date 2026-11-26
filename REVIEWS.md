@@ -57,6 +57,9 @@ rule file in [`.cursor/rules/`](.cursor/rules) for the area the diff touches (`a
 
 - New public API must be intentional: new classes/methods not for public use need
   `@ApiStatus.Internal`, new unstable API needs `@ApiStatus.Experimental`.
+- Non-customer API added for a hybrid SDK (React Native, Flutter, .NET, Unity, ...) needs
+  `@HybridSdkApi`. Changing, moving, or removing an element marked `@HybridSdkApi` needs a callout
+  that the hybrid SDK teams using it were told.
 - Removing or changing the signature of public API, or silently changing a default, sampling rate,
   or feature toggle, without a deprecation and a `CHANGELOG.md`/`MIGRATION.md` note.
 - New features must be **opt-in by default** via `SentryOptions` (or a namespaced options class).

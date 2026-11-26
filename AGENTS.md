@@ -9,7 +9,7 @@ rule file in `.cursor/rules/`:
 
 | Rule | Read it when working on |
 |---|---|
-| `api` | Public API surface, binary compatibility, `.api` files, `updateKotlinAbi`, `IScope`/`IScopes`/`Sentry` static API, protocol classes |
+| `api` | Public API surface, binary compatibility, `.api` files, `updateKotlinAbi`, `@HybridSdkApi`, API for hybrid SDKs, `IScope`/`IScopes`/`Sentry` static API, protocol classes |
 | `options` | `SentryOptions`, namespaced options, `ExternalOptions`, `sentry.properties`, `ManifestMetadataReader`, Spring Boot properties |
 | `scopes` | Scope management, forking, lifecycle, `ScopeType`, thread-local storage, scope bleeding, Hub → Scopes migration |
 | `deduplication` | Duplicate event detection, `DuplicateEventDetectionEventProcessor`, `enableDeduplication` |
