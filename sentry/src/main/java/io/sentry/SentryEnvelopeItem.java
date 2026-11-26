@@ -18,6 +18,7 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -379,23 +380,15 @@ public final class SentryEnvelopeItem {
                 String.format("Failed to serialize perfetto profile chunk\n%s", e.getMessage()));
           }
 
-          // Read binary Perfetto trace
-          final byte[] traceBytes;
+          // [JSON metadata bytes][raw .pftrace binary bytes]
           try {
-            traceBytes = readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+            return readFileAfterPrefix(metadataBytes, traceFile, MAX_PROFILE_CHUNK_SIZE);
           } catch (IOException e) {
             throw new SentryEnvelopeException(
                 String.format("Failed to read perfetto trace file\n%s", e.getMessage()));
           } finally {
             traceFile.delete();
           }
-
-          // Concatenate: [JSON metadata bytes][raw .pftrace binary bytes]
-          final byte[] payload = new byte[metadataBytes.length + traceBytes.length];
-          System.arraycopy(metadataBytes, 0, payload, 0, metadataBytes.length);
-          System.arraycopy(traceBytes, 0, payload, metadataBytes.length, traceBytes.length);
-
-          return payload;
         });
 
     SentryEnvelopeItemHeader itemHeader =
@@ -414,6 +407,47 @@ public final class SentryEnvelopeItem {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  /**
+   * Reads {@code file} into a new array that starts with {@code prefix}. The file is read straight
+   * into its place in the result, so a large trace is held in memory once instead of being copied
+   * through intermediate buffers.
+   */
+  private static byte[] readFileAfterPrefix(
+      final byte[] prefix, final @NotNull File file, final long maxFileLength) throws IOException {
+    if (!file.isFile() || !file.canRead()) {
+      throw new IOException(
+          String.format("Reading file '%s' failed, because it's not a readable file.", file));
+    }
+    final long fileLength = file.length();
+    if (fileLength > maxFileLength) {
+      throw new IOException(
+          String.format(
+              "Reading file failed, because size located at '%s' with %d bytes is bigger "
+                  + "than the maximum allowed size of %d bytes.",
+              file, fileLength, maxFileLength));
+    }
+
+    final byte[] result = new byte[prefix.length + (int) fileLength];
+    System.arraycopy(prefix, 0, result, 0, prefix.length);
+    try (final FileInputStream input = new FileInputStream(file)) {
+      int offset = prefix.length;
+      while (offset < result.length) {
+        final int read = input.read(result, offset, result.length - offset);
+        if (read == -1) {
+          throw new IOException(
+              String.format(
+                  "Reading file '%s' failed, because it got shorter while reading.", file));
+        }
+        offset += read;
+      }
+      if (input.read() != -1) {
+        throw new IOException(
+            String.format("Reading file '%s' failed, because it got longer while reading.", file));
+      }
+    }
+    return result;
   }
 
   public static @NotNull SentryEnvelopeItem fromProfilingTrace(

@@ -213,14 +213,12 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private class CompositeData {
     private final @NotNull List<PerformanceCollectionData> dataList;
     private final @Nullable ITransaction transaction;
-    private final @NotNull Deadline collectUntil;
+    private final @NotNull Deadline timeout;
 
     private CompositeData(final @Nullable ITransaction transaction) {
       this.dataList = new ArrayList<>();
       this.transaction = transaction;
-      // On a ticker rather than the date provider: this is how long we have been collecting, and
-      // a device time change must not end a collection early or keep a finished one going.
-      this.collectUntil =
+      this.timeout =
           Deadline.after(
               options.getMonotonicTicker(),
               TRANSACTION_COLLECTION_TIMEOUT_MILLIS,
@@ -239,7 +237,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       synchronized (dataList) {
         dataList.add(data);
       }
-      return transaction != null && collectUntil.hasPassed();
+      return transaction != null && timeout.hasPassed();
     }
   }
 }

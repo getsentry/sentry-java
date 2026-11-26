@@ -16,7 +16,7 @@ dokka = "2.3.0"
 espresso = "3.7.0"
 feign = "13.18"
 gummyBears = "0.16.0"
-jackson = "2.18.3"
+jackson = "2.22.4"
 jetbrainsCompose = "1.6.11"
 kotlin = "2.4.21"
 ksp = "2.3.14"
@@ -28,19 +28,19 @@ nopen = "1.0.1"
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "5.5.1"
 openfeature = "1.18.2"
-otel = "1.67.0"
-otelAlpha = "1.67.0-alpha"
-otelInstrumentation = "2.33.1"
-otelInstrumentationAlpha = "2.33.1-alpha"
+otel = "1.68.0"
+otelAlpha = "1.68.0-alpha"
+otelInstrumentation = "2.34.0"
+otelInstrumentationAlpha = "2.34.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.44.0"
-otelSemanticConventionsAlpha = "1.44.0-alpha"
+otelSemanticConventions = "1.45.0"
+otelSemanticConventionsAlpha = "1.45.0-alpha"
 retrofit = "3.0.0"
 room2 = "2.8.5"
 room3 = "3.0.3"
-sagp = "6.13.0"
+sagp = "6.27.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
-agp = "9.5.1"
+agp = "9.5.2"
 # The R8 bundled with AGP 9.0 and 9.2 crashes on androidx.core at minSdk 24, so builds that override
 # AGP (the AGP matrix) put the R8 that ships with the default AGP on their buildscript classpath.
 r8 = "9.5.29"
@@ -50,7 +50,7 @@ slf4j = "1.7.30"
 spotless = "8.11.0"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
-springboot4 = "4.1.0"
+springboot4 = "4.2.0"
 springKafka2 = "2.8.11"
 springKafka3 = "3.3.5"
 sqldelight = "2.4.1"
@@ -84,7 +84,7 @@ springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
-gretty = { id = "org.gretty", version = "4.0.0" }
+gretty = { id = "org.gretty", version = "5.1.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version.ref = "animalsniffer" }
 sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
 shadow = { id = "com.gradleup.shadow", version = "9.6.1" }
@@ -142,9 +142,10 @@ async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", versio
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
 caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "3.3.1" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.7.0" }
+coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version = "3.4.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
 android-r8 = { module = "com.android.tools:r8", version.ref = "r8" }
-context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
+context-propagation = { module = "io.micrometer:context-propagation", version = "1.2.1" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.52.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
 feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" }
@@ -201,7 +202,7 @@ reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.6" }
-sentry-native-ndk-outproc = { module = "io.sentry:sentry-native-ndk-outproc", version = "1.0.0-beta.1" }
+sentry-native-ndk-outproc = { module = "io.sentry:sentry-native-ndk-outproc", version = "1.0.0-beta.2" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet4-api = { module = "javax.servlet:javax.servlet-api", version = "4.0.1" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
