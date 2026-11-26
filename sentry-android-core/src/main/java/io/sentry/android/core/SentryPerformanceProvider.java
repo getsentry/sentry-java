@@ -20,9 +20,11 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.time.Stopwatch;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,6 +42,10 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
   // static to rely on Class load
   // SystemClock.uptimeMillis() isn't affected by phone provider or clock changes.
   private static final long sdkInitMillis = SystemClock.uptimeMillis();
+
+  // There are no options to take the ticker from at class load.
+  private static final @NotNull Stopwatch sdkInitStopwatch =
+      Stopwatch.started(AndroidMonotonicTicker.getInstance());
 
   private @Nullable Application app;
 
@@ -257,6 +263,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     // sdk-init uses static field init as start time
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
     sdkInitTimeSpan.setStartedAt(sdkInitMillis);
+    appStartMetrics.setSdkInitStopwatch(sdkInitStopwatch);
 
     // performance v2: Uses Process.getStartUptimeMillis()
     // requires API level 24+

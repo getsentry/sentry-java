@@ -29,6 +29,7 @@ import io.sentry.android.core.CurrentActivityHolder;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,6 +80,8 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   private final @NotNull TimeSpan appStartSpan;
   private final @NotNull TimeSpan sdkInitTimeSpan;
+  // Written on the thread that initializes the SDK and read on the thread that crashes.
+  private volatile @Nullable Stopwatch sdkInitStopwatch;
   private final @NotNull TimeSpan applicationOnCreate;
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
@@ -159,6 +162,20 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    */
   public @NotNull TimeSpan getSdkInitTimeSpan() {
     return sdkInitTimeSpan;
+  }
+
+  /**
+   * Measures the time since SDK init on a {@link io.sentry.time.MonotonicTicker}, which keeps
+   * counting through deep sleep. {@link #getSdkInitTimeSpan()} runs on {@link
+   * SystemClock#uptimeMillis()}, which does not, so it can't tell how long ago the SDK really
+   * started. Set by the same two entry points as {@link #getSdkInitTimeSpan()}.
+   */
+  public @Nullable Stopwatch getSdkInitStopwatch() {
+    return sdkInitStopwatch;
+  }
+
+  public void setSdkInitStopwatch(final @NotNull Stopwatch sdkInitStopwatch) {
+    this.sdkInitStopwatch = sdkInitStopwatch;
   }
 
   public @NotNull TimeSpan getApplicationOnCreateTimeSpan() {
@@ -403,6 +420,7 @@ public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appStartType = AppStartType.UNKNOWN;
     appStartSpan.reset();
     sdkInitTimeSpan.reset();
+    sdkInitStopwatch = null;
     applicationOnCreate.reset();
     contentProviderOnCreates.clear();
     activityLifecycles.clear();

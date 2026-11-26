@@ -863,6 +863,7 @@ public final class io/sentry/android/core/performance/AppStartMetrics : io/sentr
 	public fun getClassLoadedUptimeMs ()J
 	public fun getContentProviderOnCreateTimeSpans ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
+	public fun getSdkInitStopwatch ()Lio/sentry/time/Stopwatch;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
@@ -890,6 +891,7 @@ public final class io/sentry/android/core/performance/AppStartMetrics : io/sentr
 	public fun setCachedStartInfo (Landroid/app/ApplicationStartInfo;)V
 	public fun setClassLoadedUptimeMs (J)V
 	public fun setHeadlessAppStartListener (Lio/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener;)V
+	public fun setSdkInitStopwatch (Lio/sentry/time/Stopwatch;)V
 	public fun shouldSendStartMeasurements ()Z
 	public fun shouldSendStartMeasurements (Z)Z
 }

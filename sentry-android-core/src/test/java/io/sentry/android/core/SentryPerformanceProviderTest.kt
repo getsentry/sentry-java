@@ -103,9 +103,11 @@ class SentryPerformanceProviderTest {
   @Test
   fun `provider starts appStartTimeSpan`() {
     assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasNotStarted())
+    assertNull(AppStartMetrics.getInstance().sdkInitStopwatch)
     assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasNotStarted())
     fixture.getSut()
     assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
+    assertNotNull(AppStartMetrics.getInstance().sdkInitStopwatch)
     assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasStarted())
   }
 
