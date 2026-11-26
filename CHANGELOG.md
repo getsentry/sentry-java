@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Improvements
+
+- Android: Remove consumer keep rules that had no effect, so R8 can optimize more of your app ([#6778](https://github.com/getsentry/sentry-java/pull/6778))
+
 ### Fixes
 
 - Android: A crash long after `Sentry.init` is no longer marked as a startup crash when the device slept in between, because the time since init now counts deep sleep ([#6738](https://github.com/getsentry/sentry-java/pull/6738))
