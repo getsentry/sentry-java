@@ -15,7 +15,7 @@
   - Only the name and no-arg constructor of `SentryAndroidOptions` are kept, instead of every member of every `SentryOptions` subclass.
   - `sentry-android-ndk` no longer keeps native methods of all `io.sentry.**` classes. `sentry-native-ndk` still keeps its own.
   - If your code reaches any of these by name through JNI, reflection, or bindings, add your own keep rules for exactly what it uses.
-- Remove the deprecated `sendDefaultPii` option from Java APIs, properties and environment variables, Android manifest metadata, and Spring annotations ([#6160](https://github.com/getsentry/sentry-java/issues/6160))
+- Remove the deprecated `sendDefaultPii` option from Java APIs, properties and environment variables, Android manifest metadata, and Spring annotations ([#6793](https://github.com/getsentry/sentry-java/pull/6793))
   - Configure automatically collected data with `dataCollection` instead. `DataCollection.forceDataCollection()` is also removed because the defaults now apply automatically.
   - When no `dataCollection` setting is specified, user information, database query data, file paths, GraphQL documents and variables, and HTTP request and response bodies are enabled. Cookies, URL query parameters, and HTTP headers use their default deny lists.
   - Logback raw message templates and parameters are controlled only by `includeUnencodedMessage` when an encoder is configured.
