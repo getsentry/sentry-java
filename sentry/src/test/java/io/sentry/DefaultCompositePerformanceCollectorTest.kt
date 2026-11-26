@@ -1,14 +1,12 @@
 package io.sentry
 
-import com.google.common.truth.Truth.assertThat
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.util.thread.ThreadChecker
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Callable
 import java.util.concurrent.Future
+import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -37,8 +35,7 @@ class DefaultCompositePerformanceCollectorTest {
     val id1 = "id1"
     val scopes: IScopes = mock()
     val options = SentryOptions()
-    // a real executor so scheduled collection tasks actually run, recording schedule delays
-    val executorService = RecordingExecutorService(SentryExecutorService(options))
+    val executorService = FakeTimerExecutorService()
 
     val mockCpuCollector: IPerformanceSnapshotCollector =
       object : IPerformanceSnapshotCollector {
@@ -74,14 +71,56 @@ class DefaultCompositePerformanceCollectorTest {
     }
   }
 
-  private class RecordingExecutorService(private val delegate: ISentryExecutorService) :
-    ISentryExecutorService by delegate {
-    val scheduledDelays = CopyOnWriteArrayList<Long>()
+  /**
+   * Runs scheduled tasks on the calling thread, only when the test advances its clock, so tests can
+   * step through each collection and nothing keeps running after a test ends.
+   */
+  private class FakeTimerExecutorService : ISentryExecutorService {
+    private class ScheduledTask(val runAtMillis: Long, runnable: Runnable) :
+      FutureTask<Unit>(runnable, Unit)
+
+    var nowMillis = 0L
+      private set
+
+    private val tasks = mutableListOf<ScheduledTask>()
+    val scheduledDelays = mutableListOf<Long>()
 
     override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
       scheduledDelays.add(delayMillis)
-      return delegate.schedule(runnable, delayMillis)
+      return ScheduledTask(nowMillis + delayMillis, runnable).also { tasks.add(it) }
     }
+
+    /** Runs, in order, every task due within [millis], including tasks those tasks schedule. */
+    fun advanceBy(millis: Long) {
+      val targetMillis = nowMillis + millis
+      while (true) {
+        val next =
+          tasks
+            .filterNot { it.isCancelled }
+            .minByOrNull { it.runAtMillis }
+            ?.takeIf {
+              it.runAtMillis <= targetMillis
+            } ?: break
+        tasks.remove(next)
+        nowMillis = maxOf(nowMillis, next.runAtMillis)
+        next.run()
+      }
+      nowMillis = maxOf(nowMillis, targetMillis)
+    }
+
+    /** Called from a running task to simulate it holding the timer thread for [millis]. */
+    fun busyFor(millis: Long) {
+      nowMillis += millis
+    }
+
+    override fun submit(runnable: Runnable): Future<*> = throw UnsupportedOperationException()
+
+    override fun <T> submit(callable: Callable<T>): Future<T> =
+      throw UnsupportedOperationException()
+
+    override fun close(timeoutMillis: Long) {}
+
+    override fun isClosed(): Boolean = false
   }
 
   private fun CompositePerformanceCollector.collectFuture(): Future<*>? =
@@ -108,25 +147,46 @@ class DefaultCompositePerformanceCollectorTest {
     val cpuCollector = mock<IPerformanceSnapshotCollector>()
     val collector = fixture.getSut(memoryCollector, cpuCollector)
     collector.start(fixture.transaction1)
-    Thread.sleep(300)
+    fixture.executorService.advanceBy(0)
     verify(memoryCollector).setup()
     verify(cpuCollector).setup()
   }
 
   @Test
-  fun `when start, collection is scheduled every 100 milliseconds`() {
-    val collector = fixture.getSut()
+  fun `when start, collection runs every 100 milliseconds`() {
+    val collector = fixture.getSut(memoryCollector = null, cpuCollector = countingCollector)
     collector.start(fixture.transaction1)
-    Thread.sleep(300)
-    assertTrue(fixture.executorService.scheduledDelays.contains(100L))
+
+    assertCollectsEvery100Millis()
   }
 
   @Test
-  fun `when start with a string, collection is scheduled every 100 milliseconds`() {
-    val collector = fixture.getSut()
+  fun `when start with a string, collection runs every 100 milliseconds`() {
+    val collector = fixture.getSut(memoryCollector = null, cpuCollector = countingCollector)
     collector.start(fixture.id1)
-    Thread.sleep(300)
-    assertTrue(fixture.executorService.scheduledDelays.contains(100L))
+
+    assertCollectsEvery100Millis()
+  }
+
+  private var collectCount = 0
+  private val countingCollector =
+    object : IPerformanceSnapshotCollector {
+      override fun setup() {}
+
+      override fun collect(performanceCollectionData: PerformanceCollectionData) {
+        collectCount++
+      }
+    }
+
+  private fun assertCollectsEvery100Millis() {
+    fixture.executorService.advanceBy(99)
+    assertEquals(0, collectCount)
+    fixture.executorService.advanceBy(1)
+    assertEquals(1, collectCount)
+    fixture.executorService.advanceBy(100)
+    assertEquals(2, collectCount)
+    fixture.executorService.advanceBy(100)
+    assertEquals(3, collectCount)
   }
 
   @Test
@@ -171,8 +231,7 @@ class DefaultCompositePerformanceCollectorTest {
     collector.start(fixture.transaction1)
     collector.start(fixture.transaction2)
     collector.start(fixture.id1)
-    // Let's sleep to make the collector get values
-    Thread.sleep(300)
+    fixture.executorService.advanceBy(300)
 
     val data1 = collector.stop(fixture.transaction1)
     // There is still a transaction and an id running: the collection shouldn't stop now
@@ -214,8 +273,7 @@ class DefaultCompositePerformanceCollectorTest {
     collector.start(fixture.transaction1)
     assertNotNull(collector.collectFuture())
 
-    // Let's sleep to make the collector get values
-    Thread.sleep(300)
+    fixture.executorService.advanceBy(300)
 
     // When the collector gets the values, it checks the current date, set 31 seconds after the
     // begin. This means it should stop itself
@@ -242,8 +300,7 @@ class DefaultCompositePerformanceCollectorTest {
     collector.start(fixture.transaction1)
     assertNotNull(collector.collectFuture())
 
-    // Let's sleep to make the collector get values
-    Thread.sleep(300)
+    fixture.executorService.advanceBy(300)
 
     // When the collector gets the values, it checks the current date, set 30 seconds after the
     // begin. This means it should continue without being cancelled
@@ -280,8 +337,7 @@ class DefaultCompositePerformanceCollectorTest {
     assertEquals(3, fixture.options.performanceCollectors.size)
 
     collector.start(fixture.transaction1)
-    // Let's sleep to make the collector get values
-    Thread.sleep(300)
+    fixture.executorService.advanceBy(300)
     val data1 = collector.stop(fixture.transaction1)
     assertNotNull(data1)
     val memoryData = data1.filter { it.hasUsedHeapMemory() }
@@ -298,38 +354,34 @@ class DefaultCompositePerformanceCollectorTest {
 
   @Test
   fun `first collect runs a full interval after setup even when the timer thread was busy`() {
-    val setupNanos = AtomicLong()
-    val firstCollectNanos = AtomicLong()
-    val collected = CountDownLatch(1)
+    var setupMillis = -1L
+    var firstCollectMillis = -1L
     val timingCollector =
       object : IPerformanceSnapshotCollector {
         override fun setup() {
-          setupNanos.set(System.nanoTime())
+          setupMillis = fixture.executorService.nowMillis
         }
 
         override fun collect(performanceCollectionData: PerformanceCollectionData) {
-          if (firstCollectNanos.compareAndSet(0, System.nanoTime())) {
-            collected.countDown()
+          if (firstCollectMillis == -1L) {
+            firstCollectMillis = fixture.executorService.nowMillis
           }
         }
       }
     val collector = fixture.getSut(memoryCollector = null, cpuCollector = timingCollector)
-    val timerThreadBusy = CountDownLatch(1)
-    fixture.executorService.schedule({ timerThreadBusy.await() }, 0L)
+    fixture.executorService.schedule({ fixture.executorService.busyFor(200) }, 0L)
 
     collector.start(fixture.transaction1)
-    // keep the timer thread busy past the collection interval
-    Thread.sleep(200)
-    timerThreadBusy.countDown()
+    fixture.executorService.advanceBy(300)
 
-    assertTrue(collected.await(1, TimeUnit.SECONDS))
-    assertThat(firstCollectNanos.get() - setupNanos.get())
-      .isAtLeast(TimeUnit.MILLISECONDS.toNanos(100))
-    collector.stop(fixture.transaction1)
+    assertEquals(200, setupMillis)
+    assertEquals(300, firstCollectMillis)
   }
 
   @Test
   fun `setup and collect happen on background thread`() {
+    val executorService = SentryExecutorService(fixture.options)
+    fixture.options.setTimerExecutorService(executorService)
     val threadCheckerCollector = spy(ThreadCheckerCollector())
     fixture.options.addPerformanceCollector(threadCheckerCollector)
     val collector = fixture.getSut()
@@ -340,6 +392,7 @@ class DefaultCompositePerformanceCollectorTest {
     // Let's sleep to make the collector get values
     Thread.sleep(300)
     collector.stop(fixture.transaction1)
+    executorService.close(0)
 
     verify(threadCheckerCollector).setup()
     verify(threadCheckerCollector, atLeast(1)).collect(any())
