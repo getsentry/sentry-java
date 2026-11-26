@@ -50,6 +50,7 @@ import io.sentry.protocol.Contexts
 import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
 import io.sentry.transport.NoOpEnvelopeCache
+import io.sentry.util.LoadClass
 import io.sentry.util.StringUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -73,6 +74,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -627,10 +629,33 @@ class SentryAndroidTest {
     ShadowApplication.setProcessName("${context.packageName}.sentry_ndk_crash")
     var configured = false
 
-    fixture.initSut { configured = true }
+    Mockito.mockConstruction(LoadClass::class.java) { loadClass, _ ->
+        whenever(
+            loadClass.isClassAvailable(
+              eq(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME),
+              anyOrNull<ILogger>(),
+            ),
+          )
+          .thenReturn(true)
+      }
+      .use { fixture.initSut { configured = true } }
 
     assertFalse(configured)
     assertFalse(Sentry.isEnabled())
+  }
+
+  @Test
+  @Config(sdk = [30])
+  fun `init runs in a process named like the NDK crash service without outproc`() {
+    ShadowApplication.setProcessName("${context.packageName}.sentry_ndk_crash")
+    var configured = false
+
+    fixture.initSut {
+      it.dsn = "https://key@sentry.io/123"
+      configured = true
+    }
+
+    assertTrue(configured)
   }
 
   private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {

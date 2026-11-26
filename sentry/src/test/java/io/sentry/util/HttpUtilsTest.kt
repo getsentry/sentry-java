@@ -233,4 +233,17 @@ class HttpUtilsTest {
       Locale.setDefault(originalLocale)
     }
   }
+
+  @Test
+  fun `sensitive data key check matches keys containing denylist terms in any case`() {
+    assertThat(HttpUtils.containsSensitiveDataKey("authToken")).isTrue()
+    assertThat(HttpUtils.containsSensitiveDataKey("X-API-KEY")).isTrue()
+    assertThat(HttpUtils.containsSensitiveDataKey("SessionId")).isTrue()
+  }
+
+  @Test
+  fun `sensitive data key check doesn't match keys without denylist terms`() {
+    assertThat(HttpUtils.containsSensitiveDataKey("productId")).isFalse()
+    assertThat(HttpUtils.containsSensitiveDataKey("query")).isFalse()
+  }
 }

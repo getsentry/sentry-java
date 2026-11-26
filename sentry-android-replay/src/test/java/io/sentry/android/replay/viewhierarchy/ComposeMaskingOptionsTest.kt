@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
+import coil3.compose.AsyncImage as Coil3AsyncImage
 import com.google.common.truth.Truth.assertThat
 import io.sentry.NoOpLogger
 import io.sentry.SentryOptions
@@ -147,7 +149,7 @@ class ComposeMaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllImages = true }
 
     val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
+    assertEquals(2, imageNodes.size) // [AsyncImage, Coil3AsyncImage]
     assertTrue(imageNodes.all { it.shouldMask })
   }
 
@@ -202,7 +204,7 @@ class ComposeMaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllImages = false }
 
     val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
+    assertEquals(2, imageNodes.size) // [AsyncImage, Coil3AsyncImage]
     assertTrue(imageNodes.none { it.shouldMask })
   }
 
@@ -417,6 +419,12 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
           model = Uri.fromFile(File(image.toURI())),
           contentDescription = null,
           modifier = Modifier.padding(vertical = 16.dp),
+        )
+        // Coil 3 loads asynchronously, so without a size the node is empty and invisible
+        Coil3AsyncImage(
+          model = Uri.fromFile(File(image.toURI())),
+          contentDescription = null,
+          modifier = Modifier.size(10.dp),
         )
         Text("Random repo", fontSize = fontSizeApplier?.invoke() ?: TextUnit.Unspecified)
         TextField(

@@ -1,9 +1,9 @@
-# PR Review Guidelines for Cursor Bugbot
+# PR Review Guidelines
 
-You are reviewing a pull request for the Sentry Java/Android SDK.
+Applies to any agent reviewing a pull request for the Sentry Java/Android SDK.
 
-Read [`AGENTS.md`](../AGENTS.md) for build commands and contributing rules, and the matching
-rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `options`, `scopes`,
+Read [`AGENTS.md`](AGENTS.md) for build commands and contributing rules, and the matching
+rule file in [`.cursor/rules/`](.cursor/rules) for the area the diff touches (`api`, `options`, `scopes`,
 `offline`, `opentelemetry`, ...).
 
 ## Critical
@@ -105,7 +105,9 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
   plain field read is a data race, not merely a stale value.
 - Read mutable shared state once per operation. Re-reading the same field for several decisions in
   one pass lets it change mid-pass, so the results disagree with each other.
-- Prefer the `synchronized` keyword. Existing code that uses `AutoClosableReentrantLock` is legacy.
+- In JVM and shared modules, including `sentry` core, use `AutoClosableReentrantLock`, not
+  `synchronized`, which pins virtual threads on JDK 21–23. In Android-only modules
+  (`sentry-android-*`), use `synchronized`. Don't flag existing locks that predate this rule.
 - New classes have a clear and defined threading and concurrency model as part of the javadoc if
   needed.
 

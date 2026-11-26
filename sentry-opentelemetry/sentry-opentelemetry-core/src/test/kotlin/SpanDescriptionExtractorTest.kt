@@ -309,6 +309,63 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
+  fun `maps replacement messaging system name to queue publish op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `replacement messaging system name wins over http when queue tracing enabled`() {
+    givenSpanKind(SpanKind.PRODUCER)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-queue", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `http wins over replacement messaging system name when queue tracing disabled`() {
+    givenSpanKind(SpanKind.CLIENT)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = false)
+
+    assertEquals("http.client", info.op)
+    assertEquals("POST https://sqs.us-east-1.amazonaws.com/", info.description)
+    assertEquals(TransactionNameSource.URL, info.transactionNameSource)
+  }
+
+  @Test
   fun `maps messaging send operation type to queue publish op`() {
     givenAttributes(
       mapOf(

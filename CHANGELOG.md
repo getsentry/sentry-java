@@ -132,17 +132,39 @@
 ### Fixes
 
 - OpenTelemetry: Group GraphQL operation spans under the `graphql` operation while retaining names such as `query GreetingQuery` as descriptions ([#6764](https://github.com/getsentry/sentry-java/pull/6764))
-- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
-- Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
 - Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
 - Preserve independent Netty read and write timeout events when exception singletons are reused. These exceptions now bypass event deduplication by default, so applications with multiple capture integrations may report the same timeout more than once. Use `SentryOptions.setIgnoredErrorsForDeduplication(...)` or `ignored-errors-for-deduplication` to customize or clear the default exclusions. ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
 - Prevent changes to reused tracing options from affecting spans and transactions after creation ([#6417](https://github.com/getsentry/sentry-java/pull/6417))
 - Avoid duplicate serialization debug logs when calculating serialized object sizes ([#6255](https://github.com/getsentry/sentry-java/pull/6255))
 - `Contexts.setProfile(null)` now removes the profile context instead of throwing ([#6684](https://github.com/getsentry/sentry-java/pull/6684))
 
+### Dependencies
+
+- Bump OpenTelemetry ([#6691](https://github.com/getsentry/sentry-java/pull/6691))
+  - `opentelemetry` to `1.68.0` (was `1.67.0`)
+  - `opentelemetry-alpha` to `1.68.0-alpha` (was `1.67.0-alpha`)
+  - `opentelemetry-instrumentation` to `2.34.0` (was `2.33.1`)
+  - `opentelemetry-instrumentation-alpha` to `2.34.0-alpha` (was `2.33.1-alpha`)
+  - `opentelemetry-semconv` to `1.45.0` (was `1.44.0`)
+  - `opentelemetry-semconv-alpha` to `1.45.0-alpha` (was `1.44.0-alpha`)
+
 ### Internal
 
 - Measure the 30 second performance-collection budget on a monotonic ticker, so that a device time change no longer ends collection early or extends it past the budget ([#6101](https://github.com/getsentry/sentry-java/pull/6101))
+
+## 8.66.0
+
+### Fixes
+
+- Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))
+- Profiling: No longer crash on API 35+ devices whose framework can't load `ProfilingManager`. Perfetto profiling is turned off on those devices instead ([#6742](https://github.com/getsentry/sentry-java/pull/6742))
+- Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
+- Android profiling: Uploading a Perfetto profile chunk now keeps the trace in memory once instead of up to three times, lowering peak memory use for traces up to 50 MB ([#6743](https://github.com/getsentry/sentry-java/pull/6743))
+- Stop a transaction's CPU and memory collection 30 seconds after it starts even when the device's wall clock changes in between ([#6739](https://github.com/getsentry/sentry-java/pull/6739))
+
+### Dependencies
+
+- Nav3: `sentry-android-navigation3` no longer declares a dependency on `androidx.lifecycle:lifecycle-runtime-compose`. Nav3 apps already depend on it via `navigation3-ui`, so no app changes are necessary ([#6699](https://github.com/getsentry/sentry-java/pull/6699))
 
 ## 8.65.1
 

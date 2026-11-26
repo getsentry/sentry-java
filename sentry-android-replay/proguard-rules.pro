@@ -8,6 +8,8 @@
 -keepclasseswithmembernames class * {
     androidx.compose.ui.graphics.painter.Painter painter;
 }
+# Elements without a painter member, e.g. Coil 3.1+ ContentPainterElement, are masked by name only
+-keepnames class **PainterElement
 # Rules to detect Text colors and if they have Modifier.fillMaxWidth to later mask them
 -dontwarn androidx.compose.ui.graphics.ColorProducer
 -dontwarn androidx.compose.foundation.layout.FillElement

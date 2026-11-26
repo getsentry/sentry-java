@@ -41,6 +41,19 @@ class ForwardingBackStackEntryMapperTest {
   }
 
   @Test
+  fun `map() - forwards to the mapper current when map is called`() {
+    var mapper = BackStackEntryMapper<HomeScreen> { SentryBackStackEntry("first") }
+    val sut = ForwardingBackStackEntryMapper { mapper }
+    val first = sut.map(HomeScreen())
+    mapper = BackStackEntryMapper { SentryBackStackEntry("second") }
+
+    val second = sut.map(HomeScreen())
+
+    assertThat(first).isEqualTo(SentryBackStackEntry("first"))
+    assertThat(second).isEqualTo(SentryBackStackEntry("second"))
+  }
+
+  @Test
   fun `mapper forwards null results`() {
     val sut = ForwardingBackStackEntryMapper<HomeScreen> { BackStackEntryMapper { null } }
     assertThat(sut.map(HomeScreen())).isNull()

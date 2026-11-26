@@ -25,12 +25,8 @@ public final class SpanDescriptionExtractor {
       final @NotNull SentryOptions options) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
-    if (options.isEnableQueueTracing()) {
-      final @Nullable String messagingSystem =
-          attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM);
-      if (messagingSystem != null) {
-        return descriptionForMessagingSystem(otelSpan);
-      }
+    if (options.isEnableQueueTracing() && OtelSpanUtils.getMessagingSystem(attributes) != null) {
+      return descriptionForMessagingSystem(otelSpan);
     }
 
     final @Nullable String graphqlOperationType =

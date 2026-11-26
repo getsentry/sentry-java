@@ -105,6 +105,9 @@ dependencies {
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.material3)
+  implementation(libs.coil3.compose)
+  // Compose UI 1.10+ lets R8 rename modifier elements, so the replay masking keep rules get tested
+  implementation(libs.androidx.compose.ui.replay)
   implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.core)
   implementation(libs.androidx.recyclerview)
