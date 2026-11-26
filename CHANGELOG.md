@@ -14,7 +14,8 @@
 ### Features
 
 - Record ANR warnings from the system as `app.anr` breadcrumbs on Android 17 (API 37) and above ([#6245](https://github.com/getsentry/sentry-java/pull/6245))
-  - The breadcrumb contains the ANR type, the system description, the timeout, and how much of the timeout was already used. It is recorded when `enableAppLifecycleBreadcrumbs` is enabled.
+  - The breadcrumb contains the ANR type, the system description, the timeout, and how much of the timeout was already used.
+  - It is enabled by default. To disable it, set `options.isEnableAnrWarningBreadcrumbs = false` or add `<meta-data android:name="io.sentry.breadcrumbs.anr-warnings" android:value="false" />` to your `AndroidManifest.xml`.
 
 ### Dependencies
 

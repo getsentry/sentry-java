@@ -69,6 +69,12 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for SystemEvents Registering a BroadcastReceiver */
   private boolean enableSystemEventBreadcrumbs = true;
 
+  /**
+   * Enable or disable automatic {@code app.anr} breadcrumbs for the ANR warnings that the system
+   * reports on Android 17 (API 37) and above, before the app is declared unresponsive.
+   */
+  private boolean enableAnrWarningBreadcrumbs = true;
+
   /** Enable or disable automatic breadcrumbs for App Components Using ComponentCallbacks */
   private boolean enableAppComponentBreadcrumbs = true;
 
@@ -485,6 +491,14 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
   }
 
+  public boolean isEnableAnrWarningBreadcrumbs() {
+    return enableAnrWarningBreadcrumbs;
+  }
+
+  public void setEnableAnrWarningBreadcrumbs(boolean enableAnrWarningBreadcrumbs) {
+    this.enableAnrWarningBreadcrumbs = enableAnrWarningBreadcrumbs;
+  }
+
   public boolean isEnableSystemEventBreadcrumbs() {
     return enableSystemEventBreadcrumbs;
   }
@@ -519,6 +533,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     enableAppComponentBreadcrumbs = enable;
     enableSystemEventBreadcrumbs = enable;
     enableAppLifecycleBreadcrumbs = enable;
+    enableAnrWarningBreadcrumbs = enable;
     enableNetworkEventBreadcrumbs = enable;
     setEnableUserInteractionBreadcrumbs(enable);
   }

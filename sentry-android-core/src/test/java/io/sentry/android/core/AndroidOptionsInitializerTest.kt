@@ -673,6 +673,15 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `AnrWarningListenerIntegration added to integration list`() {
+    fixture.initSut()
+
+    val actual =
+      fixture.sentryOptions.integrations.firstOrNull { it is AnrWarningListenerIntegration }
+    assertNotNull(actual)
+  }
+
+  @Test
   fun `AnrIntegration is added after AppLifecycleIntegration`() {
     fixture.initSut()
 

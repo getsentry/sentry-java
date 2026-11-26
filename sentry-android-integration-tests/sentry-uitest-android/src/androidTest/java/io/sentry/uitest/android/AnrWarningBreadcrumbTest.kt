@@ -42,7 +42,7 @@ class AnrWarningBreadcrumbTest : BaseUiTest() {
     val recorded = CountDownLatch(1)
     val anrBreadcrumb = AtomicReference<Breadcrumb>()
     initSentry { options: SentryAndroidOptions ->
-      options.isEnableAppLifecycleBreadcrumbs = true
+      options.isEnableAnrWarningBreadcrumbs = true
       options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
         if (breadcrumb.category == "app.anr") {
           anrBreadcrumb.set(breadcrumb)
