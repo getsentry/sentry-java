@@ -203,6 +203,13 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
+    serialize(writer, logger, getLength());
+  }
+
+  /** Serializes this header with the length of the payload that is written after it. */
+  void serialize(
+      final @NotNull ObjectWriter writer, final @NotNull ILogger logger, final int length)
+      throws IOException {
     writer.beginObject();
     if (contentType != null) {
       writer.name(JsonKeys.CONTENT_TYPE).value(contentType);
@@ -220,7 +227,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (itemCount != null) {
       writer.name(JsonKeys.ITEM_COUNT).value(itemCount);
     }
-    writer.name(JsonKeys.LENGTH).value(getLength());
+    writer.name(JsonKeys.LENGTH).value(length);
     final @Nullable Integer resolvedMetaLength = getMetaLength();
     if (resolvedMetaLength != null) {
       writer.name(JsonKeys.META_LENGTH).value(resolvedMetaLength);

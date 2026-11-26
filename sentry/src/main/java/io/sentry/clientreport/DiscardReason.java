@@ -10,7 +10,8 @@ public enum DiscardReason {
   BEFORE_SEND("before_send"),
   CALLBACK_ERROR("callback_error"),
   EVENT_PROCESSOR("event_processor"), // also for ignored exceptions
-  BACKPRESSURE("backpressure");
+  BACKPRESSURE("backpressure"),
+  INVALID("invalid");
 
   private final String reason;
 

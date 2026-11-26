@@ -17,6 +17,7 @@ import io.sentry.SentryExecutorService;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.util.Platform;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,27 +60,48 @@ public final class SpotlightIntegration
     }
   }
 
+  /**
+   * Serializes the envelope on the calling thread, so it is done before the transport serializes
+   * the same envelope, and posts it to Spotlight on a background thread.
+   */
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public void execute(final @NotNull SentryEnvelope envelope, final @Nullable Hint hint) {
+    if (options == null) {
+      return;
+    }
+    final @NotNull byte[] body;
     try {
-      executorService.submit(() -> sendEnvelope(envelope));
+      body = serializeEnvelope(options, envelope);
+    } catch (Exception e) {
+      // ISerializer.serialize declares Exception. On failure the envelope isn't sent to Spotlight.
+      logger.log(ERROR, "Failed to serialize the envelope for Spotlight.", e);
+      return;
+    }
+    try {
+      executorService.submit(() -> sendEnvelope(body));
     } catch (RejectedExecutionException e) {
       logger.log(WARNING, "Spotlight envelope submission rejected.", e);
     }
   }
 
-  private void sendEnvelope(final @NotNull SentryEnvelope envelope) {
+  private static @NotNull byte[] serializeEnvelope(
+      final @NotNull SentryOptions options, final @NotNull SentryEnvelope envelope)
+      throws Exception {
+    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    try (final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
+      options.getSerializer().serialize(envelope, gzip);
+    }
+    return outputStream.toByteArray();
+  }
+
+  private void sendEnvelope(final @NotNull byte[] body) {
     try {
-      if (options == null) {
-        throw new IllegalArgumentException("SentryOptions are required to send envelopes.");
-      }
       final String spotlightConnectionUrl = getSpotlightConnectionUrl();
 
       final HttpURLConnection connection = createConnection(spotlightConnectionUrl);
-      try (final OutputStream outputStream = connection.getOutputStream();
-          final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
-        options.getSerializer().serialize(envelope, gzip);
+      try (final OutputStream outputStream = connection.getOutputStream()) {
+        outputStream.write(body);
       } catch (Throwable e) {
         logger.log(
             ERROR, "An exception occurred while submitting the envelope to the Sentry server.", e);

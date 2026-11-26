@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.clientreport.ClientReport;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.protocol.App;
@@ -245,22 +246,34 @@ public final class JsonSerializer implements ISerializer {
       writer.write("\n");
 
       for (final SentryEnvelopeItem item : envelope.getItems()) {
+        final @NotNull SentryEnvelopeItem.Payload payload;
         try {
-          // When this throws we don't write anything and continue with the next item.
-          final byte[] data = item.getData();
-
-          item.getHeader()
-              .serialize(new JsonObjectWriter(writer, options.getMaxDepth()), options.getLogger());
-          writer.write("\n");
-          writer.flush();
-
-          outputStream.write(data);
-
-          writer.write("\n");
+          payload = item.openPayload();
         } catch (Exception exception) {
+          // Nothing of the item is written yet, so the rest of the envelope stays valid.
           options
               .getLogger()
               .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
+          if (item.markDropRecorded()) {
+            options.getClientReportRecorder().recordLostEnvelopeItem(DiscardReason.INVALID, item);
+          }
+          continue;
+        }
+        // Once the item header is written, a failure leaves the envelope invalid, so it propagates.
+        try {
+          item.getHeader()
+              .serialize(
+                  new JsonObjectWriter(writer, options.getMaxDepth()),
+                  options.getLogger(),
+                  payload.getLength());
+          writer.write("\n");
+          writer.flush();
+
+          payload.writeTo(outputStream);
+
+          writer.write("\n");
+        } finally {
+          payload.close();
         }
       }
     } finally {

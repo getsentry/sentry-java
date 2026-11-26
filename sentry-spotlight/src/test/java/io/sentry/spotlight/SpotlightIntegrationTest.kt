@@ -1,13 +1,20 @@
 package io.sentry.spotlight
 
 import io.sentry.IScopes
+import io.sentry.ISerializer
+import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeEnvelopeCallback
+import io.sentry.protocol.SentryId
 import io.sentry.util.SpotlightPlatformTestManipulator
+import java.io.OutputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.same
+import org.mockito.kotlin.verify
 
 class SpotlightIntegrationTest {
   @Test
@@ -70,5 +77,25 @@ class SpotlightIntegrationTest {
     spotlight.register(mock<IScopes>(), options)
 
     assertEquals("http://example.com:1234/stream", spotlight.spotlightConnectionUrl)
+  }
+
+  @Test
+  fun `serializes the envelope before execute returns`() {
+    val serializer = mock<ISerializer>()
+    val options =
+      SentryOptions().apply {
+        isEnableSpotlight = true
+        // Nothing listens there, so the background post fails fast.
+        spotlightConnectionUrl = "http://localhost:1/stream"
+        setSerializer(serializer)
+      }
+    val envelope = SentryEnvelope(SentryId(), null, emptyList())
+    val spotlight = SpotlightIntegration()
+    spotlight.register(mock<IScopes>(), options)
+
+    spotlight.execute(envelope, null)
+
+    verify(serializer).serialize(same(envelope), any<OutputStream>())
+    spotlight.close()
   }
 }

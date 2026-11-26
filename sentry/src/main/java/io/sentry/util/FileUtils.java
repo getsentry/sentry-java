@@ -92,7 +92,24 @@ public final class FileUtils {
    */
   public static byte[] readBytesFromFile(String pathname, long maxFileLength)
       throws IOException, SecurityException {
-    File file = new File(pathname);
+    ensureReadableFile(new File(pathname), maxFileLength);
+
+    try (FileInputStream fileInputStream = new FileInputStream(pathname);
+        BufferedInputStream inputStream = new BufferedInputStream(fileInputStream); ) {
+      return inputStreamToByteArray(inputStream, maxFileLength);
+    }
+  }
+
+  /**
+   * Checks that a path exists, is a readable file and is not larger than the max size allowed.
+   *
+   * @param file file to check
+   * @param maxFileLength the maximum allowed file size in bytes
+   * @throws IOException if any of the checks fails
+   */
+  public static void ensureReadableFile(final @NotNull File file, final long maxFileLength)
+      throws IOException, SecurityException {
+    final @NotNull String pathname = file.getPath();
 
     if (!file.exists()) {
       throw new IOException(String.format("File '%s' doesn't exists", file.getName()));
@@ -114,11 +131,6 @@ public final class FileUtils {
               "Reading file failed, because size located at '%s' with %d bytes is bigger "
                   + "than the maximum allowed size of %d bytes.",
               pathname, file.length(), maxFileLength));
-    }
-
-    try (FileInputStream fileInputStream = new FileInputStream(pathname);
-        BufferedInputStream inputStream = new BufferedInputStream(fileInputStream); ) {
-      return inputStreamToByteArray(inputStream, maxFileLength);
     }
   }
 

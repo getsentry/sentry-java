@@ -10,8 +10,10 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.Proxy
 import io.sentry.Session
+import io.sentry.exception.SentryEnvelopeAbortedException
 import io.sentry.protocol.User
 import java.io.IOException
+import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.net.Proxy.Type
 import java.net.URL
@@ -20,6 +22,7 @@ import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLSocketFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -79,6 +82,20 @@ class HttpConnectionTest {
 
     verify(fixture.serializer).serialize(eq(envelope), any())
     assertTrue(result.isSuccess)
+  }
+
+  @Test
+  fun `does not send the request when the envelope serialization is aborted`() {
+    val transport = fixture.getSUT()
+    val envelope = SentryEnvelope.from(fixture.serializer, createSession(), null)
+    whenever(fixture.serializer.serialize(eq(envelope), any<OutputStream>()))
+      .thenThrow(SentryEnvelopeAbortedException("changed"))
+
+    assertFailsWith<SentryEnvelopeAbortedException> { transport.send(envelope) }
+
+    verify(fixture.connection, never()).responseCode
+    verify(fixture.connection).disconnect()
+    verify(fixture.socketTagger).untagSockets()
   }
 
   @Test

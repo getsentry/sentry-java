@@ -1,6 +1,9 @@
 package io.sentry
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.IClientReportRecorder
+import io.sentry.exception.SentryEnvelopeAbortedException
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.SentryId
@@ -34,6 +37,7 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.msgpack.core.MessagePack
@@ -162,6 +166,133 @@ class SentryEnvelopeItemTest {
       )
 
     assertAttachment(attachment, fixture.bytesAllowed, item)
+  }
+
+  @Test
+  fun `fromAttachment with file sets the header length to the file size`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeBytes(fixture.bytes)
+
+    val item =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+
+    assertThat(item.header.length).isEqualTo(fixture.bytes.size)
+  }
+
+  @Test
+  fun `fromAttachment with file reads the file each time the envelope is serialized`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeText("first")
+    val item =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(SentryId()), listOf(item))
+
+    val first = serializeEnvelope(envelope)
+    file.writeText("second!")
+    val second = serializeEnvelope(envelope)
+
+    assertThat(first).contains("\"length\":5}\nfirst\n")
+    assertThat(second).contains("\"length\":7}\nsecond!\n")
+  }
+
+  @Test
+  fun `fromAttachment with file deleted before serialization drops only that item`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeBytes(fixture.bytes)
+    val fileItem =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment(file.path),
+        fixture.maxAttachmentSize,
+      )
+    val bytesItem =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        fixture.options.logger,
+        Attachment("bytes".toByteArray(), "bytes.txt"),
+        fixture.maxAttachmentSize,
+      )
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(SentryId()), listOf(fileItem, bytesItem))
+
+    file.delete()
+    val serialized = serializeEnvelope(envelope)
+
+    assertThat(serialized).doesNotContain("attachment.txt")
+    assertThat(serialized).contains("\"filename\":\"bytes.txt\"")
+    assertThat(serialized).contains("\"length\":5}\nbytes\n")
+  }
+
+  @Test
+  fun `fromAttachment with file deleted before serialization records it as invalid once`() {
+    val recorder = mock<IClientReportRecorder>()
+    fixture.options.clientReportRecorder = recorder
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeBytes(fixture.bytes)
+    val item = fileAttachmentItem(file)
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(SentryId()), listOf(item))
+
+    file.delete()
+    serializeEnvelope(envelope)
+    serializeEnvelope(envelope)
+
+    verify(recorder, times(1)).recordLostEnvelopeItem(DiscardReason.INVALID, item)
+  }
+
+  @Test
+  fun `fromAttachment with file aborts when the file shrinks while it is written`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeText("hello")
+    val item = fileAttachmentItem(file)
+
+    item.openPayload().use { payload ->
+      RandomAccessFile(file, "rw").use { it.setLength(2) }
+      assertFailsWith<SentryEnvelopeAbortedException> { payload.writeTo(ByteArrayOutputStream()) }
+    }
+  }
+
+  @Test
+  fun `fromAttachment with file aborts when the file grows while it is written`() {
+    val file = tmpDir.newFile("attachment.txt")
+    file.writeText("hello")
+    val item = fileAttachmentItem(file)
+
+    item.openPayload().use { payload ->
+      file.appendText(" world")
+      assertFailsWith<SentryEnvelopeAbortedException> { payload.writeTo(ByteArrayOutputStream()) }
+    }
+  }
+
+  @Test
+  fun `envelope serialization fails when a file shrinks while the envelope is written`() {
+    val file = tmpDir.newFile("attachment.bin")
+    file.writeBytes(ByteArray(20_000))
+    val envelope =
+      SentryEnvelope(SentryEnvelopeHeader(SentryId()), listOf(fileAttachmentItem(file)))
+    val output =
+      object : ByteArrayOutputStream() {
+        override fun write(b: ByteArray, off: Int, len: Int) {
+          // The first large write is the first chunk of the file payload.
+          if (len >= 8192) {
+            RandomAccessFile(file, "rw").use { it.setLength(10_000) }
+          }
+          super.write(b, off, len)
+        }
+      }
+
+    assertFailsWith<SentryEnvelopeAbortedException> {
+      fixture.serializer.serialize(envelope, output)
+    }
   }
 
   @Test
@@ -838,6 +969,20 @@ class SentryEnvelopeItemTest {
     assertEquals(attachment.contentType, actualItem.header.contentType)
     assertEquals(attachment.filename, actualItem.header.fileName)
     assertArrayEquals(expectedBytes, actualItem.data)
+  }
+
+  private fun fileAttachmentItem(file: File): SentryEnvelopeItem =
+    SentryEnvelopeItem.fromAttachment(
+      fixture.serializer,
+      fixture.options.logger,
+      Attachment(file.path),
+      fixture.maxAttachmentSize,
+    )
+
+  private fun serializeEnvelope(envelope: SentryEnvelope): String {
+    val stream = ByteArrayOutputStream()
+    fixture.serializer.serialize(envelope, stream)
+    return stream.toString("UTF-8")
   }
 
   private fun serialize(serializable: JsonSerializable): ByteArray {

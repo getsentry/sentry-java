@@ -12,6 +12,7 @@ import io.sentry.SentryOptions;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.exception.SentryEnvelopeAbortedException;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Enqueable;
@@ -321,6 +322,13 @@ public final class AsyncHttpTransport implements ITransport {
 
             throw new IllegalStateException(message);
           }
+        } catch (SentryEnvelopeAbortedException e) {
+          // A file payload changed or became unreadable mid-write, so the envelope is dropped.
+          envelopeCache.discard(envelope);
+          options
+              .getClientReportRecorder()
+              .recordLostEnvelope(DiscardReason.INVALID, envelopeWithClientReport);
+          throw new IllegalStateException("The envelope could not be serialized.", e);
         } catch (IOException e) {
           // Failure due to IO is allowed to retry the event
           HintUtils.runIfHasType(
