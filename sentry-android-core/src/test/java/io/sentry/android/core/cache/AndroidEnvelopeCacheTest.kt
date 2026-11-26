@@ -1,5 +1,6 @@
 package io.sentry.android.core.cache
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
 import io.sentry.ISerializer
@@ -15,6 +16,7 @@ import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.MemoryLimiterIntegration.MemoryLimiterHint
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.cache.EnvelopeCache
 import io.sentry.time.Stopwatch
@@ -22,8 +24,8 @@ import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.HintUtils
 import java.io.File
 import java.lang.IllegalArgumentException
+import java.time.Duration
 import java.util.Date
-import java.util.concurrent.TimeUnit.HOURS
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -32,11 +34,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
 import org.mockito.kotlin.whenever
+import org.robolectric.shadows.ShadowSystemClock
 
+@RunWith(AndroidJUnit4::class)
 class AndroidEnvelopeCacheTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
@@ -110,9 +115,10 @@ class AndroidEnvelopeCacheTest {
 
   @Test
   fun `when the device slept through the threshold since sdk init, does not write startup crash file`() {
-    val cache = fixture.getSut(dir = tmpDir, sdkInitStarted = true)
-    // The ticker counts deep sleep, which an uptime clock would have left out.
-    fixture.ticker.advance(5, HOURS)
+    val cache = fixture.getSut(dir = tmpDir)
+    AppStartMetrics.getInstance()
+      .setSdkInitStopwatch(Stopwatch.started(AndroidMonotonicTicker.getInstance()))
+    ShadowSystemClock.simulateDeepSleep(Duration.ofHours(5))
 
     val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
     cache.storeEnvelope(fixture.envelope, hints)
