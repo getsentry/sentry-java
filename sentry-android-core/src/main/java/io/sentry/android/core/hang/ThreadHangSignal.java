@@ -24,7 +24,8 @@ public final class ThreadHangSignal implements HangSignal, Metronome.TickListene
   private final @NotNull ThreadPoster poster;
   private final long suspiciousThresholdMs;
 
-  private volatile long probeRunMs;
+  // The origin of Metronome.nowMs() is arbitrary, so 0 cannot mean "never ran".
+  private volatile long probeRunMs = Long.MIN_VALUE;
 
   private final @NotNull Runnable probe;
 
