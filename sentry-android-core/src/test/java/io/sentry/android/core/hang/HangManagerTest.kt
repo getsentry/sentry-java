@@ -12,9 +12,11 @@ import io.sentry.android.core.hang.HangManager.DEFAULT_POLLING_INTERVAL_MS
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.time.EpochClock
+import io.sentry.time.JavaMonotonicTicker
 import io.sentry.time.TestMonotonicTicker
 import io.sentry.time.Timestamp
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -1116,6 +1118,48 @@ class HangManagerTest {
 
     assertThat(executors).isEmpty()
     assertThat(signal.closeCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `manager on the default executor posts the probe of a thread signal`() {
+    val posted = CountDownLatch(1)
+    val poster =
+      object : ThreadPoster {
+        override fun post(runnable: Runnable) = posted.countDown()
+
+        override fun remove(runnable: Runnable) = Unit
+      }
+    appStateProvider.foreground()
+    val created =
+      HangManager(
+        options,
+        appStateProvider,
+        JavaMonotonicTicker.getInstance(),
+        epochClock,
+        DEFAULT_POLLING_INTERVAL_MS,
+        DEFAULT_MAX_RECORDING_TIME_MS,
+        MAX_SAMPLES,
+        HangManager.DEFAULT_EXECUTOR_FACTORY,
+        { metronome ->
+          listOf(
+            ThreadHangSignal(
+              metronome,
+              { false },
+              poster,
+              HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS,
+            ),
+          )
+        },
+        emptyList(),
+      )
+
+    created.subscribe(listener)
+
+    try {
+      assertThat(posted.await(10, TimeUnit.SECONDS)).isTrue()
+    } finally {
+      created.unsubscribe(listener)
+    }
   }
 
   private class FakeAppStateProvider : AppStateProvider {
