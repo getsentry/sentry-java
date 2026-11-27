@@ -7,23 +7,23 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class SentryAutoDateProviderTest {
-  val javaNinePlus = Platform.isJavaNinePlus()
+  val isAndroid = Platform.isAndroid()
 
   @AfterTest
   fun restorePlatform() {
-    PlatformTestManipulator.pretendJavaNinePlus(javaNinePlus)
+    PlatformTestManipulator.pretendIsAndroid(isAndroid)
   }
 
   @Test
-  fun `uses SentryInstantDate on Java9+`() {
-    PlatformTestManipulator.pretendJavaNinePlus(true)
+  fun `uses SentryInstantDate on the JVM`() {
+    PlatformTestManipulator.pretendIsAndroid(false)
     val now = SentryAutoDateProvider().now()
     assertTrue(now is SentryInstantDate)
   }
 
   @Test
-  fun `uses SentryNanotimeDate on Java8`() {
-    PlatformTestManipulator.pretendJavaNinePlus(false)
+  fun `uses SentryNanotimeDate on Android`() {
+    PlatformTestManipulator.pretendIsAndroid(true)
     val now = SentryAutoDateProvider().now()
     assertTrue(now is SentryNanotimeDate)
   }
