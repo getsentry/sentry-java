@@ -7,6 +7,11 @@
 
 ## Unreleased
 
+### Improvements
+
+- Nav3: Record why a back stack entry is `/unknown` via an `unknown_entry_reason` next to it in the Sentry UI ([#6801](https://github.com/getsentry/sentry-java/pull/6801))
+  - A `BackStackEntryMapper` that throws now records `"unknown_entry_reason": "mapping_failed"` instead of `"dropped_by_sentry": "mapping_failed"` in the entry's arguments.
+
 ### Fixes
 
 - Session Replay: Mask Compose images loaded with Coil 3.1+ `AsyncImage` when `maskAllImages` is enabled ([#6759](https://github.com/getsentry/sentry-java/pull/6759))

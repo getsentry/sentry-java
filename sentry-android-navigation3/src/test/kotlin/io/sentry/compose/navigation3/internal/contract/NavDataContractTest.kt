@@ -2,6 +2,7 @@ package io.sentry.compose.navigation3.internal.contract
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason.Companion.UNKNOWN_ENTRY_REASON_KEY
 import org.junit.Test
 
 /** Pins the strings the Sentry UI displays, so that renaming one fails a test. */
@@ -30,6 +31,8 @@ class NavDataContractTest {
     assertThat(BREADCRUMB_TO_KEY).isEqualTo("to")
     assertThat(BREADCRUMB_FROM_ARGUMENTS_KEY).isEqualTo("from_arguments")
     assertThat(BREADCRUMB_TO_ARGUMENTS_KEY).isEqualTo("to_arguments")
+    assertThat(BREADCRUMB_FROM_UNKNOWN_ENTRY_REASON_KEY).isEqualTo("from_unknown_entry_reason")
+    assertThat(BREADCRUMB_TO_UNKNOWN_ENTRY_REASON_KEY).isEqualTo("to_unknown_entry_reason")
   }
 
   @Test
@@ -41,6 +44,26 @@ class NavDataContractTest {
   @Test
   fun `unknown entry name matches the displayed name`() {
     assertThat(UNKNOWN_ENTRY_NAME).isEqualTo("/unknown")
+  }
+
+  @Test
+  fun `unknown entry reason key matches the displayed name`() {
+    assertThat(UNKNOWN_ENTRY_REASON_KEY).isEqualTo("unknown_entry_reason")
+  }
+
+  @Test
+  fun `each unknown entry reason serializes to its displayed value`() {
+    val serializedValues = UnknownEntryReason.entries.associateWith { it.serializedValue }
+
+    assertThat(serializedValues)
+      .containsExactly(
+        UnknownEntryReason.BLANK_NAME,
+        "blank_name",
+        UnknownEntryReason.MAPPING_FAILED,
+        "mapping_failed",
+        UnknownEntryReason.UNMAPPED,
+        "unmapped",
+      )
   }
 
   @Test
@@ -60,8 +83,6 @@ class NavDataContractTest {
         "duplicate_key",
         ArgumentDropReason.INVALID_STRUCTURE,
         "invalid_structure",
-        ArgumentDropReason.MAPPING_FAILED,
-        "mapping_failed",
         ArgumentDropReason.MAX_COUNT,
         "max_argument_count_exceeded",
         ArgumentDropReason.SANITIZATION_FAILED,

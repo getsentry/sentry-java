@@ -83,6 +83,9 @@ public class SentryBackStackEntry(
  * `/detail` throws, the back stack record will be `/home -> /unknown -> /settings` rather than
  * `/home -> /settings`.
  *
+ * Each "/unknown" entry records why it has no name under `unknown_entry_reason` (e.g.,
+ * `"mapping_failed"` if [map] threw).
+ *
  * **Choosing appropriate arguments**
  *
  * Argument values may be any of the following scalar types:

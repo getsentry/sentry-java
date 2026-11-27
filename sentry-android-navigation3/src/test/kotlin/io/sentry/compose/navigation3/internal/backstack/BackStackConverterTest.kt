@@ -12,6 +12,7 @@ import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
 import java.io.StringWriter
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -157,7 +158,14 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert() - returns unknown name with arguments if mapper name is blank`() {
+  fun `convert() - returns a named entry without an unknown entry reason if mapper returns a name`() {
+    val converter = newConverter()
+
+    assertThat(converter.convert(HomeScreen()).unknownEntryReason).isNull()
+  }
+
+  @Test
+  fun `convert() - returns unknown name with the blank name reason and arguments if mapper name is blank`() {
     val converter =
       newConverter(entryMapper = { SentryBackStackEntry("   ", mapOf("userId" to "123")) })
 
@@ -166,6 +174,7 @@ class BackStackConverterTest {
         NormalizedSentryBackStackEntry(
           name = "/unknown",
           arguments = mapOf("userId" to "123"),
+          unknownEntryReason = UnknownEntryReason.BLANK_NAME,
         ),
       )
     verify(logger)
@@ -187,6 +196,7 @@ class BackStackConverterTest {
         NormalizedSentryBackStackEntry(
           name = "/unknown",
           argumentDropReason = ArgumentDropReason.MAX_COUNT,
+          unknownEntryReason = UnknownEntryReason.BLANK_NAME,
         ),
       )
   }
@@ -212,22 +222,27 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert() - returns unknown name without arguments if mapper returns null`() {
+  fun `convert() - returns unknown name with the unmapped reason if mapper returns null`() {
     val converter = newConverter(entryMapper = { null })
 
     assertThat(converter.convert(HomeScreen()))
-      .isEqualTo(NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME))
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          UNKNOWN_ENTRY_NAME,
+          unknownEntryReason = UnknownEntryReason.UNMAPPED,
+        ),
+      )
   }
 
   @Test
-  fun `convert() - returns unknown name with the mapping failed drop reason if mapper throws`() {
+  fun `convert() - returns unknown name with the mapping failed reason and no arguments if mapper throws`() {
     val converter = newConverter(entryMapper = { error("boom") })
 
     assertThat(converter.convert(HomeScreen()))
       .isEqualTo(
         NormalizedSentryBackStackEntry(
           UNKNOWN_ENTRY_NAME,
-          argumentDropReason = ArgumentDropReason.MAPPING_FAILED,
+          unknownEntryReason = UnknownEntryReason.MAPPING_FAILED,
         ),
       )
     verify(logger)
