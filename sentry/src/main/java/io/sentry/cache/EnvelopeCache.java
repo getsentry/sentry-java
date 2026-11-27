@@ -402,18 +402,15 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       // overwriting it
       if (!previousSessionMoved) {
         moveCurrentToPreviousSession(currentSessionFile, getPreviousSessionFile(directoryPath));
-        if (!previousSessionMoved) {
-          options
-              .getLogger()
-              .log(WARNING, "Previous session could not be moved, not overwriting it.");
-          lastPersistedSessionId = null;
-          return;
-        }
       }
       final boolean written = writeSessionToDisk(currentSessionFile, session);
-      // a failed write truncates the file, so there is no good copy left to protect. Delete it, so
-      // a later move does not put it over the last run's session in the previous session file.
-      if (!written && !currentSessionFile.delete()) {
+      // A written file holds this session, even if the move failed, so the init-time move must
+      // skip it. After a failed write, delete the truncated file only if the move worked: then it
+      // is ours, and a later move must not put it over the last run's session. If the move failed,
+      // the file can still hold the last run's session, so it stays for a later move to retry.
+      if (written) {
+        previousSessionMoved = true;
+      } else if (previousSessionMoved && !currentSessionFile.delete()) {
         options
             .getLogger()
             .log(WARNING, "Unable to delete the current session file after a failed write.");

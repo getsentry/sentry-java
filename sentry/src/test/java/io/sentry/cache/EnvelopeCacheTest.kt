@@ -865,23 +865,49 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `failed move in persistCurrentSession keeps the last run's session for a later move`() {
+  fun `failed move in persistCurrentSession still writes the live session for the init-time move to skip`() {
     val cache = fixture.getSUT()
     val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
     val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
     currentSessionFile.writeText("session content from last run")
     // a non-empty directory where the previous session file belongs makes the move fail
     assertTrue(File(previousSessionFile, "blocker").mkdirs())
+    val liveSession = createSession()
 
-    cache.persistCurrentSession(createSession())
+    cache.persistCurrentSession(liveSession)
+    assertTrue(previousSessionFile.deleteRecursively())
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
 
-    assertThat(currentSessionFile.readText()).isEqualTo("session content from last run")
+    assertThat(previousSessionFile.exists()).isFalse()
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(liveSession.sessionId)
+  }
+
+  @Test
+  fun `failed move and failed write in persistCurrentSession leave the file for a later move`() {
+    val liveSession = createSession()
+    val serializer = mock<ISerializer>()
+    whenever(serializer.serialize(same(liveSession), any<Writer>()))
+      .thenThrow(RuntimeException("forced ex"))
+    val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    assertTrue(File(previousSessionFile, "blocker").mkdirs())
+
+    cache.persistCurrentSession(liveSession)
+    // the file may still be the last run's session, so it is not deleted
+    assertThat(currentSessionFile.exists()).isTrue()
 
     assertTrue(previousSessionFile.deleteRecursively())
     cache.movePreviousSession(currentSessionFile, previousSessionFile)
 
     assertThat(currentSessionFile.exists()).isFalse()
-    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
+    assertThat(previousSessionFile.exists()).isTrue()
   }
 
   @Test
