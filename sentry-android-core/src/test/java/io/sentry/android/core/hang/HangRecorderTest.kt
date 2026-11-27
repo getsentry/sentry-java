@@ -25,15 +25,19 @@ class HangRecorderTest {
   private fun start(
     vararg listeners: FakeListener,
     collectors: List<HangCollectorSetup<*>> = listOf(HangCollectorSetup(collector, writer, store)),
-  ): HangRecorder? = HangRecorder.start(listeners.toList(), collectors, 100, 5_000, logger)
+  ): HangRecorder = HangRecorder.start(listeners.toList(), collectors, 100, 5_000, logger)
 
   private fun HangRecord.values() = stackTraces.map { it.stack.single().methodName }
 
   @Test
-  fun `no record without a listener that asks for one`() {
+  fun `a hang without a listener that asks for a record samples nothing`() {
     val recorder = start(FakeListener(null), FakeListener(HangRecordingRequest(false, true)))
 
-    assertThat(recorder).isNull()
+    recorder.sample(120)
+
+    assertThat(recorder.isRecording).isFalse()
+    assertThat(recorder.listeners).isEmpty()
+    assertThat(collector.sampleCount).isEqualTo(0)
     assertThat(store.calls).isEmpty()
   }
 
@@ -54,7 +58,7 @@ class HangRecorderTest {
       start(
         FakeListener(HangRecordingRequest(true, false)),
         FakeListener(HangRecordingRequest(true, true)),
-      )!!
+      )
 
     recorder.sample(120)
     recorder.sample(120)
@@ -64,7 +68,7 @@ class HangRecorderTest {
 
   @Test
   fun `record without persist request does not touch the store`() {
-    val recorder = start(FakeListener(HangRecordingRequest(true, false)))!!
+    val recorder = start(FakeListener(HangRecordingRequest(true, false)))
 
     recorder.sample(120)
 
@@ -74,7 +78,7 @@ class HangRecorderTest {
 
   @Test
   fun `stops sampling after maxSamples ticks`() {
-    val recorder = start(FakeListener(HangRecordingRequest(true, false)))!!
+    val recorder = start(FakeListener(HangRecordingRequest(true, false)))
 
     repeat(5) { recorder.sample(3) }
 
@@ -84,7 +88,7 @@ class HangRecorderTest {
 
   @Test
   fun `a tick without a value still counts against maxSamples`() {
-    val recorder = start(FakeListener(HangRecordingRequest(true, false)))!!
+    val recorder = start(FakeListener(HangRecordingRequest(true, false)))
     collector.returnNull = true
 
     recorder.sample(2)
@@ -107,7 +111,7 @@ class HangRecorderTest {
             HangCollectorSetup(collector, writer, store),
             HangCollectorSetup(other, writer, null),
           ),
-      )!!
+      )
     store.throwOnAdd = true
 
     recorder.sample(120)
@@ -122,7 +126,7 @@ class HangRecorderTest {
   @Test
   fun `store clear failure stops persisting`() {
     store.throwOnClear = true
-    val recorder = start(FakeListener(HangRecordingRequest(true, true)))!!
+    val recorder = start(FakeListener(HangRecordingRequest(true, true)))
 
     recorder.sample(120)
 
@@ -135,14 +139,14 @@ class HangRecorderTest {
     val recording1 = FakeListener(HangRecordingRequest(true, false))
     val recording2 = FakeListener(HangRecordingRequest(true, true))
     val notRecording = FakeListener(null)
-    val recorder = start(recording1, recording2, notRecording)!!
+    val recorder = start(recording1, recording2, notRecording)
 
     assertThat(recorder.listeners).containsExactly(recording1, recording2).inOrder()
   }
 
   @Test
   fun `end builds the record with duration and start timestamp`() {
-    val recorder = start(FakeListener(HangRecordingRequest(true, false)))!!
+    val recorder = start(FakeListener(HangRecordingRequest(true, false)))
 
     val record = recorder.end(8_100)
 
