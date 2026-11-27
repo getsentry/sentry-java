@@ -147,9 +147,9 @@ context-propagation = { module = "io.micrometer:context-propagation", version = 
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.52.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
 feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" }
-graphql-java17 = { module = "com.graphql-java:graphql-java", version = "17.3" }
-graphql-java22 = { module = "com.graphql-java:graphql-java", version = "22.1" }
-graphql-java24 = { module = "com.graphql-java:graphql-java", version = "24.0" }
+graphql-java17 = { module = "com.graphql-java:graphql-java", version = "26.2" }
+graphql-java22 = { module = "com.graphql-java:graphql-java", version = "26.2" }
+graphql-java24 = { module = "com.graphql-java:graphql-java", version = "26.2" }
 netflix-dgs-platform = { module = "com.netflix.graphql.dgs:graphql-dgs-platform-dependencies", version.ref = "dgs" }
 netflix-dgs-subscriptions-websockets-autoconfigure = { module = "com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure", version.ref = "dgs" }
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
