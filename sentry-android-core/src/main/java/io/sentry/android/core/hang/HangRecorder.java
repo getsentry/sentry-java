@@ -2,6 +2,8 @@ package io.sentry.android.core.hang;
 
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,6 +23,7 @@ final class HangRecorder {
   private final @NotNull List<HangCollectorSetup<?>> collectors;
   private final @NotNull List<HangRecordingListener> listeners;
   private final @NotNull ILogger logger;
+  private final @NotNull AnchoredClock clock;
   private final long startTimeMs;
   private final @NotNull HangRecord.Builder record;
   private boolean persist;
@@ -30,12 +33,14 @@ final class HangRecorder {
       final @NotNull List<HangCollectorSetup<?>> collectors,
       final @NotNull List<HangRecordingListener> listeners,
       final @NotNull ILogger logger,
+      final @NotNull AnchoredClock clock,
       final long startTimeMs,
       final long startTimestampMs,
       final boolean persist) {
     this.collectors = collectors;
     this.listeners = listeners;
     this.logger = logger;
+    this.clock = clock;
     this.startTimeMs = startTimeMs;
     this.record = new HangRecord.Builder().setStartTimestampMs(startTimestampMs);
     this.persist = persist;
@@ -44,6 +49,7 @@ final class HangRecorder {
   /**
    * Asks each listener what it needs from this hang, and clears the stores if one asks to persist.
    *
+   * @param clock the clock of the sample times, anchored one time for this hang
    * @param startTimeMs the start of the hang, as a monotonic time in milliseconds
    * @param startTimestampMs the start of the hang, as Unix time in milliseconds
    * @return the recorder of this hang, which samples nothing if no listener asks for a record
@@ -51,6 +57,7 @@ final class HangRecorder {
   static @NotNull HangRecorder start(
       final @NotNull Collection<HangRecordingListener> subscriptions,
       final @NotNull List<HangCollectorSetup<?>> collectors,
+      final @NotNull AnchoredClock clock,
       final long startTimeMs,
       final long startTimestampMs,
       final @NotNull ILogger logger) {
@@ -66,7 +73,8 @@ final class HangRecorder {
       }
     }
     final @NotNull HangRecorder recorder =
-        new HangRecorder(collectors, listeners, logger, startTimeMs, startTimestampMs, persist);
+        new HangRecorder(
+            collectors, listeners, logger, clock, startTimeMs, startTimestampMs, persist);
     if (persist) {
       recorder.clearStores();
     }
@@ -94,9 +102,10 @@ final class HangRecorder {
       return;
     }
     samplingTicks++;
+    final @NotNull Timestamp now = clock.now();
     for (final @NotNull HangCollectorSetup<?> setup : collectors) {
       try {
-        sample(setup, record, persist);
+        sample(setup, now, record, persist);
       } catch (IOException e) {
         stopPersisting(e);
       }
@@ -132,10 +141,11 @@ final class HangRecorder {
 
   private static <T> void sample(
       final @NotNull HangCollectorSetup<T> setup,
+      final @NotNull Timestamp now,
       final @NotNull HangRecord.Builder record,
       final boolean persist)
       throws IOException {
-    final @Nullable T sample = setup.collector.sample();
+    final @Nullable T sample = setup.collector.sample(now);
     if (sample == null) {
       return;
     }

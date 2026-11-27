@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.NANOSECONDS
 import java.util.concurrent.locks.LockSupport
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -223,6 +224,34 @@ class HangManagerTest {
     assertThat(record.durationMs).isEqualTo(idleSinceMs - suspiciousSinceMs)
     assertThat(record.startTimestampMs).isEqualTo(timestampAtOpenMs - 300)
     assertThat(recordedValues().single()).containsExactly("s1")
+  }
+
+  @Test
+  fun `samples of a hang use one wall-clock reading`() {
+    startInForeground()
+    val anchorMs = unixTimeMs
+    openHangInTick(0)
+
+    unixTimeMs += HOURS.toMillis(1)
+    advance(DEFAULT_POLLING_INTERVAL_MS)
+    executor.runTick()
+
+    assertThat(collector.timestampsMs)
+      .containsExactly(anchorMs, anchorMs + DEFAULT_POLLING_INTERVAL_MS)
+      .inOrder()
+  }
+
+  @Test
+  fun `each hang reads the wall clock again`() {
+    startInForeground()
+    openHangInTick(0)
+    signal.report(HangSignal.State.IDLE, 0)
+    unixTimeMs += HOURS.toMillis(1)
+    collector.timestampsMs.clear()
+
+    openHangInTick(0)
+
+    assertThat(collector.timestampsMs).containsExactly(unixTimeMs)
   }
 
   @Test
@@ -1269,12 +1298,14 @@ class HangManagerTest {
    */
   private class FakeCollector(private val prefix: String = "s") : HangDataCollector<String> {
     val calls = mutableListOf<String>()
+    val timestampsMs = mutableListOf<Long>()
     private var sampleCount = 0
     var returnNull = false
     var throwOnSample = false
 
-    override fun sample(): String? {
+    override fun sample(timestamp: Timestamp): String? {
       calls.add("sample")
+      timestampsMs.add(NANOSECONDS.toMillis(timestamp.epochNanos()))
       sampleCount++
       if (throwOnSample) {
         throw IllegalStateException("collector failed")
