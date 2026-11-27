@@ -8,6 +8,11 @@ public interface SpanDataConvention {
   //  https://develop.sentry.dev/sdk/performance/span-data-conventions/
   String DB_SYSTEM_KEY = "db.system";
   String DB_NAME_KEY = "db.name";
+  String DB_SYSTEM_NAME_KEY = "db.system.name";
+  String DB_NAMESPACE_KEY = "db.namespace";
+  String DB_QUERY_TEXT_KEY = "db.query.text";
+  String DB_QUERY_SUMMARY_KEY = "db.query.summary";
+  String DB_STORED_PROCEDURE_NAME_KEY = "db.stored_procedure.name";
   String HTTP_QUERY_KEY = "http.query";
   String HTTP_FRAGMENT_KEY = "http.fragment";
   String HTTP_METHOD_KEY = "http.request.method";

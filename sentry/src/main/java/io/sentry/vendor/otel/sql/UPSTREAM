@@ -1,0 +1,7 @@
+# Vendored by scripts/sync-otel-sql.sh; do not edit by hand.
+repository=open-telemetry/opentelemetry-java-instrumentation
+commit=979e8684e783f1a710955341924bdddeff6e83f2
+file=instrumentation-api-incubator/src/main/jflex/SqlSanitizer.jflex
+file=instrumentation-api-incubator/src/main/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/SqlQuery.java
+file=instrumentation-api-incubator/src/main/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/SqlDialect.java
+file=instrumentation-api/src/main/java/io/opentelemetry/instrumentation/api/internal/StringUtils.java

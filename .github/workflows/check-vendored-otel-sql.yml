@@ -1,0 +1,30 @@
+name: 'Check vendored OpenTelemetry SQL grammar'
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/check-vendored-otel-sql.yml'
+      - 'THIRD_PARTY_NOTICES.md'
+      - 'scripts/sync-otel-sql.sh'
+      - 'sentry/src/main/jflex/**'
+      - 'sentry/src/main/java/io/sentry/vendor/otel/sql/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Compare vendored files with upstream
+        run: ./scripts/sync-otel-sql.sh --check

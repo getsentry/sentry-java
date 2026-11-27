@@ -447,6 +447,98 @@ limitations under the License.
 
 ---
 
+## OpenTelemetry Java Instrumentation — SQL grammar (Apache 2.0)
+
+**Source:** https://github.com/open-telemetry/opentelemetry-java-instrumentation (Commit: 979e8684e783f1a710955341924bdddeff6e83f2)<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright The OpenTelemetry Authors
+
+### Scope
+
+The Sentry Java SDK's SQL query analyzer uses OpenTelemetry Java Instrumentation's SQL grammar and the three classes it depends on, vendored by `scripts/sync-otel-sql.sh` at the commit recorded in `sentry/src/main/java/io/sentry/vendor/otel/sql/UPSTREAM`. The script changes only package, imports and annotations; the grammar rules are unchanged:
+
+- `sentry/src/main/jflex/SqlSanitizer.jflex` is adapted from `instrumentation-api-incubator/src/main/jflex/SqlSanitizer.jflex`.
+- `io.sentry.vendor.otel.sql.AutoSqlSanitizer` is generated from that grammar at build time and is included in the published `sentry` artifact. It contains the JFlex skeleton, which is licensed under CC0-1.0; JFlex itself is a build-time tool and is not distributed.
+- `io.sentry.vendor.otel.sql.SqlQuery` and `io.sentry.vendor.otel.sql.SqlDialect` are adapted from `instrumentation-api-incubator/src/main/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/SqlQuery.java` and `SqlDialect.java`.
+- `io.sentry.vendor.otel.sql.StringUtils` is adapted from `instrumentation-api/src/main/java/io/opentelemetry/instrumentation/api/internal/StringUtils.java`.
+
+```
+Copyright The OpenTelemetry Authors
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
+## OpenTelemetry Java Instrumentation — SQL analyzer tests (Apache 2.0)
+
+**Source:** https://github.com/open-telemetry/opentelemetry-java-instrumentation (Commit: 2acd9a5f1153e725a3b80e9b90ad55b385576fe8)<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright The OpenTelemetry Authors
+
+### Scope
+
+The Sentry Java SDK's SQL analyzer test suite includes test inputs adapted from the SQL analyzer tests in `instrumentation-api-incubator/src/test/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/`. The adapted inputs reside in `sentry/src/test/resources/sql/analyzer-cases.json` (cases whose `source` starts with `otel-java:`) and `sentry/src/test/java/io/sentry/util/sql/SqlQueryAnalyzerPathologicalTest.kt`. These are test sources and are not part of the published artifacts.
+
+```
+Copyright The OpenTelemetry Authors
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
+## OpenTelemetry .NET Contrib — SQL processor tests (Apache 2.0)
+
+**Source:** https://github.com/open-telemetry/opentelemetry-dotnet-contrib (Commit: 4e3aba9ddf89f9accac004f44f32ebde335dd115)<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright The OpenTelemetry Authors
+
+### Scope
+
+The Sentry Java SDK's SQL analyzer test suite includes test inputs adapted from `test/OpenTelemetry.Contrib.Shared.Tests/SqlProcessorTests.cs` and `test/OpenTelemetry.Contrib.Shared.Tests/SqlProcessorTestCases.json`. The adapted inputs reside in `sentry/src/test/resources/sql/analyzer-cases.json` (cases whose `source` starts with `otel-dotnet:`). These are test sources and are not part of the published artifacts.
+
+```
+Copyright The OpenTelemetry Authors
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
 ## SalomonBrys — ANR-WatchDog (MIT)
 
 **Source:** https://github.com/SalomonBrys/ANR-WatchDog (Commit: 1969075f75f5980e9000eaffbaa13b0daf282dcb)<br>

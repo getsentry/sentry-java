@@ -1,0 +1,2538 @@
+{
+  "attribution": [
+    "Cases whose source is otel-java:... are adapted from OpenTelemetry Java Instrumentation; cases whose source is otel-dotnet:... are adapted from OpenTelemetry .NET Contrib.",
+    "Copyright The OpenTelemetry Authors.",
+    "Licensed under the Apache License, Version 2.0.",
+    "https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/2acd9a5f1153e725a3b80e9b90ad55b385576fe8/instrumentation-api-incubator/src/test/java/io/opentelemetry/instrumentation/api/incubator/semconv/db",
+    "https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/4e3aba9ddf89f9accac004f44f32ebde335dd115/test/OpenTelemetry.Contrib.Shared.Tests"
+  ],
+  "cases": [
+    {
+      "id": "literal.string.basic",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users WHERE email = 'Zq9xK7@example.com'",
+      "secrets": ["Zq9xK7@example.com"],
+      "source": "sentry"
+    },
+    {
+      "id": "procedure.call.basic",
+      "dialect": "postgresql",
+      "input": "CALL get_user(?, 'Zq9xK7tenant')",
+      "secrets": ["Zq9xK7tenant"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.conservative.backslash",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE a = 'a\\' , 'Zq9xK7secret'",
+      "secrets": ["Zq9xK7secret"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.doubled_quote",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM users WHERE name = 'O''Zq9xK7a'",
+      "secrets": ["Zq9xK7a"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.multiline",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM notes WHERE body = 'line one\nZq9xK7b line two'",
+      "secrets": ["Zq9xK7b"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.backslash.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT * FROM files WHERE path = 'C:\\' AND owner = 'Zq9xK7c'",
+      "secrets": ["Zq9xK7c"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.backslash.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM files WHERE path = 'C:\\' AND owner = 'Zq9xK7d'",
+      "secrets": ["Zq9xK7d"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.backslash.mysql",
+      "dialect": "mysql",
+      "input": "SELECT * FROM users WHERE name = 'it\\'s Zq9xK7e'",
+      "secrets": ["Zq9xK7e"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.backslash_same_boundary.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM files WHERE name LIKE '100\\%' AND path = 'C:\\\\' AND note = 'say \\\"hi\\\"' AND quote = 'it\\\\''s' AND owner = 'Zq9xK7la'",
+      "secrets": ["Zq9xK7la"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.backslash_same_boundary.mysql",
+      "dialect": "mysql",
+      "input": "SELECT * FROM files WHERE name LIKE '100\\%' AND path = 'C:\\\\' AND note = 'say \\\"hi\\\"' AND quote = 'it\\\\''s' AND owner = 'Zq9xK7lb'",
+      "secrets": ["Zq9xK7lb"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.string.backslash_same_boundary.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM files WHERE name LIKE '100\\%' AND path = 'C:\\\\' AND note = 'say \\\"hi\\\"' AND quote = 'it\\\\''s' AND owner = 'Zq9xK7lc'",
+      "secrets": ["Zq9xK7lc"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.hex",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE a = 0xDEADBEEF AND b = 0Xbeef AND c = X'4A6F' AND d = x'4a'",
+      "secrets": ["DEADBEEF"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.number.word_suffix.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE a = 123_456_789 AND b = 0o1234567 AND c = 0x_DEAD_BEEF AND d = 9_876.5e1_2",
+      "secrets": ["123_456_789", "0o1234567", "0x_DEAD_BEEF", "9_876.5e1_2"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.national.sqlserver",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM [Users] WHERE [Name] = N'Zq9xK7f'",
+      "secrets": ["Zq9xK7f"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.escape_string.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users WHERE name = E'Zq9xK7g'",
+      "secrets": ["Zq9xK7g"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.escape_string.backslash.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users WHERE nick = E'it\\'s' AND key = 'Zq9xK7h'",
+      "secrets": ["Zq9xK7h"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.charset_introducer.mysql",
+      "dialect": "mysql",
+      "input": "SELECT * FROM users WHERE name = _utf8mb4'Zq9xK7i'",
+      "secrets": ["Zq9xK7i"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.unicode_escape.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT U&'Zq9xK7j' FROM t",
+      "secrets": ["Zq9xK7j"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE body = $$it's Zq9xK7k$$",
+      "secrets": ["Zq9xK7k"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar.dash_dash_inside.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE body = $$a--x\nZq9xK7wf$$",
+      "secrets": ["Zq9xK7wf"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar_tag.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE body = $fn$ it's $$ Zq9xK7l $fn$ AND id = 1",
+      "secrets": ["Zq9xK7l"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar.mysql",
+      "dialect": "mysql",
+      "input": "SELECT $$a FROM t WHERE b = 'x$$' AND c = 'Zq9xK7m'",
+      "secrets": ["Zq9xK7m"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE body = $$Zq9xK7n$$",
+      "secrets": ["Zq9xK7n"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar_tag.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE body = $t$Zq9xK7h2c$t$",
+      "secrets": ["Zq9xK7h2c"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar.h2",
+      "dialect": "h2",
+      "input": "SELECT * FROM t WHERE body = $$it's Zq9xK7h2a$$",
+      "secrets": ["Zq9xK7h2a"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar_tag.h2",
+      "dialect": "h2",
+      "input": "SELECT * FROM t WHERE a = $t$ AND b = 'p $t$' AND c = 'Zq9xK7h2b'",
+      "secrets": ["Zq9xK7h2b"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar_tag.inside_identifier.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT a$x$ FROM t WHERE p = 'foo$x$Zq9xK7si'",
+      "secrets": ["Zq9xK7si"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar.inside_identifier.h2",
+      "dialect": "h2",
+      "input": "SELECT a$$ FROM t WHERE p = 'x$$Zq9xK7sj'",
+      "secrets": ["Zq9xK7sj"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.dollar_tag.inside_identifier.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a$x$Zq9xK7sk$x$ FROM t",
+      "secrets": ["Zq9xK7sk"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.dollar_in_identifier.oracle",
+      "dialect": "oracle",
+      "input": "SELECT sid FROM V$SESSION WHERE username = 'Zq9xK7sl'",
+      "secrets": ["Zq9xK7sl"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.oracle",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nick = q'[it's me]' AND key = 'Zq9xK7o'",
+      "secrets": ["Zq9xK7o"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.delimiters.oracle",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE a = Q'{it's Zq9xK7p}' AND b = nq'!Zq9xK7q!'",
+      "secrets": ["Zq9xK7p", "Zq9xK7q"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM users WHERE nick = q'[it's me]' AND key = 'Zq9xK7r'",
+      "secrets": ["Zq9xK7r"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT q'Zq9xK7s' FROM t",
+      "secrets": ["Zq9xK7s"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.paired_inner_quotes.oracle",
+      "dialect": "oracle",
+      "input": "SELECT q'[A'Zq9xK7qa'B]' FROM dual",
+      "secrets": ["Zq9xK7qa"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.other_delimiter.oracle",
+      "dialect": "oracle",
+      "input": "SELECT q'#it's Zq9xK7qc#' FROM dual",
+      "secrets": ["Zq9xK7qc"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.paired_inner_quotes.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT q'[A'Zq9xK7qb'B]' FROM dual",
+      "secrets": ["Zq9xK7qb"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.other_closer_inside.oracle",
+      "dialect": "oracle",
+      "input": "SELECT q'[a)'Zq9xK7ss]' FROM t",
+      "secrets": ["Zq9xK7ss"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.after_number.oracle",
+      "dialect": "oracle",
+      "input": "SELECT 1q'[it's Zq9xK7st]' FROM dual",
+      "secrets": ["Zq9xK7st"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.after_dot.oracle",
+      "dialect": "oracle",
+      "input": "SELECT x.q'!it's Zq9xK7sq!' FROM t",
+      "secrets": ["Zq9xK7sq"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.q_quote.after_dot.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT x.nq'[a'Zq9xK7sr]' FROM t",
+      "secrets": ["Zq9xK7sr"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.keyword_before_quote",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT CASE WHEN a = 1 THEN 'x' ELSE'Zq9xK7t' END FROM t",
+      "secrets": ["Zq9xK7t"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.prefix_after_dot.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT \"a\".N'Zq9xK7sg' FROM t",
+      "secrets": ["Zq9xK7sg"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.in_list.collapse",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE a IN (1, 2, 3) AND b IN ('Zq9xK7u', 'x') AND c IN(?, ?) AND d IN (x, 'y')",
+      "secrets": ["Zq9xK7u"],
+      "source": "sentry"
+    },
+    {
+      "id": "literal.values.multi_row_kept",
+      "dialect": "CONSERVATIVE",
+      "input": "INSERT INTO t (a, b) VALUES (1, 'Zq9xK7w'), (2, 'x')",
+      "secrets": ["Zq9xK7w"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.line",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a -- Zq9xK7aa\nFROM t",
+      "secrets": ["Zq9xK7aa"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.block",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a /* Zq9xK7ab */ FROM t",
+      "secrets": ["Zq9xK7ab"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.block.no_space",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a/*Zq9xK7ac*/FROM t",
+      "secrets": ["Zq9xK7ac"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.leading",
+      "dialect": "CONSERVATIVE",
+      "input": "/* Zq9xK7ad */ SELECT a FROM t",
+      "secrets": ["Zq9xK7ad"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.end_without_newline",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a FROM t -- Zq9xK7ae",
+      "secrets": ["Zq9xK7ae"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.nested.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT a /* outer /* Zq9xK7af */ still Zq9xK7ag */ FROM t",
+      "secrets": ["Zq9xK7af", "Zq9xK7ag"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.nested.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT a /* outer /* Zq9xK7ah */ FROM t",
+      "secrets": ["Zq9xK7ah"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.nested.mysql",
+      "dialect": "mysql",
+      "input": "SELECT a /* outer /* Zq9xK7ai */ FROM t WHERE b = 'Zq9xK7aj'",
+      "secrets": ["Zq9xK7ai", "Zq9xK7aj"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.nested.overlapping",
+      "dialect": "sqlite",
+      "input": "SELECT a /*/*/ Zq9xK7wd */ FROM t",
+      "secrets": ["Zq9xK7wd"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.hash.mysql",
+      "dialect": "mysql",
+      "input": "SELECT a FROM t # Zq9xK7ak\nWHERE b = 1",
+      "secrets": ["Zq9xK7ak"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.hash.mariadb",
+      "dialect": "mariadb",
+      "input": "SELECT a FROM t #Zq9xK7al",
+      "secrets": ["Zq9xK7al"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.hash.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM #orders WHERE id = 'Zq9xK7am'",
+      "secrets": ["Zq9xK7am"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.mysql_executable",
+      "dialect": "mysql",
+      "input": "SELECT /*!50001 SQL_NO_CACHE Zq9xK7an */ a FROM t",
+      "secrets": ["Zq9xK7an"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.optimizer_hint",
+      "dialect": "oracle",
+      "input": "SELECT /*+ INDEX(t idx_Zq9xK7ao) */ a FROM t",
+      "secrets": ["Zq9xK7ao"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.markers_inside_string",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT '-- Zq9xK7ap', '/* x */', '#y' FROM t",
+      "secrets": ["Zq9xK7ap"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.quote_inside",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a /* it's */ FROM t -- don't\nWHERE b = 'Zq9xK7aq'",
+      "secrets": ["Zq9xK7aq"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.before_comment.mysql",
+      "dialect": "mysql",
+      "input": "SELECT a--/* Zq9xK7sf */b FROM t",
+      "secrets": ["Zq9xK7sf"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 1--1 FROM t WHERE a = 'Zq9xK7ar'",
+      "secrets": ["Zq9xK7ar"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.after_number.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT 1--Zq9xK7wa\nFROM t",
+      "secrets": ["Zq9xK7wa"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.after_number.mysql",
+      "dialect": "mysql",
+      "input": "SELECT 2-- Zq9xK7wb\nFROM t",
+      "secrets": ["Zq9xK7wb"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.after_number.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT 3.5e--Zq9xK7wc\nFROM t",
+      "secrets": ["Zq9xK7wc"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.sign_prefix.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT a+--1234 Zq9xK7we\nFROM t",
+      "secrets": ["Zq9xK7we"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.double_slash.h2",
+      "dialect": "h2",
+      "input": "SELECT a // Zq9xK7at\nFROM t",
+      "secrets": ["Zq9xK7at"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.double_slash.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a // Zq9xK7au\nFROM t",
+      "secrets": ["Zq9xK7au"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.bare_cr.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t -- note\rWHERE b = Zq9xK7xm",
+      "secrets": ["Zq9xK7xm"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.bare_cr.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT a FROM t -- c\r WHERE b = 'x\n Zq9xK7xn'",
+      "secrets": ["Zq9xK7xn"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.bare_cr_empty.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t --\rZq9xK7xo",
+      "secrets": ["Zq9xK7xo"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.crlf.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t -- Zq9xK7xp\r\nWHERE b = 1",
+      "secrets": ["Zq9xK7xp"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.dash_dash.cr_at_end.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT a FROM t -- Zq9xK7xq\r",
+      "secrets": ["Zq9xK7xq"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.hash.bare_cr.mysql",
+      "dialect": "mysql",
+      "input": "SELECT a FROM t # note\rWHERE b = Zq9xK7xr",
+      "secrets": ["Zq9xK7xr"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.hash.bare_cr_empty.mysql",
+      "dialect": "mysql",
+      "input": "SELECT a FROM t #\rZq9xK7xs",
+      "secrets": ["Zq9xK7xs"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.hash.crlf.mysql",
+      "dialect": "mysql",
+      "input": "SELECT a FROM t # Zq9xK7xt\r\nWHERE b = 1",
+      "secrets": ["Zq9xK7xt"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.double_slash.bare_cr.h2",
+      "dialect": "h2",
+      "input": "SELECT a FROM t // note\rWHERE b = Zq9xK7xu",
+      "secrets": ["Zq9xK7xu"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.block.after_star.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT */* Zq9xK7sa */ FROM t",
+      "secrets": ["Zq9xK7sa"],
+      "source": "sentry"
+    },
+    {
+      "id": "comment.double_slash.after_star.h2",
+      "dialect": "h2",
+      "input": "SELECT a*// Zq9xK7sb\nFROM t",
+      "secrets": ["Zq9xK7sb"],
+      "source": "sentry"
+    },
+    {
+      "id": "jdbc.call_return",
+      "dialect": "CONSERVATIVE",
+      "input": "{? = call calc_total(?, 'Zq9xK7av')}",
+      "secrets": ["Zq9xK7av"],
+      "source": "sentry"
+    },
+    {
+      "id": "jdbc.temporal",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE created > {ts '2024-01-02 03:04:05'} AND day = {d '2024-01-02'}",
+      "secrets": ["2024-01-02"],
+      "source": "sentry"
+    },
+    {
+      "id": "jdbc.fn",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT {fn UCASE(name)}, {fn CONCAT('Zq9xK7aw', name)} FROM t",
+      "secrets": ["Zq9xK7aw"],
+      "source": "sentry"
+    },
+    {
+      "id": "prepared.mixed_constant",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM orders WHERE user_id = ? AND status = 'Zq9xK7ax' AND total > 100",
+      "secrets": ["Zq9xK7ax"],
+      "source": "sentry"
+    },
+    {
+      "id": "prepared.in_memory",
+      "dialect": "in-memory",
+      "input": "SELECT * FROM [cache] WHERE key = ? AND tag = 'Zq9xK7ay'",
+      "secrets": ["Zq9xK7ay"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.create_user.oracle",
+      "dialect": "oracle",
+      "input": "CREATE USER Zq9xK7bb IDENTIFIED BY Zq9xK7ba",
+      "secrets": ["Zq9xK7ba", "Zq9xK7bb"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.alter_user_replace.oracle",
+      "dialect": "oracle",
+      "input": "ALTER USER Zq9xK7bc IDENTIFIED BY Zq9xK7bd REPLACE Zq9xK7be",
+      "secrets": ["Zq9xK7bc", "Zq9xK7bd", "Zq9xK7be"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.create_user.mysql",
+      "dialect": "mysql",
+      "input": "CREATE USER 'Zq9xK7bf'@'localhost' IDENTIFIED BY 'Zq9xK7bg'",
+      "secrets": ["Zq9xK7bf", "Zq9xK7bg"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.create_user.postgresql",
+      "dialect": "postgresql",
+      "input": "CREATE USER Zq9xK7bh WITH PASSWORD 'Zq9xK7bi'",
+      "secrets": ["Zq9xK7bh", "Zq9xK7bi"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.unquoted_password",
+      "dialect": "CONSERVATIVE",
+      "input": "ALTER USER Zq9xK7bj PASSWORD Zq9xK7bk",
+      "secrets": ["Zq9xK7bj", "Zq9xK7bk"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.create_login.sqlserver",
+      "dialect": "sqlserver",
+      "input": "CREATE LOGIN [CONTOSO\\Zq9xK7bl] FROM WINDOWS",
+      "secrets": ["Zq9xK7bl", "CONTOSO"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.create_login_password.sqlserver",
+      "dialect": "sqlserver",
+      "input": "CREATE LOGIN Zq9xK7bm WITH PASSWORD = 'Zq9xK7bn'",
+      "secrets": ["Zq9xK7bm", "Zq9xK7bn"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.drop_user_if_exists.postgresql",
+      "dialect": "postgresql",
+      "input": "DROP USER IF EXISTS \"Zq9xK7bo\"",
+      "secrets": ["Zq9xK7bo"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.grant_grantees",
+      "dialect": "CONSERVATIVE",
+      "input": "GRANT SELECT, INSERT ON orders TO Zq9xK7bp, Zq9xK7bq",
+      "secrets": ["Zq9xK7bp", "Zq9xK7bq"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.revoke_grantee",
+      "dialect": "CONSERVATIVE",
+      "input": "REVOKE SELECT ON orders FROM Zq9xK7br",
+      "secrets": ["Zq9xK7br"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.grant_identified_by.mysql",
+      "dialect": "mysql",
+      "input": "GRANT ALL PRIVILEGES ON db.* TO 'Zq9xK7bs'@'%' IDENTIFIED BY 'Zq9xK7bt'",
+      "secrets": ["Zq9xK7bs", "Zq9xK7bt"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.create_role",
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE ROLE Zq9xK7by",
+      "secrets": ["Zq9xK7by"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.set_password.mysql",
+      "dialect": "mysql",
+      "input": "SET PASSWORD FOR 'Zq9xK7nh'@'localhost' = 'Zq9xK7ni'",
+      "secrets": ["Zq9xK7nh", "Zq9xK7ni"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.pragma_key.sqlite",
+      "dialect": "sqlite",
+      "input": "PRAGMA key = Zq9xK7xa",
+      "secrets": ["Zq9xK7xa"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.pragma_key_call.sqlite",
+      "dialect": "sqlite",
+      "input": "PRAGMA key(Zq9xK7xb)",
+      "secrets": ["Zq9xK7xb"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.pragma_schema_key.sqlite",
+      "dialect": "sqlite",
+      "input": "PRAGMA main.key = Zq9xK7xc",
+      "secrets": ["Zq9xK7xc"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.attach_key.sqlite",
+      "dialect": "sqlite",
+      "input": "ATTACH DATABASE 'Zq9xK7xd.db' AS other KEY Zq9xK7xe",
+      "secrets": ["Zq9xK7xd", "Zq9xK7xe"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.set_custom.postgresql",
+      "dialect": "postgresql",
+      "input": "SET app.tenant = Zq9xK7xf",
+      "secrets": ["Zq9xK7xf"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.set_local_to.postgresql",
+      "dialect": "postgresql",
+      "input": "SET LOCAL app.tenant TO Zq9xK7xg",
+      "secrets": ["Zq9xK7xg"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.set_session_authorization.postgresql",
+      "dialect": "postgresql",
+      "input": "SET SESSION AUTHORIZATION Zq9xK7xh",
+      "secrets": ["Zq9xK7xh"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.alter_system.postgresql",
+      "dialect": "postgresql",
+      "input": "ALTER SYSTEM SET app.k = Zq9xK7xi",
+      "secrets": ["Zq9xK7xi"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.set_list.mysql",
+      "dialect": "mysql",
+      "input": "SET sql_mode = TRADITIONAL, @a = Zq9xK7xj",
+      "secrets": ["Zq9xK7xj"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.alter_session.oracle",
+      "dialect": "oracle",
+      "input": "ALTER SESSION SET CURRENT_SCHEMA = Zq9xK7xk",
+      "secrets": ["Zq9xK7xk"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.config_value.multi_statement.postgresql",
+      "dialect": "postgresql",
+      "input": "SET app.tenant = Zq9xK7xl; SELECT a FROM t",
+      "secrets": ["Zq9xK7xl"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.reduction_ends_at_statement_end.postgresql",
+      "dialect": "postgresql",
+      "input": "CREATE USER Zq9xK7ne WITH PASSWORD 'x; DROP TABLE Zq9xK7nf'; UPDATE t SET a = 'Zq9xK7ng'",
+      "secrets": ["Zq9xK7ne", "Zq9xK7nf", "Zq9xK7ng"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.unterminated_in_reduced_part.postgresql",
+      "dialect": "postgresql",
+      "input": "CREATE ROLE Zq9xK7nj VALID UNTIL 'Zq9xK7nk",
+      "secrets": ["Zq9xK7nj", "Zq9xK7nk"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.identified_by.database_link.oracle",
+      "dialect": "oracle",
+      "input": "CREATE DATABASE LINK remote CONNECT TO scott IDENTIFIED BY Zq9xK7na USING 'Zq9xK7nb'",
+      "secrets": ["Zq9xK7na", "Zq9xK7nb"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.identified_by_quoted.database_link.oracle",
+      "dialect": "oracle",
+      "input": "CREATE DATABASE LINK remote CONNECT TO scott IDENTIFIED BY \"Zq9xK7nc\" USING 'Zq9xK7nd'",
+      "secrets": ["Zq9xK7nc", "Zq9xK7nd"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.identified_by.set_role.oracle",
+      "dialect": "oracle",
+      "input": "SET ROLE app_role IDENTIFIED BY Zq9xK7pa",
+      "secrets": ["Zq9xK7pa"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.identified_by.comment_between.oracle",
+      "dialect": "oracle",
+      "input": "SET ROLE app_role IDENTIFIED /* role password */ BY Zq9xK7pb",
+      "secrets": ["Zq9xK7pb"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.password_stop.double_quoted.postgresql",
+      "dialect": "postgresql",
+      "input": "CREATE DATABASE db SYSTEM USER PASSWORD \"Zq9xK7nl\"",
+      "secrets": ["Zq9xK7nl"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.password_stop.equals.sqlserver",
+      "dialect": "sqlserver",
+      "input": "CREATE CERTIFICATE billing ENCRYPTION BY PASSWORD = 'Zq9xK7nm' WITH SUBJECT = 'Zq9xK7nn'",
+      "secrets": ["Zq9xK7nm", "Zq9xK7nn"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.connect_not_allowlisted",
+      "dialect": "CONSERVATIVE",
+      "input": "CONNECT Zq9xK7bu PASSWORD Zq9xK7bv",
+      "secrets": ["Zq9xK7bu", "Zq9xK7bv"],
+      "source": "sentry"
+    },
+    {
+      "id": "credentials.password_update",
+      "dialect": "CONSERVATIVE",
+      "input": "UPDATE users SET password = 'Zq9xK7bx' WHERE id = 1",
+      "secrets": ["Zq9xK7bx"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.insert",
+      "dialect": "CONSERVATIVE",
+      "input": "INSERT INTO users (id, name) VALUES (1, 'Zq9xK7ca')",
+      "secrets": ["Zq9xK7ca"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.update",
+      "dialect": "CONSERVATIVE",
+      "input": "UPDATE users SET name = 'Zq9xK7cb' WHERE id = 1",
+      "secrets": ["Zq9xK7cb"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.upsert",
+      "dialect": "CONSERVATIVE",
+      "input": "UPSERT INTO users (id, name) VALUES (1, 'Zq9xK7cc')",
+      "secrets": ["Zq9xK7cc"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.insert_on_conflict.postgresql",
+      "dialect": "postgresql",
+      "input": "INSERT INTO users (id, name) VALUES (1, 'Zq9xK7cd') ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name",
+      "secrets": ["Zq9xK7cd"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.replace.mysql",
+      "dialect": "mysql",
+      "input": "REPLACE INTO users VALUES (1, 'Zq9xK7ce')",
+      "secrets": ["Zq9xK7ce"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.create_table",
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE TABLE orders (id INT PRIMARY KEY, status VARCHAR(20) DEFAULT 'Zq9xK7cf')",
+      "secrets": ["Zq9xK7cf"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.call",
+      "dialect": "CONSERVATIVE",
+      "input": "CALL update_stats(1, 'Zq9xK7cg')",
+      "secrets": ["Zq9xK7cg"],
+      "source": "sentry"
+    },
+    {
+      "id": "shape.execute.lowercase",
+      "dialect": "CONSERVATIVE",
+      "input": "execute sp_refresh 'Zq9xK7ch'",
+      "secrets": ["Zq9xK7ch"],
+      "source": "sentry"
+    },
+    {
+      "id": "allowlist.prepare.postgresql",
+      "dialect": "postgresql",
+      "input": "PREPARE find_user (int) AS SELECT * FROM users WHERE id = $1 AND tenant = 'Zq9xK7ma'",
+      "secrets": ["Zq9xK7ma"],
+      "source": "sentry"
+    },
+    {
+      "id": "allowlist.copy.postgresql",
+      "dialect": "postgresql",
+      "input": "COPY users (id, email) FROM '/srv/import/Zq9xK7mb.csv' WITH (FORMAT csv)",
+      "secrets": ["Zq9xK7mb"],
+      "source": "sentry"
+    },
+    {
+      "id": "allowlist.copy_query.postgresql",
+      "dialect": "postgresql",
+      "input": "COPY (SELECT * FROM users WHERE tenant = 'Zq9xK7mc') TO STDOUT",
+      "secrets": ["Zq9xK7mc"],
+      "source": "sentry"
+    },
+    {
+      "id": "allowlist.kill.mysql",
+      "dialect": "mysql",
+      "input": "KILL QUERY 48213",
+      "secrets": ["48213"],
+      "source": "sentry"
+    },
+    {
+      "id": "allowlist.xa.mysql",
+      "dialect": "mysql",
+      "input": "XA START 'Zq9xK7md'",
+      "secrets": ["Zq9xK7md"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.double_quotes.hsqldb",
+      "dialect": "hsqldb",
+      "input": "SELECT \"Name\" FROM \"PUBLIC\".\"Users\" WHERE \"Id\" = 'Zq9xK7da'",
+      "secrets": ["Zq9xK7da"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.double_quotes.derby",
+      "dialect": "derby",
+      "input": "INSERT INTO \"Users\" (\"Name\") VALUES ('Zq9xK7db')",
+      "secrets": ["Zq9xK7db"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.double_quotes.mysql",
+      "dialect": "mysql",
+      "input": "SELECT * FROM users WHERE name = \"Zq9xK7dc\"",
+      "secrets": ["Zq9xK7dc"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.double_quotes.unknown_target_after_quoted_names.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT * FROM [a\"b], `c\"d`, \"Zq9xK7og\"",
+      "secrets": ["Zq9xK7og"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.double_quotes.backslash.mysql",
+      "dialect": "mysql",
+      "input": "SELECT * FROM t WHERE a = \"x\\\" AND b = 'Zq9xK7dd'",
+      "secrets": ["Zq9xK7dd"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.double_quotes.backslash_same_boundary.mysql",
+      "dialect": "mysql",
+      "input": "SELECT * FROM t WHERE a LIKE \"100\\%\" AND b = \"C:\\\\\" AND c = \"say \\'hi\\'\" AND d = 'Zq9xK7ld'",
+      "secrets": ["Zq9xK7ld"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.quote_inside.sqlserver",
+      "dialect": "sqlserver",
+      "input": "SELECT [O'Brien] FROM [Users] WHERE [Note] = N'Zq9xK7de'",
+      "secrets": ["Zq9xK7de"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.bracket_inside.sqlserver",
+      "dialect": "sqlserver",
+      "input": "SELECT [a[b] FROM t WHERE c = 'Zq9xK7sh'",
+      "secrets": ["Zq9xK7sh"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.escaped_close.sqlserver",
+      "dialect": "sqlserver",
+      "input": "SELECT [a]]'x] FROM t WHERE p = 'Zq9xK7sm'",
+      "secrets": ["Zq9xK7sm"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.escaped_close_dotted.sqlserver",
+      "dialect": "sqlserver",
+      "input": "SELECT [dbo].[a]]'x] FROM t WHERE p = 'Zq9xK7sn'",
+      "secrets": ["Zq9xK7sn"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.escaped_close.sqlite",
+      "dialect": "sqlite",
+      "input": "SELECT [a]]'Zq9xK7so' FROM [t]",
+      "secrets": ["Zq9xK7so"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.escaped_close.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [a]]'x] FROM t WHERE p = 'Zq9xK7sp'",
+      "secrets": ["Zq9xK7sp"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT tags[1] FROM t WHERE tags[2] = 'Zq9xK7df'",
+      "secrets": ["Zq9xK7df"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.quote_inside.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [O'Brien] FROM t WHERE a = 'Zq9xK7dk'",
+      "secrets": ["Zq9xK7dk"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.comment_inside.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [-- ] 'a\nZq9xK7dm' FROM t",
+      "secrets": ["Zq9xK7dm"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.double_slash_inside.h2",
+      "dialect": "h2",
+      "input": "SELECT [// ] 'a\nZq9xK7dn' FROM t",
+      "secrets": ["Zq9xK7dn"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.dotted_quote_inside.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [a].[O'Brien] FROM t WHERE b = 'Zq9xK7dl'",
+      "secrets": ["Zq9xK7dl"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.unterminated_after_literal.mysql",
+      "dialect": "mysql",
+      "input": "SELECT a[ 'Zq9xK7sc]'",
+      "secrets": ["Zq9xK7sc"],
+      "source": "sentry"
+    },
+    {
+      "id": "dialect.brackets.unterminated_quote_inside.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [O'Brien FROM t WHERE a = 'Zq9xK7sd'",
+      "secrets": ["Zq9xK7sd"],
+      "source": "sentry"
+    },
+    {
+      "id": "bracket.array_literal.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE tags = ARRAY['Zq9xK7dg', 'x']",
+      "secrets": ["Zq9xK7dg"],
+      "source": "sentry"
+    },
+    {
+      "id": "bracket.subscript_string.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT data['Zq9xK7dh'] FROM t",
+      "secrets": ["Zq9xK7dh"],
+      "source": "sentry"
+    },
+    {
+      "id": "bracket.array_literal.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE tags = ARRAY['Zq9xK7di']",
+      "secrets": ["Zq9xK7di"],
+      "source": "sentry"
+    },
+    {
+      "id": "bracket.subscript_string.conservative",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT data['Zq9xK7dj'] FROM t",
+      "secrets": ["Zq9xK7dj"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.unterminated.single_quote",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM users WHERE name = 'Zq9xK7ea",
+      "secrets": ["Zq9xK7ea"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.unterminated.double_quote.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM \"Zq9xK7eb",
+      "secrets": ["Zq9xK7eb"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.unterminated.backtick.mysql",
+      "dialect": "mysql",
+      "input": "SELECT * FROM `Zq9xK7ec",
+      "secrets": ["Zq9xK7ec"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.unterminated.bracket.sqlserver",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM [Orders WHERE name = 'Zq9xK7ed'",
+      "secrets": ["Zq9xK7ed"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.unterminated.block_comment",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a FROM t /* Zq9xK7ee",
+      "secrets": ["Zq9xK7ee"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.unterminated.dollar_tag.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE a = $x$Zq9xK7ef",
+      "secrets": ["Zq9xK7ef"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.unbalanced.open_paren",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE a IN (1, 'Zq9xK7eg'",
+      "secrets": ["Zq9xK7eg"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.control_char",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a\u0000b FROM t WHERE c = 'Zq9xK7eh'",
+      "secrets": ["Zq9xK7eh"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.control_char_in_literal",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE a = 'x\u0001Zq9xK7ei'",
+      "secrets": ["Zq9xK7ei"],
+      "source": "sentry"
+    },
+    {
+      "id": "malformed.lone_surrogate_in_literal",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE a = '\udc00Zq9xK7ej'",
+      "secrets": ["Zq9xK7ej"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.sentence",
+      "dialect": "CONSERVATIVE",
+      "input": "Please email Zq9xK7ek@example.com about the report",
+      "secrets": ["Zq9xK7ek"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.command",
+      "dialect": "CONSERVATIVE",
+      "input": "AUTH Zq9xK7el",
+      "secrets": ["Zq9xK7el"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.after_semicolon",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t; AUTH Zq9xK7em",
+      "secrets": ["Zq9xK7em"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.after_semicolon.double_quoted_name.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT \"a;b\" FROM t; AUTH Zq9xK7oc",
+      "secrets": ["Zq9xK7oc"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.after_semicolon.bracket_name.sqlserver",
+      "dialect": "sqlserver",
+      "input": "SELECT [a;b] FROM t; AUTH Zq9xK7od",
+      "secrets": ["Zq9xK7od"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.after_semicolon.backtick_name.mysql",
+      "dialect": "mysql",
+      "input": "SELECT `a;b` FROM t; AUTH Zq9xK7oe",
+      "secrets": ["Zq9xK7oe"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.after_semicolon.inside_subscript.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT a[1; AUTH Zq9xK7of]",
+      "secrets": ["Zq9xK7of"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.backslash_outside_literal",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT a \\ Zq9xK7en FROM t",
+      "secrets": ["Zq9xK7en"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.symbol",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 😀, Zq9xK7eo FROM t",
+      "secrets": ["Zq9xK7eo"],
+      "source": "sentry"
+    },
+    {
+      "id": "unrecognized.unicode_identifier_kept",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT ąś FROM źćļ WHERE x = 'ɣZq9xK7ep'",
+      "secrets": ["Zq9xK7ep"],
+      "source": "sentry"
+    },
+    {
+      "id": "size.summary.over_255",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM table_with_a_long_name_00, table_with_a_long_name_01, table_with_a_long_name_02, table_with_a_long_name_03, table_with_a_long_name_04, table_with_a_long_name_05, table_with_a_long_name_06, table_with_a_long_name_07, table_with_a_long_name_08, table_with_a_long_name_09, table_with_a_long_name_10, table_with_a_long_name_11 WHERE x = 'Zq9xK7fb'",
+      "secrets": ["Zq9xK7fb"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.room.master_table_insert",
+      "dialect": "sqlite",
+      "input": "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'Zq9xK7va')",
+      "secrets": ["Zq9xK7va"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.hibernate.sequence",
+      "dialect": "postgresql",
+      "input": "select nextval('Zq9xK7vc')",
+      "secrets": ["Zq9xK7vc"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.hibernate.hql_comment",
+      "dialect": "postgresql",
+      "input": "/* select p from Person p where p.email = 'Zq9xK7vd' */ select p1_0.id from person p1_0 where p1_0.email='Zq9xK7vd'",
+      "secrets": ["Zq9xK7vd"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.postgresql.upsert_jsonb",
+      "dialect": "postgresql",
+      "input": "INSERT INTO user_settings (user_id, setting, value) VALUES (?, 'Zq9xK7ve', ?::jsonb) ON CONFLICT (user_id, setting) DO UPDATE SET value = EXCLUDED.value, updated_at = now() RETURNING id",
+      "secrets": ["Zq9xK7ve"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.postgresql.jsonb_filter",
+      "dialect": "postgresql",
+      "input": "SELECT id, payload->>'Zq9xK7vf' AS status FROM events WHERE payload @> '{\"type\": \"Zq9xK7vg\"}'::jsonb AND created_at > ? ORDER BY created_at DESC LIMIT 50",
+      "secrets": ["Zq9xK7vf", "Zq9xK7vg"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.postgresql.job_claim",
+      "dialect": "postgresql",
+      "input": "UPDATE jobs SET status = 'Zq9xK7vh', locked_at = now() WHERE id = (SELECT id FROM jobs WHERE status = 'Zq9xK7vi' ORDER BY priority DESC FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id, payload",
+      "secrets": ["Zq9xK7vh", "Zq9xK7vi"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.postgresql.do_block",
+      "dialect": "postgresql",
+      "input": "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'Zq9xK7vs') THEN CREATE TYPE order_status AS ENUM ('new', 'paid'); END IF; END $$",
+      "secrets": ["Zq9xK7vs"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.postgresql.notify",
+      "dialect": "postgresql",
+      "input": "NOTIFY order_events, 'Zq9xK7vj'",
+      "secrets": ["Zq9xK7vj"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.mysql.double_quoted_string",
+      "dialect": "mysql",
+      "input": "SELECT id FROM users WHERE status = \"Zq9xK7vk\" AND email = ?",
+      "secrets": ["Zq9xK7vk"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.mysql.backslash_escaped_quote",
+      "dialect": "mysql",
+      "input": "SELECT id FROM customers WHERE last_name = 'O\\'Zq9xK7vr' AND active = 1",
+      "secrets": ["Zq9xK7vr"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.mysql.json",
+      "dialect": "mysql",
+      "input": "SELECT JSON_UNQUOTE(JSON_EXTRACT(attrs, '$.Zq9xK7vl')) AS color FROM products WHERE JSON_CONTAINS(tags, '\"Zq9xK7vm\"')",
+      "secrets": ["Zq9xK7vl", "Zq9xK7vm"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.sqlserver.insert_audit",
+      "dialect": "sqlserver",
+      "input": "INSERT INTO [dbo].[AuditLog] ([UserId], [Action], [CreatedAt]) VALUES (?, N'Zq9xK7vn', SYSUTCDATETIME())",
+      "secrets": ["Zq9xK7vn"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.sqlserver.exec_procedure",
+      "dialect": "sqlserver",
+      "input": "EXEC [dbo].[usp_GetOrders] @CustomerId = ?, @Status = N'Zq9xK7vo'",
+      "secrets": ["Zq9xK7vo"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.tooling.liquibase_lock.mysql",
+      "dialect": "mysql",
+      "input": "UPDATE DATABASECHANGELOGLOCK SET `LOCKED` = 1, LOCKEDBY = 'Zq9xK7vp', LOCKGRANTED = NOW() WHERE ID = 1 AND `LOCKED` = 0",
+      "secrets": ["Zq9xK7vp"],
+      "source": "sentry"
+    },
+    {
+      "id": "workload.tooling.quartz_lock.postgresql",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM QRTZ_LOCKS WHERE SCHED_NAME = 'Zq9xK7vq' AND LOCK_NAME = ? FOR UPDATE",
+      "secrets": ["Zq9xK7vq"],
+      "source": "sentry"
+    },
+    {
+      "id": "otel_java.sanitize_sql.001",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD=1234",
+      "secrets": ["1234"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[1]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.002",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD = 1234",
+      "secrets": ["1234"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[2]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.003",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD>=-1234",
+      "secrets": ["1234"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[3]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.004",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD<-1234",
+      "secrets": ["1234"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[4]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.005",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD <.1234",
+      "secrets": ["1234"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[5]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.016",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 0x0af764",
+      "secrets": ["0af764"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[16]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.017",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 0xdeadBEEF",
+      "secrets": ["deadBEEF"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[17]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.024",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 123-45-6789",
+      "secrets": ["6789"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[24]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.027",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD = 'words and spaces'",
+      "secrets": ["words and spaces"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[27]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.028",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD = ' an escaped '' quote mark inside'",
+      "secrets": ["quote mark inside"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[28]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.030",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD = '\"inside doubles\"'",
+      "secrets": ["inside doubles"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[30]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.031",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD = '\"$$$$\"'",
+      "secrets": ["\"$$$$\""],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[31]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.032",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TABLE WHERE FIELD = 'a single \" doublequote inside'",
+      "secrets": ["doublequote inside"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[32]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.034",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM TABLE WHERE FIELD = $$words and spaces$$",
+      "secrets": ["words and spaces"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[34]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.035",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM TABLE WHERE FIELD = $$quotes '\" inside$$",
+      "secrets": ["quotes '\" inside"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[35]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.036",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM TABLE WHERE FIELD = $$\"''\"$$",
+      "secrets": ["\"''\""],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[36]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.040",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT    *    \t\r\nFROM  TABLE WHERE FIELD1 = 12344 AND FIELD2 = 5678",
+      "secrets": ["12344", "5678"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[40]"
+    },
+    {
+      "id": "otel_java.sanitize_sql.041",
+      "dialect": "CONSERVATIVE",
+      "input": "from TABLE WHERE FIELD=1234",
+      "secrets": ["1234"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[41]"
+    },
+    {
+      "id": "otel_java.simplify_sql.034",
+      "dialect": "CONSERVATIVE",
+      "input": "select 12345678",
+      "secrets": ["12345678"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[34]"
+    },
+    {
+      "id": "otel_java.simplify_sql.054",
+      "dialect": "CONSERVATIVE",
+      "input": "delete from 12345678",
+      "secrets": ["12345678"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[54]"
+    },
+    {
+      "id": "otel_java.simplify_sql.101",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM TABLE WHERE FIELD = $tag$hello world$tag$",
+      "secrets": ["hello world"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[101]"
+    },
+    {
+      "id": "otel_java.simplify_sql.102",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM TABLE WHERE FIELD = $a$nested $b$value$b$ here$a$",
+      "secrets": ["nested $b$value$b$ here"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[102]"
+    },
+    {
+      "id": "otel_java.simplify_sql.109",
+      "dialect": "CONSERVATIVE",
+      "input": "REPLACE INTO users VALUES (1, 'name')",
+      "secrets": ["name"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[109]"
+    },
+    {
+      "id": "otel_java.simplify_sql.123",
+      "dialect": "CONSERVATIVE",
+      "input": "GRANT SELECT ON users TO some_user",
+      "secrets": ["some_user"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[123]"
+    },
+    {
+      "id": "otel_java.simplify_sql.124",
+      "dialect": "CONSERVATIVE",
+      "input": "GRANT ALL PRIVILEGES ON database.* TO 'user'@'host'",
+      "secrets": ["user", "host"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[124]"
+    },
+    {
+      "id": "otel_java.simplify_sql.125",
+      "dialect": "CONSERVATIVE",
+      "input": "REVOKE SELECT ON users FROM some_user",
+      "secrets": ["some_user"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[125]"
+    },
+    {
+      "id": "otel_java.simplify_sql.126",
+      "dialect": "CONSERVATIVE",
+      "input": "REVOKE ALL PRIVILEGES ON database.* FROM 'user'@'host'",
+      "secrets": ["user", "host"],
+      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[126]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.001",
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE USER new_user PASSWORD Password1",
+      "secrets": ["new_user", "Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[1]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.002",
+      "dialect": "CONSERVATIVE",
+      "input": "ALTER USER user PASSWORD Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[2]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.003",
+      "dialect": "CONSERVATIVE",
+      "input": "CONNECT user PASSWORD Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[3]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.004",
+      "dialect": "CONSERVATIVE",
+      "input": "VALIDATE USER user PASSWORD Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[4]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.005",
+      "dialect": "CONSERVATIVE",
+      "input": "CHECK USER user PASSWORD \"Password1\"",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[5]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.006",
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE DATABASE db SYSTEM USER PASSWORD Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[6]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.007",
+      "dialect": "CONSERVATIVE",
+      "input": "ALTER SYSTEM SET SECURE STORE BACKUP PASSWORD \"Password1\"",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[7]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.008",
+      "dialect": "CONSERVATIVE",
+      "input": "EXPORT table AS BINARY ENCRYPTION PASSWORD Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[8]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.009",
+      "dialect": "CONSERVATIVE",
+      "input": "IMPORT MY_SCHEMA1.T1 FROM '/backup/export_dir' WITH ENCRYPTION PASSWORD Password1",
+      "secrets": ["Password1", "export_dir"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[9]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.010",
+      "dialect": "CONSERVATIVE",
+      "input": "RECOVER ENCRYPTION ROOT KEYS USING 'backup' PASSWORD Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[10]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.011",
+      "dialect": "CONSERVATIVE",
+      "input": "GRANT SELECT ON users TO admin /* PASSWORD Password1 */",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[11]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.012",
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE USER new_user IDENTIFIED BY Password1",
+      "secrets": ["new_user", "Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[12]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.013",
+      "dialect": "oracle",
+      "input": "ALTER USER user IDENTIFIED BY Password1 REPLACE Password2",
+      "secrets": ["Password1", "Password2"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[13]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.014",
+      "dialect": "CONSERVATIVE",
+      "input": "GRANT ALL PRIVILEGES ON database.* TO user IDENTIFIED BY Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[14]"
+    },
+    {
+      "id": "otel_java.sanitize_sensitive.023",
+      "dialect": "CONSERVATIVE",
+      "input": "UPDATE users SET password = \"Password1\"",
+      "secrets": ["ord1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[23]"
+    },
+    {
+      "id": "otel_java.sanitize_grant_identified_by_after_previous_statement.001",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 1; GRANT ALL PRIVILEGES ON database.* TO user IDENTIFIED BY Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeGrantIdentifiedByAfterPreviousStatement[1]"
+    },
+    {
+      "id": "otel_java.sanitize_ddl_object_named_password.001",
+      "dialect": "CONSERVATIVE",
+      "input": "CREATE USER password PASSWORD Password1",
+      "secrets": ["Password1"],
+      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeDdlObjectNamedPassword[1]"
+    },
+    {
+      "id": "otel_java.subqueries_in_clause_positions.009",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT COALESCE((SELECT name FROM t1 WHERE id = ?), 'default') FROM dual",
+      "secrets": ["default"],
+      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[9]"
+    },
+    {
+      "id": "otel_java.expressions.004",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT CASE WHEN status = ? THEN 'Active' ELSE 'Inactive' END FROM users",
+      "secrets": ["Active", "Inactive"],
+      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[4]"
+    },
+    {
+      "id": "otel_java.expressions.005",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT CASE WHEN price > (SELECT AVG(price) FROM products) THEN 'High' ELSE 'Low' END FROM products",
+      "secrets": ["High"],
+      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[5]"
+    },
+    {
+      "id": "otel_java.lexical_edge_cases.002",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users WHERE name = $tag$unterminated",
+      "secrets": ["unterminated"],
+      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lexicalEdgeCases[2]"
+    },
+    {
+      "id": "otel_java.vendor_specific_syntax.008",
+      "dialect": "oracle",
+      "input": "SELECT * FROM sales MODEL DIMENSION BY (product) MEASURES (amount) RULES (amount['Total'] = amount['A'] + amount['B'])",
+      "secrets": ["Total"],
+      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[8]"
+    },
+    {
+      "id": "otel_dotnet.json.numeric_literal_with_decimal_point",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 12.34, -12.34, +12.34, .01, -.01",
+      "secrets": ["12.34"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_with_decimal_point"
+    },
+    {
+      "id": "otel_dotnet.json.numeric_literal_exponential",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 12.34e56, -12.34e56, +12.34e56",
+      "secrets": ["12.34e56"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_exponential"
+    },
+    {
+      "id": "otel_dotnet.json.numeric_literal_negative_exponential",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 12.34e-56, -12.34e-56, +12.34e-56",
+      "secrets": ["12.34e-56"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_negative_exponential"
+    },
+    {
+      "id": "otel_dotnet.json.hex_literal",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 0xDEADBEEF, 0XdeadBEEF",
+      "secrets": ["DEADBEEF", "deadBEEF"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#hex_literal"
+    },
+    {
+      "id": "otel_dotnet.json.string_literal",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 'hello'",
+      "secrets": ["hello"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#string_literal"
+    },
+    {
+      "id": "otel_dotnet.json.string_literal_escaped_single_quote",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 'My name''s not important'",
+      "secrets": ["not important"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#string_literal_escaped_single_quote"
+    },
+    {
+      "id": "otel_dotnet.json.string_with_embedded_newline",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT 'My name is \n not important'",
+      "secrets": ["not important"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#string_with_embedded_newline"
+    },
+    {
+      "id": "otel_dotnet.json.numbers_in_identifiers",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT c3po, r2d2 FROM covid19 WHERE n1h1=1234",
+      "secrets": ["1234"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#numbers_in_identifiers"
+    },
+    {
+      "id": "otel_dotnet.json.insert_into",
+      "dialect": "CONSERVATIVE",
+      "input": "INSERT INTO X VALUES(1, 23456, 123.456, 99+100)",
+      "secrets": ["23456"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#insert_into"
+    },
+    {
+      "id": "otel_dotnet.json.uuid",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT { guid '01234567-89ab-cdef-0123-456789abcdef' }",
+      "secrets": ["01234567-89ab"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#uuid"
+    },
+    {
+      "id": "otel_dotnet.json.comments",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT column -- end of line comment\nFROM /* block \n comment */ table",
+      "secrets": ["end of line", "block \n comment"],
+      "source": "otel-dotnet:SqlProcessorTestCases.json#comments"
+    },
+    {
+      "id": "otel_dotnet.line_comment_crlf.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM table -- comment\r\nWHERE id = 42",
+      "secrets": ["comment"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_SingleLineCommentWithCarriageReturnLineFeed_PreservesLineBreak"
+    },
+    {
+      "id": "otel_dotnet.unterminated_bracket.01",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM [Orders WHERE CustomerName = 'secret-name' AND Id = 123 AND Token = 0xDEADBEEF",
+      "secrets": ["secret-name", "DEADBEEF"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedEscapedIdentifierInFromClause_SanitizesLiterals"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('a)b', 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[1]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.02",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('a)b', 'secret-name', 'another)one')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[2]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.03",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('O''Brien)', 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[3]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.04",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('))', 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[4]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.05",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN (1 /* don't */, 'a)b', 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[5]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.06",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN (1 /* ) */, 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[6]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.07",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN (1, -- don't )\n'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[7]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.08",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', $$b)c$$, $$secret-name$$, 'd')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[8]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.09",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', $tag$b)c$tag$, 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[9]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.10",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', E'b\\')c', 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[10]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.11",
+      "dialect": "oracle",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', q'[it's)]', 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[11]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.12",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', /* /* ) */ ) */ 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[12]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.13",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', [b)c], 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[13]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.14",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', \"b)c\", 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[14]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren.15",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', `b)c`, 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParen_SanitizesAllLiterals[15]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren_backslash.01",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name IN ('carol@example.com', \"Fabrikam (UK)\", \"alice@example.com\", \"x\", \"secret-name\")",
+      "secrets": ["secret-name", "carol@example.com", "alice@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParenWithBackslashDialect_SanitizesAllLiterals[1]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren_backslash.01.control",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name IN ('carol@example.com', 'Fabrikam (UK)', 'alice@example.com', 'x', 'secret-name')",
+      "secrets": ["secret-name", "carol@example.com", "alice@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParenWithBackslashDialect_SanitizesAllLiterals[1]/control"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren_backslash.02",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', \"b\\\")c\", 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParenWithBackslashDialect_SanitizesAllLiterals[2]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren_backslash.02.control",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name IN ('a', 'b\\')c', 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParenWithBackslashDialect_SanitizesAllLiterals[2]/control"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren_backslash.03",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name IN (1, 2 # don't )\n, 'secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralOrCommentContainingCloseParenWithBackslashDialect_SanitizesAllLiterals[3]"
+    },
+    {
+      "id": "otel_dotnet.unterminated_in_clause_identifier.01",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM Users WHERE Id IN (1, [Manager's Approval] = 'secret-name' AND Name = [",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedInClause_QuotedIdentifiersInItAreStillParsedAsIdentifiers[1]"
+    },
+    {
+      "id": "otel_dotnet.unterminated_in_clause_identifier.02",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM Users WHERE Id IN (1, \"Manager's Approval\" = 'secret-name' AND Name = \"",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedInClause_QuotedIdentifiersInItAreStillParsedAsIdentifiers[2]"
+    },
+    {
+      "id": "otel_dotnet.unterminated_in_clause_identifier.03",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Id IN (1, `Manager's Approval` = 'secret-name' AND Name = `",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedInClause_QuotedIdentifiersInItAreStillParsedAsIdentifiers[3]"
+    },
+    {
+      "id": "otel_dotnet.in_clause_close_paren_personal_data.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT Id FROM Users WHERE Email IN ('x)', 'user@example.com')",
+      "secrets": ["user@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_InClauseLiteralContainingCloseParen_DoesNotLeakPersonalData"
+    },
+    {
+      "id": "otel_dotnet.unterminated_in_clause_close_paren.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('a)b', 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedInClauseLiteralContainingCloseParen_SanitizesAllLiterals"
+    },
+    {
+      "id": "otel_dotnet.backslash_quote_backslash_dialect.01",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Password = 'a\\'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BackslashEscapedQuoteWithBackslashDialect_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.backslash_quote_in_clause_backslash_dialect.01",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name IN ('a\\'secret-name', 'b')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BackslashEscapedQuoteInInClauseWithBackslashDialect_SanitizesLiterals"
+    },
+    {
+      "id": "otel_dotnet.doubled_quote.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Password = 'a''secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubledQuoteEscape_SanitizesLiteralInEitherDialect[1]"
+    },
+    {
+      "id": "otel_dotnet.doubled_quote.02",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Password = 'a''secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubledQuoteEscape_SanitizesLiteralInEitherDialect[2]"
+    },
+    {
+      "id": "otel_dotnet.backslash_before_doubled_quote.01",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM Users WHERE Password = 'a\\''secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BackslashBeforeDoubledQuoteWithoutBackslashDialect_DoesNotLeak"
+    },
+    {
+      "id": "otel_dotnet.dollar_quoted.01",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE c = $$secret-name$$",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DollarQuotedString_SanitizesLiteral[1]"
+    },
+    {
+      "id": "otel_dotnet.dollar_quoted.02",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE c = $tag$se'cret-'name$tag$",
+      "secrets": ["se'cret-'name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DollarQuotedString_SanitizesLiteral[2]"
+    },
+    {
+      "id": "otel_dotnet.unterminated_dollar.01",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE c = $$secret-name",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedDollarQuotedString_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.double_quoted_backslash_dialect.01",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name = \"secret-value\" AND Id = 1",
+      "secrets": ["secret-value"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubleQuotedStringWithBackslashDialect_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.doubled_double_quote_backslash_dialect.01",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name = \"a\"\"secret-value\"",
+      "secrets": ["secret-value"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubledDoubleQuoteEscapeWithBackslashDialect_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.backslash_double_quote_backslash_dialect.01",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name = \"a\\\"secret-value\"",
+      "secrets": ["secret-value"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BackslashEscapedDoubleQuoteWithBackslashDialect_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.unterminated_double_quote_backslash_dialect.01",
+      "dialect": "mysql",
+      "input": "SELECT * FROM Users WHERE Name = \"secret-value",
+      "secrets": ["secret-value"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedDoubleQuotedStringWithBackslashDialect_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.unterminated_in_clause_literal.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Users WHERE Name IN ('secret-name",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedInClauseStringLiteral_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.01",
+      "dialect": "sqlserver",
+      "input": "SELECT [a].[Id], [a].[Nom de l'enterprise], [a].[Token] FROM [Accounts] AS [a] WHERE [a].[Token] = N'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[1]"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.01.control",
+      "dialect": "sqlserver",
+      "input": "SELECT [a].[Id], [a].[NomEnterprise], [a].[Token] FROM [Accounts] AS [a] WHERE [a].[Token] = N'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[1]/control"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.02",
+      "dialect": "postgresql",
+      "input": "SELECT \"a\".\"Id\", \"a\".\"Nom de l'enterprise\", \"a\".\"Token\" FROM \"Accounts\" AS \"a\" WHERE \"a\".\"Token\" = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[2]"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.02.control",
+      "dialect": "postgresql",
+      "input": "SELECT \"a\".\"Id\", \"a\".\"NomEnterprise\", \"a\".\"Token\" FROM \"Accounts\" AS \"a\" WHERE \"a\".\"Token\" = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[2]/control"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.03",
+      "dialect": "mysql",
+      "input": "SELECT `a`.`Id`, `a`.`Nom de l'enterprise`, `a`.`Token` FROM `Accounts` AS `a` WHERE `a`.`Token` = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[3]"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.03.control",
+      "dialect": "mysql",
+      "input": "SELECT `a`.`Id`, `a`.`NomEnterprise`, `a`.`Token` FROM `Accounts` AS `a` WHERE `a`.`Token` = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[3]/control"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.04",
+      "dialect": "sqlserver",
+      "input": "SELECT [a].[Nom de l'enterprise] FROM [Accounts] AS [a] WHERE [a].[Token] = N'secret-name' AND [a].[Nom de l'enterprise] = N'Contoso'",
+      "secrets": ["secret-name", "Contoso"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[4]"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier.04.control",
+      "dialect": "sqlserver",
+      "input": "SELECT [a].[NomEnterprise] FROM [Accounts] AS [a] WHERE [a].[Token] = N'secret-name' AND [a].[NomEnterprise] = N'Contoso'",
+      "secrets": ["secret-name", "Contoso"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_SanitizesLiterals[4]/control"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier_summary.01",
+      "dialect": "sqlserver",
+      "input": "SELECT [a].[Nom de l'enterprise] FROM [Accounts] AS [a] WHERE [a].[Note] = N'Transfer from Contoso4471 approved'",
+      "secrets": ["Contoso4471"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_DoesNotChangeQuerySummary"
+    },
+    {
+      "id": "otel_dotnet.quote_in_quoted_identifier_summary.01.control",
+      "dialect": "sqlserver",
+      "input": "SELECT [a].[NomEnterprise] FROM [Accounts] AS [a] WHERE [a].[Note] = N'Transfer from Contoso4471 approved'",
+      "secrets": ["Contoso4471"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_QuoteInQuotedIdentifier_DoesNotChangeQuerySummary/control"
+    },
+    {
+      "id": "otel_dotnet.array_in_from.01",
+      "dialect": "postgresql",
+      "input": "INSERT INTO audit_recipients (email) SELECT e FROM unnest(ARRAY['alice@example.com', 'bob@example.com', 'carol@example.com']) AS t(e)",
+      "secrets": ["alice@example.com", "bob@example.com", "carol@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ArrayInFromClause_SanitizesLiteralsInSqlAndSummary[1]"
+    },
+    {
+      "id": "otel_dotnet.array_in_from.02",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM unnest(ARRAY ['alice@example.com', 'bob@example.com'])",
+      "secrets": ["alice@example.com", "bob@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ArrayInFromClause_SanitizesLiteralsInSqlAndSummary[2]"
+    },
+    {
+      "id": "otel_dotnet.array_in_from.03",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM UNNEST(['alice@example.com', 'bob@example.com'])",
+      "secrets": ["alice@example.com", "bob@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ArrayInFromClause_SanitizesLiteralsInSqlAndSummary[3]"
+    },
+    {
+      "id": "otel_dotnet.array_in_from.04",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM UNNEST([12345, 67890])",
+      "secrets": ["12345", "67890"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ArrayInFromClause_SanitizesLiteralsInSqlAndSummary[4]"
+    },
+    {
+      "id": "otel_dotnet.array_in_from.05",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM UNNEST([Email, 'alice@example.com'])",
+      "secrets": ["alice@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ArrayInFromClause_SanitizesLiteralsInSqlAndSummary[5]"
+    },
+    {
+      "id": "otel_dotnet.array_in_from.06",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM UNNEST(['alice]@example.com', 'bob@example.com'])",
+      "secrets": ["bob@example.com", "alice]@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ArrayInFromClause_SanitizesLiteralsInSqlAndSummary[6]"
+    },
+    {
+      "id": "otel_dotnet.bracket_identifier_and_array.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT [Manager's Approval] FROM [Requests] WHERE [Tags] = ARRAY['secret-name'] AND [Owner] = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketedIdentifierAndArray_SanitizesOnlyLiterals[1]"
+    },
+    {
+      "id": "otel_dotnet.bracket_identifier_and_array.02",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM Requests WHERE [Owner] >[Manager's Approval] AND [Owner] = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketedIdentifierAndArray_SanitizesOnlyLiterals[2]"
+    },
+    {
+      "id": "otel_dotnet.bracket_identifier_and_array.03",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM [1st Manager's Requests] WHERE [Owner] = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketedIdentifierAndArray_SanitizesOnlyLiterals[3]"
+    },
+    {
+      "id": "otel_dotnet.bracket_after_expression.01",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE Tags = ARRAY[E'it\\'s', 'secret-name']",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketAfterExpressionOrKeyword_IsParsedAccordingToItsContext[1]"
+    },
+    {
+      "id": "otel_dotnet.bracket_after_expression.02",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE Tags = ARRAY [E'it\\'s', 'secret-name']",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketAfterExpressionOrKeyword_IsParsedAccordingToItsContext[2]"
+    },
+    {
+      "id": "otel_dotnet.bracket_after_expression.03",
+      "dialect": "postgresql",
+      "input": "SELECT Tags[E'secret-name\\''] FROM t",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketAfterExpressionOrKeyword_IsParsedAccordingToItsContext[3]"
+    },
+    {
+      "id": "otel_dotnet.bracket_after_expression.04",
+      "dialect": "postgresql",
+      "input": "SELECT (Tags)[E'secret-name\\''] FROM t",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketAfterExpressionOrKeyword_IsParsedAccordingToItsContext[4]"
+    },
+    {
+      "id": "otel_dotnet.bracket_after_expression.05",
+      "dialect": "postgresql",
+      "input": "SELECT Tags[1][E'secret-name\\''] FROM t",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketAfterExpressionOrKeyword_IsParsedAccordingToItsContext[5]"
+    },
+    {
+      "id": "otel_dotnet.bracket_after_expression.06",
+      "dialect": "postgresql",
+      "input": "SELECT \"Tags\"[E'secret-name\\''] FROM t",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketAfterExpressionOrKeyword_IsParsedAccordingToItsContext[6]"
+    },
+    {
+      "id": "otel_dotnet.bracket_after_expression.07",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM[O'Brien] WHERE [Owner] = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_BracketAfterExpressionOrKeyword_IsParsedAccordingToItsContext[7]"
+    },
+    {
+      "id": "otel_dotnet.double_quoted_number.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE c = \"12345\"",
+      "secrets": ["12345"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubleQuotedValueStartingWithNumber_IsSanitized[1]"
+    },
+    {
+      "id": "otel_dotnet.double_quoted_number.02",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE c = \"078-05-1120\" AND d = 'secret-name'",
+      "secrets": ["078-05-1120", "secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubleQuotedValueStartingWithNumber_IsSanitized[2]"
+    },
+    {
+      "id": "otel_dotnet.double_quoted_number.03",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE c = \" +44 20 7946 0958\"",
+      "secrets": ["7946 0958"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubleQuotedValueStartingWithNumber_IsSanitized[3]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.01",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users WHERE nickname = E'it\\'s me' AND api_key = 'secret-name'",
+      "secrets": ["secret"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[1]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.02",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users WHERE nickname = e'it\\\\\\'s me' AND api_key = 'secret-name'",
+      "secrets": ["secret"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[2]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.03",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nickname = q'[it's me]' AND api_key = 'secret-name'",
+      "secrets": ["secret", "it's me"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[3]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.04",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nickname = Q'{it's me}' AND api_key = 'secret-name'",
+      "secrets": ["secret", "it's me"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[4]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.05",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nickname = q'(it's me)' AND api_key = 'secret-name'",
+      "secrets": ["secret", "it's me"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[5]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.06",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nickname = q'<it's me>' AND api_key = 'secret-name'",
+      "secrets": ["secret", "it's me"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[6]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.07",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nickname = q'!it's me!' AND api_key = 'secret-name'",
+      "secrets": ["secret", "it's me"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[7]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.08",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nickname = nq'[it's me]' AND api_key = 'secret-name'",
+      "secrets": ["secret", "it's me"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[8]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.09",
+      "dialect": "oracle",
+      "input": "SELECT * FROM users WHERE nickname = q'[it's me' AND api_key = 'secret-name'",
+      "secrets": ["secret", "it's me"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[9]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.10",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users /* disabled: /* old */ don't use */ WHERE api_key = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[10]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.11",
+      "dialect": "postgresql",
+      "input": "SELECT * FROM users /* disabled: /* old */ don't use WHERE api_key = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[11]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment.12",
+      "dialect": "mysql",
+      "input": "SELECT * FROM users # don't cache\nWHERE api_key = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[12]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment_where_valid.01",
+      "dialect": "sqlserver",
+      "input": "SELECT * FROM #users WHERE api_key = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_IsOnlyRecognizedWhereValid[1]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment_where_valid.02",
+      "dialect": "mysql",
+      "input": "SELECT * FROM users /* a /* b */ WHERE api_key = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_IsOnlyRecognizedWhereValid[2]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment_where_valid.03",
+      "dialect": "sqlserver",
+      "input": "SELECT CASE WHEN x = 1 THEN 'a' ELSE'b\\' END FROM users WHERE api_key = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_IsOnlyRecognizedWhereValid[3]"
+    },
+    {
+      "id": "otel_dotnet.dialect_literal_or_comment_where_valid.04",
+      "dialect": "sqlserver",
+      "input": "SELECT e, q FROM users WHERE e = 'a\\' AND q = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_IsOnlyRecognizedWhereValid[4]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.01",
+      "dialect": "sqlserver",
+      "input": "CREATE LOGIN [CONTOSO\\alice.smith] FROM WINDOWS",
+      "secrets": ["CONTOSO", "alice.smith"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[1]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.02",
+      "dialect": "sqlserver",
+      "input": "CREATE USER [Alice Smith] WITH PASSWORD = 'Pa55w0rd!'",
+      "secrets": ["Alice Smith", "Pa55w0rd!"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[2]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.03",
+      "dialect": "sqlserver",
+      "input": "CREATE USER [svc-payments] WITH PASSWORD = 'Pa55w0rd!'",
+      "secrets": ["svc-payments", "Pa55w0rd!"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[3]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.04",
+      "dialect": "sqlserver",
+      "input": "CREATE USER [alice@contoso.com] FROM EXTERNAL PROVIDER",
+      "secrets": ["alice@contoso.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[4]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.05",
+      "dialect": "sqlserver",
+      "input": "CREATE USER [alice]]smith] WITHOUT LOGIN",
+      "secrets": ["alice]]smith"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[5]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.06",
+      "dialect": "sqlserver",
+      "input": "DROP USER IF EXISTS [Alice Smith]",
+      "secrets": ["Alice Smith"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[6]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.07",
+      "dialect": "sqlserver",
+      "input": "ALTER LOGIN \"Alice Smith\" DISABLE",
+      "secrets": ["Alice Smith"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[7]"
+    },
+    {
+      "id": "otel_dotnet.login_or_user_name.08",
+      "dialect": "sqlserver",
+      "input": "CREATE LOGIN alice WITH PASSWORD = 'Pa55w0rd!'",
+      "secrets": ["Pa55w0rd!"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[8]"
+    },
+    {
+      "id": "otel_dotnet.login_escaped_brackets_max_length.01",
+      "dialect": "sqlserver",
+      "input": "CREATE USER [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]]] WITHOUT LOGIN",
+      "secrets": ["aaaaaaaaaa]]"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[1]"
+    },
+    {
+      "id": "otel_dotnet.login_escaped_brackets_max_length.02",
+      "dialect": "sqlserver",
+      "input": "CREATE USER [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] WITHOUT LOGIN",
+      "secrets": ["]]]]]]]]]]]]"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[2]"
+    },
+    {
+      "id": "otel_dotnet.login_escaped_brackets_max_length.03",
+      "dialect": "sqlserver",
+      "input": "CREATE USER []]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] WITHOUT LOGIN",
+      "secrets": ["]]]]]]]]]]]]"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[3]"
+    },
+    {
+      "id": "otel_dotnet.string_after_summary_limit.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE Password='secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_StringLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[1]"
+    },
+    {
+      "id": "otel_dotnet.string_after_summary_limit.02",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE Password=N'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_StringLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[2]"
+    },
+    {
+      "id": "otel_dotnet.string_after_summary_limit.03",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE Password = 'secret-name'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_StringLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[3]"
+    },
+    {
+      "id": "otel_dotnet.string_after_summary_limit.04",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE Email IN ('secret-name','other')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_StringLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[4]"
+    },
+    {
+      "id": "otel_dotnet.string_after_summary_limit.05",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE Email LIKE'%secret-name%'",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_StringLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[5]"
+    },
+    {
+      "id": "otel_dotnet.string_after_summary_limit.06",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT INSERT INTO Credentials (User, Password) VALUES ('admin','secret-name')",
+      "secrets": ["secret-name"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_StringLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[6]"
+    },
+    {
+      "id": "otel_dotnet.number_after_summary_limit.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE SocialSecurityNumber=123456789",
+      "secrets": ["123456789"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_NumericOrHexLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[1]"
+    },
+    {
+      "id": "otel_dotnet.number_after_summary_limit.02",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE SocialSecurityNumber = 123456789",
+      "secrets": ["123456789"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_NumericOrHexLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[2]"
+    },
+    {
+      "id": "otel_dotnet.number_after_summary_limit.03",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE ApiToken=0xDEADBEEF",
+      "secrets": ["DEADBEEF"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_NumericOrHexLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[3]"
+    },
+    {
+      "id": "otel_dotnet.number_after_summary_limit.04",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE ApiToken = 0xDEADBEEF",
+      "secrets": ["DEADBEEF"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_NumericOrHexLiteralAfterSummaryLengthLimitReached_SanitizesLiteral[4]"
+    },
+    {
+      "id": "otel_dotnet.many_joins_summary_limit.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT o.OrderId, c.Email FROM Orders AS o INNER JOIN CustomerOrderDetails0 AS d0 ON d0.OrderId = o.OrderId INNER JOIN CustomerOrderDetails1 AS d1 ON d1.OrderId = o.OrderId INNER JOIN CustomerOrderDetails2 AS d2 ON d2.OrderId = o.OrderId INNER JOIN CustomerOrderDetails3 AS d3 ON d3.OrderId = o.OrderId INNER JOIN CustomerOrderDetails4 AS d4 ON d4.OrderId = o.OrderId INNER JOIN CustomerOrderDetails5 AS d5 ON d5.OrderId = o.OrderId INNER JOIN CustomerOrderDetails6 AS d6 ON d6.OrderId = o.OrderId INNER JOIN CustomerOrderDetails7 AS d7 ON d7.OrderId = o.OrderId INNER JOIN CustomerOrderDetails8 AS d8 ON d8.OrderId = o.OrderId INNER JOIN CustomerOrderDetails9 AS d9 ON d9.OrderId = o.OrderId INNER JOIN CustomerOrderDetails10 AS d10 ON d10.OrderId = o.OrderId INNER JOIN CustomerOrderDetails11 AS d11 ON d11.OrderId = o.OrderId WHERE c.Email='user@example.com'",
+      "secrets": ["user@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ManyJoinsExceedingSummaryLengthLimit_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.many_tables_summary_limit.01",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM CustomerOrderDetails0,CustomerOrderDetails1,CustomerOrderDetails2,CustomerOrderDetails3,CustomerOrderDetails4,CustomerOrderDetails5,CustomerOrderDetails6,CustomerOrderDetails7,CustomerOrderDetails8,CustomerOrderDetails9,CustomerOrderDetails10,CustomerOrderDetails11 WHERE Email='user@example.com'",
+      "secrets": ["user@example.com"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_ManyTablesExceedingSummaryLengthLimit_SanitizesLiteral"
+    },
+    {
+      "id": "otel_dotnet.summary_limit_text_unchanged.01.short",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM Orders WHERE Password='secret-name' AND Id=123 AND Token=0xDEADBEEF",
+      "secrets": ["secret-name", "DEADBEEF"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_SummaryLengthLimitReached_DoesNotChangeSanitizedSql/short"
+    },
+    {
+      "id": "otel_dotnet.summary_limit_text_unchanged.01.long",
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WHERE Password='secret-name' AND Id=123 AND Token=0xDEADBEEF",
+      "secrets": ["secret-name", "DEADBEEF"],
+      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_SummaryLengthLimitReached_DoesNotChangeSanitizedSql/long"
+    }
+  ]
+}
