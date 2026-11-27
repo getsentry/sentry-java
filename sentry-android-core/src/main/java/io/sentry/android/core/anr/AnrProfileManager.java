@@ -6,9 +6,9 @@ import static io.sentry.android.core.anr.AnrProfilingIntegration.THRESHOLD_ANR_M
 
 import io.sentry.ILogger;
 import io.sentry.SentryOptions;
-import io.sentry.cache.tape.ObjectQueue;
-import io.sentry.cache.tape.QueueFile;
 import io.sentry.util.Objects;
+import io.sentry.vendor.tape.ObjectQueue;
+import io.sentry.vendor.tape.QueueFile;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

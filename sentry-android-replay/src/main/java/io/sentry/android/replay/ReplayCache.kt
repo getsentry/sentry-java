@@ -11,14 +11,14 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
-import io.sentry.android.replay.video.MuxerConfig
-import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.ExceptionUtils
 import io.sentry.util.FileUtils
+import io.sentry.vendor.flutterscreenrecorder.MuxerConfig
+import io.sentry.vendor.flutterscreenrecorder.SimpleVideoEncoder
 import java.io.Closeable
 import java.io.File
 import java.io.StringReader

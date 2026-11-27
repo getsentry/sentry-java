@@ -45,13 +45,13 @@ import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.cache.PersistingScopeObserver.SCOPE_CACHE
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
-import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.LoadClass
 import io.sentry.util.StringUtils
+import io.sentry.vendor.tape.QueueFile
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files

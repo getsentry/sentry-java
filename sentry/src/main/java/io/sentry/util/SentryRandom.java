@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.vendor.pcg.Random;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 

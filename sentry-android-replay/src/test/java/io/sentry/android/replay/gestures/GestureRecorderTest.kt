@@ -11,7 +11,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.SentryOptions
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.replay.gestures.GestureRecorder.SentryReplayGestureRecorder
-import io.sentry.android.replay.phoneWindow
+import io.sentry.vendor.curtains.phoneWindow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

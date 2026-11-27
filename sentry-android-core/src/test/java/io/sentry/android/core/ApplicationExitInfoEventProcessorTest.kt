@@ -42,7 +42,6 @@ import io.sentry.cache.PersistingScopeObserver.TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.PersistingScopeObserver.USER_FILENAME
-import io.sentry.cache.tape.QueueFile
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.Backfillable
 import io.sentry.protocol.Browser
@@ -63,6 +62,7 @@ import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
+import io.sentry.vendor.tape.QueueFile
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.test.BeforeTest
@@ -914,7 +914,7 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("AppExitInfo", exception.mechanism!!.type)
     assertEquals("ANR", exception.value)
     assertEquals("ApplicationNotResponding", exception.type)
-    assertEquals("io.sentry.android.core", exception.module)
+    assertEquals("io.sentry.vendor.anrwatchdog", exception.module)
     assertEquals(true, exception.stacktrace!!.snapshot)
     val frame = exception.stacktrace!!.frames!!.first()
     assertEquals(777, frame.lineno)
@@ -932,7 +932,7 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("AppExitInfo", exception.mechanism!!.type)
     assertEquals("ANR", exception.value)
     assertEquals("ApplicationNotResponding", exception.type)
-    assertEquals("io.sentry.android.core", exception.module)
+    assertEquals("io.sentry.vendor.anrwatchdog", exception.module)
     assertNull(exception.stacktrace)
   }
 

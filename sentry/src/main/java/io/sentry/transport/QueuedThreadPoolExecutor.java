@@ -5,6 +5,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryDate;
 import io.sentry.SentryDateProvider;
 import io.sentry.SentryLevel;
+import io.sentry.vendor.javafixes.concurrent.ReusableCountLatch;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;

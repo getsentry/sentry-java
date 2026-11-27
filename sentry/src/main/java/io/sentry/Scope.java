@@ -17,6 +17,8 @@ import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import io.sentry.util.SentryCallbackReentrancyGuard;
+import io.sentry.vendor.commons.collections.CircularFifoQueue;
+import io.sentry.vendor.commons.collections.SynchronizedQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;

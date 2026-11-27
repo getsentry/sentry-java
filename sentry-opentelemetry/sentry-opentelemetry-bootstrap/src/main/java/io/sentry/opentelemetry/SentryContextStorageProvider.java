@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.context.ContextStorageProvider;
+import io.sentry.vendor.opentelemetry.SentryOtelThreadLocalStorage;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import org.jetbrains.annotations.NotNull;

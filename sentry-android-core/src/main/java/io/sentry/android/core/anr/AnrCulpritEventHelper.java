@@ -1,12 +1,12 @@
 package io.sentry.android.core.anr;
 
 import io.sentry.SentryExceptionFactory;
-import io.sentry.android.core.ApplicationNotResponding;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
+import io.sentry.vendor.anrwatchdog.ApplicationNotResponding;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;

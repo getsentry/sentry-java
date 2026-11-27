@@ -1,0 +1,217 @@
+/*
+ * Adapted from https://github.com/SalomonBrys/ANR-WatchDog/blob/1969075f75f5980e9000eaffbaa13b0daf282dcb/anr-watchdog/src/main/java/com/github/anrwatchdog/ANRWatchDog.java
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 Salomon BRYS
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+package io.sentry.vendor.anrwatchdog;
+
+import static android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING;
+
+import android.app.ActivityManager;
+import android.content.Context;
+import io.sentry.IDebugManager;
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
+import io.sentry.android.core.MainLooperHandler;
+import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.time.Deadline;
+import io.sentry.time.MonotonicTicker;
+import io.sentry.util.ExceptionUtils;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/** A watchdog timer thread that detects when the UI thread has frozen. */
+@ApiStatus.Internal
+@SuppressWarnings("UnusedReturnValue")
+public final class ANRWatchDog extends Thread {
+
+  private static final long DEFAULT_POLLING_INTERVAL_MS = 500;
+
+  private final boolean reportInDebug;
+  private final ANRListener anrListener;
+  private final MainLooperHandler uiHandler;
+
+  /** the interval in which we check if there's an ANR, in ms */
+  private long pollingIntervalMs;
+
+  private final long timeoutIntervalMillis;
+  private final @NotNull ILogger logger;
+
+  /** How long the main thread has left to run the ticker before we call it an ANR. */
+  private volatile @NotNull Deadline uiResponsiveUntil;
+
+  private final AtomicBoolean reported = new AtomicBoolean(false);
+
+  private final @NotNull Context context;
+  private final @Nullable IDebugManager debugManager;
+
+  private final Runnable ticker;
+
+  public static @NotNull ANRWatchDog create(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull ANRListener listener,
+      final @NotNull Context context) {
+    return new ANRWatchDog(
+        options.getMonotonicTicker(),
+        options.getAnrTimeoutIntervalMillis(),
+        DEFAULT_POLLING_INTERVAL_MS,
+        options.isAnrReportInDebug(),
+        listener,
+        options.getLogger(),
+        new MainLooperHandler(),
+        context,
+        options.getDebugManager());
+  }
+
+  ANRWatchDog(
+      @NotNull final MonotonicTicker monotonicTicker,
+      long timeoutIntervalMillis,
+      long pollingIntervalMillis,
+      boolean reportInDebug,
+      @NotNull ANRListener listener,
+      @NotNull ILogger logger,
+      @NotNull MainLooperHandler uiHandler,
+      final @NotNull Context context,
+      final @Nullable IDebugManager debugManager) {
+
+    super("|ANR-WatchDog|");
+
+    this.timeoutIntervalMillis = timeoutIntervalMillis;
+    this.pollingIntervalMs = pollingIntervalMillis;
+    this.reportInDebug = reportInDebug;
+    this.anrListener = listener;
+    this.logger = logger;
+    this.uiHandler = uiHandler;
+    this.context = context;
+    this.debugManager = debugManager;
+    this.uiResponsiveUntil =
+        Deadline.after(monotonicTicker, timeoutIntervalMillis, TimeUnit.MILLISECONDS);
+    this.ticker =
+        () -> {
+          uiResponsiveUntil =
+              Deadline.after(monotonicTicker, timeoutIntervalMillis, TimeUnit.MILLISECONDS);
+          reported.set(false);
+        };
+
+    if (timeoutIntervalMillis < (pollingIntervalMs * 2)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "ANRWatchDog: timeoutIntervalMillis has to be at least %d ms",
+              pollingIntervalMs * 2));
+    }
+  }
+
+  @Override
+  public void run() {
+    // right when the watchdog gets started, let's assume there's no ANR
+    ticker.run();
+
+    while (!isInterrupted()) {
+      uiHandler.post(ticker);
+
+      try {
+        Thread.sleep(pollingIntervalMs);
+      } catch (InterruptedException e) {
+        try {
+          Thread.currentThread().interrupt();
+        } catch (SecurityException ignored) {
+          logger.log(
+              SentryLevel.WARNING,
+              "Failed to interrupt due to SecurityException: %s",
+              e.getMessage());
+          return;
+        }
+        logger.log(SentryLevel.WARNING, "Interrupted: %s", e.getMessage());
+        return;
+      }
+
+      // If the main thread has not handled ticker, it is blocked. ANR.
+      if (uiResponsiveUntil.hasPassed()) {
+        if (!reportInDebug && debugManager != null && debugManager.isDebuggerConnected()) {
+          logger.log(
+              SentryLevel.DEBUG,
+              "An ANR was detected but ignored because the debugger is connected.");
+          reported.set(true);
+          continue;
+        }
+
+        if (isProcessNotResponding() && reported.compareAndSet(false, true)) {
+          final String message =
+              "Application Not Responding for at least " + timeoutIntervalMillis + " ms.";
+
+          final ApplicationNotResponding error =
+              new ApplicationNotResponding(message, uiHandler.getThread());
+          anrListener.onAppNotResponding(error);
+        }
+      }
+    }
+  }
+
+  private boolean isProcessNotResponding() {
+    // we only raise an ANR event if the process is in ANR state.
+    // if ActivityManager is not available, we'll still be able to send ANRs
+    final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+
+    if (am != null) {
+      List<ActivityManager.ProcessErrorStateInfo> processesInErrorState = null;
+      try {
+        processesInErrorState = am.getProcessesInErrorState();
+      } catch (OutOfMemoryError e) {
+        // Unparceling the reply, which lists every process in an error state, can fail to
+        // allocate even when the app itself has memory left, so it's not treated as fatal here
+        // (#2114). The process is treated as responding normally, so no ANR is reported.
+        logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
+      } catch (Throwable e) {
+        // A Binder call into the activity manager, which can rethrow any runtime exception from
+        // the other side. The process is treated as responding normally, so no ANR is reported.
+        ExceptionUtils.rethrowIfFatal(e);
+        logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
+      }
+      // if list is null, there's no process in ANR state.
+      if (processesInErrorState != null) {
+        for (ActivityManager.ProcessErrorStateInfo item : processesInErrorState) {
+          if (item.condition == NOT_RESPONDING) {
+            return true;
+          }
+        }
+      }
+      // when list is empty, or there's no element NOT_RESPONDING, we can assume the app is not
+      // blocked
+      return false;
+    }
+    return true;
+  }
+
+  public interface ANRListener {
+    /**
+     * Called when an ANR is detected.
+     *
+     * @param error The error describing the ANR.
+     */
+    void onAppNotResponding(@NotNull ApplicationNotResponding error);
+  }
+}

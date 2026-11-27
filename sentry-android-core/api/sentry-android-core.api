@@ -234,11 +234,6 @@ public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
-public final class io/sentry/android/core/ApplicationNotResponding : java/lang/RuntimeException {
-	public fun <init> (Ljava/lang/String;)V
-	public fun getThread ()Ljava/lang/Thread;
-}
-
 public final class io/sentry/android/core/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -323,6 +318,13 @@ public final class io/sentry/android/core/InternalSentrySdk {
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/IScope;)Ljava/util/Map;
 	public static fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public static fun updateSessionForDroppedEventNonTerminating (Z)V
+}
+
+public final class io/sentry/android/core/MainLooperHandler {
+	public fun <init> ()V
+	public fun <init> (Landroid/os/Looper;)V
+	public fun getThread ()Ljava/lang/Thread;
+	public fun post (Ljava/lang/Runnable;)V
 }
 
 public final class io/sentry/android/core/MemoryLimiterIntegration : io/sentry/Integration, java/io/Closeable {
@@ -553,19 +555,6 @@ public final class io/sentry/android/core/SentryScreenshotOptions : io/sentry/Se
 	public fun <init> ()V
 	public fun setMaskAllImages (Z)V
 	public fun trackCustomMasking ()V
-}
-
-public final class io/sentry/android/core/SentryShakeDetector : android/hardware/SensorEventListener {
-	public fun <init> (Lio/sentry/ILogger;)V
-	public fun close ()V
-	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
-	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
-	public fun start (Landroid/content/Context;Lio/sentry/android/core/SentryShakeDetector$Listener;)V
-	public fun stop ()V
-}
-
-public abstract interface class io/sentry/android/core/SentryShakeDetector$Listener {
-	public abstract fun onShake ()V
 }
 
 public final class io/sentry/android/core/SentryUserFeedbackForm : android/app/Dialog {
@@ -900,5 +889,70 @@ public final class io/sentry/android/core/util/AndroidLazyEvaluator {
 
 public abstract interface class io/sentry/android/core/util/AndroidLazyEvaluator$AndroidEvaluator {
 	public abstract fun evaluate (Landroid/content/Context;)Ljava/lang/Object;
+}
+
+public final class io/sentry/vendor/anrwatchdog/ANRWatchDog : java/lang/Thread {
+	public static fun create (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/vendor/anrwatchdog/ANRWatchDog$ANRListener;Landroid/content/Context;)Lio/sentry/vendor/anrwatchdog/ANRWatchDog;
+	public fun run ()V
+}
+
+public abstract interface class io/sentry/vendor/anrwatchdog/ANRWatchDog$ANRListener {
+	public abstract fun onAppNotResponding (Lio/sentry/vendor/anrwatchdog/ApplicationNotResponding;)V
+}
+
+public final class io/sentry/vendor/anrwatchdog/ApplicationNotResponding : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/Thread;)V
+	public fun getThread ()Ljava/lang/Thread;
+}
+
+public final class io/sentry/vendor/aosp/threaddump/Line {
+	public field lineno I
+	public field text Ljava/lang/String;
+	public fun <init> (ILjava/lang/String;)V
+}
+
+public final class io/sentry/vendor/aosp/threaddump/Lines {
+	public field pos I
+	public fun <init> (Ljava/util/List;)V
+	public fun hasNext ()Z
+	public fun next ()Lio/sentry/vendor/aosp/threaddump/Line;
+	public static fun readLines (Ljava/io/BufferedReader;)Lio/sentry/vendor/aosp/threaddump/Lines;
+	public static fun readLines (Ljava/io/File;)Lio/sentry/vendor/aosp/threaddump/Lines;
+	public fun rewind ()V
+}
+
+public final class io/sentry/vendor/aosp/threaddump/ThreadDumpParser {
+	public fun <init> (Lio/sentry/SentryOptions;Z)V
+	public fun getArtContext ()Lio/sentry/protocol/ArtContext;
+	public fun getDebugImages ()Ljava/util/List;
+	public fun getThreads ()Ljava/util/List;
+	public fun parse (Lio/sentry/vendor/aosp/threaddump/Lines;)V
+}
+
+public final class io/sentry/vendor/breadwallet/RootChecker {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;)V
+	public fun isDeviceRooted ()Z
+}
+
+public final class io/sentry/vendor/firebase/FirstDrawDoneListener : android/view/ViewTreeObserver$OnDrawListener {
+	public fun onDraw ()V
+	public static fun registerForNextDraw (Landroid/app/Activity;Ljava/lang/Runnable;Lio/sentry/android/core/BuildInfoProvider;)V
+	public static fun registerForNextDraw (Landroid/view/View;Ljava/lang/Runnable;Lio/sentry/android/core/BuildInfoProvider;)V
+}
+
+public final class io/sentry/vendor/seismic/SentryShakeDetector : android/hardware/SensorEventListener {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun close ()V
+	public fun init (Landroid/content/Context;Lio/sentry/ILogger;)V
+	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
+	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
+	public fun reopen ()V
+	public fun start (Landroid/content/Context;Lio/sentry/vendor/seismic/SentryShakeDetector$Listener;)V
+	public fun stop ()V
+}
+
+public abstract interface class io/sentry/vendor/seismic/SentryShakeDetector$Listener {
+	public abstract fun onShake ()V
 }
 

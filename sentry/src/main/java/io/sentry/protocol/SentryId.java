@@ -7,7 +7,7 @@ import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryUUID;
 import io.sentry.util.StringUtils;
-import io.sentry.util.UUIDStringUtils;
+import io.sentry.vendor.fastuuid.UUIDStringUtils;
 import java.io.IOException;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;

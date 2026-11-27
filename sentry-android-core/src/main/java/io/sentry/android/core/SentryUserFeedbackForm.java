@@ -33,6 +33,7 @@ import io.sentry.protocol.User;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.LoadClass;
+import io.sentry.vendor.seismic.SentryShakeDetector;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;

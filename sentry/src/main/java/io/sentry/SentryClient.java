@@ -20,6 +20,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.*;
+import io.sentry.vendor.pcg.Random;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;

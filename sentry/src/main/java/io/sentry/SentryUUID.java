@@ -1,7 +1,7 @@
 package io.sentry;
 
-import io.sentry.util.UUIDGenerator;
-import io.sentry.util.UUIDStringUtils;
+import io.sentry.vendor.dynamicdatasource.UUIDGenerator;
+import io.sentry.vendor.fastuuid.UUIDStringUtils;
 
 /**
  * SentryUUID is a utility class for generating Sentry-specific ID Strings. It provides methods for
