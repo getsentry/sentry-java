@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.internal.lifecycle
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Scope
 import io.sentry.SentryOptions
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 import org.junit.Test
 
 class StagedNavDataTest {

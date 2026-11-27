@@ -6,12 +6,12 @@ import io.sentry.ITransaction
 import io.sentry.SentryOptions
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_OP
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_TRANSACTION_ORIGIN
+import io.sentry.compose.navigation3.internal.contract.TRANSACTION_ARGUMENTS_KEY
 import io.sentry.protocol.App
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.TransactionNameSource
-
-/** The operation of nav transactions, and the type and category of nav breadcrumbs. */
-internal const val NAVIGATION_OP: String = "navigation"
 
 /**
  * Everything needed to start a nav transaction for a destination.
@@ -23,6 +23,7 @@ internal const val NAVIGATION_OP: String = "navigation"
  * transaction finishes. Each [start] creates a new transaction for the same destination.
  */
 internal class NavTransactionRequest(
+  /** The name of the nav transaction. */
   val name: String,
   /** Builds the options for each transaction started from this request. */
   private val newOptions: () -> TransactionOptions,
@@ -39,8 +40,6 @@ internal class NavTransactionRequest(
 ) {
 
   companion object {
-
-    private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
 
     /** Creates a request whose transaction options are read when each transaction starts. */
     fun forDestination(
@@ -59,10 +58,11 @@ internal class NavTransactionRequest(
             val deadlineTimeoutMillis = options.deadlineTimeout
             it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
             it.isTrimEnd = true
-            it.origin = TRANSACTION_ORIGIN
+            it.origin = NAVIGATION_TRANSACTION_ORIGIN
           }
         },
-        data = if (arguments.isNotEmpty()) mapOf("arguments" to arguments) else emptyMap(),
+        data =
+          if (arguments.isNotEmpty()) mapOf(TRANSACTION_ARGUMENTS_KEY to arguments) else emptyMap(),
         contexts = contexts,
         viewNames = viewNames,
       )
