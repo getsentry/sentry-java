@@ -567,7 +567,7 @@ final class AndroidOptionsInitializer {
                         HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)),
             Collections.singletonList(
                 new HangCollectorSetup<>(
-                    new ThreadSampleCollector(epochClock, mainLooper.getThread()),
+                    new ThreadSampleCollector(mainLooper.getThread()),
                     (stackTrace, record) -> record.addStackTrace(stackTrace),
                     new AnrProfileStore(options))));
     options.setHangManager(manager);

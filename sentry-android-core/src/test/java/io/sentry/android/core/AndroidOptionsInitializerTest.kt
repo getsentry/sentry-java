@@ -758,8 +758,6 @@ class AndroidOptionsInitializerTest {
         .single()
     val collector = setup.getProperty<HangDataCollector<*>>("collector")
     assertThat(collector).isInstanceOf(ThreadSampleCollector::class.java)
-    assertThat(collector.getProperty<Any>("epochClock"))
-      .isSameInstanceAs(fixture.sentryOptions.epochClock)
     assertThat(collector.getProperty<Thread>("thread"))
       .isSameInstanceAs(Looper.getMainLooper().thread)
     val store = setup.getProperty<Any>("store")
