@@ -379,7 +379,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       resetFile();
     } catch (IOException e) {
       throw e;
-    } catch (Throwable e) {
+    } catch (IndexOutOfBoundsException e) {
       // most likely the file is corrupt, so we delete it and recreate, accepting data loss
       resetFile();
     }
