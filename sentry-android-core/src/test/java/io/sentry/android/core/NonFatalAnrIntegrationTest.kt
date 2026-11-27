@@ -277,6 +277,16 @@ class NonFatalAnrIntegrationTest {
   }
 
   @Test
+  fun `hang without samples gets default fingerprint`() {
+    val listener = subscribed()
+
+    listener.onHangRecorded(record(samples = emptyList()))
+
+    val event = capturedEvent()
+    assertThat(event.fingerprints).containsExactly("{{ default }}", "non-fatal-anr").inOrder()
+  }
+
+  @Test
   fun `fingerprinting disabled gets default fingerprint`() {
     options.isEnableAnrFingerprinting = false
     val listener = subscribed()

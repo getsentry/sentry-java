@@ -166,7 +166,9 @@ public final class NonFatalAnrIntegration implements Integration, Closeable {
       context.put("sample_count", samples.size());
       event.getContexts().put("non_fatal_anr", context);
 
-      if (options.isEnableAnrFingerprinting()
+      // An exception without a stack has no frames either, but it is not a system-only stack.
+      if (culprit != null
+          && options.isEnableAnrFingerprinting()
           && AnrCulpritEventHelper.hasOnlySystemFrames(exceptions)) {
         event.setFingerprints(Arrays.asList("system-frames-only-anr", "non-fatal-anr"));
       } else {
