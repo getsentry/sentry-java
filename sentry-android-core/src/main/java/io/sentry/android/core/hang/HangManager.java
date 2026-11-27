@@ -369,6 +369,9 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
       return;
     }
     activeRecorder = null;
+    if (!recorder.isRecording()) {
+      return;
+    }
     final @NotNull HangRecord record = recorder.end(endTimeMs);
     final @NotNull List<HangRecordingListener> listeners = recorder.getListeners();
     try {
