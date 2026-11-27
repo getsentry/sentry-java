@@ -19,6 +19,18 @@ class NetworkBodyParserTest {
   }
 
   @Test
+  fun `a partial json body that fits the limit is reported as truncated`() {
+    val logger = mock<ILogger>()
+    val bytes = """{"items":[1,2,""".toByteArray()
+
+    val partial = NetworkBodyParser.fromBytes(bytes, "application/json", null, 512, true, logger)
+    val whole = NetworkBodyParser.fromBytes(bytes, "application/json", null, 512, logger)
+
+    assertEquals(listOf(NetworkBody.NetworkBodyWarning.JSON_TRUNCATED), partial?.warnings)
+    assertEquals(listOf(NetworkBody.NetworkBodyWarning.INVALID_JSON), whole?.warnings)
+  }
+
+  @Test
   fun `null json body gets detected correctly`() {
     val logger = mock<ILogger>()
     val rawJson = "null"

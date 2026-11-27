@@ -75,7 +75,7 @@ class AgentlessEndToEndTest {
               addBreadcrumb(Breadcrumb("Processed by the event processor"))
             }
           }
-        }
+        },
       )
     }
     Sentry.withScope {
@@ -95,11 +95,11 @@ class AgentlessEndToEndTest {
         message = Message().apply { message = "Detailed event" }
         fingerprints = listOf("NewClientDebug")
         level = SentryLevel.DEBUG
-      }
+      },
     )
     repeat(10) { i ->
       Sentry.captureEvent(
-        SentryEvent().apply { message = Message().apply { message = "event $i" } }
+        SentryEvent().apply { message = Message().apply { message = "event $i" } },
       )
     }
     val transaction = Sentry.startTransaction("transaction name", "op")

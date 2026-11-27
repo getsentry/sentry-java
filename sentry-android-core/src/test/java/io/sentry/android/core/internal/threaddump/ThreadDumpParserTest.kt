@@ -233,9 +233,9 @@ class ThreadDumpParserTest {
               | sysTid=123 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
               at MainActivity.run(MainActivity.java:177)
             """
-              .trimIndent()
-          )
-        )
+              .trimIndent(),
+          ),
+        ),
       )
     val parser = ThreadDumpParser(SentryOptions(), false)
 
@@ -257,9 +257,9 @@ class ThreadDumpParserTest {
               | sysTid=123 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
               at MainActivity.nativeRun(Native method)
             """
-              .trimIndent()
-          )
-        )
+              .trimIndent(),
+          ),
+        ),
       )
     val parser = ThreadDumpParser(SentryOptions(), false)
 

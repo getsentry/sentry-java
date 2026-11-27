@@ -6,13 +6,25 @@ import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
+import io.sentry.MonitorConfig;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import io.sentry.time.Stopwatch;
+import io.sentry.util.MonitorConfigUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.zip.CRC32;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.ApiStatus;
@@ -20,7 +32,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.EmbeddedValueResolverAware;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Schedules;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringValueResolver;
 
@@ -31,16 +47,44 @@ import org.springframework.util.StringValueResolver;
 @ApiStatus.Internal
 @Open
 public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
+  // Spring before 5.3 parses crons with CronSequenceGenerator
+  private static final boolean LEGACY_CRON_PARSER =
+      !ClassUtils.isPresent(
+          "org.springframework.scheduling.support.CronExpression",
+          SentryCheckInAdvice.class.getClassLoader());
+
+  private static final @NotNull Pattern WORD_BOUNDARY =
+      Pattern.compile("(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])");
+  private static final int MAX_SLUG_LENGTH = 50;
+
   private final @NotNull IScopes scopes;
 
+  private final boolean monitorScheduledTasks;
+
   private @Nullable StringValueResolver resolver;
+
+  private final @NotNull Map<Method, CachedMonitorConfig> monitorConfigs =
+      new ConcurrentHashMap<>();
+
+  private final @NotNull Map<String, String> derivedSlugOwners = new ConcurrentHashMap<>();
+
+  private final @NotNull Set<String> collidingSlugs = ConcurrentHashMap.newKeySet();
 
   public SentryCheckInAdvice() {
     this(ScopesAdapter.getInstance());
   }
 
   public SentryCheckInAdvice(final @NotNull IScopes scopes) {
+    this(scopes, false);
+  }
+
+  /**
+   * @param monitorScheduledTasks whether to also monitor {@code @Scheduled} methods without {@link
+   *     SentryCheckIn}, using a slug derived from the class and method name
+   */
+  public SentryCheckInAdvice(final @NotNull IScopes scopes, final boolean monitorScheduledTasks) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+    this.monitorScheduledTasks = monitorScheduledTasks;
   }
 
   @Override
@@ -52,6 +96,24 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
     SentryCheckIn checkInAnnotation =
         AnnotationUtils.findAnnotation(mostSpecificMethod, SentryCheckIn.class);
     if (checkInAnnotation == null) {
+      if (monitorScheduledTasks && isScheduled(mostSpecificMethod)) {
+        final @NotNull Class<?> targetClass = invocation.getThis().getClass();
+        final @NotNull String taskName = scheduledTaskName(targetClass, mostSpecificMethod);
+        final @Nullable MonitorConfig monitorConfig = monitorConfig(mostSpecificMethod);
+        if (monitorConfig == null) {
+          scopes
+              .getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Not monitoring %s because Sentry Crons can't express its @Scheduled schedule.",
+                  taskName);
+          return invocation.proceed();
+        }
+        final @NotNull String monitorSlug = scheduledTaskSlug(taskName);
+        warnOnSlugCollision(monitorSlug, targetClass, mostSpecificMethod);
+        return captureCheckIns(invocation, monitorSlug, false, monitorConfig);
+      }
       return invocation.proceed();
     }
 
@@ -87,6 +149,19 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return invocation.proceed();
     }
 
+    final @Nullable MonitorConfig monitorConfig =
+        !isHeartbeatOnly && checkInAnnotation.upsertMonitorConfig()
+            ? monitorConfig(mostSpecificMethod)
+            : null;
+    return captureCheckIns(invocation, monitorSlug, isHeartbeatOnly, monitorConfig);
+  }
+
+  private Object captureCheckIns(
+      final @NotNull MethodInvocation invocation,
+      final @NotNull String monitorSlug,
+      final boolean isHeartbeatOnly,
+      final @Nullable MonitorConfig monitorConfig)
+      throws Throwable {
     try (final @NotNull ISentryLifecycleToken ignored =
             scopes.forkedScopes("SentryCheckInAdvice").makeCurrent()) {
       TracingUtils.startNewTrace(scopes);
@@ -98,7 +173,9 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
 
       try {
         if (!isHeartbeatOnly) {
-          checkInId = scopes.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
+          final @NotNull CheckIn inProgress = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
+          inProgress.setMonitorConfig(monitorConfig);
+          checkInId = scopes.captureCheckIn(inProgress);
         }
         return invocation.proceed();
       } catch (Throwable e) {
@@ -110,6 +187,144 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         checkIn.setDuration(DateUtils.nanosToSeconds(stopwatch.elapsedNanos()));
         scopes.captureCheckIn(checkIn);
       }
+    }
+  }
+
+  private void warnOnSlugCollision(
+      final @NotNull String monitorSlug,
+      final @NotNull Class<?> targetClass,
+      final @NotNull Method method) {
+    final @NotNull String identity =
+        ClassUtils.getUserClass(targetClass).getName() + "." + method.getName();
+    final @Nullable String owner = derivedSlugOwners.putIfAbsent(monitorSlug, identity);
+    if (owner != null && !owner.equals(identity) && collidingSlugs.add(monitorSlug)) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Monitor slug \"%s\" is used by both %s and %s, so their check-ins go to one monitor. Add @SentryCheckIn(\"your-slug\") to one of them.",
+              monitorSlug,
+              owner,
+              identity);
+    }
+  }
+
+  static boolean isScheduled(final @NotNull Method method) {
+    return !AnnotatedElementUtils.getMergedRepeatableAnnotations(
+            method, Scheduled.class, Schedules.class)
+        .isEmpty();
+  }
+
+  /** {@code ClassName.methodName}, with nested classes as {@code Outer.Inner}. */
+  static @NotNull String scheduledTaskName(
+      final @NotNull Class<?> targetClass, final @NotNull Method method) {
+    return ClassUtils.getShortName(ClassUtils.getUserClass(targetClass)) + "." + method.getName();
+  }
+
+  static @NotNull String scheduledTaskSlug(final @NotNull String taskName) {
+    final @NotNull String slug =
+        WORD_BOUNDARY
+            .matcher(taskName)
+            .replaceAll("-")
+            .toLowerCase(Locale.ROOT)
+            .replaceAll("[^a-z0-9]+", "-")
+            .replaceAll("^-+|-+$", "");
+    if (slug.length() <= MAX_SLUG_LENGTH) {
+      return slug;
+    }
+    // keep truncated slugs unique
+    final @NotNull CRC32 crc = new CRC32();
+    crc.update(slug.getBytes(StandardCharsets.UTF_8));
+    final @NotNull String hash = String.format(Locale.ROOT, "%08x", crc.getValue());
+    return slug.substring(0, MAX_SLUG_LENGTH - hash.length() - 1).replaceAll("-+$", "")
+        + "-"
+        + hash;
+  }
+
+  private @Nullable MonitorConfig monitorConfig(final @NotNull Method method) {
+    return monitorConfigs.computeIfAbsent(
+            method, key -> new CachedMonitorConfig(monitorConfigFromScheduled(key)))
+        .config;
+  }
+
+  private @Nullable MonitorConfig monitorConfigFromScheduled(final @NotNull Method method) {
+    try {
+      final @NotNull Set<Scheduled> schedules =
+          AnnotatedElementUtils.getMergedRepeatableAnnotations(
+              method, Scheduled.class, Schedules.class);
+      if (schedules.size() != 1) {
+        return null;
+      }
+      final @NotNull Scheduled scheduled = schedules.iterator().next();
+      // timeUnit only exists from Spring 5.3.10, so read it as an attribute
+      final @Nullable Object timeUnitAttribute =
+          AnnotationUtils.getAnnotationAttributes(scheduled).get("timeUnit");
+      final @NotNull TimeUnit timeUnit =
+          timeUnitAttribute instanceof TimeUnit unit ? unit : TimeUnit.MILLISECONDS;
+      final @Nullable String cron = resolve(scheduled.cron());
+      // Spring only reads the zone for a cron
+      final @Nullable String zone =
+          cron == null || cron.isEmpty() ? null : resolve(scheduled.zone());
+      return MonitorConfigUtils.fromSpringScheduled(
+          cron,
+          zone,
+          periodMillis(scheduled.fixedRate(), scheduled.fixedRateString(), timeUnit),
+          periodMillis(scheduled.fixedDelay(), scheduled.fixedDelayString(), timeUnit),
+          LEGACY_CRON_PARSER);
+    } catch (RuntimeException e) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "Could not derive a monitor config from @Scheduled.", e);
+      return null;
+    }
+  }
+
+  private @Nullable Long periodMillis(
+      final long value, final @NotNull String valueString, final @NotNull TimeUnit timeUnit) {
+    if (value >= 0) {
+      return timeUnit.toMillis(value);
+    }
+    final @Nullable String resolved = resolve(valueString);
+    if (resolved == null || resolved.isEmpty()) {
+      return null;
+    }
+    final @NotNull String trimmed = resolved.trim();
+    @Nullable Long millis = null;
+    if (trimmed.startsWith("P") || trimmed.startsWith("p")) {
+      try {
+        millis = Duration.parse(trimmed).toMillis();
+      } catch (DateTimeParseException | ArithmeticException e) {
+        // logged below
+      }
+    } else {
+      millis = MonitorConfigUtils.parsePeriodMillis(trimmed, timeUnit);
+    }
+    if (millis == null) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not sending a monitor config because the @Scheduled period '%s' could not be parsed.",
+              trimmed);
+    }
+    return millis;
+  }
+
+  private @Nullable String resolve(final @NotNull String value) {
+    if (resolver == null || value.isEmpty()) {
+      return value;
+    }
+    return resolver.resolveStringValue(value);
+  }
+
+  private static final class CachedMonitorConfig {
+    private final @Nullable MonitorConfig config;
+
+    private CachedMonitorConfig(final @Nullable MonitorConfig config) {
+      this.config = config;
     }
   }
 

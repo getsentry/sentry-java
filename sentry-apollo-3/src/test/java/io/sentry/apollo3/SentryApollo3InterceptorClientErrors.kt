@@ -95,7 +95,7 @@ class SentryApollo3InterceptorClientErrors {
                 sdkVersion = SdkVersion("test", "1.2.3")
                 isSendDefaultPii = sendDefaultPii
                 configureOptions()
-              }
+              },
             )
         }
       whenever(scopes.captureEvent(any(), any<Hint>())).thenReturn(SentryId.EMPTY_ID)
@@ -158,7 +158,7 @@ class SentryApollo3InterceptorClientErrors {
     fixture.getSut(captureFailedRequests = false)
 
     assertFalse(
-      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo3ClientError")
+      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo3ClientError"),
     )
   }
 
@@ -167,7 +167,7 @@ class SentryApollo3InterceptorClientErrors {
     fixture.getSut()
 
     assertTrue(
-      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo3ClientError")
+      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo3ClientError"),
     )
   }
 

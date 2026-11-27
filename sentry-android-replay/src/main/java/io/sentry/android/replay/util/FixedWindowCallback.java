@@ -189,7 +189,6 @@ public class FixedWindowCallback implements Window.Callback {
     return delegate.onSearchRequested();
   }
 
-  @SuppressLint("NewApi")
   @Override
   public boolean onSearchRequested(SearchEvent searchEvent) {
     if (delegate == null) {
@@ -207,7 +206,6 @@ public class FixedWindowCallback implements Window.Callback {
     return delegate.onWindowStartingActionMode(callback);
   }
 
-  @SuppressLint("NewApi")
   @Nullable
   @Override
   public ActionMode onWindowStartingActionMode(ActionMode.Callback callback, int type) {
@@ -233,7 +231,6 @@ public class FixedWindowCallback implements Window.Callback {
     delegate.onActionModeFinished(mode);
   }
 
-  @SuppressLint("NewApi")
   @Override
   public void onProvideKeyboardShortcuts(
       List<KeyboardShortcutGroup> data, @Nullable Menu menu, int deviceId) {

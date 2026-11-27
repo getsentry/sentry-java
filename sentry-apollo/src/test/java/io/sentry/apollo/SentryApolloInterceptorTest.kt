@@ -95,7 +95,7 @@ class SentryApolloInterceptorTest {
         MockResponse()
           .setBody(responseBody)
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       if (beforeSpan != null || !attachTracingHeaders) {
@@ -232,7 +232,7 @@ class SentryApolloInterceptorTest {
       fixture.getSut { span, _, _ ->
         span.description = "overwritten description"
         span
-      }
+      },
     )
 
     verify(fixture.scopes)

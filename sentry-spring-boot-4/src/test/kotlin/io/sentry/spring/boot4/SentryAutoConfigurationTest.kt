@@ -16,6 +16,7 @@ import io.sentry.NoOpProfileConverter
 import io.sentry.NoOpTransportFactory
 import io.sentry.SamplingContext
 import io.sentry.Sentry
+import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
@@ -45,6 +46,7 @@ import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import jakarta.servlet.Filter
 import java.lang.RuntimeException
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,9 +54,12 @@ import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.internal.util.MockUtil.isMock
+import org.mockito.kotlin.after
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.quartz.JobExecutionContext
@@ -65,6 +70,7 @@ import org.quartz.core.QuartzScheduler
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.info.GitProperties
 import org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration
@@ -79,6 +85,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.core.env.MapPropertySource
+import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.quartz.SchedulerFactoryBean
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestClient
@@ -96,7 +105,7 @@ class SentryAutoConfigurationTest {
           SentryAutoConfiguration::class.java,
           WebMvcAutoConfiguration::class.java,
           SentryProfilerAutoConfiguration::class.java,
-        )
+        ),
       )
       .withPropertyValues(
         // Speed up tests by reducing timeouts and disabling expensive operations
@@ -117,7 +126,7 @@ class SentryAutoConfigurationTest {
   // Use the optimized base runner by default
   private val contextRunner =
     baseContextRunner.withUserConfiguration(
-      NoOpTransportConfiguration::class.java
+      NoOpTransportConfiguration::class.java,
     ) // Use no-op transport to avoid network calls
 
   // Specialized context runners for different test categories
@@ -125,14 +134,14 @@ class SentryAutoConfigurationTest {
     baseContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(
-        NoOpTransportConfiguration::class.java
+        NoOpTransportConfiguration::class.java,
       ) // Use no-op transport to avoid network calls
 
   private val tracingEnabledRunner =
     baseContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=1.0")
       .withUserConfiguration(
-        NoOpTransportConfiguration::class.java
+        NoOpTransportConfiguration::class.java,
       ) // Use no-op transport to avoid network calls
 
   @Test
@@ -186,10 +195,37 @@ class SentryAutoConfigurationTest {
       .run {
         assertThat(it).hasSingleBean(Sentry.OptionsConfiguration::class.java)
         assertThat(
-            it.getBean(Sentry.OptionsConfiguration::class.java, "customOptionsConfiguration")
+            it.getBean(Sentry.OptionsConfiguration::class.java, "customOptionsConfiguration"),
           )
           .isNotNull
       }
+  }
+
+  @Test
+  fun `GraphQL specification error type filtering is disabled by default`() {
+    dsnEnabledRunner.run {
+      assertThat(
+          it.getBean(SentryProperties::class.java).graphql.isEnableSpecificationErrorTypeFiltering,
+        )
+        .isFalse()
+    }
+  }
+
+  @Test
+  fun `GraphQL specification error type filtering property is applied`() {
+    listOf(false, true).forEach { enabled ->
+      dsnEnabledRunner
+        .withPropertyValues("sentry.graphql.enable-specification-error-type-filtering=$enabled")
+        .run {
+          assertThat(
+              it
+                .getBean(SentryProperties::class.java)
+                .graphql
+                .isEnableSpecificationErrorTypeFiltering,
+            )
+            .isEqualTo(enabled)
+        }
+    }
   }
 
   @Test
@@ -227,7 +263,9 @@ class SentryAutoConfigurationTest {
         "sentry.send-modules=false",
         "sentry.ignored-checkins=slug1,slugB",
         "sentry.ignored-errors=Some error,Another .*",
+        "sentry.ignored-errors-for-deduplication=example.FirstException,example.SecondException",
         "sentry.ignored-transactions=transactionName1,transactionNameB",
+        "sentry.trace-ignore-status-codes=404,500-599",
         "sentry.enable-backpressure-handling=false",
         "sentry.enable-database-transaction-tracing=true",
         "sentry.enable-cache-tracing=true",
@@ -280,7 +318,13 @@ class SentryAutoConfigurationTest {
         assertThat(options.isSendModules).isEqualTo(false)
         assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
         assertThat(options.ignoredErrors).containsOnly("Some error", "Another .*")
+        assertThat(options.ignoredErrorsForDeduplication)
+          .containsOnly("example.FirstException", "example.SecondException")
         assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
+        assertThat(options.traceIgnoreStatusCodes).hasSize(2)
+        assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
+        assertThat(options.traceIgnoreStatusCodes!![1].isInRange(500)).isTrue()
+        assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
         assertThat(options.isEnableDatabaseTransactionTracing).isEqualTo(true)
         assertThat(options.isEnableCacheTracing).isEqualTo(true)
@@ -298,6 +342,56 @@ class SentryAutoConfigurationTest {
         assertThat(options.logging.logsEnabled).isTrue()
         assertThat(options.isStrictTraceContinuation).isEqualTo(true)
         assertThat(options.orgId).isEqualTo("12345")
+      }
+  }
+
+  @Test
+  fun `ignored server HTTP status codes use the defaults`() {
+    contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
+      val ranges = it.getBean(SentryProperties::class.java).traceIgnoreStatusCodes!!
+      assertThat(ranges).hasSize(3)
+      listOf(301, 305, 399, 401, 404).forEach { statusCode ->
+        assertThat(ranges.any { it.isInRange(statusCode) }).isTrue()
+      }
+      listOf(300, 302, 303, 304, 400, 405).forEach { statusCode ->
+        assertThat(ranges.any { it.isInRange(statusCode) }).isFalse()
+      }
+    }
+  }
+
+  @Test
+  fun `YAML list binds integer ignored server HTTP status codes`() {
+    dsnEnabledRunner
+      .withInitializer { context ->
+        // YAML exposes unquoted numbers as Integer values in indexed property sources.
+        context.environment.propertySources.addFirst(
+          MapPropertySource(
+            "yaml",
+            mapOf<String, Any>(
+              "sentry.trace-ignore-status-codes[0]" to 404,
+              "sentry.trace-ignore-status-codes[1]" to "500-599",
+            ),
+          ),
+        )
+      }
+      .run {
+        val ranges = it.getBean(SentryProperties::class.java).traceIgnoreStatusCodes
+        assertThat(ranges).hasSize(2)
+        assertThat(ranges!![0].isInRange(404)).isTrue()
+        assertThat(ranges[1].isInRange(500)).isTrue()
+        assertThat(ranges[1].isInRange(599)).isTrue()
+      }
+  }
+
+  @Test
+  fun `empty ignored server HTTP status codes disable the configuration`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.trace-ignore-status-codes=",
+      )
+      .run {
+        assertThat(it.getBean(SentryProperties::class.java).traceIgnoreStatusCodes).isEmpty()
       }
   }
 
@@ -350,6 +444,19 @@ class SentryAutoConfigurationTest {
       .run {
         val options = it.getBean(SentryProperties::class.java)
         assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
+      }
+  }
+
+  @Test
+  fun `empty ignored errors for deduplication removes the default`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.ignored-errors-for-deduplication=",
+      )
+      .run {
+        val options = it.getBean(SentryProperties::class.java)
+        assertThat(options.ignoredErrorsForDeduplication).isEmpty()
       }
   }
 
@@ -563,7 +670,7 @@ class SentryAutoConfigurationTest {
     contextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
       .withConfiguration(
-        UserConfigurations.of(SentryHighestOrderUserProviderConfiguration::class.java)
+        UserConfigurations.of(SentryHighestOrderUserProviderConfiguration::class.java),
       )
       .run {
         val userProviders = it.getSentryUserProviders()
@@ -845,7 +952,7 @@ class SentryAutoConfigurationTest {
         assertTrue(
           SentryIntegrationPackageStorage.getInstance()
             .integrations
-            .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit")
+            .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit"),
         )
       }
   }
@@ -857,7 +964,7 @@ class SentryAutoConfigurationTest {
       assertFalse(
         SentryIntegrationPackageStorage.getInstance()
           .integrations
-          .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit")
+          .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit"),
       )
     }
   }
@@ -872,7 +979,7 @@ class SentryAutoConfigurationTest {
         assertFalse(
           SentryIntegrationPackageStorage.getInstance()
             .integrations
-            .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit")
+            .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit"),
         )
       }
   }
@@ -888,7 +995,7 @@ class SentryAutoConfigurationTest {
         assertTrue(
           SentryIntegrationPackageStorage.getInstance()
             .integrations
-            .contains("SpringBoot4OpenTelemetryNoAgent")
+            .contains("SpringBoot4OpenTelemetryNoAgent"),
         )
       }
   }
@@ -903,7 +1010,7 @@ class SentryAutoConfigurationTest {
         assertFalse(
           SentryIntegrationPackageStorage.getInstance()
             .integrations
-            .contains("SpringBoot4OpenTelemetryNoAgent")
+            .contains("SpringBoot4OpenTelemetryNoAgent"),
         )
       }
   }
@@ -917,14 +1024,14 @@ class SentryAutoConfigurationTest {
         FilteredClassLoader(
           AgentMarker::class.java,
           SentryAutoConfigurationCustomizerProvider::class.java,
-        )
+        ),
       )
       .withUserConfiguration(OtelBeanConfig::class.java)
       .run {
         assertFalse(
           SentryIntegrationPackageStorage.getInstance()
             .integrations
-            .contains("SpringBoot4OpenTelemetryNoAgent")
+            .contains("SpringBoot4OpenTelemetryNoAgent"),
         )
       }
   }
@@ -939,7 +1046,7 @@ class SentryAutoConfigurationTest {
         assertFalse(
           SentryIntegrationPackageStorage.getInstance()
             .integrations
-            .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit")
+            .contains("SpringBoot4OpenTelemetryAgentWithoutAutoInit"),
         )
       }
   }
@@ -995,7 +1102,7 @@ class SentryAutoConfigurationTest {
         FilteredClassLoader(
           io.sentry.graphql.SentryInstrumentation::class.java,
           io.sentry.graphql22.SentryInstrumentation::class.java,
-        )
+        ),
       )
       .run {
         assertThat(it).doesNotHaveBean(io.sentry.graphql.SentryInstrumentation::class.java)
@@ -1030,6 +1137,44 @@ class SentryAutoConfigurationTest {
       .run {
         assertThat(it).doesNotHaveBean(io.sentry.graphql.SentryInstrumentation::class.java)
         assertThat(it).hasSingleBean(io.sentry.graphql22.SentryInstrumentation::class.java)
+      }
+  }
+
+  @Test
+  fun `does not monitor @Scheduled methods by default`() {
+    contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
+      assertThat(it).doesNotHaveBean("sentryScheduledCheckInAdvisor")
+    }
+  }
+
+  @Test
+  fun `monitors @Scheduled methods when monitor-scheduled-tasks is enabled`() {
+    baseContextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.monitor-scheduled-tasks=true",
+        "sentry.exclude-scheduled-tasks[0]=SentryAutoConfigurationTest.ScheduledJobs.excluded",
+      )
+      .withConfiguration(AutoConfigurations.of(AopAutoConfiguration::class.java))
+      .withUserConfiguration(
+        MockTransportConfiguration::class.java,
+        ScheduledJobsConfiguration::class.java,
+      )
+      .run {
+        assertThat(it).hasBean("sentryScheduledCheckInAdvisor")
+        val transport = it.getBean(ITransport::class.java)
+        val captor = argumentCaptor<SentryEnvelope>()
+        verify(transport, timeout(5000).times(2)).send(any(), anyOrNull())
+        verify(transport, after(500).times(2)).send(captor.capture(), anyOrNull())
+        val payloads =
+          captor.allValues.map { envelope -> String(envelope.items.first().data, Charsets.UTF_8) }
+        assertThat(payloads).allMatch { payload ->
+          payload.contains(
+            "\"monitor_slug\":\"sentry-auto-configuration-test-scheduled-jobs-sync\"",
+          )
+        }
+        assertThat(payloads[0]).contains("\"value\":1,\"unit\":\"hour\"")
+        assertThat(payloads[1]).contains("\"status\":\"ok\"")
       }
   }
 
@@ -1091,7 +1236,7 @@ class SentryAutoConfigurationTest {
         assertThat(it)
           .getBean(IProfileConverter::class.java)
           .isInstanceOf(
-            AsyncProfilerProfileConverterProvider.AsyncProfilerProfileConverter::class.java
+            AsyncProfilerProfileConverterProvider.AsyncProfilerProfileConverter::class.java,
           )
         assertThat(it)
           .getBean(IContinuousProfiler::class.java)
@@ -1277,6 +1422,18 @@ class SentryAutoConfigurationTest {
     }
 
     @Bean open fun sentryTransport() = transport
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @EnableScheduling
+  open class ScheduledJobsConfiguration {
+    @Bean open fun scheduledJobs() = ScheduledJobs()
+  }
+
+  open class ScheduledJobs {
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS) open fun sync() {}
+
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS) open fun excluded() {}
   }
 
   @Configuration(proxyBeanMethods = false)

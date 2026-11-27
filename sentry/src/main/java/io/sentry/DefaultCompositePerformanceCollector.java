@@ -169,7 +169,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
             SentryLevel.DEBUG,
             "stop collecting performance info for transactions %s (%s)",
             transaction.getName(),
-            transaction.getSpanContext().getTraceId().toString());
+            transaction.getSpanContext().getTraceId());
 
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
       collector.onSpanFinished(transaction);
@@ -181,7 +181,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   @Override
   public @Nullable List<PerformanceCollectionData> stop(final @NotNull String id) {
     final @Nullable CompositeData data = compositeDataMap.remove(id);
-    options.getLogger().log(SentryLevel.DEBUG, "stop collecting performance info for " + id);
+    options.getLogger().log(SentryLevel.DEBUG, "stop collecting performance info for %s", id);
 
     // close if there are no more running requests
     if (compositeDataMap.isEmpty()) {
@@ -213,14 +213,12 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private class CompositeData {
     private final @NotNull List<PerformanceCollectionData> dataList;
     private final @Nullable ITransaction transaction;
-    private final @NotNull Deadline collectUntil;
+    private final @NotNull Deadline timeout;
 
     private CompositeData(final @Nullable ITransaction transaction) {
       this.dataList = new ArrayList<>();
       this.transaction = transaction;
-      // On a ticker rather than the date provider: this is how long we have been collecting, and
-      // a device time change must not end a collection early or keep a finished one going.
-      this.collectUntil =
+      this.timeout =
           Deadline.after(
               options.getMonotonicTicker(),
               TRANSACTION_COLLECTION_TIMEOUT_MILLIS,
@@ -239,7 +237,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       synchronized (dataList) {
         dataList.add(data);
       }
-      return transaction != null && collectUntil.hasPassed();
+      return transaction != null && timeout.hasPassed();
     }
   }
 }

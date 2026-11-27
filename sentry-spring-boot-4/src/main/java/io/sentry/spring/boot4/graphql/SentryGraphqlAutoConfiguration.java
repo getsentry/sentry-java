@@ -56,7 +56,8 @@ public class SentryGraphqlAutoConfiguration {
         beforeSpanCallback.getIfAvailable(),
         new SentrySpringSubscriptionHandler(),
         captureRequestBody,
-        sentryProperties.getGraphql().getIgnoredErrorTypes());
+        sentryProperties.getGraphql().getIgnoredErrorTypes(),
+        sentryProperties.getGraphql().isEnableSpecificationErrorTypeFiltering());
   }
 
   @Bean

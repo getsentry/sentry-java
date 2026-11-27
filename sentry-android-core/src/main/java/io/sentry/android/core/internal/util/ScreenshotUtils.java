@@ -15,6 +15,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.thread.IThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -24,14 +25,12 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class ScreenshotUtils {
+public final class ScreenshotUtils {
 
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 
   // Used by Hybrid SDKs
-  /**
-   * @noinspection unused
-   */
+  @SuppressWarnings("unused")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull ILogger logger,
@@ -40,7 +39,10 @@ public class ScreenshotUtils {
   }
 
   // Used by Hybrid SDKs
-  @SuppressLint("NewApi")
+  // Lint infers a UI-thread constraint from the View calls in captureScreenshot, which clashes with
+  // Bitmap.compress's @WorkerThread. captureScreenshot is safe from any thread, as it posts the
+  // view draw to the UI thread when it isn't already on it.
+  @SuppressLint("ThreadConstraint")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IThreadChecker threadChecker,
@@ -58,8 +60,8 @@ public class ScreenshotUtils {
    * same way {@link io.sentry.android.core.ScreenshotEventProcessor} does for native errors.
    *
    * @see #captureMaskedScreenshot(Activity, SentryAndroidOptions, BuildInfoProvider, boolean)
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static @Nullable byte[] takeMaskedScreenshot(
       final @NotNull Activity activity,
       final @NotNull SentryAndroidOptions options,
@@ -201,16 +203,15 @@ public class ScreenshotUtils {
           view.draw(canvas);
           latch.countDown();
         } else {
-          activity.runOnUiThread(
-              () -> {
-                try {
-                  view.draw(canvas);
-                } catch (Throwable e) {
-                  logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
-                } finally {
-                  latch.countDown();
-                }
-              });
+          activity.runOnUiThread(() -> {
+            try {
+              view.draw(canvas);
+            } catch (Throwable e) {
+              logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
+            } finally {
+              latch.countDown();
+            }
+          });
         }
 
         if (!latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
@@ -251,6 +252,9 @@ public class ScreenshotUtils {
       // screenshot png is around ~100-150 kb
       return byteArrayOutputStream.toByteArray();
     } catch (Throwable e) {
+      // compress() runs the native image encoder, so we can't know what it throws. No screenshot is
+      // attached.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Compressing bitmap failed.", e);
     }
     return null;

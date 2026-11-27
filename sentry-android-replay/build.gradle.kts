@@ -1,6 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -8,8 +7,13 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric")
+  id("io.sentry.dependency-matrix")
 }
 
 android {
@@ -41,8 +45,6 @@ android {
 
   kotlin {
     compilerOptions.jvmTarget = JvmTarget.JVM_11
-    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
   }
 
   testOptions {
@@ -59,6 +61,10 @@ android {
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
+
+    // Lint 9.5 can't load the custom checks bundled with older androidx.lifecycle releases and
+    // reports that it skips them. They only cover lifecycle APIs this module doesn't call.
+    disable += "ObsoleteLintCustomCheck"
   }
 
   buildFeatures { buildConfig = true }
@@ -92,6 +98,28 @@ dependencies {
   testImplementation(libs.androidx.compose.foundation.layout)
   testImplementation(libs.androidx.compose.material3)
   testImplementation(libs.coil.compose)
+  testImplementation(libs.coil3.compose)
+}
+
+// Session Replay calls Compose internals, whose mangled JVM names change between Compose versions.
+// .github/workflows/replay-dependency-matrix.yml runs each version's task. The oldest entry pins
+// material3 and Coil 3 to versions that run on that Compose UI, because the catalog's need a newer
+// one.
+dependencyMatrix {
+  matrix(
+    name = "composeUi",
+    groups =
+      listOf(
+        "androidx.compose.ui",
+        "androidx.compose.foundation",
+        "androidx.compose.animation",
+        "androidx.compose.runtime",
+      ),
+    versionsFile = "compose-ui-versions.json",
+  )
+  // Compose image masking detects Coil's painter modifier by reflection, and Coil 3.1 changed it.
+  // Coil 2 is a different artifact and package, so it's covered by the default unit tests instead.
+  matrix(name = "coil3", groups = listOf("io.coil-kt.coil3"), versionsFile = "coil3-versions.json")
 }
 
 tasks.withType<Detekt>().configureEach {

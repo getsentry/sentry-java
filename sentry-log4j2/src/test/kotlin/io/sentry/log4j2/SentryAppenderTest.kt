@@ -109,7 +109,7 @@ class SentryAppenderTest {
             ILoggerBatchProcessorFactory { options, client ->
               LoggerBatchProcessor(options, client, ImmediateExecutorService())
             }
-        }
+        },
       )
       loggerContext.start()
 
@@ -281,7 +281,7 @@ class SentryAppenderTest {
       .send(
         checkLogs { logs ->
           assertEquals("this should be captured as a log", logs.items.first().body)
-        }
+        },
       )
   }
 
@@ -352,8 +352,8 @@ class SentryAppenderTest {
             null,
             null,
             null,
-          )
-        )
+          ),
+        ),
       )
 
     pluginDefaultAppender.append(event)
@@ -381,8 +381,8 @@ class SentryAppenderTest {
             null,
             null,
             null,
-          )
-        )
+          ),
+        ),
       )
     doNothing().whenever(appender).captureLog(event)
 
@@ -406,7 +406,7 @@ class SentryAppenderTest {
             "auto.log.log4j2",
             event.items.first().attributes?.get("sentry.origin")?.value,
           )
-        }
+        },
       )
   }
 
@@ -579,7 +579,7 @@ class SentryAppenderTest {
               it.packageSet.any { pkg ->
                 "maven:io.sentry:sentry-log4j2" == pkg.name &&
                   BuildConfig.VERSION_NAME == pkg.version
-              }
+              },
             )
             assertTrue(it.integrationSet.contains("Log4j"))
           }
@@ -695,7 +695,7 @@ class SentryAppenderTest {
           val log = logs.items.first()
           assertEquals("testing message without parameters", log.body)
           assertNull(log.attributes?.get("sentry.message.template"))
-        }
+        },
       )
   }
 
@@ -713,7 +713,25 @@ class SentryAppenderTest {
           assertEquals("testing message param", log.body)
           assertEquals("testing message {}", log.attributes?.get("sentry.message.template")?.value)
           assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
-        }
+        },
+      )
+  }
+
+  @Test
+  fun `does not format an already formatted log message again`() {
+    val logger = fixture.getSut(minimumLevel = Level.ERROR)
+    logger.error("q={}", "PO%2010B")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("q=PO%2010B", log.body)
+          assertEquals("q={}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("PO%2010B", log.attributes?.get("sentry.message.parameter.0")?.value)
+        },
       )
   }
 
@@ -736,7 +754,7 @@ class SentryAppenderTest {
           assertEquals("param1", log.attributes?.get("sentry.message.parameter.0")?.value)
           assertEquals("param2", log.attributes?.get("sentry.message.parameter.1")?.value)
           assertNull(log.attributes?.get("sentry.message.parameter.2"))
-        }
+        },
       )
   }
 
@@ -758,7 +776,7 @@ class SentryAppenderTest {
           val attributes = log.attributes!!
           assertEquals("someValue", attributes["mdc.someTag"]?.value)
           assertNull(attributes["otherTag"])
-        }
+        },
       )
   }
 }

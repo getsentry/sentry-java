@@ -1,8 +1,7 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update format checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check
 publish: clean dryRelease
 
 # deep clean
@@ -25,9 +24,17 @@ dryRelease:
 update:
 	./gradlew dependencyUpdates -Drevision=release
 
+# Spotless formats the code. The root spotlessApply doesn't reach the separate builds.
+format:
+	./gradlew spotlessApply
+	./gradlew -p sentry-samples spotlessApply
+	./gradlew -p sentry-android-integration-tests spotlessApply
+
 # Spotless check's code
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
+	./gradlew -p sentry-samples spotlessJavaCheck spotlessKotlinCheck
+	./gradlew -p sentry-android-integration-tests spotlessJavaCheck spotlessKotlinCheck
 
 # Binary compatibility validator
 api:
@@ -35,11 +42,11 @@ api:
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
+	./gradlew -p sentry-android-integration-tests :sentry-uitest-android:assembleRelease :sentry-uitest-android:assembleAndroidTest
 
 # Assemble release of the uitest-android-critical module
 assembleUiTestCriticalRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android-critical:assembleRelease
+	./gradlew -p sentry-android-integration-tests :sentry-uitest-android-critical:assembleRelease
 
 # Run Maestro tests for the uitest-android-critical module
 runUiTestCritical:
@@ -48,3 +55,7 @@ runUiTestCritical:
 # Run tests and lint
 check:
 	./gradlew check
+
+# CI's Build job. Spotless is skipped because the Format Code workflow already runs it.
+preMerge:
+	./gradlew check -x spotlessCheck

@@ -24,9 +24,8 @@ import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.SentryReplayDebug
 import io.sentry.android.replay.util.boundsInWindow
-import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextColor
-import io.sentry.android.replay.util.isMaskable
+import io.sentry.android.replay.util.isMaskableImage
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -228,8 +227,8 @@ internal object ComposeViewHierarchyNode {
         )
       }
       else -> {
-        val painter = node.findPainter()
-        if (painter != null) {
+        val isMaskableImage = node.isMaskableImage()
+        if (isMaskableImage != null) {
           val shouldMask = isVisible && semantics.shouldMask(isImage = true, options)
 
           parent?.setImportantForCaptureToAncestors(true)
@@ -243,7 +242,7 @@ internal object ComposeViewHierarchyNode {
             parent = parent,
             isVisible = isVisible,
             isImportantForContentCapture = true,
-            shouldMask = shouldMask && painter.isMaskable(),
+            shouldMask = shouldMask && isMaskableImage,
             visibleRect = visibleRect.toRect(),
           )
         } else {
@@ -285,7 +284,8 @@ internal object ComposeViewHierarchyNode {
     }
 
     try {
-      val rootNode = (view as? Owner)?.root ?: return false
+      val rootNode =
+        (view as? Owner)?.root ?: error("${view::class.java.name} is not a Compose Owner")
       rootNode.traverse(parent, isComposeRoot = true, options, logger)
     } catch (e: Throwable) {
       logger.log(
@@ -300,11 +300,28 @@ internal object ComposeViewHierarchyNode {
           .trimIndent(),
       )
       // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
-      // as crashes instead of silently skipping the whole Compose subtree (i.e. not masking it)
+      // as crashes instead of a fully masked Compose view
       if (SentryReplayDebug.failFast) {
         throw e
       }
-      return false
+      // We can't tell which parts of the Compose view are sensitive, so we mask all of it,
+      // regardless of the masking options
+      parent.children =
+        listOf(
+          GenericViewHierarchyNode(
+            x = parent.x,
+            y = parent.y,
+            width = parent.width,
+            height = parent.height,
+            elevation = parent.elevation,
+            distance = 0,
+            parent = parent,
+            shouldMask = true,
+            isImportantForContentCapture = true,
+            isVisible = parent.isVisible,
+            visibleRect = parent.visibleRect,
+          ),
+        )
     }
 
     return true

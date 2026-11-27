@@ -7,7 +7,11 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.spring.jakarta.Main") }
 
@@ -27,16 +31,16 @@ dependencyManagement {
 }
 
 dependencies {
-  implementation(Config.Libs.springWeb)
-  implementation(Config.Libs.springAop)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.springSecurityWeb)
-  implementation(Config.Libs.springSecurityConfig)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib))
-  implementation(projects.sentrySpringJakarta)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("org.springframework:spring-webmvc")
+  implementation("org.springframework:spring-aop")
+  implementation(libs.aspectjweaver)
+  implementation("org.springframework.security:spring-security-web")
+  implementation("org.springframework.security:spring-security-config")
+  implementation(libs.kotlin.reflect)
+  implementation(kotlin("stdlib-jdk8"))
+  implementation("io.sentry:sentry-spring-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.jackson.databind)
   implementation(libs.logback.classic)
   implementation(libs.servlet.jakarta.api)

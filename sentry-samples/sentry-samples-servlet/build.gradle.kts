@@ -1,4 +1,10 @@
-plugins { war }
+plugins {
+  war
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+}
+
+val sentryVersion = libs.versions.sentry.get()
 
 group = "io.sentry.sample.servlet"
 
@@ -9,8 +15,8 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 java.targetCompatibility = JavaVersion.VERSION_11
 
 dependencies {
-  implementation(projects.sentryServlet)
-  implementation("javax.servlet:javax.servlet-api:4.0.1")
+  implementation("io.sentry:sentry-servlet:$sentryVersion")
+  implementation(libs.servlet4.api)
 }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }

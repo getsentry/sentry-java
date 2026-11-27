@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 
 class MapObjectWriterTest {
   enum class BasicEnum {
-    A
+    A,
   }
 
   class BasicSerializable : JsonSerializable {

@@ -83,19 +83,28 @@ internal class ComposeTextLayout(internal val layout: TextLayoutResult) : TextLa
  *
  * That's not going to cover all cases, but probably 90%.
  *
+ * Returns null if the node has no such modifier, otherwise whether the image should be masked (see
+ * [isMaskable]). If the modifier has no readable `painter` member, e.g. Coil 3.1+ keeps the painter
+ * on its Modifier.Node instead, we can't tell what it draws, so we treat it as maskable. For Coil
+ * that's the same result as reading it: its painter is always the `AsyncImagePainter` wrapper,
+ * which [isMaskable] can't tell apart from a remote image.
+ *
  * We also add special proguard rules to keep the `Painter` class names and their `painter` member.
  */
-internal fun LayoutNode.findPainter(): Painter? {
+internal fun LayoutNode.isMaskableImage(): Boolean? {
   val modifierInfos = getModifierInfo()
   for (index in modifierInfos.indices) {
     val modifier = modifierInfos[index].modifier
     if (modifier::class.java.name.contains("Painter")) {
-      return try {
-        modifier::class.java.getDeclaredField("painter").apply { isAccessible = true }.get(modifier)
-          as? Painter
-      } catch (e: Throwable) {
-        null
-      }
+      // a lookup by name instead of getDeclaredField, which throws on every frame for Coil 3.1+
+      val painter =
+        modifier::class
+          .java
+          .declaredFields
+          .firstOrNull { it.name == "painter" }
+          ?.apply { isAccessible = true }
+          ?.get(modifier) as? Painter
+      return painter?.isMaskable() ?: true
     }
   }
   return null

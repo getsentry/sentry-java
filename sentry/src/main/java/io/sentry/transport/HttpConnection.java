@@ -7,6 +7,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryOptions;
+import io.sentry.util.ExceptionUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -157,6 +158,10 @@ final class HttpConnection {
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
       options.getSerializer().serialize(envelope, gzip);
     } catch (Throwable e) {
+      // Besides network failures, serializing runs the items' data factories, e.g. an
+      // attachment's byte provider, so we can't know what this throws. The server's response to
+      // the incomplete request still decides the result.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(

@@ -22,6 +22,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.util.AndroidLazyEvaluator;
 import io.sentry.protocol.App;
+import io.sentry.util.ExceptionUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -38,7 +39,7 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class ContextUtils {
 
-  static class SideLoadedInfo {
+  static final class SideLoadedInfo {
     private final boolean isSideLoaded;
     private final @Nullable String installerStore;
 
@@ -65,7 +66,7 @@ public final class ContextUtils {
     }
   }
 
-  static class SplitApksInfo {
+  static final class SplitApksInfo {
     // https://github.com/google/bundletool/blob/master/src/main/java/com/android/tools/build/bundletool/model/AndroidManifest.java#L257-L263
     static final String SPLITS_REQUIRED = "com.android.vending.splits.required";
 
@@ -81,7 +82,7 @@ public final class ContextUtils {
       return isSplitApks;
     }
 
-    public @Nullable String[] getSplitNames() {
+    public String @Nullable [] getSplitNames() {
       return splitNames;
     }
   }
@@ -98,45 +99,51 @@ public final class ContextUtils {
    */
   @SuppressLint("NewApi")
   private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo33 =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context
-                  .getPackageManager()
-                  .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context
+              .getPackageManager()
+              .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
+        } catch (Throwable e) {
+          // A Binder call into the package manager, which can rethrow any runtime exception from
+          // the other side. The package info is left out.
+          ExceptionUtils.rethrowIfFatal(e);
+          return null;
+        }
+      });
 
   private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+        } catch (Throwable e) {
+          // A Binder call into the package manager, which can rethrow any runtime exception from
+          // the other side. The package info is left out.
+          ExceptionUtils.rethrowIfFatal(e);
+          return null;
+        }
+      });
 
   private static final @NotNull AndroidLazyEvaluator<String> applicationName =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              final ApplicationInfo applicationInfo = context.getApplicationInfo();
-              final int stringId = applicationInfo.labelRes;
-              if (stringId == 0) {
-                if (applicationInfo.nonLocalizedLabel != null) {
-                  return applicationInfo.nonLocalizedLabel.toString();
-                }
-                return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
-              } else {
-                return context.getString(stringId);
-              }
-            } catch (Throwable e) {
-              return null;
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          final ApplicationInfo applicationInfo = context.getApplicationInfo();
+          final int stringId = applicationInfo.labelRes;
+          if (stringId == 0) {
+            if (applicationInfo.nonLocalizedLabel != null) {
+              return applicationInfo.nonLocalizedLabel.toString();
             }
-          });
+            return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
+          } else {
+            return context.getString(stringId);
+          }
+        } catch (Throwable e) {
+          // getApplicationLabel is a Binder call into the package manager, and the context may be
+          // the app's own subclass, so we can't know what this throws. The app name is left out.
+          ExceptionUtils.rethrowIfFatal(e);
+          return null;
+        }
+      });
 
   /**
    * Since this applicationInfo uses the same flag (METADATA) we can assume it's static and cache it
@@ -145,30 +152,34 @@ public final class ContextUtils {
    */
   @SuppressLint("NewApi")
   private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo33 =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context
-                  .getPackageManager()
-                  .getApplicationInfo(
-                      context.getPackageName(),
-                      PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA));
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context
+              .getPackageManager()
+              .getApplicationInfo(
+                  context.getPackageName(),
+                  PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA));
+        } catch (Throwable e) {
+          // A Binder call into the package manager, which can rethrow any runtime exception from
+          // the other side. The application info is left out.
+          ExceptionUtils.rethrowIfFatal(e);
+          return null;
+        }
+      });
 
   private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo =
-      new AndroidLazyEvaluator<>(
-          context -> {
-            try {
-              return context
-                  .getPackageManager()
-                  .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            } catch (Throwable e) {
-              return null;
-            }
-          });
+      new AndroidLazyEvaluator<>(context -> {
+        try {
+          return context
+              .getPackageManager()
+              .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+        } catch (Throwable e) {
+          // A Binder call into the package manager, which can rethrow any runtime exception from
+          // the other side. The application info is left out.
+          ExceptionUtils.rethrowIfFatal(e);
+          return null;
+        }
+      });
 
   /**
    * Return the Application's PackageInfo if possible, or null.
@@ -207,6 +218,9 @@ public final class ContextUtils {
         return context.getPackageManager().getPackageInfo(context.getPackageName(), flags);
       }
     } catch (Throwable e) {
+      // A Binder call into the package manager, which can rethrow any runtime exception from the
+      // other side. The package info is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Error getting package info.", e);
       return null;
     }
@@ -218,7 +232,6 @@ public final class ContextUtils {
    *
    * @return the Application's ApplicationInfo if possible, or throws
    */
-  @SuppressLint("NewApi")
   @Nullable
   @SuppressWarnings("deprecation")
   static ApplicationInfo getApplicationInfo(
@@ -275,8 +288,10 @@ public final class ContextUtils {
           new ActivityManager.RunningAppProcessInfo();
       ActivityManager.getMyMemoryState(appProcessInfo);
       return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
-    } catch (Throwable ignored) {
-      // should never happen
+    } catch (Throwable e) {
+      // A Binder call into the activity manager, which can rethrow any runtime exception from the
+      // other side. The process is treated as not in the foreground.
+      ExceptionUtils.rethrowIfFatal(e);
     }
     return false;
   }
@@ -305,7 +320,9 @@ public final class ContextUtils {
           }
         }
       } catch (Throwable t) {
-        // ignored
+        // getAppTasks is a Binder call into the activity manager, which can rethrow any runtime
+        // exception from the other side. The app is treated as not running a Compose Preview.
+        ExceptionUtils.rethrowIfFatal(t);
       }
     }
     return false;
@@ -404,6 +421,9 @@ public final class ContextUtils {
     try {
       return context.getResources().getDisplayMetrics();
     } catch (Throwable e) {
+      // The context may be the app's own subclass that overrides getResources(), so we can't know
+      // what it throws. The display metrics are left out.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Error getting DisplayMetrics.", e);
       return null;
     }
@@ -446,6 +466,9 @@ public final class ContextUtils {
       logger.log(SentryLevel.INFO, "Error getting MemoryInfo.");
       return null;
     } catch (Throwable e) {
+      // A Binder call into the activity manager, which can rethrow any runtime exception from the
+      // other side. The memory info is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
       return null;
     }
@@ -512,15 +535,12 @@ public final class ContextUtils {
     app.setPermissions(permissions);
 
     if (deviceInfoUtil != null) {
-      try {
-        final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.getSplitApksInfo();
-        if (splitApksInfo != null) {
-          app.setSplitApks(splitApksInfo.isSplitApks());
-          if (splitApksInfo.getSplitNames() != null) {
-            app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
-          }
+      final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.getSplitApksInfo();
+      if (splitApksInfo != null) {
+        app.setSplitApks(splitApksInfo.isSplitApks());
+        if (splitApksInfo.getSplitNames() != null) {
+          app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
         }
-      } catch (Throwable e) {
       }
     }
   }

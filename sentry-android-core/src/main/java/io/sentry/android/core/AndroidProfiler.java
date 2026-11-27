@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import android.annotation.SuppressLint;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
@@ -32,8 +31,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AndroidProfiler {
-  public static class ProfileStartData {
+public final class AndroidProfiler {
+  public static final class ProfileStartData {
     public final long startNanos;
     public final long startCpuMillis;
     public final @NotNull Date startTimestamp;
@@ -46,7 +45,7 @@ public class AndroidProfiler {
     }
   }
 
-  public static class ProfileEndData {
+  public static final class ProfileEndData {
     public final long endNanos;
     public final long endCpuMillis;
     public final @NotNull File traceFile;
@@ -97,7 +96,7 @@ public class AndroidProfiler {
       timeoutExecutorServiceSupplier;
   private final @NotNull ILogger logger;
   private volatile boolean isRunning = false;
-  protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public AndroidProfiler(
       final @NotNull String tracesFilesDirPath,
@@ -116,7 +115,6 @@ public class AndroidProfiler {
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
   }
 
-  @SuppressLint("NewApi")
   public @Nullable ProfileStartData start() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       // intervalUs is 0 only if there was a problem in the init
@@ -225,7 +223,6 @@ public class AndroidProfiler {
     }
   }
 
-  @SuppressLint("NewApi")
   public @Nullable ProfileEndData endAndCollect(
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
@@ -299,7 +296,6 @@ public class AndroidProfiler {
     }
   }
 
-  @SuppressLint("NewApi")
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
 

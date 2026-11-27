@@ -11,6 +11,9 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   alias(libs.plugins.springboot4) apply false
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -20,7 +23,6 @@ tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
     freeCompilerArgs.add("-Xjsr305=strict")
   }
 }
@@ -33,7 +35,7 @@ dependencies {
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
-  compileOnly(Config.Libs.aspectj)
+  compileOnly(libs.aspectjweaver)
   compileOnly(libs.context.propagation)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)

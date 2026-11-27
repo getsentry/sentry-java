@@ -5,6 +5,8 @@ plugins {
 dependencies {
   implementation(libs.animalsniffer.gradle.plugin)
   implementation(libs.spotlessLib)
+  implementation(libs.detektLib)
+  implementation(libs.vanniktechMavenPublishLib)
   implementation(libs.asm)
   compileOnly(libs.kotlin.gradle.plugin)
   compileOnly(libs.android.gradle.plugin)
@@ -16,6 +18,18 @@ gradlePlugin {
       id = "io.sentry.jdk-target"
       implementationClass = "io.sentry.gradle.JdkTargetConvention"
     }
+    register("sentryDetekt") {
+      id = "io.sentry.detekt"
+      implementationClass = "io.sentry.gradle.SentryDetektPlugin"
+    }
+    register("sentryPublish") {
+      id = "io.sentry.publish"
+      implementationClass = "io.sentry.gradle.SentryPublishPlugin"
+    }
+    register("sentryMultiplatformPublish") {
+      id = "io.sentry.publish.multiplatform"
+      implementationClass = "io.sentry.gradle.SentryMultiplatformPublishPlugin"
+    }
     register("sentryApiValidation") {
       id = "io.sentry.api-validation"
       implementationClass = "io.sentry.gradle.SentryApiValidationPlugin"
@@ -24,9 +38,21 @@ gradlePlugin {
       id = "io.sentry.animalsniffer.android"
       implementationClass = "io.sentry.gradle.SentryAnimalSnifferAndroidPlugin"
     }
+    register("sentryRobolectric") {
+      id = "io.sentry.robolectric"
+      implementationClass = "io.sentry.gradle.SentryRobolectricPlugin"
+    }
     register("sentrySpringBootMatrix") {
       id = "io.sentry.spring-boot-matrix"
       implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
+    }
+    register("sentryDependencyMatrix") {
+      id = "io.sentry.dependency-matrix"
+      implementationClass = "io.sentry.gradle.DependencyMatrixPlugin"
+    }
+    register("sentryOtelAgentTests") {
+      id = "io.sentry.otel-agent-tests"
+      implementationClass = "io.sentry.gradle.OtelAgentTestsPlugin"
     }
   }
 }

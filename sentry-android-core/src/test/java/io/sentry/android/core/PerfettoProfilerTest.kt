@@ -5,7 +5,9 @@ import android.os.ProfilingManager
 import android.os.ProfilingResult
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
+import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.internal.profiling.ChunkRecord
 import io.sentry.profiling.ProfileRecordingState
@@ -20,6 +22,7 @@ import java.util.function.Consumer
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -27,7 +30,9 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
@@ -106,6 +111,43 @@ class PerfettoProfilerTest {
   }
 
   @Test
+  fun `start returns null when ProfilingManager can't be loaded`() {
+    assertStartFailsWhenGetSystemServiceThrows(NoClassDefFoundError("android.os.ProfilingManager"))
+  }
+
+  @Test
+  fun `start returns null when ProfilingManager can't be initialized`() {
+    assertStartFailsWhenGetSystemServiceThrows(ExceptionInInitializerError())
+  }
+
+  @Test
+  fun `start returns null when getSystemService throws`() {
+    assertStartFailsWhenGetSystemServiceThrows(IllegalStateException())
+  }
+
+  @Test
+  fun `fatal errors from getSystemService are rethrown`() {
+    val error = OutOfMemoryError()
+    val context =
+      mock<Context>().also {
+        whenever(it.getSystemService(Context.PROFILING_SERVICE)).thenThrow(error)
+      }
+    val thrown =
+      assertFailsWith<OutOfMemoryError> { PerfettoProfiler(context, mockLogger, executor) }
+    assertThat(thrown).isSameInstanceAs(error)
+  }
+
+  private fun assertStartFailsWhenGetSystemServiceThrows(error: Throwable) {
+    val context =
+      mock<Context>().also {
+        whenever(it.getSystemService(Context.PROFILING_SERVICE)).thenThrow(error)
+      }
+    val profiler = PerfettoProfiler(context, mockLogger, executor)
+    assertThat(profiler.startSession()).isNull()
+    verify(mockLogger).log(eq(SentryLevel.WARNING), any<String>(), eq(error))
+  }
+
+  @Test
   fun `endAndCollect calls listener with null when never started`() {
     val profiler = getSut()
     val result = AtomicReference<File?>(File("sentinel"))
@@ -151,7 +193,7 @@ class PerfettoProfilerTest {
     val result = AtomicReference<File?>(File("sentinel"))
 
     capturedCallback.accept(
-      mockResult(errorCode = ProfilingResult.ERROR_UNKNOWN, errorMessage = "unknown error")
+      mockResult(errorCode = ProfilingResult.ERROR_UNKNOWN, errorMessage = "unknown error"),
     )
     profiler.endAndCollect { result.set(it) }
 

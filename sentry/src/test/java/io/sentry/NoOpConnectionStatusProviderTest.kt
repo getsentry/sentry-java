@@ -23,7 +23,7 @@ class NoOpConnectionStatusProviderTest {
   fun `adding a listener is a no-op and returns false`() {
     val result =
       provider.addConnectionStatusObserver(
-        mock<IConnectionStatusProvider.IConnectionStatusObserver>()
+        mock<IConnectionStatusProvider.IConnectionStatusObserver>(),
       )
     assertFalse(result)
   }
@@ -31,7 +31,7 @@ class NoOpConnectionStatusProviderTest {
   @Test
   fun `removing a listener is a no-op`() {
     provider.addConnectionStatusObserver(
-      mock<IConnectionStatusProvider.IConnectionStatusObserver>()
+      mock<IConnectionStatusProvider.IConnectionStatusObserver>(),
     )
   }
 }

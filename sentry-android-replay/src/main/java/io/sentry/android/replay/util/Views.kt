@@ -1,7 +1,6 @@
 package io.sentry.android.replay.util
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
@@ -105,8 +104,6 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
   return false to null
 }
 
-@SuppressLint("ObsoleteSdkInt", "UseRequiresApi")
-@TargetApi(21)
 internal fun Drawable?.isMaskable(): Boolean {
   // TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from
   // network

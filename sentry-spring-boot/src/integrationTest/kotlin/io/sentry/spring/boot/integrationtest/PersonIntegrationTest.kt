@@ -2,6 +2,7 @@ package io.sentry.spring.boot.integrationtest
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Sentry
+import io.sentry.SpanDataConvention
 import io.sentry.protocol.FeatureFlag
 import io.sentry.test.event
 import io.sentry.test.hasFlag
@@ -45,18 +46,22 @@ class PersonIntegrationTest : IntegrationTest() {
           } == true
         }
         .transaction()!!
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+      .isEqualTo("server")
+    assertThat(transaction.contexts.trace!!.data)
+      .doesNotContainKey(SpanDataConvention.HTTP_STATUS_CODE_KEY)
     assertThat(
         transaction.hasOp(
           "http.server",
           FeatureFlag("flag.evaluation.transaction-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(
         transaction.hasSpanWithOp(
           "spanCreatedThroughSentryApi",
           FeatureFlag("flag.evaluation.my-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
 
@@ -83,14 +88,29 @@ class PersonIntegrationTest : IntegrationTest() {
 
     val transaction =
       server.awaitEnvelope { it.transaction()?.transaction == "POST /person/" }.transaction()!!
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+      .isEqualTo("server")
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+      .isEqualTo(200)
     assertThat(transaction.hasSpanWithOp("PersonService.create")).isTrue()
     assertThat(
         transaction.hasSpanWithOpAndDescription(
           "db.query",
           "insert into person (firstName, lastName) values (?, ?)",
-        )
+        ),
       )
       .isTrue()
+  }
+
+  @Test
+  fun `default not found response does not send a transaction`() {
+    val path = "/missing-ignored-status"
+
+    val response = restTemplate.getForEntity(path, String::class.java)
+
+    assertThat(response.statusCode.value()).isEqualTo(404)
+    Sentry.flush(5000)
+    server.assertNoEnvelope { it.transaction()?.request?.url?.endsWith(path) == true }
   }
 
   @Test

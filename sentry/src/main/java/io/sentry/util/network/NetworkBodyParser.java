@@ -34,6 +34,21 @@ public final class NetworkBodyParser {
    * @param logger Optional logger
    * @return A NetworkBody or null if bytes are null/empty
    */
+  public static @Nullable NetworkBody fromBytes(
+      @Nullable final byte[] bytes,
+      @Nullable final String contentType,
+      @Nullable final String charset,
+      final int maxSizeBytes,
+      @NotNull final ILogger logger) {
+    return fromBytes(bytes, contentType, charset, maxSizeBytes, false, logger);
+  }
+
+  /**
+   * Like {@link #fromBytes(byte[], String, String, int, ILogger)}, for bytes that may be only a
+   * prefix of the body, e.g. because the stream broke or was closed before it ended.
+   *
+   * @param isPartial whether the bytes are known to be a prefix of the body
+   */
   // temp fix for JDK 21: The charset is a name from the Content-Type header; unsupported names are
   // handled below.
   @SuppressWarnings("JdkObsolete")
@@ -42,13 +57,14 @@ public final class NetworkBodyParser {
       @Nullable final String contentType,
       @Nullable final String charset,
       final int maxSizeBytes,
+      final boolean isPartial,
       @NotNull final ILogger logger) {
 
     if (bytes == null || bytes.length == 0) {
       return null;
     }
 
-    final boolean isTruncated = bytes.length > maxSizeBytes;
+    final boolean isTruncated = isPartial || bytes.length > maxSizeBytes;
     final long originalByteCount = bytes.length;
 
     if (contentType != null && isBinaryContentType(contentType)) {

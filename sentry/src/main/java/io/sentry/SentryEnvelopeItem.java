@@ -8,6 +8,7 @@ import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.profiling.SentryProfile;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -17,6 +18,7 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -85,16 +87,14 @@ public final class SentryEnvelopeItem {
     Objects.requireNonNull(session, "Session is required.");
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(session, writer);
-                return stream.toByteArray();
-              }
-            });
+        new CachedItem(() -> {
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(session, writer);
+            return stream.toByteArray();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -121,16 +121,14 @@ public final class SentryEnvelopeItem {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(event, writer);
-                return stream.toByteArray();
-              }
-            });
+        new CachedItem(() -> {
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(event, writer);
+            return stream.toByteArray();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -182,16 +180,14 @@ public final class SentryEnvelopeItem {
     Objects.requireNonNull(checkIn, "CheckIn is required.");
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(checkIn, writer);
-                return stream.toByteArray();
-              }
-            });
+        new CachedItem(() -> {
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(checkIn, writer);
+            return stream.toByteArray();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -209,40 +205,37 @@ public final class SentryEnvelopeItem {
       final long maxAttachmentSize) {
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              if (attachment.getBytes() != null) {
-                final byte[] data = attachment.getBytes();
-                ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
-                return data;
-              } else if (attachment.getSerializable() != null) {
-                final JsonSerializable serializable = attachment.getSerializable();
-                @SuppressWarnings("NullableProblems")
-                final @Nullable byte[] data =
-                    JsonSerializationUtils.bytesFrom(serializer, logger, serializable);
+        new CachedItem(() -> {
+          if (attachment.getBytes() != null) {
+            final byte[] data = attachment.getBytes();
+            ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
+            return data;
+          } else if (attachment.getSerializable() != null) {
+            final JsonSerializable serializable = attachment.getSerializable();
+            @SuppressWarnings("NullableProblems")
+            final @Nullable byte[] data =
+                JsonSerializationUtils.bytesFrom(serializer, logger, serializable);
 
-                if (data != null) {
-                  ensureAttachmentSizeLimit(
-                      data.length, maxAttachmentSize, attachment.getFilename());
-                  return data;
-                }
-              } else if (attachment.getPathname() != null) {
-                return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);
-              } else if (attachment.getByteProvider() != null) {
-                @SuppressWarnings("NullableProblems")
-                final @Nullable byte[] data = attachment.getByteProvider().call();
-                if (data != null) {
-                  ensureAttachmentSizeLimit(
-                      data.length, maxAttachmentSize, attachment.getFilename());
-                  return data;
-                }
-              }
-              throw new SentryEnvelopeException(
-                  String.format(
-                      "Couldn't attach the attachment %s.\n"
-                          + "Please check that either bytes, serializable, path or provider is set.",
-                      attachment.getFilename()));
-            });
+            if (data != null) {
+              ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
+              return data;
+            }
+          } else if (attachment.getPathname() != null) {
+            return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);
+          } else if (attachment.getByteProvider() != null) {
+            @SuppressWarnings("NullableProblems")
+            final @Nullable byte[] data = attachment.getByteProvider().call();
+            if (data != null) {
+              ensureAttachmentSizeLimit(data.length, maxAttachmentSize, attachment.getFilename());
+              return data;
+            }
+          }
+          throw new SentryEnvelopeException(
+              String.format(
+                  "Couldn't attach the attachment %s.\n"
+                      + "Please check that either bytes, serializable, path or provider is set.",
+                  attachment.getFilename()));
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -287,59 +280,56 @@ public final class SentryEnvelopeItem {
     final @Nullable File traceFile = profileChunk.getTraceFile();
     // Using CachedItem, so we read the trace file in the background
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              if (traceFile != null) {
-                if (!traceFile.exists()) {
-                  throw new SentryEnvelopeException(
-                      String.format(
-                          "Dropping profile chunk, because the file '%s' doesn't exists",
-                          traceFile.getName()));
-                }
+        new CachedItem(() -> {
+          if (traceFile != null) {
+            if (!traceFile.exists()) {
+              throw new SentryEnvelopeException(
+                  String.format(
+                      "Dropping profile chunk, because the file '%s' doesn't exists",
+                      traceFile.getName()));
+            }
 
-                if (ProfileChunk.PLATFORM_JAVA.equals(profileChunk.getPlatform())) {
-                  if (!NoOpProfileConverter.getInstance().equals(profileConverter)) {
-                    try {
-                      final SentryProfile profile =
-                          profileConverter.convertFromFile(traceFile.getAbsolutePath());
-                      profileChunk.setSentryProfile(profile);
-                    } catch (Exception e) {
-                      throw new SentryEnvelopeException("Profile conversion failed", e);
-                    }
-                  } else {
-                    throw new SentryEnvelopeException(
-                        "No ProfileConverter available, dropping chunk.");
-                  }
-                } else {
-                  // The payload of the profile item is a json including the trace file encoded with
-                  // base64
-                  final byte[] traceFileBytes =
-                      readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
-                  final @NotNull String base64Trace =
-                      Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
-                  if (base64Trace.isEmpty()) {
-                    throw new SentryEnvelopeException("Profiling trace file is empty");
-                  }
-                  profileChunk.setSampledProfile(base64Trace);
+            if (ProfileChunk.PLATFORM_JAVA.equals(profileChunk.getPlatform())) {
+              if (!NoOpProfileConverter.getInstance().equals(profileConverter)) {
+                try {
+                  final SentryProfile profile =
+                      profileConverter.convertFromFile(traceFile.getAbsolutePath());
+                  profileChunk.setSentryProfile(profile);
+                } catch (Exception e) {
+                  throw new SentryEnvelopeException("Profile conversion failed", e);
                 }
+              } else {
+                throw new SentryEnvelopeException("No ProfileConverter available, dropping chunk.");
               }
+            } else {
+              // The payload of the profile item is a json including the trace file encoded with
+              // base64
+              final byte[] traceFileBytes =
+                  readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+              final @NotNull String base64Trace =
+                  Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+              if (base64Trace.isEmpty()) {
+                throw new SentryEnvelopeException("Profiling trace file is empty");
+              }
+              profileChunk.setSampledProfile(base64Trace);
+            }
+          }
 
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(profileChunk, writer);
-                return stream.toByteArray();
-              } catch (IOException e) {
-                throw new SentryEnvelopeException(
-                    String.format("Failed to serialize profile chunk\n%s", e.getMessage()));
-              } finally {
-                // In any case we delete the trace file
-                if (traceFile != null) {
-                  traceFile.delete();
-                }
-              }
-            });
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(profileChunk, writer);
+            return stream.toByteArray();
+          } catch (IOException e) {
+            throw new SentryEnvelopeException(
+                String.format("Failed to serialize profile chunk\n%s", e.getMessage()));
+          } finally {
+            // In any case we delete the trace file
+            if (traceFile != null) {
+              traceFile.delete();
+            }
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -376,40 +366,30 @@ public final class SentryEnvelopeItem {
     final AtomicReference<Integer> metaLength = new AtomicReference<>(null);
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              // Serialize JSON metadata
-              final byte[] metadataBytes;
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
-                serializer.serialize(profileChunk, writer);
-                writer.flush();
-                metadataBytes = stream.toByteArray();
-                metaLength.set(metadataBytes.length);
-              } catch (IOException e) {
-                throw new SentryEnvelopeException(
-                    String.format(
-                        "Failed to serialize perfetto profile chunk\n%s", e.getMessage()));
-              }
+        new CachedItem(() -> {
+          // Serialize JSON metadata
+          final byte[] metadataBytes;
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+            serializer.serialize(profileChunk, writer);
+            writer.flush();
+            metadataBytes = stream.toByteArray();
+            metaLength.set(metadataBytes.length);
+          } catch (IOException e) {
+            throw new SentryEnvelopeException(
+                String.format("Failed to serialize perfetto profile chunk\n%s", e.getMessage()));
+          }
 
-              // Read binary Perfetto trace
-              final byte[] traceBytes;
-              try {
-                traceBytes = readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
-              } catch (IOException e) {
-                throw new SentryEnvelopeException(
-                    String.format("Failed to read perfetto trace file\n%s", e.getMessage()));
-              } finally {
-                traceFile.delete();
-              }
-
-              // Concatenate: [JSON metadata bytes][raw .pftrace binary bytes]
-              final byte[] payload = new byte[metadataBytes.length + traceBytes.length];
-              System.arraycopy(metadataBytes, 0, payload, 0, metadataBytes.length);
-              System.arraycopy(traceBytes, 0, payload, metadataBytes.length, traceBytes.length);
-
-              return payload;
-            });
+          // [JSON metadata bytes][raw .pftrace binary bytes]
+          try {
+            return readFileAfterPrefix(metadataBytes, traceFile, MAX_PROFILE_CHUNK_SIZE);
+          } catch (IOException e) {
+            throw new SentryEnvelopeException(
+                String.format("Failed to read perfetto trace file\n%s", e.getMessage()));
+          } finally {
+            traceFile.delete();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -429,6 +409,47 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
+  /**
+   * Reads {@code file} into a new array that starts with {@code prefix}. The file is read straight
+   * into its place in the result, so a large trace is held in memory once instead of being copied
+   * through intermediate buffers.
+   */
+  private static byte[] readFileAfterPrefix(
+      final byte[] prefix, final @NotNull File file, final long maxFileLength) throws IOException {
+    if (!file.isFile() || !file.canRead()) {
+      throw new IOException(
+          String.format("Reading file '%s' failed, because it's not a readable file.", file));
+    }
+    final long fileLength = file.length();
+    if (fileLength > maxFileLength) {
+      throw new IOException(
+          String.format(
+              "Reading file failed, because size located at '%s' with %d bytes is bigger "
+                  + "than the maximum allowed size of %d bytes.",
+              file, fileLength, maxFileLength));
+    }
+
+    final byte[] result = new byte[prefix.length + (int) fileLength];
+    System.arraycopy(prefix, 0, result, 0, prefix.length);
+    try (final FileInputStream input = new FileInputStream(file)) {
+      int offset = prefix.length;
+      while (offset < result.length) {
+        final int read = input.read(result, offset, result.length - offset);
+        if (read == -1) {
+          throw new IOException(
+              String.format(
+                  "Reading file '%s' failed, because it got shorter while reading.", file));
+        }
+        offset += read;
+      }
+      if (input.read() != -1) {
+        throw new IOException(
+            String.format("Reading file '%s' failed, because it got longer while reading.", file));
+      }
+    }
+    return result;
+  }
+
   public static @NotNull SentryEnvelopeItem fromProfilingTrace(
       final @NotNull ProfilingTraceData profilingTraceData,
       final long maxTraceFileSize,
@@ -438,40 +459,37 @@ public final class SentryEnvelopeItem {
     final @NotNull File traceFile = profilingTraceData.getTraceFile();
     // Using CachedItem, so we read the trace file in the background
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              if (!traceFile.exists()) {
-                throw new SentryEnvelopeException(
-                    String.format(
-                        "Dropping profiling trace data, because the file '%s' doesn't exists",
-                        traceFile.getName()));
-              }
-              // The payload of the profile item is a json including the trace file encoded with
-              // base64
-              final byte[] traceFileBytes =
-                  readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
-              final @NotNull String base64Trace =
-                  Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
-              if (base64Trace.isEmpty()) {
-                throw new SentryEnvelopeException("Profiling trace file is empty");
-              }
-              profilingTraceData.setSampledProfile(base64Trace);
-              profilingTraceData.readDeviceCpuFrequencies();
+        new CachedItem(() -> {
+          if (!traceFile.exists()) {
+            throw new SentryEnvelopeException(
+                String.format(
+                    "Dropping profiling trace data, because the file '%s' doesn't exists",
+                    traceFile.getName()));
+          }
+          // The payload of the profile item is a json including the trace file encoded with
+          // base64
+          final byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
+          final @NotNull String base64Trace =
+              Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+          if (base64Trace.isEmpty()) {
+            throw new SentryEnvelopeException("Profiling trace file is empty");
+          }
+          profilingTraceData.setSampledProfile(base64Trace);
+          profilingTraceData.readDeviceCpuFrequencies();
 
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(profilingTraceData, writer);
-                return stream.toByteArray();
-              } catch (IOException e) {
-                throw new SentryEnvelopeException(
-                    String.format("Failed to serialize profiling trace data\n%s", e.getMessage()));
-              } finally {
-                // In any case we delete the trace file
-                traceFile.delete();
-              }
-            });
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(profilingTraceData, writer);
+            return stream.toByteArray();
+          } catch (IOException e) {
+            throw new SentryEnvelopeException(
+                String.format("Failed to serialize profiling trace data\n%s", e.getMessage()));
+          } finally {
+            // In any case we delete the trace file
+            traceFile.delete();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -492,16 +510,14 @@ public final class SentryEnvelopeItem {
     Objects.requireNonNull(clientReport, "ClientReport is required.");
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(clientReport, writer);
-                return stream.toByteArray();
-              }
-            });
+        new CachedItem(() -> {
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(clientReport, writer);
+            return stream.toByteArray();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -536,53 +552,55 @@ public final class SentryEnvelopeItem {
     final File replayVideo = replayEvent.getVideoFile();
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try {
-                try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    final Writer writer =
-                        new BufferedWriter(
-                            new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                  // relay expects the payload to be in this exact order: [event,rrweb,video]
-                  final Map<String, byte[]> replayPayload = new LinkedHashMap<>();
-                  // first serialize replay event json bytes
-                  serializer.serialize(replayEvent, writer);
-                  replayPayload.put(SentryItemType.ReplayEvent.getItemType(), stream.toByteArray());
-                  stream.reset();
+        new CachedItem(() -> {
+          try {
+            try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                final Writer writer =
+                    new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+              // relay expects the payload to be in this exact order: [event,rrweb,video]
+              final Map<String, byte[]> replayPayload = new LinkedHashMap<>();
+              // first serialize replay event json bytes
+              serializer.serialize(replayEvent, writer);
+              replayPayload.put(SentryItemType.ReplayEvent.getItemType(), stream.toByteArray());
+              stream.reset();
 
-                  // next serialize replay recording
-                  if (replayRecording != null) {
-                    serializer.serialize(replayRecording, writer);
-                    replayPayload.put(
-                        SentryItemType.ReplayRecording.getItemType(), stream.toByteArray());
-                    stream.reset();
-                  }
+              // next serialize replay recording
+              if (replayRecording != null) {
+                serializer.serialize(replayRecording, writer);
+                replayPayload.put(
+                    SentryItemType.ReplayRecording.getItemType(), stream.toByteArray());
+                stream.reset();
+              }
 
-                  // next serialize replay video bytes from given file
-                  if (replayVideo != null && replayVideo.exists()) {
-                    final byte[] videoBytes =
-                        readBytesFromFile(
-                            replayVideo.getPath(), SentryReplayEvent.REPLAY_VIDEO_MAX_SIZE);
-                    if (videoBytes.length > 0) {
-                      replayPayload.put(SentryItemType.ReplayVideo.getItemType(), videoBytes);
-                    }
-                  }
-
-                  return serializeToMsgpack(replayPayload);
-                }
-              } catch (Throwable t) {
-                logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
-                return null;
-              } finally {
-                if (replayVideo != null) {
-                  if (cleanupReplayFolder) {
-                    FileUtils.deleteRecursively(replayVideo.getParentFile());
-                  } else {
-                    replayVideo.delete();
-                  }
+              // next serialize replay video bytes from given file
+              if (replayVideo != null && replayVideo.exists()) {
+                final byte[] videoBytes =
+                    readBytesFromFile(
+                        replayVideo.getPath(), SentryReplayEvent.REPLAY_VIDEO_MAX_SIZE);
+                if (videoBytes.length > 0) {
+                  replayPayload.put(SentryItemType.ReplayVideo.getItemType(), videoBytes);
                 }
               }
-            });
+
+              return serializeToMsgpack(replayPayload);
+            }
+          } catch (Throwable t) {
+            // The recording holds data from integrations and the app, such as breadcrumb data and
+            // network details, that is serialized reflectively, so we can't know what this throws.
+            // The item is sent with an empty payload, so the replay segment is lost.
+            ExceptionUtils.rethrowIfFatal(t);
+            logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
+            return null;
+          } finally {
+            if (replayVideo != null) {
+              if (cleanupReplayFolder) {
+                FileUtils.deleteRecursively(replayVideo.getParentFile());
+              } else {
+                replayVideo.delete();
+              }
+            }
+          }
+        });
 
     final SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -599,16 +617,14 @@ public final class SentryEnvelopeItem {
     Objects.requireNonNull(logEvents, "SentryLogEvents is required.");
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(logEvents, writer);
-                return stream.toByteArray();
-              }
-            });
+        new CachedItem(() -> {
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(logEvents, writer);
+            return stream.toByteArray();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
@@ -631,16 +647,14 @@ public final class SentryEnvelopeItem {
     Objects.requireNonNull(metricsEvents, "SentryMetricsEvents is required.");
 
     final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(metricsEvents, writer);
-                return stream.toByteArray();
-              }
-            });
+        new CachedItem(() -> {
+          try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+              final Writer writer =
+                  new BufferedWriter(new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
+            serializer.serialize(metricsEvents, writer);
+            return stream.toByteArray();
+          }
+        });
 
     SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(

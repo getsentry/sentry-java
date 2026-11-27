@@ -15,10 +15,6 @@
     <ID>SwallowedException:DistributionIntegration.kt$DistributionIntegration$e: android.content.ActivityNotFoundException</ID>
     <ID>TooGenericExceptionCaught:DistributionIntegration.kt$DistributionIntegration$e: Exception</ID>
     <ID>TooGenericExceptionCaught:UpdateResponseParser.kt$UpdateResponseParser$e: Exception</ID>
-    <ID>UseCheckOrError:DistributionHttpClient.kt$DistributionHttpClient$throw IllegalStateException( "Missing required distribution configuration: orgSlug, projectSlug, or orgAuthToken" )</ID>
-    <ID>UseCheckOrError:DistributionHttpClient.kt$DistributionHttpClient$throw IllegalStateException("sentryClientName must be set")</ID>
-    <ID>UseCheckOrError:DistributionIntegration.kt$DistributionIntegration$throw IllegalStateException("buildConfiguration must be set in distribution options")</ID>
-    <ID>UseRequire:UpdateResponseParser.kt$UpdateResponseParser$throw IllegalArgumentException( "Missing required fields in API response: ${missingFields.joinToString(", ")}" )</ID>
     <ID>WildcardImport:DistributionHttpClientTest.kt$import org.junit.Assert.*</ID>
   </CurrentIssues>
 </SmellBaseline>

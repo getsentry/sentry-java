@@ -19,7 +19,7 @@ class SentryServletContainerInitializerTest {
       .addListener(
         check { it: Class<out EventListener> ->
           assertEquals(SentryServletRequestListener::class.java, it)
-        }
+        },
       )
   }
 }

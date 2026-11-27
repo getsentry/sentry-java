@@ -92,29 +92,26 @@ public final class SentryFileOutputStream extends FileOutputStream {
 
   @Override
   public void write(final int b) throws IOException {
-    spanManager.performIO(
-        () -> {
-          delegate.write(b);
-          return 1;
-        });
+    spanManager.performIO(() -> {
+      delegate.write(b);
+      return 1;
+    });
   }
 
   @Override
   public void write(final byte @NotNull [] b) throws IOException {
-    spanManager.performIO(
-        () -> {
-          delegate.write(b);
-          return b.length;
-        });
+    spanManager.performIO(() -> {
+      delegate.write(b);
+      return b.length;
+    });
   }
 
   @Override
   public void write(final byte @NotNull [] b, final int off, final int len) throws IOException {
-    spanManager.performIO(
-        () -> {
-          delegate.write(b, off, len);
-          return len;
-        });
+    spanManager.performIO(() -> {
+      delegate.write(b, off, len);
+      return len;
+    });
   }
 
   @Override

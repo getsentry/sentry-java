@@ -33,8 +33,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
-import io.sentry.transport.CurrentDateProvider;
-import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.ByteArrayInputStream;
@@ -49,24 +48,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class TombstoneIntegration implements Integration, Closeable {
+public final class TombstoneIntegration implements Integration, Closeable {
   private final @NotNull Context context;
-  private final @NotNull ICurrentDateProvider dateProvider;
   private @Nullable SentryAndroidOptions options;
 
   public TombstoneIntegration(final @NotNull Context context) {
-    // using CurrentDateProvider instead of AndroidCurrentDateProvider as AppExitInfo uses
-    // System.currentTimeMillis
-    this(context, CurrentDateProvider.getInstance());
-  }
-
-  TombstoneIntegration(
-      final @NotNull Context context, final @NotNull ICurrentDateProvider dateProvider) {
     this.context = ContextUtils.getApplicationContext(context);
-    this.dateProvider = dateProvider;
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(
@@ -96,7 +87,6 @@ public class TombstoneIntegration implements Integration, Closeable {
                     context,
                     scopes,
                     this.options,
-                    dateProvider,
                     new TombstonePolicy(this.options, this.context)));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start tombstone processor.", e);
@@ -114,7 +104,7 @@ public class TombstoneIntegration implements Integration, Closeable {
   }
 
   @ApiStatus.Internal
-  public static class TombstonePolicy implements ApplicationExitInfoPolicy {
+  public static final class TombstonePolicy implements ApplicationExitInfoPolicy {
 
     private final @NotNull SentryAndroidOptions options;
     private final @NotNull NativeEventCollector nativeEventCollector;
@@ -188,6 +178,10 @@ public class TombstoneIntegration implements Integration, Closeable {
           }
         }
       } catch (Throwable e) {
+        // getTraceInputStream() is a Binder call into system_server, and the tombstone was written
+        // by debuggerd for a crashing process, so we can't know what reading and parsing it
+        // throws. This tombstone is not reported.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -217,6 +211,10 @@ public class TombstoneIntegration implements Integration, Closeable {
           event = mergedEvent;
         }
       } catch (Throwable e) {
+        // The native events were written by sentry-native while the process was crashing, so we
+        // can't know what parsing and merging them throws. The tombstone is reported without
+        // them.
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(
@@ -289,7 +287,7 @@ public class TombstoneIntegration implements Integration, Closeable {
       }
     }
 
-    private void mergeNativeCrashes(
+    public static void mergeNativeCrashes(
         final @NotNull SentryEvent nativeEvent, final @NotNull SentryEvent tombstoneEvent) {
       // we take the event data verbatim from the Native SDK and only apply tombstone data where we
       // are sure that it will improve the outcome:

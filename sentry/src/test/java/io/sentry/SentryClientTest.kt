@@ -89,6 +89,7 @@ class SentryClientTest {
     var loggerBatchProcessorFactory = mock<ILoggerBatchProcessorFactory>()
     var metricsBatchProcessor = mock<IMetricsBatchProcessor>()
     var metricsBatchProcessorFactory = mock<IMetricsBatchProcessorFactory>()
+    val logger = mock<ILogger>()
     val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
     val scopes = mock<IScopes>()
     val sentryTracer: SentryTracer
@@ -102,13 +103,12 @@ class SentryClientTest {
         isDebug = true
         setDiagnosticLevel(SentryLevel.DEBUG)
         setSerializer(JsonSerializer(this))
-        setLogger(mock())
+        setLogger(this@Fixture.logger)
         maxAttachmentSize = this@Fixture.maxAttachmentSize
         setTransportFactory(factory)
         logs.setLoggerBatchProcessorFactory(loggerBatchProcessorFactory)
         metrics.setMetricsBatchProcessorFactory(metricsBatchProcessorFactory)
         release = "0.0.1"
-        isTraceSampling = true
       }
 
     init {
@@ -462,7 +462,7 @@ class SentryClientTest {
     scope.addEventProcessor(
       object : EventProcessor {
         override fun process(event: SentryLogEvent): SentryLogEvent? = null
-      }
+      },
     )
 
     val sut = fixture.getSut()
@@ -625,7 +625,7 @@ class SentryClientTest {
     scope.addEventProcessor(
       object : EventProcessor {
         override fun process(event: SentryMetricsEvent, hint: Hint): SentryMetricsEvent? = null
-      }
+      },
     )
 
     val sut = fixture.getSut()
@@ -1384,6 +1384,170 @@ class SentryClientTest {
   }
 
   @Test
+  fun `server transaction with default ignored HTTP status is dropped before callbacks`() {
+    val processor = mock<EventProcessor>()
+    val beforeSend = mock<SentryOptions.BeforeSendTransactionCallback>()
+    val replayController = mock<ReplayController>()
+    fixture.sentryOptions.addEventProcessor(processor)
+    fixture.sentryOptions.beforeSendTransaction = beforeSend
+    fixture.sentryOptions.setReplayController(replayController)
+    val transaction = createServerTransaction(404)
+
+    val eventId =
+      fixture
+        .getSut()
+        .captureTransaction(
+          transaction,
+          fixture.sentryTracer.traceContext(),
+          null,
+          null,
+          fixture.profilingTraceData,
+        )
+
+    assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(fixture.profilingTraceFile.exists()).isFalse()
+    verify(processor, never()).process(any<SentryTransaction>(), anyOrNull())
+    verify(beforeSend, never()).execute(any(), anyOrNull())
+    verifyNoInteractions(replayController)
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2),
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Profile.category, 1),
+      ),
+    )
+  }
+
+  @Test
+  fun `default HTTP status filter drops the default ranges`() {
+    val sut = fixture.getSut()
+
+    listOf(301, 305, 399, 401, 404).forEach {
+      val eventId =
+        sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+      assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    }
+
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter retains statuses outside the default ranges`() {
+    val sut = fixture.getSut()
+
+    listOf(200, 300, 302, 303, 304, 400, 405).forEach {
+      sut.captureTransaction(createServerTransaction(it), fixture.sentryTracer.traceContext())
+    }
+
+    verify(fixture.transport, times(7)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `custom HTTP status range replaces default and accepts OTel long value`() {
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(500, 599)))
+    val sut = fixture.getSut()
+
+    val ignoredEventId =
+      sut.captureTransaction(createServerTransaction(503L), fixture.sentryTracer.traceContext())
+    val retainedEventId =
+      sut.captureTransaction(createServerTransaction(404), fixture.sentryTracer.traceContext())
+
+    assertThat(ignoredEventId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(retainedEventId).isNotEqualTo(SentryId.EMPTY_ID)
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `HTTP status filter is disabled for an empty configuration`() {
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(emptyList())
+
+    fixture
+      .getSut()
+      .captureTransaction(createServerTransaction(404), fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter only applies to server transactions`() {
+    val clientTransaction = createServerTransaction(404)
+    clientTransaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "client"
+    val missingKindTransaction = createServerTransaction(404)
+    missingKindTransaction.contexts.trace!!.data.remove(SpanDataConvention.SENTRY_KIND_KEY)
+    val sut = fixture.getSut()
+
+    sut.captureTransaction(clientTransaction, fixture.sentryTracer.traceContext())
+    sut.captureTransaction(missingKindTransaction, fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport, times(2)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter ignores missing and invalid root status values`() {
+    val invalidStatusValues = listOf("404", 404.0, 404.5f, 99, 600, Long.MAX_VALUE)
+    val sut = fixture.getSut()
+
+    invalidStatusValues.forEach { statusCode ->
+      sut.captureTransaction(
+        createServerTransaction(statusCode),
+        fixture.sentryTracer.traceContext(),
+      )
+    }
+    val missingStatusTransaction = createServerTransaction(200)
+    missingStatusTransaction.contexts.trace!!.data.remove(SpanDataConvention.HTTP_STATUS_CODE_KEY)
+    sut.captureTransaction(missingStatusTransaction, fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport, times(invalidStatusValues.size + 1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `default HTTP status filter does not read child span attributes`() {
+    val tracer =
+      SentryTracer(
+        TransactionContext("child-status-transaction", "op", TracesSamplingDecision(true)),
+        fixture.scopes,
+      )
+    tracer.startChild("child").apply {
+      setData(SpanDataConvention.SENTRY_KIND_KEY, "server")
+      setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, 404)
+      finish()
+    }
+    val transaction = SentryTransaction(tracer)
+
+    fixture.getSut().captureTransaction(transaction, tracer.traceContext())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `profiling trace deletion failure for default ignored transaction is logged`() {
+    val traceFile = mock<File>()
+    whenever(traceFile.delete()).thenReturn(false)
+    whenever(traceFile.path).thenReturn("undeletable.trace")
+    val profilingTraceData = ProfilingTraceData(traceFile, fixture.sentryTracer)
+
+    fixture
+      .getSut()
+      .captureTransaction(
+        createServerTransaction(404),
+        fixture.sentryTracer.traceContext(),
+        null,
+        null,
+        profilingTraceData,
+      )
+
+    verify(traceFile).delete()
+    verify(fixture.logger)
+      .log(
+        SentryLevel.WARNING,
+        "Failed to delete profiling trace file %s for an ignored transaction",
+        "undeletable.trace",
+      )
+  }
+
+  @Test
   fun `backfillable events are only wired through backfilling processors`() {
     val backfillingProcessor = mock<BackfillingEventProcessor>()
     val nonBackfillingProcessor = mock<EventProcessor>()
@@ -1525,7 +1689,7 @@ class SentryClientTest {
           transaction.spans.removeIf { it.description != "span2" }
           return transaction
         }
-      }
+      },
     )
 
     fixture.getSut().captureTransaction(transaction, scope, null)
@@ -2185,7 +2349,7 @@ class SentryClientTest {
           assertEquals(1, images.size)
           assertEquals(DebugImage.PROGUARD, images[0].type)
           assertEquals("current-uuid", images[0].uuid)
-        }
+        },
       )
   }
 
@@ -2199,7 +2363,7 @@ class SentryClientTest {
             DebugImage().apply {
               type = DebugImage.PROGUARD
               uuid = "previous-uuid"
-            }
+            },
           )
       }
 
@@ -2215,7 +2379,7 @@ class SentryClientTest {
           assertEquals(1, images.size)
           assertEquals(DebugImage.PROGUARD, images[0].type)
           assertEquals("previous-uuid", images[0].uuid)
-        }
+        },
       )
   }
 
@@ -2466,7 +2630,7 @@ class SentryClientTest {
         }
 
         override fun registerSegmentName(segmentName: String) {}
-      }
+      },
     )
     val sut = fixture.getSut()
     val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
@@ -2483,7 +2647,7 @@ class SentryClientTest {
         override fun registerSegmentName(segmentName: String) {
           registeredSegmentName = segmentName
         }
-      }
+      },
     )
     val sut = fixture.getSut()
     val sentryTracer =
@@ -3060,7 +3224,7 @@ class SentryClientTest {
           override fun process(transaction: SentryTransaction, hint: Hint): SentryTransaction? {
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3084,7 +3248,7 @@ class SentryClientTest {
           override fun process(transaction: SentryTransaction, hint: Hint): SentryTransaction? {
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3149,7 +3313,7 @@ class SentryClientTest {
             hint.addAttachment(fixture.attachment3)
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3183,7 +3347,7 @@ class SentryClientTest {
             hint.replaceAttachments(listOf(fixture.attachment3))
             return transaction
           }
-        }
+        },
       )
     }
 
@@ -3762,7 +3926,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3779,7 +3943,7 @@ class SentryClientTest {
           terminated = isTerminating
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3787,7 +3951,7 @@ class SentryClientTest {
       SentryEvent().apply {
         exceptions =
           listOf(SentryException().apply { mechanism = Mechanism().apply { isHandled = false } })
-      }
+      },
     )
     assertTrue(terminated == true)
   }
@@ -3798,7 +3962,7 @@ class SentryClientTest {
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
         override fun captureReplay(isTerminating: Boolean?): SentryId = replayId
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3859,7 +4023,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3882,7 +4046,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3923,7 +4087,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
       SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
@@ -3944,7 +4108,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
       SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
@@ -3965,7 +4129,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -3992,7 +4156,7 @@ class SentryClientTest {
         SentryEvent().apply {
           exceptions =
             listOf(
-              SentryException().apply { mechanism = Mechanism().apply { isHandled = handled } }
+              SentryException().apply { mechanism = Mechanism().apply { isHandled = handled } },
             )
         }
       }
@@ -4055,7 +4219,7 @@ class SentryClientTest {
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
         override fun captureReplay(isTerminating: Boolean?): SentryId = SentryId.EMPTY_ID
-      }
+      },
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
       SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
@@ -4081,7 +4245,7 @@ class SentryClientTest {
           called = true
           return SentryId.EMPTY_ID
         }
-      }
+      },
     )
     val sut = fixture.getSut()
 
@@ -4360,7 +4524,7 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1)
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1),
       ),
     )
 
@@ -4379,7 +4543,7 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1)
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1),
       ),
     )
 
@@ -4408,7 +4572,7 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1)
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1),
       ),
     )
     verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Feedback, 1)
@@ -4519,7 +4683,7 @@ class SentryClientTest {
 
       val bytesTooBig = ByteArray((fixture.maxAttachmentSize + 1).toInt()) { 0 }
       addAttachment(
-        Attachment(bytesTooBig, "will_get_dropped.txt", "application/octet-stream", true)
+        Attachment(bytesTooBig, "will_get_dropped.txt", "application/octet-stream", true),
       )
     }
   }
@@ -4533,6 +4697,13 @@ class SentryClientTest {
       transaction = "eventTransaction"
       level = SentryLevel.DEBUG
       user = User().apply { id = "eventId" }
+    }
+  }
+
+  private fun createServerTransaction(statusCode: Any): SentryTransaction {
+    return SentryTransaction(fixture.sentryTracer).apply {
+      contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "server"
+      contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY] = statusCode
     }
   }
 
@@ -4623,7 +4794,7 @@ class SentryClientTest {
           val attachmentItemTooBig = attachmentItems.last()
           assertFailsWith<SentryEnvelopeException>(
             "Getting data from attachment should" +
-              "throw an exception, because the attachment is too big."
+              "throw an exception, because the attachment is too big.",
           ) {
             attachmentItemTooBig.data
           }
@@ -4655,7 +4826,7 @@ class SentryClientTest {
           val profilingTraceItem =
             actual.items.firstOrNull { item -> item.header.type == SentryItemType.ProfileChunk }
           assertNotNull(profilingTraceItem?.data)
-        }
+        },
       )
   }
 

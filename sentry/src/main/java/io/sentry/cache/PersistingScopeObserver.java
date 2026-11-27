@@ -16,6 +16,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LazyEvaluator;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -65,66 +66,68 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   private @NotNull SentryOptions options;
   private final @NotNull LazyEvaluator<ObjectQueue<Breadcrumb>> breadcrumbsQueue =
-      new LazyEvaluator<>(
-          () -> {
-            final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
-            if (cacheDir == null) {
-              options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
-              return ObjectQueue.createEmpty();
-            }
+      new LazyEvaluator<>(() -> {
+        final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
+        if (cacheDir == null) {
+          options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
+          return ObjectQueue.createEmpty();
+        }
 
-            QueueFile queueFile = null;
-            final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
-            try {
-              try {
-                queueFile =
-                    new QueueFile.Builder(file)
-                        .size(options.getMaxBreadcrumbs())
-                        .synchronousWrites(false)
-                        .build();
-              } catch (IOException e) {
-                // if file is corrupted we simply delete it and try to create it again. We accept
-                // the trade
-                // off of losing breadcrumbs for ANRs that happened right before the app has
-                // received an
-                // update where the new format was introduced
-                file.delete();
+        QueueFile queueFile = null;
+        final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
+        try {
+          try {
+            queueFile =
+                new QueueFile.Builder(file)
+                    .size(options.getMaxBreadcrumbs())
+                    .synchronousWrites(false)
+                    .build();
+          } catch (IOException e) {
+            // if file is corrupted we simply delete it and try to create it again. We accept
+            // the trade
+            // off of losing breadcrumbs for ANRs that happened right before the app has
+            // received an
+            // update where the new format was introduced
+            file.delete();
 
-                queueFile =
-                    new QueueFile.Builder(file)
-                        .size(options.getMaxBreadcrumbs())
-                        .synchronousWrites(false)
-                        .build();
+            queueFile =
+                new QueueFile.Builder(file)
+                    .size(options.getMaxBreadcrumbs())
+                    .synchronousWrites(false)
+                    .build();
+          }
+        } catch (IOException e) {
+          options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
+          return ObjectQueue.createEmpty();
+        }
+        return ObjectQueue.create(
+            queueFile,
+            new ObjectQueue.Converter<Breadcrumb>() {
+              @Override
+              @Nullable
+              public Breadcrumb from(byte[] source) {
+                try (final Reader reader =
+                    new BufferedReader(
+                        new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
+                  return options.getSerializer().deserialize(reader, Breadcrumb.class);
+                } catch (Throwable e) {
+                  // The queue file was written by an earlier launch and may be corrupt, so we
+                  // can't know what deserializing it throws. The breadcrumb is skipped.
+                  ExceptionUtils.rethrowIfFatal(e);
+                  options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
+                }
+                return null;
               }
-            } catch (IOException e) {
-              options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
-              return ObjectQueue.createEmpty();
-            }
-            return ObjectQueue.create(
-                queueFile,
-                new ObjectQueue.Converter<Breadcrumb>() {
-                  @Override
-                  @Nullable
-                  public Breadcrumb from(byte[] source) {
-                    try (final Reader reader =
-                        new BufferedReader(
-                            new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
-                      return options.getSerializer().deserialize(reader, Breadcrumb.class);
-                    } catch (Throwable e) {
-                      options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
-                    }
-                    return null;
-                  }
 
-                  @Override
-                  public void toStream(Breadcrumb value, OutputStream sink) throws IOException {
-                    try (final Writer writer =
-                        new BufferedWriter(new OutputStreamWriter(sink, UTF_8))) {
-                      options.getSerializer().serialize(value, writer);
-                    }
-                  }
-                });
-          });
+              @Override
+              public void toStream(Breadcrumb value, OutputStream sink) throws IOException {
+                try (final Writer writer =
+                    new BufferedWriter(new OutputStreamWriter(sink, UTF_8))) {
+                  options.getSerializer().serialize(value, writer);
+                }
+              }
+            });
+      });
 
   // Latest pending value per file (or DELETE_MARKER), coalesced until the next flush.
   private final @NotNull Map<String, Object> pendingWrites = new ConcurrentHashMap<>();
@@ -325,6 +328,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     try {
       task.run();
     } catch (Throwable e) {
+      // The task serializes scope values, which can hold arbitrary app objects, so we can't know
+      // what it throws. The changes it had not written yet are not persisted.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(ERROR, "Serialization task failed", e);
     }
   }

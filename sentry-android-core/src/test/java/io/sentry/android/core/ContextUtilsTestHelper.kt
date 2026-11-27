@@ -23,7 +23,10 @@ object ContextUtilsTestHelper {
     whenever(mockContext.packageName).thenReturn("io.sentry.sample.test")
     whenever(mockContext.packageManager).thenReturn(mockPackageManager)
     whenever(
-        mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA)
+        mockPackageManager.getApplicationInfo(
+          mockContext.packageName,
+          PackageManager.GET_META_DATA,
+        ),
       )
       .thenReturn(mockApplicationInfo)
 

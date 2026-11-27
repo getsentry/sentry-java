@@ -42,16 +42,15 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class JavaContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 10000;
-  private final List<String> invalidFilenameChars =
-      Arrays.asList(
-          ".", ",", ":", ";", "|", "\\", "=", "%", "&", "[", "]", "(", ")", "<", ">", "{", "}", "!",
-          "*", "?", "~", "\"", "'", "$", "`", "^");
+  // async-profiler splits its arguments on "," and expands "%" patterns in the file name.
+  private final List<String> invalidFilenameChars = Arrays.asList(",", "%");
 
   private final @NotNull ILogger logger;
   private final @Nullable String profilingTracesDirPath;
   private final int profilingTracesHz;
   private final @NotNull ISentryExecutorService executorService;
   private boolean isInitialized = false;
+  private boolean hasValidOptions = false;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
   private @Nullable Future<?> stopFuture;
@@ -92,7 +91,7 @@ public final class JavaContinuousProfiler
 
   private boolean init() {
     if (isInitialized) {
-      return true;
+      return hasValidOptions;
     }
     isInitialized = true;
 
@@ -107,6 +106,7 @@ public final class JavaContinuousProfiler
           profilingTracesHz);
       return false;
     }
+    hasValidOptions = true;
     return true;
   }
 
@@ -400,23 +400,22 @@ public final class JavaContinuousProfiler
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                // SDK is closed, we don't send the chunks
-                if (isClosed.get()) {
-                  return;
-                }
-                final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
-                try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
-                  for (ProfileChunk.Builder builder : payloadBuilders) {
-                    payloads.add(builder.build(options));
-                  }
-                  payloadBuilders.clear();
-                }
-                for (ProfileChunk payload : payloads) {
-                  scopes.captureProfileChunk(payload);
-                }
-              });
+          .submit(() -> {
+            // SDK is closed, we don't send the chunks
+            if (isClosed.get()) {
+              return;
+            }
+            final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
+            try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
+              for (ProfileChunk.Builder builder : payloadBuilders) {
+                payloads.add(builder.build(options));
+              }
+              payloadBuilders.clear();
+            }
+            for (ProfileChunk payload : payloads) {
+              scopes.captureProfileChunk(payload);
+            }
+          });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
     }

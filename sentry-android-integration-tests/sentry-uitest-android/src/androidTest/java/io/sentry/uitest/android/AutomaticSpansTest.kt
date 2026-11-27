@@ -41,6 +41,7 @@ class AutomaticSpansTest : BaseUiTest() {
     activity.moveToState(Lifecycle.State.DESTROYED)
 
     relay.assert {
+      assertAppStartTransaction()
       assertFirstEnvelope {
         val transactionItem: SentryTransaction = it.assertTransaction()
         assertTrue("TTID span missing") {
@@ -70,9 +71,9 @@ class AutomaticSpansTest : BaseUiTest() {
 
     relay.assert {
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "ProfilingSampleActivity"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
+          "ProfilingSampleActivity"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           it.assertNoOtherItems()
@@ -89,6 +90,7 @@ class AutomaticSpansTest : BaseUiTest() {
             "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.",
           )
         }
+      assertAppStartTransaction()
       assertNoOtherEnvelopes()
     }
   }

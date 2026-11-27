@@ -50,8 +50,8 @@ class SentryLogsSerializationTest {
                   "custom.integer" to SentryLogEventAttributeValue("integer", 10),
                 )
               it.severityNumber = 10
-            }
-        )
+            },
+        ),
       )
   }
 

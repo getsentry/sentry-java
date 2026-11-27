@@ -18,7 +18,6 @@ import static io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.USER_FILENAME;
 import static io.sentry.protocol.Contexts.REPLAY_ID;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -40,6 +39,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
 import io.sentry.android.core.anr.AggregatedStackTrace;
+import io.sentry.android.core.anr.AnrCulpritEventHelper;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
 import io.sentry.android.core.anr.AnrProfile;
 import io.sentry.android.core.anr.AnrProfileManager;
@@ -48,7 +48,6 @@ import io.sentry.android.core.anr.StackTraceConverter;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
-import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.NativeCrashExit;
@@ -64,12 +63,12 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.protocol.profiling.SentryProfile;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.SentryRandom;
 import java.io.File;
@@ -100,6 +99,7 @@ public final class ApplicationExitInfoEventProcessor
   private final @NotNull BuildInfoProvider buildInfoProvider;
 
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
+  private final @NotNull AnrCulpritEventHelper culpritEventHelper;
 
   private final @Nullable PersistingScopeObserver persistingScopeObserver;
 
@@ -121,6 +121,7 @@ public final class ApplicationExitInfoEventProcessor
         new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
+    culpritEventHelper = new AnrCulpritEventHelper(sentryExceptionFactory);
   }
 
   private @Nullable HintEnricher findEnricher(final @NotNull Object hint) {
@@ -243,6 +244,7 @@ public final class ApplicationExitInfoEventProcessor
     return true;
   }
 
+  @SuppressWarnings("JavaUtilDate")
   private void setReplayId(
       final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
@@ -447,6 +449,9 @@ public final class ApplicationExitInfoEventProcessor
         }
       }
     } catch (Throwable e) {
+      // The first DeviceInfoUtil.getInstance call queries the package manager over Binder, which
+      // can rethrow any runtime exception from the other side. The split APK info is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
     }
 
@@ -716,6 +721,9 @@ public final class ApplicationExitInfoEventProcessor
         }
       }
     } catch (Throwable e) {
+      // The first DeviceInfoUtil.getInstance call queries the package manager over Binder, which
+      // can rethrow any runtime exception from the other side. The side-loaded tags are left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
     }
   }
@@ -728,7 +736,6 @@ public final class ApplicationExitInfoEventProcessor
 
   // only use static data that does not change between app launches (e.g. timezone, boottime,
   // battery level will change)
-  @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();
     device.setManufacturer(Build.MANUFACTURER);
@@ -858,7 +865,8 @@ public final class ApplicationExitInfoEventProcessor
         return;
       }
 
-      if (options.isEnableAnrFingerprinting() && hasOnlySystemFrames(event)) {
+      if (options.isEnableAnrFingerprinting()
+          && AnrCulpritEventHelper.hasOnlySystemFrames(event.getExceptions())) {
         // If the stacktrace only contains system frames, we want to statically group these events
         // to avoid ANR noise due to {{ default }} stacktrace grouping
         event.setFingerprints(
@@ -933,6 +941,7 @@ public final class ApplicationExitInfoEventProcessor
           sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
     }
 
+    @SuppressWarnings("JavaUtilDate")
     private void applyAnrProfile(
         @NotNull SentryEvent event,
         @NotNull Backfillable hint,
@@ -975,6 +984,9 @@ public final class ApplicationExitInfoEventProcessor
           options.getLogger().log(SentryLevel.DEBUG, "No ANR profile file found");
         }
       } catch (Throwable t) {
+        // The profile file was written by the previous process, possibly while it was being
+        // killed, so we can't know how reading it fails. The ANR is sent without a profile.
+        ExceptionUtils.rethrowIfFatal(t);
         options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile", t);
       } finally {
         if (!AnrProfileRotationHelper.deleteLastFile(cacheDir)) {
@@ -1000,28 +1012,17 @@ public final class ApplicationExitInfoEventProcessor
       // Capture profile chunk
       final @Nullable SentryId profilerId =
           captureAnrProfile(anrTimestamp, anrProfile, optionsSource);
-      final @NotNull StackTraceElement[] stack = culprit.getStack();
+      final Mechanism mechanism = new Mechanism();
+      mechanism.setType("ANR");
+      final @Nullable List<SentryException> sentryExceptions =
+          culpritEventHelper.toSentryExceptions(culprit, mechanism);
 
-      if (stack.length > 0) {
-        final StackTraceElement stackTraceElement = stack[0];
-        final String message =
-            stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName();
-        final ApplicationNotResponding exception = new ApplicationNotResponding(message);
-        exception.setStackTrace(stack);
-
-        final Mechanism mechanism = new Mechanism();
-        mechanism.setType("ANR");
-        final ExceptionMechanismException error =
-            new ExceptionMechanismException(mechanism, exception, null, false);
-
-        final @NotNull List<SentryException> sentryException =
-            sentryExceptionFactory.getSentryExceptions(error);
-
+      if (sentryExceptions != null) {
         // Replace the original ANR exception with the profile-derived one,
         // as we assume the profiling culprit identification is more valuable
         // the event threads are kept as-is, so the original main thread stacktrace is still
         // available
-        event.setExceptions(sentryException);
+        event.setExceptions(sentryExceptions);
 
         if (profilerId != null) {
           event.getContexts().setProfile(new ProfileContext(profilerId));
@@ -1053,32 +1054,6 @@ public final class ApplicationExitInfoEventProcessor
       } else {
         return chunk.getProfilerId();
       }
-    }
-
-    private boolean hasOnlySystemFrames(@NotNull SentryEvent event) {
-      final List<SentryException> exceptions = event.getExceptions();
-      if (exceptions == null || exceptions.isEmpty()) {
-        return false;
-      }
-
-      for (final SentryException exception : exceptions) {
-        final SentryStackTrace stacktrace = exception.getStacktrace();
-        if (stacktrace != null) {
-          final List<SentryStackFrame> frames = stacktrace.getFrames();
-          if (frames != null && !frames.isEmpty()) {
-            for (final SentryStackFrame frame : frames) {
-              if (frame.isInApp() != null && frame.isInApp()) {
-                return false;
-              }
-              final String module = frame.getModule();
-              if (module != null && !AnrCulpritIdentifier.isSystemFrame(module)) {
-                return false;
-              }
-            }
-          }
-        }
-      }
-      return true;
     }
 
     /**

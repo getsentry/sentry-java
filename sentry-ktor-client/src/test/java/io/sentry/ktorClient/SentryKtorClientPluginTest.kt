@@ -23,8 +23,10 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.ScopeType
 import io.sentry.Sentry
+import io.sentry.SentryDateProvider
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -78,7 +80,7 @@ class SentryKtorClientPluginTest {
       failedRequestTargets: List<String> = listOf(".*"),
       failedRequestStatusCodes: List<HttpStatusCodeRange> =
         listOf(
-          HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
+          HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX),
         ),
       sendDefaultPii: Boolean = false,
       optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
@@ -118,7 +120,7 @@ class SentryKtorClientPluginTest {
           .addHeader("myResponseHeader", "myValue")
           .addHeader("Set-Cookie", "theme=dark; Path=/")
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       return HttpClient(httpClientEngine) {
@@ -150,6 +152,27 @@ class SentryKtorClientPluginTest {
           assertEquals(fixture.server.url("/hello").toString(), it.getData("url"))
           assertEquals(13L, it.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY))
           assertNotNull(it.getData(SpanDataConvention.HTTP_START_TIMESTAMP))
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `breadcrumb timestamps are epoch milliseconds`(): Unit = runBlocking {
+    val epochMillis = 1_700_000_000_123L
+    val sut =
+      fixture.getSut(
+        optionsConfiguration = { options ->
+          options.dateProvider = SentryDateProvider { SentryNanotimeDate(epochMillis, 0) }
+        },
+      )
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> {
+          assertThat(it.getData(SpanDataConvention.HTTP_START_TIMESTAMP)).isEqualTo(epochMillis)
+          assertThat(it.getData(SpanDataConvention.HTTP_END_TIMESTAMP)).isEqualTo(epochMillis)
         },
         anyOrNull(),
       )
@@ -457,7 +480,7 @@ class SentryKtorClientPluginTest {
           beforeSpan = { span, _ ->
             span.spanContext.sampled = false
             error("callback failed")
-          }
+          },
         )
       fixture.sentryTracer.spanContext.sampled = sampled
       fixture.options.onDiscard = onDiscard
@@ -481,7 +504,7 @@ class SentryKtorClientPluginTest {
         beforeSpan = { span, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
     fixture.options.isDebug = true
     fixture.options.setLogger(logger)
@@ -536,7 +559,7 @@ class SentryKtorClientPluginTest {
         beforeSpan = { span, _ ->
           span.description = "changed"
           span
-        }
+        },
       )
     sut.use { sut.get(fixture.server.url("/hello").toString()) }
     val span = fixture.sentryTracer.children.single()
@@ -579,7 +602,7 @@ class SentryKtorClientPluginTest {
         optionsConfiguration =
           Sentry.OptionsConfiguration {
             it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.denyList("token")
-          }
+          },
       )
     sut.get(fixture.server.url("/hello?name=value&token=secret").toString())
 
@@ -595,7 +618,7 @@ class SentryKtorClientPluginTest {
         optionsConfiguration =
           Sentry.OptionsConfiguration {
             it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.off()
-          }
+          },
       )
     sut.get(fixture.server.url("/hello?name=value").toString())
 
@@ -733,8 +756,8 @@ class SentryKtorClientPluginTest {
         "thirdPartyBaggage=someValue," +
           "secondThirdPartyBaggage=secondValue; " +
           "property;propertyKey=propertyValue," +
-          "anotherThirdPartyBaggage=anotherValue"
-      )
+          "anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))

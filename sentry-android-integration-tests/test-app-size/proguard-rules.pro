@@ -40,6 +40,7 @@
 -dontwarn timber.log.Timber$Tree
 -dontwarn kotlin.Deprecated
 -dontwarn kotlin.Function
+-dontwarn kotlin.jvm.JvmField
 -dontwarn kotlin.jvm.JvmStatic
 -dontwarn kotlin.jvm.functions.Function2
 -dontwarn kotlin.jvm.functions.Function3
@@ -47,5 +48,7 @@
 -dontwarn kotlin.math.MathKt
 -dontwarn okhttp3.EventListener
 -dontwarn okhttp3.Interceptor
+-dontwarn okhttp3.ResponseBody
+-dontwarn okio.ForwardingSource
 # Assume all classes are used to not strip them out, e.g. integrations like Compose or Sqlite
 -keep class io.sentry.**

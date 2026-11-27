@@ -34,7 +34,7 @@ class MetricsIntegrationTest : IntegrationTest() {
       .isEqualTo("distribution metric tracked")
 
     assertThat(
-        awaitMetric("distributionMetric").hasMetric("distributionMetric", "distribution", 23.0)
+        awaitMetric("distributionMetric").hasMetric("distributionMetric", "distribution", 23.0),
       )
       .isTrue()
   }

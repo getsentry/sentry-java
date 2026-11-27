@@ -85,7 +85,7 @@ class ReplaySmokeTest {
         Callback {
           it.callback?.run()
           true
-        }
+        },
       )
 
     private val recordingThread = Executors.newSingleThreadScheduledExecutor()

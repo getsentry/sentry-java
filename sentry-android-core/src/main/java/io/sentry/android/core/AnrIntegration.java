@@ -47,8 +47,7 @@ public final class AnrIntegration implements Integration, Closeable {
 
   private @Nullable SentryOptions options;
 
-  protected static final @NotNull AutoClosableReentrantLock watchDogLock =
-      new AutoClosableReentrantLock();
+  static final @NotNull AutoClosableReentrantLock watchDogLock = new AutoClosableReentrantLock();
 
   @Override
   public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
@@ -56,6 +55,7 @@ public final class AnrIntegration implements Integration, Closeable {
     register(scopes, (SentryAndroidOptions) options);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void register(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
     options
@@ -67,14 +67,13 @@ public final class AnrIntegration implements Integration, Closeable {
       try {
         options
             .getExecutorService()
-            .submit(
-                () -> {
-                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
-                    if (!isClosed) {
-                      startAnrWatchdog(scopes, options);
-                    }
-                  }
-                });
+            .submit(() -> {
+              try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
+                if (!isClosed) {
+                  startAnrWatchdog(scopes, options);
+                }
+              }
+            });
       } catch (Throwable e) {
         options
             .getLogger()
@@ -95,13 +94,7 @@ public final class AnrIntegration implements Integration, Closeable {
                 options.getAnrTimeoutIntervalMillis());
 
         anrWatchDog =
-            new ANRWatchDog(
-                options.getAnrTimeoutIntervalMillis(),
-                options.isAnrReportInDebug(),
-                error -> reportANR(scopes, options, error),
-                options.getLogger(),
-                context,
-                options.getDebugManager());
+            ANRWatchDog.create(options, error -> reportANR(scopes, options, error), context);
         anrWatchDog.start();
 
         options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");

@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
  * OnDrawListener that unregisters itself and invokes callback when the next draw is done. This API
  * 16+ implementation is an approximation of the initial-display-time defined by Android Vitals.
  */
-public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
+public final class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final @NotNull Handler mainThreadHandler = new Handler(Looper.getMainLooper());
   private final @NotNull AtomicReference<View> viewReference;
   private final @NotNull Runnable callback;
@@ -111,13 +111,12 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     }
     // OnDrawListeners cannot be removed within onDraw. Posting the removal instead of waiting for
     // the next global layout guarantees it happens, even if no layout pass follows the draw.
-    mainThreadHandler.post(
-        () -> {
-          final ViewTreeObserver observer = view.getViewTreeObserver();
-          if (observer.isAlive()) {
-            observer.removeOnDrawListener(this);
-          }
-        });
+    mainThreadHandler.post(() -> {
+      final ViewTreeObserver observer = view.getViewTreeObserver();
+      if (observer.isAlive()) {
+        observer.removeOnDrawListener(this);
+      }
+    });
     mainThreadHandler.postAtFrontOfQueue(callback);
   }
 

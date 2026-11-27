@@ -204,7 +204,7 @@ class LifecycleWatcherTest {
           assertEquals("navigation", it.type)
           assertEquals(SentryLevel.INFO, it.level)
           // cant assert data, its not a public API
-        }
+        },
       )
   }
 
@@ -227,7 +227,7 @@ class LifecycleWatcherTest {
           assertEquals("navigation", it.type)
           assertEquals(SentryLevel.INFO, it.level)
           // cant assert data, its not a public API
-        }
+        },
       )
   }
 

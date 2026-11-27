@@ -13,6 +13,7 @@ import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.profiling.ChunkRecord;
 import io.sentry.profiling.ProfileRecordingState;
+import io.sentry.util.ExceptionUtils;
 import java.io.File;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
@@ -28,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-public class PerfettoProfiler {
+public final class PerfettoProfiler {
 
   // Bundle keys matching ProfilingManager constants
   private static final String KEY_DURATION_MS = "KEY_DURATION_MS";
@@ -56,15 +57,11 @@ public class PerfettoProfiler {
 
   private volatile @Nullable ChunkRecord chunkRecord = null;
 
-  @SuppressLint("WrongConstant")
   public PerfettoProfiler(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull ISentryExecutorService executorService) {
-    this(
-        logger,
-        executorService,
-        (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE));
+    this(logger, executorService, getProfilingManager(context, logger));
   }
 
   PerfettoProfiler(
@@ -74,6 +71,30 @@ public class PerfettoProfiler {
     this.logger = logger;
     this.executorService = executorService;
     this.profilingManager = profilingManager;
+  }
+
+  /**
+   * Returns null when the device can't provide ProfilingManager, which makes {@link #start} fail,
+   * so the device records no profiles.
+   */
+  @SuppressLint("WrongConstant")
+  private static @Nullable ProfilingManager getProfilingManager(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    try {
+      return (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE);
+    } catch (LinkageError e) {
+      // Some devices report API 35+ but ship a framework whose ProfilingManager can't be loaded
+      // (NoClassDefFoundError) or initialized (ExceptionInInitializerError). Caught before the
+      // broad catch below, because rethrowIfFatal rethrows every LinkageError.
+      logger.log(SentryLevel.WARNING, "ProfilingManager can't be loaded on this device.", e);
+      return null;
+    } catch (Throwable t) {
+      // Broad on purpose: getSystemService is a system-service boundary, and OEM frameworks can
+      // throw anything from it.
+      ExceptionUtils.rethrowIfFatal(t);
+      logger.log(SentryLevel.WARNING, "ProfilingManager is not available on this device.", t);
+      return null;
+    }
   }
 
   /**
@@ -109,6 +130,9 @@ public class PerfettoProfiler {
           Runnable::run,
           this::onProfilingResult);
     } catch (Throwable e) {
+      // A Binder call into the profiling service, which can rethrow any runtime exception from
+      // the other side. This chunk is not profiled.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Failed to request Profiling.", e);
       // No profiling was requested, so a late result from the OS must not write into the record
       this.chunkRecord = null;
@@ -123,6 +147,7 @@ public class PerfettoProfiler {
    * error) once the OS delivers the result. The listener may be called synchronously if the result
    * has already arrived, or asynchronously on an OS-managed thread otherwise.
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void endAndCollect(final @NotNull Consumer<@Nullable File> listener) {
     if (!started) {
       logger.log(SentryLevel.WARNING, "PerfettoProfiler was never started");

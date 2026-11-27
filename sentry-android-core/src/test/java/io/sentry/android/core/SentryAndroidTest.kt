@@ -50,6 +50,7 @@ import io.sentry.protocol.Contexts
 import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
 import io.sentry.transport.NoOpEnvelopeCache
+import io.sentry.util.LoadClass
 import io.sentry.util.StringUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -73,6 +74,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -85,6 +87,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
+import org.robolectric.shadows.ShadowApplication
 import timber.log.Timber
 
 @RunWith(AndroidJUnit4::class)
@@ -164,7 +167,7 @@ class SentryAndroidTest {
                 (no managed stack frames)
               """
                 .trimIndent()
-                .byteInputStream()
+                .byteInputStream(),
             )
         }
       shadowActivityManager.addApplicationExitInfo(exitInfo)
@@ -178,6 +181,7 @@ class SentryAndroidTest {
   fun `set up`() {
     Sentry.close()
     AppStartMetrics.getInstance().clear()
+    ContextUtils.resetInstance()
     context = ApplicationProvider.getApplicationContext()
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
     fixture.shadowActivityManager = Shadow.extract(activityManager)
@@ -291,14 +295,14 @@ class SentryAndroidTest {
           minEventLevel = FATAL,
           minBreadcrumbLevel = DEBUG,
           logsEnabled = false,
-        )
+        ),
       )
 
       it.addIntegration(
         SystemEventsBreadcrumbsIntegration(
           ApplicationProvider.getApplicationContext(),
           CustomHandler(Looper.getMainLooper()),
-        )
+        ),
       )
       refOptions = it
     }
@@ -397,7 +401,7 @@ class SentryAndroidTest {
   }
 
   @Test
-  @Config(sdk = [26])
+  @Config(sdk = [30])
   fun `init starts session replay if app is in foreground`() {
     initSentryWithForegroundImportance(true) { _ ->
       Shadows.shadowOf(Looper.getMainLooper()).idle()
@@ -406,7 +410,7 @@ class SentryAndroidTest {
   }
 
   @Test
-  @Config(sdk = [26])
+  @Config(sdk = [30])
   fun `init does not start session replay if the app is in background`() {
     initSentryWithForegroundImportance(false) { _ ->
       Shadows.shadowOf(Looper.getMainLooper()).idle()
@@ -501,7 +505,7 @@ class SentryAndroidTest {
     }
     await
       .withAlias(
-        "Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout"
+        "Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout",
       )
       .untilTrue(asserted)
 
@@ -619,6 +623,41 @@ class SentryAndroidTest {
     assertTrue(optionsRef.eventProcessors.any { it is ApplicationExitInfoEventProcessor })
   }
 
+  @Test
+  @Config(sdk = [30])
+  fun `init does nothing in the NDK crash service process`() {
+    ShadowApplication.setProcessName("${context.packageName}.sentry_ndk_crash")
+    var configured = false
+
+    Mockito.mockConstruction(LoadClass::class.java) { loadClass, _ ->
+        whenever(
+            loadClass.isClassAvailable(
+              eq(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME),
+              anyOrNull<ILogger>(),
+            ),
+          )
+          .thenReturn(true)
+      }
+      .use { fixture.initSut { configured = true } }
+
+    assertFalse(configured)
+    assertFalse(Sentry.isEnabled())
+  }
+
+  @Test
+  @Config(sdk = [30])
+  fun `init runs in a process named like the NDK crash service without outproc`() {
+    ShadowApplication.setProcessName("${context.packageName}.sentry_ndk_crash")
+    var configured = false
+
+    fixture.initSut {
+      it.dsn = "https://key@sentry.io/123"
+      configured = true
+    }
+
+    assertTrue(configured)
+  }
+
   private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {
     val scopeDir = File(cacheDir, SCOPE_CACHE).also { it.mkdirs() }
     val queueFile = QueueFile.Builder(File(scopeDir, BREADCRUMBS_FILENAME)).build()
@@ -646,7 +685,7 @@ class SentryAndroidTest {
   private class CustomEnvelopCache : IEnvelopeCache {
     override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
 
-    override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+    override fun storeEnvelope(envelope: SentryEnvelope, hint: Hint) = true
 
     override fun discard(envelope: SentryEnvelope) = Unit
   }

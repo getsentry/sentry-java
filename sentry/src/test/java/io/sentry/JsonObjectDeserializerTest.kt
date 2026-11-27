@@ -261,7 +261,7 @@ class JsonObjectDeserializerTest {
             "boolean" to true,
             "array" to listOf("a", "b", "c"),
             "object" to mapOf("key" to "value"),
-          )
+          ),
       )
 
     val actual = deserialize(json)

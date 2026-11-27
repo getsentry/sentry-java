@@ -21,6 +21,18 @@ import org.springframework.http.HttpHeaders
 class PersonIntegrationTest : IntegrationTest() {
 
   @Test
+  fun `default not found response does not send a transaction`() {
+    val path = "/missing-default-ignored-status"
+
+    val response = restTemplate.getForEntity(path, String::class.java)
+
+    assertThat(response.statusCode.value()).isEqualTo(404)
+    server.assertNoEnvelope(millis = 1_000) {
+      it.transaction()?.request?.url?.endsWith(path) == true
+    }
+  }
+
+  @Test
   fun `failed request reports errors, spans with their flags, and logs`() {
     val response = restTemplate.getForEntity("/person/11", String::class.java)
     assertThat(response.statusCode.value()).isEqualTo(500)
@@ -47,21 +59,21 @@ class PersonIntegrationTest : IntegrationTest() {
     // Whichever initializes Sentry names the SDK, which shows that each mode takes its own path.
     assertThat(transactionEnvelope.header.sdkVersion!!.name)
       .isEqualTo(
-        if (AgentApp.autoInit) "sentry.java.opentelemetry.agent" else "sentry.java.spring-boot"
+        if (AgentApp.autoInit) "sentry.java.opentelemetry.agent" else "sentry.java.spring-boot",
       )
     val transaction = transactionEnvelope.transaction()!!
     assertThat(
         transaction.hasOp(
           "http.server",
           FeatureFlag("flag.evaluation.transaction-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(
         transaction.hasSpanWithOp(
           "spanCreatedThroughOtelApi",
           FeatureFlag("flag.evaluation.my-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(transaction.hasSpanWithOp("spanCreatedThroughSentryApi")).isTrue()
@@ -127,7 +139,7 @@ class PersonIntegrationTest : IntegrationTest() {
         transaction.hasSpanWithOpAndDescription(
           "db",
           "insert into person (firstName, lastName) values (?, ?)",
-        )
+        ),
       )
       .isTrue()
   }

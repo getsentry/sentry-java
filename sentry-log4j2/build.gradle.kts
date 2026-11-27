@@ -8,6 +8,9 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -62,7 +65,7 @@ tasks.named<JavaCompile>("compileJava") {
     listOf(
       "-Alog4j.graalvm.groupId=${project.group}",
       "-Alog4j.graalvm.artifactId=${project.name}",
-    )
+    ),
   )
 }
 

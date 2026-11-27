@@ -24,6 +24,10 @@ public final class SystemEpochClock implements EpochClock {
 
   private static final SystemEpochClock instance = new SystemEpochClock();
 
+  /**
+   * Prefer {@link io.sentry.SentryOptions#getEpochClock()}, which is where a platform would
+   * substitute its own wall clock, the way Android already substitutes the ticker.
+   */
   public static @NotNull EpochClock getInstance() {
     return instance;
   }

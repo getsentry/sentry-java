@@ -268,7 +268,7 @@ class SentryUserFeedbackFormTest {
     val context = ContextThemeWrapper(fixture.application, android.R.style.Theme_Material_Light)
 
     assertThat(SentryUserFeedbackForm.resolveTheme(context, 0))
-      .isEqualTo(android.R.style.Theme_Material_Light_Dialog_Alert)
+      .isEqualTo(android.R.style.ThemeOverlay_Material_Dialog_Alert)
   }
 
   @Test
@@ -365,7 +365,7 @@ class SentryUserFeedbackFormTest {
         eq(SentryLevel.WARNING),
         eq(
           "Feedback screenshot button won't be shown. It requires the androidx.activity " +
-            "dependency and the feedback form being shown from a ComponentActivity."
+            "dependency and the feedback form being shown from a ComponentActivity.",
         ),
       )
   }
@@ -507,7 +507,7 @@ class SentryUserFeedbackFormTest {
         eq(SentryLevel.WARNING),
         eq(
           "Unable to determine the size of the selected screenshot, the attachment size limit " +
-            "is applied when the feedback is captured."
+            "is applied when the feedback is captured.",
         ),
         any<SecurityException>(),
       )

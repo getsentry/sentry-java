@@ -1,14 +1,17 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric")
 }
 
 android {
@@ -31,12 +34,15 @@ android {
 
   kotlin {
     compilerOptions.jvmTarget = JVM_11
-    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
   }
 
   testOptions {
-    unitTests.isReturnDefaultValues = true
+    unitTests.apply {
+      isReturnDefaultValues = true
+      // AGP 9.5 can't create the Compose Preview task without it, which breaks any
+      // build that creates every task, such as an LSP's Gradle import.
+      isIncludeAndroidResources = true
+    }
   }
 
   lint {
@@ -61,16 +67,20 @@ kotlin { explicitApi() }
 
 dependencies {
   implementation(projects.sentry)
-  implementation(libs.androidx.lifecycle.runtime.compose)
+  compileOnly(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
+  compileOnly(libs.androidx.compose.ui)
 
+  testImplementation(projects.sentryAndroidCore)
+  testImplementation(projects.sentryTestSupport)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.fragment.ktx)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)

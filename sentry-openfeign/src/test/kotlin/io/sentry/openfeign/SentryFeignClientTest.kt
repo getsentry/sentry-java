@@ -99,7 +99,6 @@ class SentryFeignClientTest {
 
   @Test
   fun `when there is an active span, adds sentry trace header to the request`() {
-    fixture.sentryOptions.isTraceSampling = true
     fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
     val sut = fixture.getSut()
     sut.getOk()
@@ -111,7 +110,6 @@ class SentryFeignClientTest {
 
   @Test
   fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
-    fixture.sentryOptions.isTraceSampling = true
     fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
     val sut = fixture.getSut()
 
@@ -121,8 +119,8 @@ class SentryFeignClientTest {
           listOf(
             "thirdPartyBaggage=someValue",
             "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
-          )
-      )
+          ),
+      ),
     )
 
     val recorderRequest =
@@ -134,8 +132,8 @@ class SentryFeignClientTest {
     assertEquals(baggageHeaderValues.size, 1)
     assertTrue(
       baggageHeaderValues[0].startsWith(
-        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
-      )
+        "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
@@ -180,7 +178,6 @@ class SentryFeignClientTest {
   @Test
   fun `when request url not in tracing origins, does not add sentry trace header to the request`() {
     fixture.sentryOptions.setTracePropagationTargets(listOf("http://some-other-url.sentry.io"))
-    fixture.sentryOptions.isTraceSampling = true
     fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
     val sut = fixture.getSut()
     sut.getOk()
@@ -307,7 +304,7 @@ class SentryFeignClientTest {
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
             throw IllegalStateException("callback failed")
-          }
+          },
         )
       fixture.sentryTracer.spanContext.sampled = sampled
       fixture.sentryOptions.onDiscard = onDiscard
@@ -333,7 +330,7 @@ class SentryFeignClientTest {
         beforeSpan = { span, _, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
 
     assertThat(sut.getOk()).isEqualTo("success")
@@ -424,7 +421,6 @@ class SentryFeignClientTest {
 
   @Test
   fun `adds W3C traceparent header when propagateTraceparent is enabled`() {
-    fixture.sentryOptions.isTraceSampling = true
     fixture.sentryOptions.isPropagateTraceparent = true
     fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
     val sut = fixture.getSut()
@@ -437,7 +433,6 @@ class SentryFeignClientTest {
 
   @Test
   fun `does not add W3C traceparent header when propagateTraceparent is disabled`() {
-    fixture.sentryOptions.isTraceSampling = true
     fixture.sentryOptions.isPropagateTraceparent = false
     fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
     val sut = fixture.getSut()

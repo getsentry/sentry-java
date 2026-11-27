@@ -25,6 +25,7 @@ import io.sentry.android.core.internal.util.NetworkConnection;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
+import io.sentry.util.ExceptionUtils;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Collections;
@@ -247,7 +248,6 @@ public final class DeviceInfoUtil {
     }
   }
 
-  @SuppressWarnings("NewApi")
   @NotNull
   private TimeZone getTimeZone() {
     // Only use the costly Calendar API on Android 13+ (API Level 33+) when the locale contains a
@@ -304,6 +304,9 @@ public final class DeviceInfoUtil {
 
       return ((float) level / (float) scale) * percentMultiplier;
     } catch (Throwable e) {
+      // The extras were parceled by system_server and are unparceled on first access, which can
+      // throw any runtime exception on malformed data. The battery level is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting device battery level.", e);
       return null;
     }
@@ -322,6 +325,9 @@ public final class DeviceInfoUtil {
       return plugged == BatteryManager.BATTERY_PLUGGED_AC
           || plugged == BatteryManager.BATTERY_PLUGGED_USB;
     } catch (Throwable e) {
+      // The extras were parceled by system_server and are unparceled on first access, which can
+      // throw any runtime exception on malformed data. The charging state is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting device charging state.", e);
       return null;
     }
@@ -335,6 +341,9 @@ public final class DeviceInfoUtil {
         return ((float) temperature) / 10; // celsius
       }
     } catch (Throwable e) {
+      // The extras were parceled by system_server and are unparceled on first access, which can
+      // throw any runtime exception on malformed data. The temperature is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting battery temperature.", e);
     }
     return null;
@@ -360,6 +369,9 @@ public final class DeviceInfoUtil {
         return null;
       }
     } catch (Throwable e) {
+      // The context may be the app's own subclass that overrides getResources(), so we can't know
+      // what it throws. The orientation is left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error getting device orientation.", e);
     }
     return deviceOrientation;
@@ -370,16 +382,10 @@ public final class DeviceInfoUtil {
    *
    * @return the total amount of internal storage, in bytes
    */
-  @Nullable
-  private Long getTotalInternalStorage(final @NotNull StatFs stat) {
-    try {
-      long blockSize = stat.getBlockSizeLong();
-      long totalBlocks = stat.getBlockCountLong();
-      return totalBlocks * blockSize;
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting total internal storage amount.", e);
-      return null;
-    }
+  private long getTotalInternalStorage(final @NotNull StatFs stat) {
+    long blockSize = stat.getBlockSizeLong();
+    long totalBlocks = stat.getBlockCountLong();
+    return totalBlocks * blockSize;
   }
 
   /**
@@ -387,18 +393,10 @@ public final class DeviceInfoUtil {
    *
    * @return the unused amount of internal storage, in bytes
    */
-  @Nullable
-  private Long getUnusedInternalStorage(final @NotNull StatFs stat) {
-    try {
-      long blockSize = stat.getBlockSizeLong();
-      long availableBlocks = stat.getAvailableBlocksLong();
-      return availableBlocks * blockSize;
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Error getting unused internal storage amount.", e);
-      return null;
-    }
+  private long getUnusedInternalStorage(final @NotNull StatFs stat) {
+    long blockSize = stat.getBlockSizeLong();
+    long availableBlocks = stat.getAvailableBlocksLong();
+    return availableBlocks * blockSize;
   }
 
   @Nullable
@@ -409,6 +407,9 @@ public final class DeviceInfoUtil {
         return new StatFs(path.getPath());
       }
     } catch (Throwable e) {
+      // getExternalFilesDirs asks the storage service over Binder to create the directories, so
+      // we can't know what it throws. The external storage sizes are left out.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.INFO, "Not possible to read external files directory");
     }
     return null;
@@ -450,16 +451,10 @@ public final class DeviceInfoUtil {
    * @return the total amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  @Nullable
-  private Long getTotalExternalStorage(final @NotNull StatFs stat) {
-    try {
-      final long blockSize = stat.getBlockSizeLong();
-      final long totalBlocks = stat.getBlockCountLong();
-      return totalBlocks * blockSize;
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
-      return null;
-    }
+  private long getTotalExternalStorage(final @NotNull StatFs stat) {
+    final long blockSize = stat.getBlockSizeLong();
+    final long totalBlocks = stat.getBlockCountLong();
+    return totalBlocks * blockSize;
   }
 
   /**
@@ -468,18 +463,10 @@ public final class DeviceInfoUtil {
    * @return the unused amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  @Nullable
-  private Long getUnusedExternalStorage(final @NotNull StatFs stat) {
-    try {
-      final long blockSize = stat.getBlockSizeLong();
-      final long availableBlocks = stat.getAvailableBlocksLong();
-      return availableBlocks * blockSize;
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Error getting unused external storage amount.", e);
-      return null;
-    }
+  private long getUnusedExternalStorage(final @NotNull StatFs stat) {
+    final long blockSize = stat.getBlockSizeLong();
+    final long availableBlocks = stat.getAvailableBlocksLong();
+    return availableBlocks * blockSize;
   }
 
   @Nullable

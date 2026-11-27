@@ -12,10 +12,10 @@ import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.protocol.Device;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -34,10 +34,7 @@ public final class AppComponentsBreadcrumbsIntegration
   private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
-  // TODO: JAVA-729
-  @SuppressWarnings("deprecation")
-  private final @NotNull Debouncer trimMemoryDebouncer =
-      new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
+  private volatile @Nullable Debouncer trimMemoryDebouncer;
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
     this.context =
@@ -51,6 +48,8 @@ public final class AppComponentsBreadcrumbsIntegration
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
+    this.trimMemoryDebouncer =
+        new Debouncer(this.options.getMonotonicTicker(), DEBOUNCE_WAIT_TIME_MS, 0);
 
     this.options
         .getLogger()
@@ -68,6 +67,10 @@ public final class AppComponentsBreadcrumbsIntegration
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
         addIntegrationToSdkVersion("AppComponentsBreadcrumbs");
       } catch (Throwable e) {
+        // The context may be the app's own subclass, or a ContextImpl that doesn't support
+        // component callbacks on older versions, so we can't know what this throws. App
+        // component breadcrumbs are disabled.
+        ExceptionUtils.rethrowIfFatal(e);
         this.options.setEnableAppComponentBreadcrumbs(false);
         options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
       }
@@ -79,12 +82,15 @@ public final class AppComponentsBreadcrumbsIntegration
     try {
       // if its a ContextImpl, unregisterComponentCallbacks can't be used
       context.unregisterComponentCallbacks(this);
-    } catch (Throwable ignored) {
-      // fine, might throw on older versions
+    } catch (Throwable e) {
+      // The context may be the app's own subclass, or a ContextImpl that doesn't support
+      // component callbacks on older versions, so we can't know what this throws. The callbacks
+      // may stay registered until the process ends.
+      ExceptionUtils.rethrowIfFatal(e);
       if (options != null) {
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, ignored, "It was not possible to unregisterComponentCallbacks");
+            .log(SentryLevel.DEBUG, e, "It was not possible to unregisterComponentCallbacks");
       }
     }
 
@@ -121,7 +127,8 @@ public final class AppComponentsBreadcrumbsIntegration
       return;
     }
 
-    if (trimMemoryDebouncer.checkForDebounce()) {
+    final @Nullable Debouncer trimMemoryDebouncer = this.trimMemoryDebouncer;
+    if (trimMemoryDebouncer != null && trimMemoryDebouncer.checkForDebounce()) {
       // if we received trim_memory within 1 minute time, ignore this call
       return;
     }
@@ -169,6 +176,7 @@ public final class AppComponentsBreadcrumbsIntegration
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void executeInBackground(final @NotNull Runnable runnable) {
     if (options != null) {
       try {

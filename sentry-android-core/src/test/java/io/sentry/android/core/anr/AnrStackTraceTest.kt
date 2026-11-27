@@ -1,5 +1,6 @@
 package io.sentry.android.core.anr
 
+import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -123,5 +124,92 @@ class AnrStackTraceTest {
     val deserialized = AnrStackTrace.deserialize(dis)
 
     assertNull(deserialized)
+  }
+
+  @Test
+  fun `v2 round trip keeps the thread state`() {
+    val stack = arrayOf(StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42))
+    val original = AnrStackTrace(1234567890L, stack, Thread.State.BLOCKED)
+
+    val deserialized = roundTrip(original)
+
+    assertThat(deserialized).isNotNull()
+    assertThat(deserialized!!.state).isEqualTo(Thread.State.BLOCKED)
+    assertThat(deserialized.timestampMs).isEqualTo(1234567890L)
+    assertThat(deserialized.stack).isEqualTo(stack)
+  }
+
+  @Test
+  fun `v2 round trip keeps a null thread state`() {
+    val original = AnrStackTrace(1234567890L, emptyArray(), null)
+
+    val deserialized = roundTrip(original)
+
+    assertThat(deserialized).isNotNull()
+    assertThat(deserialized!!.state).isNull()
+  }
+
+  @Test
+  fun `v1 bytes are still read with a null state`() {
+    val bytes = ByteArrayOutputStream()
+    val dos = DataOutputStream(bytes)
+    dos.writeShort(1)
+    dos.writeLong(1234567890L)
+    dos.writeInt(1)
+    dos.writeUTF("com.example.MyClass")
+    dos.writeUTF("method1")
+    dos.writeBoolean(false)
+    dos.writeUTF("MyClass.java")
+    dos.writeInt(42)
+    dos.flush()
+
+    val deserialized =
+      AnrStackTrace.deserialize(DataInputStream(ByteArrayInputStream(bytes.toByteArray())))
+
+    assertThat(deserialized).isNotNull()
+    assertThat(deserialized!!.state).isNull()
+    assertThat(deserialized.timestampMs).isEqualTo(1234567890L)
+    assertThat(deserialized.stack)
+      .isEqualTo(arrayOf(StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42)))
+  }
+
+  @Test
+  fun `unknown thread state name reads as null`() {
+    val bytes = ByteArrayOutputStream()
+    val dos = DataOutputStream(bytes)
+    dos.writeShort(2)
+    dos.writeLong(1234567890L)
+    dos.writeBoolean(false)
+    dos.writeUTF("NOT_A_STATE")
+    dos.writeInt(0)
+    dos.flush()
+
+    val deserialized =
+      AnrStackTrace.deserialize(DataInputStream(ByteArrayInputStream(bytes.toByteArray())))
+
+    assertThat(deserialized).isNotNull()
+    assertThat(deserialized!!.state).isNull()
+  }
+
+  @Test
+  fun `version 3 returns null`() {
+    val bytes = ByteArrayOutputStream()
+    val dos = DataOutputStream(bytes)
+    dos.writeShort(3)
+    dos.writeLong(1234567890L)
+    dos.flush()
+
+    val deserialized =
+      AnrStackTrace.deserialize(DataInputStream(ByteArrayInputStream(bytes.toByteArray())))
+
+    assertThat(deserialized).isNull()
+  }
+
+  private fun roundTrip(original: AnrStackTrace): AnrStackTrace? {
+    val bytes = ByteArrayOutputStream()
+    val dos = DataOutputStream(bytes)
+    original.serialize(dos)
+    dos.flush()
+    return AnrStackTrace.deserialize(DataInputStream(ByteArrayInputStream(bytes.toByteArray())))
   }
 }

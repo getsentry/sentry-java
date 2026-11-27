@@ -9,6 +9,8 @@ import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.export.SpanExporter
 import io.opentelemetry.sdk.trace.samplers.Sampler
 import io.opentelemetry.sdk.trace.samplers.SamplingDecision
 import io.sentry.DataCategory
@@ -138,18 +140,24 @@ class SentrySamplerTest {
     verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
     verifyNoMoreInteractions(onDiscard)
     val recordingSampler = mock<Sampler>(defaultAnswer = delegatesTo(sampler))
-    SdkTracerProvider.builder().setSampler(recordingSampler).build().use { provider ->
-      val openTelemetry =
-        mock<OpenTelemetry>().also {
-          whenever(it.tracerProvider).thenReturn(provider)
-        }
-      OtelSpanFactory(openTelemetry).createTransaction(context, scopes, TransactionOptions(), null)
-      val attributes = argumentCaptor<Attributes>()
-      verify(recordingSampler).shouldSample(any(), any(), any(), any(), attributes.capture(), any())
-      val restored = OtelSamplingUtil.extractSamplingDecision(attributes.firstValue)!!
-      assertThat(restored.sampled).isFalse()
-      assertThat(restored.profileSampled).isFalse()
-    }
+    SdkTracerProvider.builder()
+      .setSampler(recordingSampler)
+      .addSpanProcessor(SimpleSpanProcessor.create(SpanExporter.composite()))
+      .build()
+      .use { provider ->
+        val openTelemetry =
+          mock<OpenTelemetry>().also {
+            whenever(it.tracerProvider).thenReturn(provider)
+          }
+        OtelSpanFactory(openTelemetry)
+          .createTransaction(context, scopes, TransactionOptions(), null)
+        val attributes = argumentCaptor<Attributes>()
+        verify(recordingSampler)
+          .shouldSample(any(), any(), any(), any(), attributes.capture(), any())
+        val restored = OtelSamplingUtil.extractSamplingDecision(attributes.firstValue)!!
+        assertThat(restored.sampled).isFalse()
+        assertThat(restored.profileSampled).isFalse()
+      }
 
     verifyNoMoreInteractions(onDiscard)
   }

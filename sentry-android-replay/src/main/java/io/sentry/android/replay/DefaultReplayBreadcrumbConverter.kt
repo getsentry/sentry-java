@@ -44,7 +44,7 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
    * user-provided callback to provide the actual breadcrumb to process.
    */
   private inner class ReplayBeforeBreadcrumbCallback(
-    private val delegate: BeforeBreadcrumbCallback?
+    private val delegate: BeforeBreadcrumbCallback?,
   ) : BeforeBreadcrumbCallback {
     override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? {
       val resultBreadcrumb =
@@ -81,11 +81,11 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
     Collections.synchronizedMap(
       object : LinkedHashMap<Breadcrumb, NetworkRequestData>() {
         override fun removeEldestEntry(
-          eldest: MutableMap.MutableEntry<Breadcrumb, NetworkRequestData>?
+          eldest: MutableMap.MutableEntry<Breadcrumb, NetworkRequestData>?,
         ): Boolean {
           return size > MAX_HTTP_NETWORK_DETAILS
         }
-      }
+      },
     )
 
   override fun convert(breadcrumb: Breadcrumb): RRWebEvent? {
@@ -233,10 +233,12 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
 
       // Add Network Details data when available
       networkDetailData?.let { networkData ->
+        val responseDetails = networkData.response
+
         networkData.method?.let { breadcrumbData["method"] = it }
-        networkData.statusCode?.let { breadcrumbData["statusCode"] = it }
+        responseDetails?.statusCode?.let { breadcrumbData["statusCode"] = it }
         networkData.requestBodySize?.let { breadcrumbData["requestBodySize"] = it }
-        networkData.responseBodySize?.let { breadcrumbData["responseBodySize"] = it }
+        responseDetails?.size?.let { breadcrumbData["responseBodySize"] = it }
 
         networkData.request?.let { request ->
           val requestData = mutableMapOf<String, Any?>()
@@ -257,7 +259,7 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
           }
         }
 
-        networkData.response?.let { response ->
+        responseDetails?.let { response ->
           val responseData = mutableMapOf<String, Any?>()
           response.size?.let { responseData["size"] = it }
           response.body?.let {

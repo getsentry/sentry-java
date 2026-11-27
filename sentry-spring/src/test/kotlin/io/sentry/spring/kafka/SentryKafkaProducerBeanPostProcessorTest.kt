@@ -28,7 +28,7 @@ class SentryKafkaProducerBeanPostProcessorTest {
     val captor = argumentCaptor<ProducerPostProcessor<String, String>>()
     verify(factory).addPostProcessor(captor.capture())
     assertTrue(
-      captor.firstValue is SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<*, *>
+      captor.firstValue is SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<*, *>,
     )
   }
 
@@ -89,7 +89,7 @@ class SentryKafkaProducerBeanPostProcessorTest {
     assertEquals(1, factory.postProcessors.size)
     assertTrue(
       factory.postProcessors.first()
-        is SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<*, *>
+        is SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<*, *>,
     )
   }
 }

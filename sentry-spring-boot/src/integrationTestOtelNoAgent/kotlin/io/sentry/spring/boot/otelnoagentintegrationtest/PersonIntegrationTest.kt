@@ -22,6 +22,16 @@ import org.springframework.http.HttpHeaders
 class PersonIntegrationTest : IntegrationTest() {
 
   @Test
+  fun `default not found response does not send a transaction`() {
+    val path = "/missing-default-ignored-status"
+
+    val response = restTemplate.getForEntity(path, String::class.java)
+
+    assertThat(response.statusCode.value()).isEqualTo(404)
+    server.assertNoEnvelope { it.transaction()?.request?.url?.endsWith(path) == true }
+  }
+
+  @Test
   fun `failed request reports errors, nested spans with their flags, and logs`() {
     val response = restTemplate.getForEntity("/person/11", String::class.java)
     assertThat(response.statusCode.value()).isEqualTo(500)
@@ -54,14 +64,14 @@ class PersonIntegrationTest : IntegrationTest() {
         transaction.hasSpanWithOp(
           "personSpanThroughOtelAnnotation",
           FeatureFlag("flag.evaluation.outer-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(
         transaction.hasSpanWithOp(
           "spanCreatedThroughOtelApi",
           FeatureFlag("flag.evaluation.inner-feature-flag", true),
-        )
+        ),
       )
       .isTrue()
     assertThat(transaction.hasSpanWithOp("spanCreatedThroughSentryApi", noFeatureFlags = true))
@@ -128,7 +138,7 @@ class PersonIntegrationTest : IntegrationTest() {
         transaction.hasSpanWithOpAndDescription(
           "db",
           "insert into person (firstName, lastName) values (?, ?)",
-        )
+        ),
       )
       .isTrue()
   }

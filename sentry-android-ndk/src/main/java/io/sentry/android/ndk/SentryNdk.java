@@ -1,5 +1,6 @@
 package io.sentry.android.ndk;
 
+import android.content.Context;
 import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.ndk.NativeModuleListLoader;
@@ -41,6 +42,17 @@ public final class SentryNdk {
    * @param options the SentryAndroidOptions
    */
   public static void init(@NotNull final SentryAndroidOptions options) {
+    init(null, options);
+  }
+
+  /**
+   * Init the NDK integration
+   *
+   * @param context the Android context
+   * @param options the SentryAndroidOptions
+   */
+  public static void init(
+      @Nullable final Context context, @NotNull final SentryAndroidOptions options) {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     try {
       if (loadLibraryLatch.await(2000, TimeUnit.MILLISECONDS)) {
@@ -89,6 +101,8 @@ public final class SentryNdk {
         throw new IllegalStateException("Timeout waiting for Sentry NDK library to load");
       }
     } catch (InterruptedException e) {
+      // we don't own the calling thread, so keep its interrupt for the code that does
+      Thread.currentThread().interrupt();
       throw new IllegalStateException(
           "Thread interrupted while waiting for NDK libs to be loaded", e);
     }
@@ -104,6 +118,8 @@ public final class SentryNdk {
         throw new IllegalStateException("Timeout waiting for Sentry NDK library to load");
       }
     } catch (InterruptedException e) {
+      // we don't own the calling thread, so keep its interrupt for the code that does
+      Thread.currentThread().interrupt();
       throw new IllegalStateException(
           "Thread interrupted while waiting for NDK libs to be loaded", e);
     }

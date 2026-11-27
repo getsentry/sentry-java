@@ -6,11 +6,6 @@
 # The JNI layer uses this class through reflection
 -keep class io.sentry.protocol.DebugImage { *; }
 
-# For native methods, see http://proguard.sourceforge.net/manual/examples.html#native
--keepclasseswithmembernames,includedescriptorclasses class io.sentry.** {
-    native <methods>;
-}
-
 # don't warn jetbrains annotations
 -dontwarn org.jetbrains.annotations.**
 

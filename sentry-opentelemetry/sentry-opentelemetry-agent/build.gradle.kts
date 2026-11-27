@@ -7,6 +7,9 @@ plugins {
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.shadow)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -104,7 +107,9 @@ fun isolateClasses(jars: Iterable<File>): CopySpec = copySpec {
   }
 }
 
-// Don't publish non-shadowed jar (shadowJar is in shadowRuntimeElements)
+// Only the agent, the shadow jar in shadowRuntimeElements, is published. The plain jar in
+// runtimeElements holds just AgentMarker. A project dependency on this module resolves to it, so
+// the Spring Boot modules' unit tests get AgentMarker on their classpath without the agent.
 with(components["java"] as AdhocComponentWithVariants) {
   configurations.forEach {
     withVariantsFromConfiguration(configurations["apiElements"]) { skip() }
@@ -128,15 +133,6 @@ tasks {
     mergeServiceFiles()
     exclude("**/module-info.class")
     relocatePackages(this)
-
-    // exclude known bootstrap dependencies - they can't appear in the inst/ directory
-    dependencies {
-      exclude("org.slf4j:slf4j-api")
-      exclude("io.opentelemetry:opentelemetry-api")
-      exclude("io.opentelemetry:opentelemetry-api-logs")
-      exclude("io.opentelemetry:opentelemetry-context")
-      exclude("io.opentelemetry:opentelemetry-semconv")
-    }
   }
 
   // 2. the distro javaagent libs are then isolated - moved to the inst/ directory
@@ -212,7 +208,7 @@ tasks {
 
   test {
     jvmArgumentProviders.add(
-      objects.newInstance<ChildJvmTestArguments>().apply { agentJar.from(shadowJar) }
+      objects.newInstance<ChildJvmTestArguments>().apply { agentJar.from(shadowJar) },
     )
   }
 }

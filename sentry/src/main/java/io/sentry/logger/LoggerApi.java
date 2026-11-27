@@ -17,6 +17,7 @@ import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
@@ -110,7 +111,8 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable SentryDate timestamp = params.getTimestamp();
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
-      final @NotNull String messageToUse = maybeFormatMessage(message, args);
+      final @NotNull String messageToUse =
+          params.isMessageAlreadyFormatted() ? message : maybeFormatMessage(message, args);
 
       final @NotNull IScope combinedScope = scopes.getCombinedScopeView();
       final @NotNull PropagationContext propagationContext = combinedScope.getPropagationContext();
@@ -130,6 +132,9 @@ public final class LoggerApi implements ILoggerApi {
 
       scopes.getClient().captureLog(logEvent, combinedScope);
     } catch (Throwable e) {
+      // A public API entry point whose capture runs integration and app code, such as event
+      // processors, so we can't know what it throws. The log is dropped.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }
   }
@@ -143,6 +148,10 @@ public final class LoggerApi implements ILoggerApi {
     try {
       return String.format(message, args);
     } catch (Throwable t) {
+      // Formatting calls the app's toString() and Formattable implementations of the arguments,
+      // and the format string may not match them, so we can't know what this throws. The log is
+      // sent with the unformatted message.
+      ExceptionUtils.rethrowIfFatal(t);
       scopes
           .getOptions()
           .getLogger()

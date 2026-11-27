@@ -56,22 +56,25 @@ match on values only they produce.
 ## The OpenTelemetry agent
 
 The agent must not run in the test's JVM, because it would instrument the test's own HTTP client
-and server. The Spring Boot modules have an `agentFixture` source set with the app. `AgentApp`
-starts it once per test JVM in a child process, with `ChildJvmApp` and the agent jar passed through
-`ChildJvmTestArguments`. The suite's task runs with the agent initializing Sentry, and
-`integrationTestOtelAgentWithoutAutoInit` runs the same tests with the Spring Boot starter doing
-it. Gradle runs the two in parallel.
+and server. The `io.sentry.otel-agent-tests` plugin in `build-logic` gives the Spring Boot modules
+an `agentFixture` source set with the app, the `integrationTestOtelAgent` suite and the built agent
+jar; each module adds only the dependencies of its Spring Boot line. `AgentApp` starts the app once
+per test JVM in a child process, with `ChildJvmApp` and the agent jar passed through
+`ChildJvmTestArguments`. The suite's task runs with the agent initializing Sentry, and its second
+target, `integrationTestOtelAgentWithoutAutoInit`, runs the same tests with the Spring Boot starter
+doing it. Gradle runs the two in parallel. `otelAgentTests()` in a `springBootMatrix` block registers
+both on each version.
 
 ## Running them
 
 - The `springBootMatrix` block in each Spring module's build file runs its suites on every version
   of its Spring Boot line in `gradle/spring-boot-versions.json`, with a task per suite and version,
-  e.g. `integrationTestWebfluxBoot3_2_12`. The suites and the SDK compile once, against the
-  catalog's version; only the runtime classpath changes. `allIntegrationTestsBoot3_2_12` runs one
+  e.g. `integrationTestWebfluxBoot3_4_13`. The suites and the SDK compile once, against the
+  catalog's version; only the runtime classpath changes. `allIntegrationTestsBoot3_4_13` runs one
   version's suites, `allIntegrationTestsBoot3` every version's.
 - The `spring-boot-{2,3,4}-matrix.yml` workflows read the same file and run each version in its own
-  job, e.g. `./gradlew :sentry-spring-jakarta:allIntegrationTestsBoot3_2_12
-  :sentry-spring-boot-jakarta:allIntegrationTestsBoot3_2_12`. The suites aren't part of `check`, so
+  job, e.g. `./gradlew :sentry-spring-jakarta:allIntegrationTestsBoot3_4_13
+  :sentry-spring-boot-jakarta:allIntegrationTestsBoot3_4_13`. The suites aren't part of `check`, so
   a new suite only runs on CI once it's added to its module's `springBootMatrix` block, and a new
   module once it's added to its workflow.
 - Suite code may only use APIs that exist in the oldest version of its line. Compiled against a
@@ -83,8 +86,9 @@ it. Gradle runs the two in parallel.
   customizes, and that the OpenTelemetry starter instruments, so it adds or replaces trace headers
   on the requests a test sends. Build one outside the context.
 - Sentry exports OpenTelemetry spans in batches every 5 seconds. In-process, flush the tracer
-  provider from the server's hook. With the agent this isn't possible, so each test waits for a
-  batch and negative checks wait at least 6 seconds.
+  provider from the server's hook. With the agent this isn't possible, so set
+  `OTEL_BSP_SCHEDULE_DELAY` on the app to shorten the batch delay, and make negative checks wait
+  well past it.
 - Sentry is global, so a second live Spring context in an OpenTelemetry suite takes it over. Keep
   one live context per JVM (`@DirtiesContext` when a test needs its own).
 - The async profiler rejects a traces path with a `.` anywhere in its absolute form. Put the path

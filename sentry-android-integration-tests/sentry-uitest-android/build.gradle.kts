@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 plugins {
   id("com.android.application")
@@ -8,7 +9,11 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -28,7 +33,6 @@ android {
     // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
     // Check the readme for more info.
     testInstrumentationRunnerArguments["clearPackageData"] = "true"
-    buildConfigField("String", "ENVIRONMENT", "\"${System.getProperty("environment", "")}\"")
   }
 
   testOptions { execution = "ANDROIDX_TEST_ORCHESTRATOR" }
@@ -38,14 +42,13 @@ android {
     // Note that the viewBinding.enabled property is now deprecated.
     viewBinding = true
     compose = true
-    buildConfig = true
   }
 
   composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
 
   signingConfigs {
     getByName("debug") {
-      storeFile = rootProject.file("debug.keystore")
+      storeFile = file("../../debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -70,6 +73,10 @@ android {
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
+
+    // This module is the one lint picks to check the build root's Gradle wrapper, and this check
+    // compares it with the latest Gradle release online, so every new release would fail the build.
+    disable += "AndroidGradlePluginVersion"
   }
 
   androidComponents.beforeVariants {
@@ -86,23 +93,25 @@ if (applySentryIntegrations) {
 }
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
 
   if (applySentryIntegrations) {
-    implementation(projects.sentryAndroid)
-    implementation(projects.sentryCompose)
+    implementation("io.sentry:sentry-android:$sentryVersion")
+    implementation("io.sentry:sentry-compose:$sentryVersion")
   } else {
-    implementation(projects.sentryAndroidCore)
+    implementation("io.sentry:sentry-android-core:$sentryVersion")
   }
   implementation(libs.androidx.appcompat)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.material3)
+  implementation(libs.coil3.compose)
+  // Compose UI 1.10+ lets R8 rename modifier elements, so the replay masking keep rules get tested
+  implementation(libs.androidx.compose.ui.replay)
   implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.core)
   implementation(libs.androidx.recyclerview)
+  implementation(libs.androidx.webkit)
   implementation(libs.androidx.test.espresso.idling.resource)
   implementation(libs.leakcanary)
 
@@ -113,7 +122,7 @@ dependencies {
   errorprone(libs.nullaway)
 
   androidTestUtil(libs.androidx.test.orchestrator)
-  androidTestImplementation(projects.sentryTestSupport)
+  androidTestImplementation("io.sentry:sentry-test-support:$sentryVersion")
   androidTestImplementation(libs.androidx.test.core.ktx)
   androidTestImplementation(libs.androidx.test.espresso.core)
   androidTestImplementation(libs.androidx.test.ext.junit)
@@ -122,15 +131,38 @@ dependencies {
   androidTestImplementation(libs.awaitility3.kotlin)
   androidTestImplementation(libs.kotlin.test.junit)
   androidTestImplementation(libs.leakcanary.instrumentation)
-  androidTestImplementation(libs.okhttp.mockwebserver)
+  androidTestImplementation(libs.okhttp.mockwebserver4)
+
+  constraints {
+    // Lint 9.5 can't load the custom lint checks of lifecycle releases before 2.10.0. Lifecycle
+    // aligns all its artifacts to one version, so raising this one raises them all.
+    implementation(libs.androidx.lifecycle.runtime.compose)
+  }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-  options.errorprone {
-    check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
-    option("NullAway:AnnotatedPackages", "io.sentry")
-    option("NullAway:UnannotatedSubPackages", "io.sentry.uitest.android.databinding")
+// net.ltgt.errorprone only configures Gradle's JVM source sets, not Android variants, so put Error
+// Prone on each variant's processor path and enable it ourselves.
+androidComponents.onVariants { variant ->
+  variant.annotationProcessorConfiguration.extendsFrom(configurations.errorprone.get())
+  variant.configureJavaCompileTask { task ->
+    // Tells Error Prone this is Android code, so it skips checks that don't apply there, such as
+    // DefaultCharset (Android's default charset is always UTF-8), and runs its Android checks.
+    task.options.compilerArgs.add("-XDandroidCompatible=true")
+    task.options.errorprone {
+      enabled = true
+      check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+      option("NullAway:AnnotatedPackages", "io.sentry")
+      option("NullAway:UnannotatedSubPackages", "io.sentry.uitest.android.databinding")
+      // AGP generates the view binding classes, so their findings can't be fixed here.
+      excludedPaths.set(".*/build/generated/.*")
+    }
   }
+}
+
+detekt {
+  buildUponDefaultConfig = true
+  allRules = true
+  config.setFrom(file("../../detekt.yml"))
 }
 
 tasks.withType<Detekt>().configureEach {

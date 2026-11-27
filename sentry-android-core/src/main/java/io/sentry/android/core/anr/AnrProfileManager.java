@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AnrProfileManager implements AutoCloseable {
+public final class AnrProfileManager implements AutoCloseable {
 
   private static final int MAX_NUM_STACKTRACES =
       (int) ((THRESHOLD_ANR_MS / POLLING_INTERVAL_MS) * 2);
@@ -61,7 +61,7 @@ public class AnrProfileManager implements AutoCloseable {
               queueFile,
               new ObjectQueue.Converter<AnrStackTrace>() {
                 @Override
-                public AnrStackTrace from(final byte[] source) throws IOException {
+                public @Nullable AnrStackTrace from(final byte[] source) throws IOException {
                   // no need to close the streams since they are backed by byte arrays and don't
                   // hold any resources
                   final @NotNull ByteArrayInputStream bis = new ByteArrayInputStream(source);

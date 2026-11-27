@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
+import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.annotation.SuppressLint;
@@ -56,6 +57,7 @@ import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.LazyEvaluator;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Objects;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -149,7 +151,7 @@ final class AndroidOptionsInitializer {
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final boolean isReplayAvailable) {
     initializeIntegrationsAndProcessors(
         options, context, new BuildInfoProvider(new AndroidLogger()), loadClass, isReplayAvailable);
@@ -159,7 +161,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final boolean isReplayAvailable) {
 
     if (options.getCacheDirPath() != null
@@ -406,7 +408,7 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable,
       final boolean isReplayAvailable,
@@ -427,8 +429,12 @@ final class AndroidOptionsInitializer {
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
-    final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
-    options.addIntegration(new NdkIntegration(sentryNdkClass));
+    // the outproc backend builds on the inproc one, so it goes first, and quietly
+    Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_OUTPROC_CLASS_NAME, null);
+    if (sentryNdkClass == null) {
+      sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
+    }
+    options.addIntegration(new NdkIntegration(context, sentryNdkClass));
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
       options.addIntegration(new TombstoneIntegration(context));
@@ -491,7 +497,7 @@ final class AndroidOptionsInitializer {
       options.setReplayController(replay);
     }
     if (isDistributionAvailable) {
-      final DistributionIntegration distribution = new DistributionIntegration((context));
+      final DistributionIntegration distribution = new DistributionIntegration(context);
       options.setDistributionController(distribution);
       options.addIntegration(distribution);
     }

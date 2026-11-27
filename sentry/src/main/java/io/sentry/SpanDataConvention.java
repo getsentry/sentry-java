@@ -12,6 +12,7 @@ public interface SpanDataConvention {
   String HTTP_FRAGMENT_KEY = "http.fragment";
   String HTTP_METHOD_KEY = "http.request.method";
   String HTTP_STATUS_CODE_KEY = "http.response.status_code";
+  String SENTRY_KIND_KEY = "sentry.kind";
   String HTTP_RESPONSE_CONTENT_LENGTH_KEY = "http.response_content_length";
   String BLOCKED_MAIN_THREAD_KEY = "blocked_main_thread";
   String CALL_STACK_KEY = "call_stack";

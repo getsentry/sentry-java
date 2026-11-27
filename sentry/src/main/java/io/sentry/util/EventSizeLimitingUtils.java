@@ -96,6 +96,9 @@ public final class EventSizeLimitingUtils {
 
       return reducedEvent;
     } catch (Throwable e) {
+      // Measuring the size serializes the event, which holds data from integrations and the app,
+      // reflectively, so we can't know what this throws. The event is sent as is.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(

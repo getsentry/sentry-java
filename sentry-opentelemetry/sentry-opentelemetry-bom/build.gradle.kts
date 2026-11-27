@@ -1,6 +1,9 @@
 plugins {
   `java-platform`
   `maven-publish`
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 javaPlatform.allowDependencies()

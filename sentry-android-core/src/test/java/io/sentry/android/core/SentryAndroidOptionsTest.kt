@@ -34,13 +34,13 @@ class SentryAndroidOptionsTest {
     assertTrue(
       sdkVersion.packageSet.any {
         it.name == "maven:io.sentry:sentry-android-core" && it.version == BuildConfig.VERSION_NAME
-      }
+      },
     )
 
     assertTrue(
       sdkVersion.packageSet.any {
         it.name == "maven:io.sentry:sentry" && it.version == BuildConfig.VERSION_NAME
-      }
+      },
     )
   }
 
@@ -173,9 +173,9 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
-  fun `standalone app start tracing is disabled by default`() {
+  fun `standalone app start tracing is enabled by default`() {
     val sentryOptions = SentryAndroidOptions()
-    assertFalse(sentryOptions.isEnableStandaloneAppStartTracing)
+    assertTrue(sentryOptions.isEnableStandaloneAppStartTracing)
   }
 
   fun `when options is initialized, enableScopeSync is enabled by default`() {
@@ -195,7 +195,7 @@ class SentryAndroidOptionsTest {
   fun `ndk handler strategy option can be changed`() {
     val sentryOptions = SentryAndroidOptions()
     sentryOptions.setNativeHandlerStrategy(
-      NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START
+      NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START,
     )
     assertEquals(
       NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START.value,
@@ -269,6 +269,18 @@ class SentryAndroidOptionsTest {
 
     sentryOptions.tombstoneMergeTimeThresholdMillis = 10000L
     assertEquals(10000L, sentryOptions.tombstoneMergeTimeThresholdMillis)
+  }
+
+  @Test
+  fun `webView tracing allowed hosts are empty by default and copied when set`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertTrue(sentryOptions.webViewTracing.allowedHosts.isEmpty())
+
+    val hosts = mutableListOf("example.com")
+    sentryOptions.webViewTracing.allowedHosts = hosts
+    hosts.add("other.com")
+
+    assertEquals(listOf("example.com"), sentryOptions.webViewTracing.allowedHosts)
   }
 
   private class CustomDebugImagesLoader : IDebugImagesLoader {

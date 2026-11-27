@@ -4,7 +4,6 @@ import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
@@ -45,7 +44,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  * implementation using {@code ProfilingManager}, available on API 35+.
  */
 @ApiStatus.Internal
-public class AndroidContinuousProfiler
+public final class AndroidContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 60000;
 
@@ -53,7 +52,6 @@ public class AndroidContinuousProfiler
   private final @Nullable String profilingTracesDirPath;
   private final int profilingTracesHz;
   private final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier;
-  private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isInitialized = false;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable AndroidProfiler profiler = null;
@@ -83,7 +81,6 @@ public class AndroidContinuousProfiler
       final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
-    this.buildInfoProvider = buildInfoProvider;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
     this.executorServiceSupplier = executorServiceSupplier;
@@ -175,10 +172,6 @@ public class AndroidContinuousProfiler
 
   private void start() {
     initScopes();
-
-    // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
-    // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;
 
     // Let's initialize trace folder and profiling interval
     init();
@@ -281,12 +274,6 @@ public class AndroidContinuousProfiler
         return;
       }
 
-      // onTransactionStart() is only available since Lollipop_MR1
-      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) {
-        return;
-      }
-
       List<PerformanceCollectionData> performanceCollectionData = null;
       if (performanceCollector != null) {
         performanceCollectionData = performanceCollector.stop(chunkId.toString());
@@ -335,6 +322,7 @@ public class AndroidContinuousProfiler
     }
   }
 
+  @Override
   public void reevaluateSampling() {
     shouldSample = true;
   }
@@ -373,27 +361,27 @@ public class AndroidContinuousProfiler
     return ProfileRecordingState.UNKNOWN;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     try {
       options
           .getExecutorService()
-          .submit(
-              () -> {
-                // SDK is closed, we don't send the chunks
-                if (isClosed.get()) {
-                  return;
-                }
-                final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
-                try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
-                  for (ProfileChunk.Builder builder : payloadBuilders) {
-                    payloads.add(builder.build(options));
-                  }
-                  payloadBuilders.clear();
-                }
-                for (ProfileChunk payload : payloads) {
-                  scopes.captureProfileChunk(payload);
-                }
-              });
+          .submit(() -> {
+            // SDK is closed, we don't send the chunks
+            if (isClosed.get()) {
+              return;
+            }
+            final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
+            try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
+              for (ProfileChunk.Builder builder : payloadBuilders) {
+                payloads.add(builder.build(options));
+              }
+              payloadBuilders.clear();
+            }
+            for (ProfileChunk payload : payloads) {
+              scopes.captureProfileChunk(payload);
+            }
+          });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
     }

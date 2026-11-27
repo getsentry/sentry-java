@@ -68,10 +68,10 @@ class StackTest {
   fun `cloning stack clones stack items`() {
     val stack =
       fixture.getSut(
-        fixture.createStackItem(Scope(fixture.options).apply { this.setTag("rootTag", "value") })
+        fixture.createStackItem(Scope(fixture.options).apply { this.setTag("rootTag", "value") }),
       )
     stack.push(
-      fixture.createStackItem(Scope(fixture.options).apply { this.setTag("childTag", "value") })
+      fixture.createStackItem(Scope(fixture.options).apply { this.setTag("childTag", "value") }),
     )
     val clone = Stack(stack)
 

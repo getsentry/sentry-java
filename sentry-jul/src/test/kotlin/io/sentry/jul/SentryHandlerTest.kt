@@ -289,7 +289,7 @@ class SentryHandlerTest {
     fixture = Fixture()
 
     fixture.logger.config(
-      "this should not be a breadcrumb as the level is lower than the minimum INFO"
+      "this should not be a breadcrumb as the level is lower than the minimum INFO",
     )
     fixture.logger.info("this should be a breadcrumb")
     fixture.logger.warning("this should not be sent as the event but be a breadcrumb")
@@ -339,7 +339,7 @@ class SentryHandlerTest {
       .send(
         checkLogs { logs ->
           assertEquals("this should be captured as a log", logs.items.first().body)
-        }
+        },
       )
   }
 
@@ -427,7 +427,7 @@ class SentryHandlerTest {
             assertTrue(
               it.packageSet.any { pkg ->
                 "maven:io.sentry:sentry-jul" == pkg.name && BuildConfig.VERSION_NAME == pkg.version
-              }
+              },
             )
             assertTrue(it.integrationSet.contains("Jul"))
           }
@@ -459,7 +459,7 @@ class SentryHandlerTest {
       .send(
         checkLogs { logs ->
           assertEquals("this should be captured as a log", logs.items.first().body)
-        }
+        },
       )
   }
 
@@ -527,10 +527,10 @@ class SentryHandlerTest {
       }
 
     fixture.handler.publish(
-      LogRecord(Level.INFO, null).apply { this.resourceBundle = resourceBundle }
+      LogRecord(Level.INFO, null).apply { this.resourceBundle = resourceBundle },
     )
     fixture.handler.publish(
-      LogRecord(Level.SEVERE, null).apply { this.resourceBundle = resourceBundle }
+      LogRecord(Level.SEVERE, null).apply { this.resourceBundle = resourceBundle },
     )
     Sentry.flush(10)
 
@@ -558,7 +558,7 @@ class SentryHandlerTest {
         checkLogs { event ->
           assertEquals(SentryLogLevel.TRACE, event.items.first().level)
           assertEquals("auto.log.jul", event.items.first().attributes?.get("sentry.origin")?.value)
-        }
+        },
       )
   }
 
@@ -630,7 +630,7 @@ class SentryHandlerTest {
           val log = logs.items.first()
           assertEquals("testing message without parameters", log.body)
           assertNull(log.attributes?.get("sentry.message.template"))
-        }
+        },
       )
   }
 
@@ -648,7 +648,25 @@ class SentryHandlerTest {
           assertEquals("testing message param", log.body)
           assertEquals("testing message {0}", log.attributes?.get("sentry.message.template")?.value)
           assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
-        }
+        },
+      )
+  }
+
+  @Test
+  fun `does not format an already formatted log message again`() {
+    fixture = Fixture(minimumLevel = Level.SEVERE)
+    fixture.logger.log(Level.SEVERE, "q={0}", arrayOf("PO%2010B"))
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("q=PO%2010B", log.body)
+          assertEquals("q={0}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("PO%2010B", log.attributes?.get("sentry.message.parameter.0")?.value)
+        },
       )
   }
 
@@ -666,7 +684,7 @@ class SentryHandlerTest {
           assertEquals("testing message param", log.body)
           assertEquals("testing message %s", log.attributes?.get("sentry.message.template")?.value)
           assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
-        }
+        },
       )
   }
 
@@ -688,7 +706,7 @@ class SentryHandlerTest {
           )
           assertEquals(1, log.attributes?.get("sentry.message.parameter.0")?.value)
           assertNull(log.attributes?.get("sentry.message.parameter.1"))
-        }
+        },
       )
   }
 
@@ -710,7 +728,7 @@ class SentryHandlerTest {
           val attributes = log.attributes!!
           assertEquals("someValue", attributes["mdc.someTag"]?.value)
           assertNull(attributes["otherTag"])
-        }
+        },
       )
   }
 }

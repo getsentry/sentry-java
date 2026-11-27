@@ -277,7 +277,7 @@ class JavaContinuousProfilerTest {
       .log(
         eq(SentryLevel.WARNING),
         eq(
-          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)"
+          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)",
         ),
         eq(expectedPath),
         eq(false),
@@ -419,6 +419,31 @@ class JavaContinuousProfilerTest {
         eq("Disabling profiling because traces directory path contains invalid character: %s"),
         eq(","),
       )
+  }
+
+  @Test
+  fun `profiler starts when the traces dir path contains a dot`() {
+    val profiler = fixture.getSut {
+      it.profilingTracesDirPath = File("tmp", "sentry.traces").absolutePath
+    }
+    File(fixture.options.profilingTracesDirPath!!).mkdirs()
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+    profiler.close(true)
+  }
+
+  @Test
+  fun `profiler stays disabled when the traces dir is created after its first start`() {
+    val tracesDir = File(fixture.options.profilingTracesDirPath!!)
+    tracesDir.deleteRecursively()
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertFalse(profiler.isRunning)
+
+    tracesDir.mkdirs()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertFalse(profiler.isRunning)
   }
 
   fun withMockScopes(closure: () -> Unit) =

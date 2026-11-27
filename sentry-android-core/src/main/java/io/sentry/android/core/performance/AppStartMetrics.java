@@ -29,6 +29,7 @@ import io.sentry.android.core.CurrentActivityHolder;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,7 +54,7 @@ import org.jetbrains.annotations.TestOnly;
 // public API.
 @SuppressWarnings("this-escape")
 @ApiStatus.Internal
-public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
+public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   public interface HeadlessAppStartListener {
     void onHeadlessAppStart();
   }
@@ -86,7 +87,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private boolean isCallbackRegistered = false;
   private volatile boolean shouldSendStartMeasurements = true;
+  // Set when the app moves to the background, so a relaunch in the same process is timed from its
+  // own activity rather than from the process start.
+  private volatile boolean isWarmRelaunchPending = false;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
+  // Main thread only. Set in onActivityPreCreated, consumed by the onActivityCreated that follows.
+  private long activityPreCreatedUptimeMs = -1;
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartListenerInvoked = new AtomicBoolean(false);
@@ -120,16 +126,16 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * @return the app start span Uses Process.getStartUptimeMillis() as start timestamp, which
-   *     requires API level 24+
+   * Returns the app start span. It uses Process.getStartUptimeMillis() as start timestamp, which
+   * requires API level 24+.
    */
   public @NotNull TimeSpan getAppStartTimeSpan() {
     return appStartSpan;
   }
 
   /**
-   * @return the app start span Uses Process.getStartUptimeMillis() as start timestamp, which
-   *     requires API level 24+
+   * Returns the app start span. It uses Process.getStartUptimeMillis() as start timestamp, which
+   * requires API level 24+.
    */
   public @NotNull TimeSpan createProcessInitSpan() {
     // AppStartSpan and CLASS_LOADED_UPTIME_MS can be modified at any time.
@@ -144,11 +150,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * @return the SDK init time span. Uses ContentProvider/Sdk init time as start timestamp. It's the
-   *     app start fallback below API 24, where the process start time isn't available.
-   *     <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
-   *     fallback to {@link io.sentry.android.core.SentryAndroid}. At least the start timestamp
-   *     should always be set.
+   * Returns the SDK init time span. Uses ContentProvider/Sdk init time as start timestamp. It's the
+   * app start fallback below API 24, where the process start time isn't available.
+   *
+   * <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
+   * fallback to {@link io.sentry.android.core.SentryAndroid}. At least the start timestamp should
+   * always be set.
    */
   public @NotNull TimeSpan getSdkInitTimeSpan() {
     return sdkInitTimeSpan;
@@ -338,8 +345,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * @return the app start time span if it was started, falls back to the sdk init time span
-   *     otherwise
+   * Returns the app start time span if it was started, falls back to the sdk init time span
+   * otherwise.
    */
   public @NotNull TimeSpan getAppStartTimeSpanWithFallback() {
     // If the app start type was never determined or app wasn't launched in foreground,
@@ -408,8 +415,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appLaunchedInForeground = null;
     isCallbackRegistered = false;
     shouldSendStartMeasurements = true;
+    isWarmRelaunchPending = false;
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
+    activityPreCreatedUptimeMs = -1;
     firstIdle = -1;
     headlessAppStartCheckPending.set(false);
     headlessAppStartListenerInvoked.set(false);
@@ -420,6 +429,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appStartEndTime = null;
     cachedStartInfo = null;
     appStartExtension.clear();
+    appStartExtension.setExtendAppStartListener(null);
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -464,8 +474,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param application The application object where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onApplicationCreate(final @NotNull Application application) {
     final long now = SystemClock.uptimeMillis();
 
@@ -480,8 +490,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param application The application object where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onApplicationPostCreate(final @NotNull Application application) {
     final long now = SystemClock.uptimeMillis();
 
@@ -550,28 +560,14 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (!headlessAppStartCheckPending.compareAndSet(false, true)) {
       return;
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      Looper.getMainLooper()
-          .getQueue()
-          .addIdleHandler(
-              () -> {
-                firstIdle = SystemClock.uptimeMillis();
-                headlessAppStartCheckPending.set(false);
-                handleHeadlessAppStartIfNeededOnMain();
-                return false;
-              });
-    } else {
-      final Handler handler = new Handler(Looper.getMainLooper());
-      handler.post(
-          () -> {
-            firstIdle = SystemClock.uptimeMillis();
-            handler.post(
-                () -> {
-                  headlessAppStartCheckPending.set(false);
-                  handleHeadlessAppStartIfNeededOnMain();
-                });
-          });
-    }
+    Looper.getMainLooper()
+        .getQueue()
+        .addIdleHandler(() -> {
+          firstIdle = SystemClock.uptimeMillis();
+          headlessAppStartCheckPending.set(false);
+          handleHeadlessAppStartIfNeededOnMain();
+          return false;
+        });
   }
 
   /**
@@ -639,8 +635,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           stopHeadlessAppStartAt(onCreateStartUptimeMs);
           return;
         }
-      } catch (Throwable ignored) {
-        // Best effort: never let optional startup timestamp enrichment break app startup.
+      } catch (Throwable e) {
+        // The start info came from system_server over Binder and the timestamp is optional, so a
+        // malformed record must not break app startup. The process init time is used instead.
+        ExceptionUtils.rethrowIfFatal(e);
       }
     }
 
@@ -659,8 +657,19 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   @Override
+  public void onActivityPreCreated(
+      @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    // ActivityLifecycleIntegration starts the activity.load span here, so a warm app start must not
+    // start any later than that. Classification stays in onActivityCreated, which also runs when
+    // the SDK is initialized inside Activity.onCreate, after this callback was dispatched.
+    activityPreCreatedUptimeMs = SystemClock.uptimeMillis();
+  }
+
+  @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    final long activityCreatedUptimeMillis = SystemClock.uptimeMillis();
+    final long activityCreatedUptimeMillis =
+        activityPreCreatedUptimeMs != -1 ? activityPreCreatedUptimeMs : SystemClock.uptimeMillis();
+    activityPreCreatedUptimeMs = -1;
     CurrentActivityHolder.getInstance().setActivity(activity);
 
     // the first activity determines the app start type
@@ -675,8 +684,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       // the extended vital measure from the activity while the eager app.start transaction stays
       // anchored at process start.
       if ((!isAppLaunchedInForeground()
+              || isWarmRelaunchPending
               || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1))
           && !appStartExtension.isActive()) {
+        isWarmRelaunchPending = false;
         appStartType = AppStartType.WARM;
         shouldSendStartMeasurements = true;
         appStartSpan.reset();
@@ -743,6 +754,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       appStartType = AppStartType.WARM;
       appLaunchedInForeground = true;
       shouldSendStartMeasurements = true;
+      isWarmRelaunchPending = true;
       firstDrawDone.set(false);
     }
   }
@@ -751,8 +763,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param contentProvider The content provider where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onContentProviderCreate(final @NotNull ContentProvider contentProvider) {
     final long now = SystemClock.uptimeMillis();
 
@@ -765,8 +777,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param contentProvider The content provider where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onContentProviderPostCreate(final @NotNull ContentProvider contentProvider) {
     final long now = SystemClock.uptimeMillis();
 

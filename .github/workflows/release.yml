@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Get auth token
         id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           app-id: ${{ vars.SENTRY_RELEASE_BOT_CLIENT_ID }}
           private-key: ${{ secrets.SENTRY_RELEASE_BOT_PRIVATE_KEY }}
@@ -33,7 +33,7 @@ jobs:
           # Needs to be set, otherwise git describe --tags will fail with: No names found, cannot describe anything
           fetch-depth: 0
       - name: Prepare release
-        uses: getsentry/craft@2e29b0819113d334c15da3d8cac2138cb9dc111a # 3.9.0
+        uses: getsentry/craft@b2a6fa4904f37b46f34b82330e0f3bf02a40f681 # 3.13.0
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
         with:

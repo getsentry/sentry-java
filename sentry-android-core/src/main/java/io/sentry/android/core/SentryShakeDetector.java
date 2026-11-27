@@ -76,7 +76,10 @@ public final class SentryShakeDetector implements SensorEventListener {
       return;
     }
     if (sensorManager == null) {
-      sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+      // An Activity's SensorManager holds on to that Activity, and the cached manager outlives it.
+      sensorManager =
+          (SensorManager)
+              ContextUtils.getApplicationContext(context).getSystemService(Context.SENSOR_SERVICE);
     }
     if (sensorManager != null && accelerometer == null) {
       accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false);
@@ -114,11 +117,10 @@ public final class SentryShakeDetector implements SensorEventListener {
     }
     final @Nullable Handler h = handler;
     if (h != null) {
-      h.post(
-          () -> {
-            //noinspection Convert2MethodRef
-            queue.clear();
-          });
+      h.post(() -> {
+        //noinspection Convert2MethodRef
+        queue.clear();
+      });
     }
   }
 
@@ -159,7 +161,7 @@ public final class SentryShakeDetector implements SensorEventListener {
     // Not needed for shake detection.
   }
 
-  static class SampleQueue {
+  static final class SampleQueue {
     private static final long MAX_WINDOW_SIZE_NS = 500_000_000L; // 0.5s
     private static final long MIN_WINDOW_SIZE_NS = MAX_WINDOW_SIZE_NS >> 1; // 0.25s
     private static final int MIN_QUEUE_SIZE = 4;
@@ -226,13 +228,13 @@ public final class SentryShakeDetector implements SensorEventListener {
     }
   }
 
-  static class Sample {
+  static final class Sample {
     long timestamp;
     boolean accelerating;
     @Nullable Sample next;
   }
 
-  static class SamplePool {
+  static final class SamplePool {
     private @Nullable Sample head;
 
     @NotNull

@@ -14,6 +14,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class ExternalOptionsTest {
@@ -38,7 +39,7 @@ class ExternalOptionsTest {
         "data-collection.graphql.variables=true",
         "data-collection.database-query-data=false",
         "data-collection.file-paths=false",
-      )
+      ),
     ) { options ->
       val dataCollection = options.dataCollection
 
@@ -91,7 +92,7 @@ class ExternalOptionsTest {
         "data-collection.graphql.variables=invalid",
         "data-collection.database-query-data=invalid",
         "data-collection.file-paths=invalid",
-      )
+      ),
     ) { options ->
       assertThat(options.dataCollection!!.userInfo).isFalse()
       assertThat(options.dataCollection!!.graphql.document).isFalse()
@@ -121,7 +122,7 @@ class ExternalOptionsTest {
         "proxy.port=9090",
         "proxy.user=some-user",
         "proxy.pass=some-pass",
-      )
+      ),
     ) {
       assertNotNull(it.proxy) { proxy ->
         assertEquals("proxy.example.com", proxy.host)
@@ -192,7 +193,7 @@ class ExternalOptionsTest {
       listOf(
         "in-app-includes=org.springframework,com.myapp",
         "in-app-excludes=org.jboss,com.microsoft",
-      )
+      ),
     ) {
       assertEquals(listOf("org.springframework", "com.myapp"), it.inAppIncludes)
       assertEquals(listOf("org.jboss", "com.microsoft"), it.inAppExcludes)
@@ -334,6 +335,29 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with ignored errors for deduplication using external properties`() {
+    withPropertiesFile(
+      "ignored-errors-for-deduplication=example.FirstException,example.SecondException",
+    ) { options ->
+      assertThat(options.ignoredErrorsForDeduplication)
+        .containsExactly("example.FirstException", "example.SecondException")
+        .inOrder()
+    }
+  }
+
+  @Test
+  fun `creates options with empty ignored errors for deduplication using external properties`() {
+    withPropertiesFile("ignored-errors-for-deduplication=") { options ->
+      assertThat(options.ignoredErrorsForDeduplication).containsExactly("")
+    }
+  }
+
+  @Test
+  fun `creates options with null ignored errors for deduplication if missing`() {
+    withPropertiesFile { options -> assertThat(options.ignoredErrorsForDeduplication).isNull() }
+  }
+
+  @Test
   fun `creates options with single bundle ID using external properties`() {
     withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
       assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))
@@ -343,12 +367,12 @@ class ExternalOptionsTest {
   @Test
   fun `creates options with multiple bundle IDs using external properties`() {
     withPropertiesFile(
-      "bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411,faa3ab42-b1bd-4659-af8e-1682324aa744"
+      "bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411,faa3ab42-b1bd-4659-af8e-1682324aa744",
     ) { options ->
       assertTrue(
         options.bundleIds.containsAll(
-          listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744")
-        )
+          listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744"),
+        ),
       )
     }
   }
@@ -397,7 +421,7 @@ class ExternalOptionsTest {
   fun `creates options with ignoredTransactions`() {
     withPropertiesFile("ignored-transactions=transactionName1,transactionName2") { options ->
       assertTrue(
-        options.ignoredTransactions!!.containsAll(listOf("transactionName1", "transactionName2"))
+        options.ignoredTransactions!!.containsAll(listOf("transactionName1", "transactionName2")),
       )
     }
   }
@@ -406,6 +430,75 @@ class ExternalOptionsTest {
   fun `creates options with null ignoredTransactions if missing`() {
     val logger = mock<ILogger>()
     withPropertiesFile("Another .*", logger) { options -> assertNull(options.ignoredTransactions) }
+  }
+
+  @Test
+  fun `ignored server HTTP status codes are null if missing`() {
+    withPropertiesFile { assertThat(it.traceIgnoreStatusCodes).isNull() }
+  }
+
+  @Test
+  fun `creates empty ignored server HTTP status codes from empty input`() {
+    withPropertiesFile("trace-ignore-status-codes=") {
+      assertThat(it.traceIgnoreStatusCodes).isEmpty()
+    }
+  }
+
+  @Test
+  fun `creates ignored server HTTP status codes and ranges`() {
+    withPropertiesFile("trace-ignore-status-codes=404, 410 , 500-599") { options ->
+      val ranges = options.traceIgnoreStatusCodes
+      assertThat(ranges).hasSize(3)
+      assertThat(ranges!![0].isInRange(404)).isTrue()
+      assertThat(ranges[1].isInRange(410)).isTrue()
+      assertThat(ranges[2].isInRange(500)).isTrue()
+      assertThat(ranges[2].isInRange(599)).isTrue()
+    }
+  }
+
+  @Test
+  fun `ignores invalid entries while preserving valid ignored server HTTP status codes`() {
+    val logger = mock<ILogger>()
+    withPropertiesFile(
+      "trace-ignore-status-codes=404,invalid,600,500-400",
+      logger,
+    ) { options ->
+      val ranges = options.traceIgnoreStatusCodes
+      assertThat(ranges).hasSize(1)
+      assertThat(ranges!![0].isInRange(404)).isTrue()
+    }
+    verify(logger, times(3)).log(eq(SentryLevel.WARNING), any<String>(), any<String>())
+  }
+
+  @Test
+  fun `all invalid ignored server HTTP status codes leave existing configuration unchanged`() {
+    withPropertiesFile("trace-ignore-status-codes=invalid,600,500-400") { externalOptions ->
+      assertThat(externalOptions.traceIgnoreStatusCodes).isNull()
+
+      val options =
+        SentryOptions().apply {
+          traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(410))
+        }
+      options.merge(externalOptions)
+
+      assertThat(options.traceIgnoreStatusCodes).hasSize(1)
+      assertThat(options.traceIgnoreStatusCodes!![0].isInRange(410)).isTrue()
+    }
+  }
+
+  @Test
+  fun `system property takes precedence for ignored server HTTP status codes`() {
+    System.setProperty("sentry.trace-ignore-status-codes", "410")
+    try {
+      withPropertiesFile("trace-ignore-status-codes=404") { options ->
+        val ranges = options.traceIgnoreStatusCodes
+        assertThat(ranges).hasSize(1)
+        assertThat(ranges!![0].isInRange(410)).isTrue()
+        assertThat(ranges[0].isInRange(404)).isFalse()
+      }
+    } finally {
+      System.clearProperty("sentry.trace-ignore-status-codes")
+    }
   }
 
   @Test
@@ -466,7 +559,7 @@ class ExternalOptionsTest {
         "cron.default-timezone=America/New_York",
         "cron.default-failure-issue-threshold=40",
         "cron.default-recovery-threshold=50",
-      )
+      ),
     ) { options ->
       assertEquals(1L, options.cron?.defaultCheckinMargin)
       assertEquals(30L, options.cron?.defaultMaxRuntime)

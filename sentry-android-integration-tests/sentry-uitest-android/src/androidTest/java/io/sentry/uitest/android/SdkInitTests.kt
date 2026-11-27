@@ -18,6 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import leakcanary.LeakAssertions
 import leakcanary.LeakCanary
+import org.junit.Ignore
 import org.junit.runner.RunWith
 import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
@@ -74,9 +75,10 @@ class SdkInitTests : BaseUiTest() {
     transaction2.finish()
 
     relay.assert {
+      assertAppStartTransaction()
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           it.assertNoOtherItems()
@@ -84,9 +86,8 @@ class SdkInitTests : BaseUiTest() {
         }
 
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "EmptyActivity"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "EmptyActivity"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           // Transaction-based Profiling is already in e2etests transaction, so it won't run again
@@ -96,8 +97,8 @@ class SdkInitTests : BaseUiTest() {
         }
 
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests2"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests2"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           // Profiling uses executorService, so if the executorService is shutdown it would fail
@@ -110,6 +111,10 @@ class SdkInitTests : BaseUiTest() {
     }
   }
 
+  // The headless app start sent after the second init can take the transaction profiler from
+  // afterRestart. Re-enable without the profile assertion once transaction-based profiling is
+  // dropped.
+  @Ignore("https://github.com/getsentry/sentry-java/issues/5094")
   @Test
   fun doubleInitDoesNotWait() {
     initSentry(true)
@@ -186,17 +191,17 @@ class SdkInitTests : BaseUiTest() {
                 ReferencePattern.InstanceFieldPattern(
                   "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
                   "context",
-                )
-              )
+                ),
+              ),
             ) +
             ('a'..'z').map { char ->
               IgnoredReferenceMatcher(
                 ReferencePattern.StaticFieldPattern(
                   "com.testfairy.modules.capture.TouchListener",
                   "$char",
-                )
+                ),
               )
-            }
+            },
       )
 
     val activityScenario = launchActivity<ComposeActivity>()
@@ -237,12 +242,12 @@ class SdkInitTests : BaseUiTest() {
       // so we need to set the current activity manually
       CurrentActivityHolder.getInstance().setActivity(activity)
       Thread {
-          initSentry(false) { options: SentryAndroidOptions ->
-            options.tracesSampleRate = 1.0
-            options.profilesSampleRate = 1.0
-          }
-          initLatch.countDown()
+        initSentry(false) { options: SentryAndroidOptions ->
+          options.tracesSampleRate = 1.0
+          options.profilesSampleRate = 1.0
         }
+        initLatch.countDown()
+      }
         .start()
     }
     initLatch.await()

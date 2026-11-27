@@ -15,6 +15,7 @@ import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,8 +101,9 @@ final class ManifestMetadataReader {
 
   static final String PROFILER_START_ON_APP_START = "io.sentry.traces.profiling.start-on-app-start";
 
-  @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
+
+  static final String WEBVIEW_TRACING_ALLOWED_HOSTS = "io.sentry.webview-tracing.allowed-hosts";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
   static final String PROGUARD_UUID = "io.sentry.proguard-uuid";
@@ -185,6 +186,9 @@ final class ManifestMetadataReader {
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
 
   static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
+
+  static final String IGNORED_ERRORS_FOR_DEDUPLICATION =
+      "io.sentry.ignored-errors-for-deduplication";
 
   static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
 
@@ -472,9 +476,6 @@ final class ManifestMetadataReader {
           }
         }
 
-        options.setTraceSampling(
-            readBool(metadata, logger, TRACE_SAMPLING, options.isTraceSampling()));
-
         options.setEnableAutoActivityLifecycleTracing(
             readBool(
                 metadata,
@@ -541,6 +542,12 @@ final class ManifestMetadataReader {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
           options.setTracePropagationTargets(tracePropagationTargets);
+        }
+
+        final @Nullable List<String> webViewTracingAllowedHosts =
+            readList(metadata, logger, WEBVIEW_TRACING_ALLOWED_HOSTS);
+        if (webViewTracingAllowedHosts != null) {
+          options.getWebViewTracing().setAllowedHosts(webViewTracingAllowedHosts);
         }
 
         options.setEnableFramesTracking(readBool(metadata, logger, PERFORM_FRAMES_TRACKING, true));
@@ -731,6 +738,12 @@ final class ManifestMetadataReader {
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
+        final @Nullable List<String> ignoredErrorsForDeduplication =
+            readList(metadata, logger, IGNORED_ERRORS_FOR_DEDUPLICATION);
+        if (ignoredErrorsForDeduplication != null) {
+          options.setIgnoredErrorsForDeduplication(ignoredErrorsForDeduplication);
+        }
+
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
         if (includes != null && !includes.isEmpty()) {
           for (final @NotNull String include : includes) {
@@ -830,6 +843,10 @@ final class ManifestMetadataReader {
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
     } catch (Throwable e) {
+      // A metadata bundle from the package manager is unparceled on first access, and its values
+      // are whatever the app put in its manifest, so we can't know what reading it throws. The
+      // options keep their defaults for every key not read yet.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(
@@ -1122,6 +1139,9 @@ final class ManifestMetadataReader {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
     } catch (Throwable e) {
+      // A metadata bundle from the package manager is unparceled on first access, so we can't know
+      // what reading it throws. Auto-init stays enabled.
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
     }
     return autoInit;

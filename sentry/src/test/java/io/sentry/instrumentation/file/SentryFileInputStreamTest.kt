@@ -47,7 +47,7 @@ class SentryFileInputStreamTest {
             isSendDefaultPii = sendDefaultPii
             threadChecker = ThreadChecker.getInstance()
             addInAppInclude("org.junit")
-          }
+          },
         )
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
       if (activeTransaction) {

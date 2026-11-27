@@ -107,7 +107,7 @@ class SpanDescriptionExtractorTest {
       mapOf(
         HttpAttributes.HTTP_REQUEST_METHOD to "GET",
         UrlAttributes.URL_FULL to "https://sentry.io/some/path?q=1#top",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo()
@@ -121,7 +121,7 @@ class SpanDescriptionExtractorTest {
   fun `uses URL_PATH for description`() {
     givenSpanKind(SpanKind.SERVER)
     givenAttributes(
-      mapOf(HttpAttributes.HTTP_REQUEST_METHOD to "GET", UrlAttributes.URL_PATH to "/some/path")
+      mapOf(HttpAttributes.HTTP_REQUEST_METHOD to "GET", UrlAttributes.URL_PATH to "/some/path"),
     )
 
     val info = whenExtractingSpanInfo()
@@ -140,7 +140,7 @@ class SpanDescriptionExtractorTest {
         HttpAttributes.HTTP_ROUTE to "/some/{id}",
         HttpIncubatingAttributes.HTTP_TARGET to "some/path?q=1#top",
         UrlAttributes.URL_PATH to "/some/path",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo()
@@ -181,7 +181,7 @@ class SpanDescriptionExtractorTest {
       mapOf(
         DbIncubatingAttributes.DB_SYSTEM to "some",
         DbIncubatingAttributes.DB_QUERY_TEXT to "SELECT * FROM tbl",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo()
@@ -197,7 +197,7 @@ class SpanDescriptionExtractorTest {
       mapOf(
         DbIncubatingAttributes.DB_SYSTEM to "some",
         DbIncubatingAttributes.DB_STATEMENT to "SELECT * FROM tbl",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo()
@@ -238,7 +238,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = false)
@@ -255,7 +255,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -266,13 +266,70 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
+  fun `maps replacement messaging system name to queue publish op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `replacement messaging system name wins over http when queue tracing enabled`() {
+    givenSpanKind(SpanKind.PRODUCER)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-queue", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `http wins over replacement messaging system name when queue tracing disabled`() {
+    givenSpanKind(SpanKind.CLIENT)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM_NAME to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = false)
+
+    assertEquals("http.client", info.op)
+    assertEquals("POST https://sqs.us-east-1.amazonaws.com/", info.description)
+    assertEquals(TransactionNameSource.URL, info.transactionNameSource)
+  }
+
+  @Test
   fun `maps messaging send operation type to queue publish op`() {
     givenAttributes(
       mapOf(
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "send",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -289,7 +346,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "process",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -306,7 +363,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "deliver",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -323,7 +380,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "create",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -340,7 +397,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "receive",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -357,7 +414,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "rabbitmq",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "settle",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -375,7 +432,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "rabbitmq",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "queue-name",
         MessagingIncubatingAttributes.MESSAGING_OPERATION to "publish",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -391,7 +448,7 @@ class SpanDescriptionExtractorTest {
       mapOf(
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -407,7 +464,7 @@ class SpanDescriptionExtractorTest {
       mapOf(
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -423,7 +480,7 @@ class SpanDescriptionExtractorTest {
       mapOf(
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -444,7 +501,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "aws.sqs",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = true)
@@ -464,7 +521,7 @@ class SpanDescriptionExtractorTest {
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "aws.sqs",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
-      )
+      ),
     )
 
     val info = whenExtractingSpanInfo(queueTracingEnabled = false)

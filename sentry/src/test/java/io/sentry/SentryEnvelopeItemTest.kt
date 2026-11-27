@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.SentryId
@@ -14,10 +15,12 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.io.RandomAccessFile
 import java.io.StringWriter
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.concurrent.Callable
+import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -193,7 +196,7 @@ class SentryEnvelopeItemTest {
 
     assertFailsWith<IOException>(
       "Reading the attachment ${attachment.pathname} failed, because the file located at " +
-        "the path is not a file."
+        "the path is not a file.",
     ) {
       item.data
     }
@@ -218,7 +221,7 @@ class SentryEnvelopeItemTest {
         )
 
       assertFailsWith<IOException>(
-        "Reading the attachment ${attachment.pathname} failed, " + "because can't read the file."
+        "Reading the attachment ${attachment.pathname} failed, " + "because can't read the file.",
       ) {
         item.data
       }
@@ -272,7 +275,7 @@ class SentryEnvelopeItemTest {
 
     assertFailsWith<SentryEnvelopeException>(
       "Couldn't attach the attachment ${attachment.filename}.\n" +
-        "Please check that either bytes or a path is set."
+        "Please check that either bytes or a path is set.",
     ) {
       item.data
     }
@@ -385,7 +388,7 @@ class SentryEnvelopeItemTest {
 
     assertFailsWith<SentryEnvelopeException>(
       "Couldn't attach the attachment ${attachment.filename}.\n" +
-        "Please check that either bytes or a path is set."
+        "Please check that either bytes or a path is set.",
     ) {
       item.data
     }
@@ -427,7 +430,7 @@ class SentryEnvelopeItemTest {
     val profilingTraceData = mock<ProfilingTraceData> { whenever(it.traceFile).thenReturn(file) }
 
     assertFailsWith<SentryEnvelopeException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())
         .data
@@ -445,7 +448,7 @@ class SentryEnvelopeItemTest {
     file.writeBytes(fixture.bytes)
     file.setReadable(false)
     assertFailsWith<IOException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfilingTrace(profilingTraceData, fixture.maxAttachmentSize, mock())
         .data
@@ -538,7 +541,7 @@ class SentryEnvelopeItemTest {
       }
 
     assertFailsWith<SentryEnvelopeException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
     }
@@ -555,7 +558,7 @@ class SentryEnvelopeItemTest {
     file.writeBytes(fixture.bytes)
     file.setReadable(false)
     assertFailsWith<IOException>(
-      "Dropping profiling trace data, because the file ${file.path} doesn't exists"
+      "Dropping profiling trace data, because the file ${file.path} doesn't exists",
     ) {
       SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
     }
@@ -674,6 +677,47 @@ class SentryEnvelopeItemTest {
       "expected meta_length=$metaLength in header JSON, was: $json",
     )
   }
+
+  @Test
+  fun `fromPerfettoProfileChunk keeps a multi-megabyte trace intact after the metadata`() {
+    val traceFile = tmpDir.newFile("trace.pftrace")
+    val traceBytes = Random(42).nextBytes(3 * 1024 * 1024 + 17)
+    traceFile.writeBytes(traceBytes)
+
+    val item =
+      SentryEnvelopeItem.fromPerfettoProfileChunk(perfettoChunk(traceFile), fixture.serializer)
+
+    val payload = item.data
+    val metaLength = item.header.metaLength!!
+    assertThat(payload.size).isEqualTo(metaLength + traceBytes.size)
+    assertThat(payload.copyOfRange(metaLength, payload.size)).isEqualTo(traceBytes)
+    assertThat(traceFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `fromPerfettoProfileChunk with trace over 50MB throws and deletes the file`() {
+    val traceFile = tmpDir.newFile("trace.pftrace")
+    RandomAccessFile(traceFile, "rw").use { it.setLength(50L * 1024 * 1024 + 1) }
+
+    val item =
+      SentryEnvelopeItem.fromPerfettoProfileChunk(perfettoChunk(traceFile), fixture.serializer)
+
+    val exception = assertFailsWith<SentryEnvelopeException> { item.data }
+    assertThat(exception.message).contains("bigger than the maximum allowed size")
+    assertThat(traceFile.exists()).isFalse()
+  }
+
+  private fun perfettoChunk(traceFile: File): ProfileChunk =
+    ProfileChunk.Builder(
+        SentryId(),
+        SentryId(),
+        emptyMap(),
+        traceFile,
+        SentryNanotimeDate(),
+        ProfileChunk.PLATFORM_ANDROID,
+      )
+      .setContentType(ProfileChunk.CONTENT_TYPE_PERFETTO)
+      .build(fixture.options)
 
   @Test
   fun `fromPerfettoProfileChunk with missing file throws`() {

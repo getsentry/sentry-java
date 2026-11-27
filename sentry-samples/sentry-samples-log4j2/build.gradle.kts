@@ -3,12 +3,16 @@ plugins {
   application
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.log4j2.Main") }
 
 dependencies {
-  implementation(projects.sentryLog4j2)
+  implementation("io.sentry:sentry-log4j2:$sentryVersion")
   implementation(libs.log4j.api)
   implementation(libs.log4j.core)
 }
@@ -21,7 +25,7 @@ tasks.shadowJar {
   mergeServiceFiles()
   // Use Log4j2 cache transformer to properly handle plugin files
   transform(
-    com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer()
+    com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer(),
   )
 }
 

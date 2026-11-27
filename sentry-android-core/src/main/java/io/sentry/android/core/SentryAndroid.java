@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
 import android.os.Trace;
@@ -19,6 +20,10 @@ import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.FileUtils;
+import io.sentry.util.LoadClass;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +53,10 @@ public final class SentryAndroid {
   private static final String FRAGMENT_CLASS_NAME =
       "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
 
-  protected static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
+  // the process of SentryNdkCrashService in sentry-android-ndk-outproc
+  private static final String NDK_CRASH_SERVICE_PROCESS_SUFFIX = ".sentry_ndk_crash";
+
+  static final @NotNull AutoClosableReentrantLock staticLock = new AutoClosableReentrantLock();
 
   private SentryAndroid() {}
 
@@ -91,11 +98,16 @@ public final class SentryAndroid {
    * @param logger your custom logger that implements ILogger
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
-  @SuppressLint("NewApi")
   public static void init(
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    if (isNdkCrashServiceProcess()) {
+      logger.log(
+          SentryLevel.DEBUG, "Skipping SentryAndroid.init in the NDK crash service process.");
+      return;
+    }
+
     // Started before acquiring the lock so it stays balanced with the endSection() in the finally
     // even if acquire() throws.
     Trace.beginSection("SentryAndroid.init");
@@ -103,7 +115,7 @@ public final class SentryAndroid {
       Sentry.init(
           new SentryAndroidOptionsContainer(),
           options -> {
-            final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
+            final LoadClass classLoader = new LoadClass();
             final boolean isTimberUpstreamAvailable =
                 classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
             final boolean isFragmentUpstreamAvailable =
@@ -121,7 +133,7 @@ public final class SentryAndroid {
                 classLoader.isClassAvailable(SENTRY_DISTRIBUTION_INTEGRATION_CLASS_NAME, options);
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
-            final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
+            final LoadClass loadClass = new LoadClass();
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);
@@ -154,11 +166,9 @@ public final class SentryAndroid {
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead
             final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-            if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
-              final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
-              if (appStartTimeSpan.hasNotStarted()) {
-                appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
-              }
+            final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+            if (appStartTimeSpan.hasNotStarted()) {
+              appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
             }
             if (context.getApplicationContext() instanceof Application) {
               appStartMetrics.registerLifecycleCallbacks(
@@ -183,13 +193,12 @@ public final class SentryAndroid {
           // so only start a session if it's not already started
           // This e.g. happens on React Native, or e.g. on deferred SDK init
           final AtomicBoolean sessionStarted = new AtomicBoolean(false);
-          scopes.configureScope(
-              scope -> {
-                final @Nullable Session currentSession = scope.getSession();
-                if (currentSession != null && currentSession.getStarted() != null) {
-                  sessionStarted.set(true);
-                }
-              });
+          scopes.configureScope(scope -> {
+            final @Nullable Session currentSession = scope.getSession();
+            if (currentSession != null && currentSession.getStarted() != null) {
+              sessionStarted.set(true);
+            }
+          });
           if (!sessionStarted.get()) {
             scopes.startSession();
           }
@@ -270,6 +279,33 @@ public final class SentryAndroid {
         final Integration integration = systemEventsIntegrations.get(i);
         options.getIntegrations().remove(integration);
       }
+    }
+  }
+
+  @SuppressLint("NewApi")
+  private static boolean isNdkCrashServiceProcess() {
+    if (!new LoadClass()
+        .isClassAvailable(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME, (ILogger) null)) {
+      return false;
+    }
+    final @Nullable String processName =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            ? Application.getProcessName()
+            : readProcessName();
+    return processName != null && processName.endsWith(NDK_CRASH_SERVICE_PROCESS_SUFFIX);
+  }
+
+  // argv[0] of an app process is its process name
+  private static @Nullable String readProcessName() {
+    try {
+      final @Nullable String cmdline = FileUtils.readText(new File("/proc/self/cmdline"));
+      if (cmdline == null) {
+        return null;
+      }
+      final int end = cmdline.indexOf('\0');
+      return end >= 0 ? cmdline.substring(0, end) : cmdline;
+    } catch (IOException e) {
+      return null;
     }
   }
 }

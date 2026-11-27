@@ -3,17 +3,22 @@
 package io.sentry.android.replay.viewhierarchy
 
 import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -32,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
+import coil3.compose.AsyncImage as Coil3AsyncImage
+import com.google.common.truth.Truth.assertThat
 import io.sentry.NoOpLogger
 import io.sentry.SentryOptions
 import io.sentry.android.replay.maskAllImages
@@ -39,6 +46,7 @@ import io.sentry.android.replay.maskAllText
 import io.sentry.android.replay.sentryReplayMask
 import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.android.replay.util.ComposeTextLayout
+import io.sentry.android.replay.util.MaskRenderer
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
@@ -141,7 +149,7 @@ class ComposeMaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllImages = true }
 
     val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
+    assertEquals(2, imageNodes.size) // [AsyncImage, Coil3AsyncImage]
     assertTrue(imageNodes.all { it.shouldMask })
   }
 
@@ -196,7 +204,7 @@ class ComposeMaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllImages = false }
 
     val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
-    assertEquals(1, imageNodes.size) // [AsyncImage]
+    assertEquals(2, imageNodes.size) // [AsyncImage, Coil3AsyncImage]
     assertTrue(imageNodes.none { it.shouldMask })
   }
 
@@ -221,7 +229,7 @@ class ComposeMaskingOptionsTest {
 
   @Test
   @Ignore(
-    "Flaky: Robolectric intermittently reports zero bounds for nodes, causing isVisible=false and making the assertion non-deterministic"
+    "Flaky: Robolectric intermittently reports zero bounds for nodes, causing isVisible=false and making the assertion non-deterministic",
   )
   fun `when sentry-unmask modifier is set unmasks the node`() {
     ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.sentryReplayUnmask() }
@@ -287,6 +295,74 @@ class ComposeMaskingOptionsTest {
     assertTrue(genericNodes.none { it.shouldMask })
   }
 
+  @Test
+  fun `when walking the Compose tree throws a LinkageError, the whole Compose view is masked`() {
+    assertComposeViewFullyMaskedWhenGetChildrenThrows(NoSuchMethodError())
+  }
+
+  @Test
+  fun `when walking the Compose tree throws a RuntimeException, the whole Compose view is masked`() {
+    assertComposeViewFullyMaskedWhenGetChildrenThrows(IllegalStateException())
+  }
+
+  @Test
+  fun `when a Compose view has no Owner, the whole view is masked`() {
+    val activity = buildActivity(ComponentActivity::class.java).setup()
+    val composeView = AndroidComposeViewWithoutOwner(activity.get())
+    activity.get().setContentView(composeView)
+    shadowOf(Looper.getMainLooper()).idle()
+    val options =
+      SentryOptions().apply {
+        sessionReplay.maskAllText = false
+        sessionReplay.maskAllImages = false
+      }
+    val composeViewNode = ViewHierarchyNode.fromView(composeView, null, 0, options.sessionReplay)
+
+    val handled =
+      ComposeViewHierarchyNode.fromView(
+        composeView,
+        composeViewNode,
+        options.sessionReplay,
+        NoOpLogger.getInstance(),
+      )
+
+    assertTrue(handled)
+    assertThat(composeViewNode.renderMasks()).containsExactly(composeViewNode.visibleRect)
+  }
+
+  private fun assertComposeViewFullyMaskedWhenGetChildrenThrows(error: Throwable) {
+    val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val options =
+      SentryOptions().apply {
+        sessionReplay.maskAllText = false
+        sessionReplay.maskAllImages = false
+      }
+    val composeView = assertNotNull(activity.get().window.decorView.lookupComposeView())
+    val composeViewNode = ViewHierarchyNode.fromView(composeView, null, 0, options.sessionReplay)
+
+    val handled =
+      Mockito.mockStatic(SentryLayoutNodeHelper.javaClass).use {
+        mock: MockedStatic<SentryLayoutNodeHelper> ->
+        mock.`when`<Any> { SentryLayoutNodeHelper.getChildren(any<LayoutNode>()) }.thenThrow(error)
+
+        ComposeViewHierarchyNode.fromView(
+          composeView,
+          composeViewNode,
+          options.sessionReplay,
+          NoOpLogger.getInstance(),
+        )
+      }
+
+    assertTrue(handled)
+    assertThat(composeViewNode.renderMasks()).containsExactly(composeViewNode.visibleRect)
+  }
+
+  private fun ViewHierarchyNode.renderMasks(): List<Rect> {
+    val bitmap = Bitmap.createBitmap(1000, 2000, Bitmap.Config.ARGB_8888)
+    return MaskRenderer().use { it.renderMasks(bitmap, this) }
+  }
+
   private inline fun <reified T> Activity.collectNodesOfType(options: SentryOptions): List<T> {
     val root = window.decorView
     val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
@@ -319,6 +395,8 @@ class ComposeMaskingOptionsTest {
   }
 }
 
+private class AndroidComposeViewWithoutOwner(context: Context) : FrameLayout(context)
+
 private class ComposeMaskingOptionsActivity : ComponentActivity() {
   companion object {
     var textModifierApplier: (() -> Modifier)? = null
@@ -341,6 +419,12 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
           model = Uri.fromFile(File(image.toURI())),
           contentDescription = null,
           modifier = Modifier.padding(vertical = 16.dp),
+        )
+        // Coil 3 loads asynchronously, so without a size the node is empty and invisible
+        Coil3AsyncImage(
+          model = Uri.fromFile(File(image.toURI())),
+          contentDescription = null,
+          modifier = Modifier.size(10.dp),
         )
         Text("Random repo", fontSize = fontSizeApplier?.invoke() ?: TextUnit.Unspecified)
         TextField(

@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 public final class ReplayNetworkRequestOrResponse {
+  private final @Nullable Integer statusCode;
   private final @Nullable Long size;
   private final @Nullable NetworkBody body;
   private final @NotNull Map<String, String> headers;
@@ -20,9 +21,22 @@ public final class ReplayNetworkRequestOrResponse {
       @Nullable final Long size,
       @Nullable final NetworkBody body,
       @NotNull final Map<String, String> headers) {
+    this(null, size, body, headers);
+  }
+
+  public ReplayNetworkRequestOrResponse(
+      @Nullable final Integer statusCode,
+      @Nullable final Long size,
+      @Nullable final NetworkBody body,
+      @NotNull final Map<String, String> headers) {
+    this.statusCode = statusCode;
     this.size = size;
     this.body = body;
     this.headers = headers;
+  }
+
+  public @Nullable Integer getStatusCode() {
+    return statusCode;
   }
 
   public @Nullable Long getSize() {
@@ -40,7 +54,9 @@ public final class ReplayNetworkRequestOrResponse {
   @Override
   public String toString() {
     return "ReplayNetworkRequestOrResponse{"
-        + "size="
+        + "statusCode="
+        + statusCode
+        + ", size="
         + size
         + ", body="
         + body

@@ -87,23 +87,21 @@ public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
 
     @Override
     public void registerBatchLoader(BiFunction<List<K>, BatchLoaderEnvironment, Flux<V>> loader) {
-      delegate.registerBatchLoader(
-          (keys, batchLoaderEnvironment) -> {
-            scopesFromContext(batchLoaderEnvironment)
-                .addBreadcrumb(Breadcrumb.graphqlDataLoader(keys, keyType, valueType, name));
-            return loader.apply(keys, batchLoaderEnvironment);
-          });
+      delegate.registerBatchLoader((keys, batchLoaderEnvironment) -> {
+        scopesFromContext(batchLoaderEnvironment)
+            .addBreadcrumb(Breadcrumb.graphqlDataLoader(keys, keyType, valueType, name));
+        return loader.apply(keys, batchLoaderEnvironment);
+      });
     }
 
     @Override
     public void registerMappedBatchLoader(
         BiFunction<Set<K>, BatchLoaderEnvironment, Mono<Map<K, V>>> loader) {
-      delegate.registerMappedBatchLoader(
-          (keys, batchLoaderEnvironment) -> {
-            scopesFromContext(batchLoaderEnvironment)
-                .addBreadcrumb(Breadcrumb.graphqlDataLoader(keys, keyType, valueType, name));
-            return loader.apply(keys, batchLoaderEnvironment);
-          });
+      delegate.registerMappedBatchLoader((keys, batchLoaderEnvironment) -> {
+        scopesFromContext(batchLoaderEnvironment)
+            .addBreadcrumb(Breadcrumb.graphqlDataLoader(keys, keyType, valueType, name));
+        return loader.apply(keys, batchLoaderEnvironment);
+      });
     }
 
     private @NotNull IScopes scopesFromContext(final @NotNull BatchLoaderEnvironment environment) {

@@ -8,6 +8,7 @@ import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.thread.ThreadChecker
 import java.util.Timer
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -36,6 +37,7 @@ class DefaultCompositePerformanceCollectorTest {
     val id1 = "id1"
     val scopes: IScopes = mock()
     val ticker = TestMonotonicTicker()
+    // SentryOptions has no ticker setter.
     val options =
       object : SentryOptions() {
         override fun getMonotonicTicker(): MonotonicTicker = ticker
@@ -194,14 +196,10 @@ class DefaultCompositePerformanceCollectorTest {
     collector.start(fixture.transaction1)
     verify(fixture.mockTimer, never())!!.cancel()
 
-    // 31 seconds of collecting have gone by
-    fixture.ticker.advance(31, TimeUnit.SECONDS)
-
+    fixture.ticker.advance(30, TimeUnit.SECONDS)
     // Let's sleep to make the collector get values
     Thread.sleep(300)
 
-    // When the collector gets the values, it checks how long it has been collecting for, which is
-    // now past the 30 second budget. This means it should stop itself
     verify(fixture.mockTimer)!!.cancel()
 
     // When the collector times out, the data collection for spans is stopped, too
@@ -213,38 +211,67 @@ class DefaultCompositePerformanceCollectorTest {
   }
 
   @Test
-  fun `collector keeps collecting while inside the 30 second budget`() {
+  fun `collector collects for 30 seconds`() {
     val collector = fixture.getSut()
     collector.start(fixture.transaction1)
-    verify(fixture.mockTimer, never())!!.cancel()
 
-    // 29 seconds of collecting have gone by
-    fixture.ticker.advance(29, TimeUnit.SECONDS)
-
+    fixture.ticker.advance(TimeUnit.SECONDS.toNanos(30) - 1, TimeUnit.NANOSECONDS)
     // Let's sleep to make the collector get values
     Thread.sleep(300)
 
-    // Still inside the 30 second budget, so it should continue without being cancelled
     verify(fixture.mockTimer, never())!!.cancel()
 
-    // Data is deleted after the collector times out
     val data1 = collector.stop(fixture.transaction1)
     assertNotNull(data1)
   }
+
+  @Test
+  fun `collector keeps collecting when the wall clock steps forward`() {
+    val wallClock = AtomicReference<SentryDate>(wallClockAt(TimeUnit.HOURS.toSeconds(2)))
+    val collector = fixture.getSut { it.dateProvider = SentryDateProvider { wallClock.get() } }
+    collector.start(fixture.transaction1)
+
+    wallClock.set(wallClockAt(TimeUnit.HOURS.toSeconds(3)))
+    // Let's sleep to make the collector get values
+    Thread.sleep(300)
+
+    verify(fixture.mockTimer, never())!!.cancel()
+    assertNotNull(collector.stop(fixture.transaction1))
+  }
+
+  @Test
+  fun `collector times out when the wall clock steps backward`() {
+    val wallClock = AtomicReference<SentryDate>(wallClockAt(TimeUnit.HOURS.toSeconds(2)))
+    val collector = fixture.getSut { it.dateProvider = SentryDateProvider { wallClock.get() } }
+    collector.start(fixture.transaction1)
+
+    wallClock.set(wallClockAt(TimeUnit.HOURS.toSeconds(1)))
+    fixture.ticker.advance(30, TimeUnit.SECONDS)
+    // Let's sleep to make the collector get values
+    Thread.sleep(300)
+
+    verify(fixture.mockTimer)!!.cancel()
+    assertNull(collector.stop(fixture.transaction1))
+  }
+
+  private fun wallClockAt(seconds: Long) =
+    SentryNanotimeDate(TimeUnit.SECONDS.toMillis(seconds), TimeUnit.SECONDS.toNanos(seconds))
 
   @Test
   fun `collector has no IPerformanceCollector by default`() {
     val collector = fixture.getSut(null, null)
     assertNotNull(collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors"))
     assertTrue(
-      collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors").isEmpty()
+      collector.getProperty<List<IPerformanceSnapshotCollector>>("snapshotCollectors").isEmpty(),
     )
 
     assertNotNull(
-      collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors")
+      collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors"),
     )
     assertTrue(
-      collector.getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors").isEmpty()
+      collector
+        .getProperty<List<IPerformanceContinuousCollector>>("continuousCollectors")
+        .isEmpty(),
     )
   }
 

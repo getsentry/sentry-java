@@ -57,6 +57,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -85,15 +86,17 @@ class SentryOkHttpInterceptorTest {
       failedRequestTargets: List<String> = listOf(".*"),
       failedRequestStatusCodes: List<HttpStatusCodeRange> =
         listOf(
-          HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
+          HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX),
         ),
       sendDefaultPii: Boolean = false,
       eventListener: EventListener? = null,
       additionalInterceptors: List<Interceptor> = emptyList(),
+      isReplayRecording: Boolean = true,
       optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
     ): OkHttpClient {
       options =
         SentryOptions().also {
+          it.setReplayController(mock { on { isRecording } doReturn isReplayRecording })
           optionsConfiguration?.configure(it)
           it.dsn = "https://key@sentry.io/proj"
           if (includeMockServerInTracePropagationTargets) {
@@ -117,7 +120,7 @@ class SentryOkHttpInterceptorTest {
           .setBody(responseBody)
           .addHeader("myResponseHeader", "myValue")
           .setSocketPolicy(socketPolicy)
-          .setResponseCode(httpStatusCode)
+          .setResponseCode(httpStatusCode),
       )
 
       val interceptor =
@@ -181,7 +184,7 @@ class SentryOkHttpInterceptorTest {
   }
 
   private fun postRequest(
-    body: RequestBody = "request-body".toRequestBody("text/plain".toMediaType())
+    body: RequestBody = "request-body".toRequestBody("text/plain".toMediaType()),
   ): Request = Request.Builder().post(body).url(fixture.server.url("/hello")).build()
 
   @SuppressWarnings("MaxLineLength")
@@ -280,8 +283,8 @@ class SentryOkHttpInterceptorTest {
         "thirdPartyBaggage=someValue," +
           "secondThirdPartyBaggage=secondValue; " +
           "property;propertyKey=propertyValue," +
-          "anotherThirdPartyBaggage=anotherValue"
-      )
+          "anotherThirdPartyBaggage=anotherValue",
+      ),
     )
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
@@ -361,7 +364,7 @@ class SentryOkHttpInterceptorTest {
           it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
           it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
           it.sessionReplay.setNetworkDetailAllowUrls(listOf(".*"))
-        }
+        },
       )
 
     val request = postRequest().newBuilder().addHeader("Accept", "application/json").build()
@@ -374,11 +377,32 @@ class SentryOkHttpInterceptorTest {
         hint.firstValue.getAs(
           TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS,
           NetworkRequestData::class.java,
-        )
+        ),
       )
     assertEquals("request-body", networkDetails.request?.body?.body)
     assertEquals("application/json", networkDetails.request?.headers?.get("Accept"))
     assertNotNull(networkDetails.response)
+  }
+
+  @Test
+  fun `does not capture Session Replay network details when replay is not recording`() {
+    val sut =
+      fixture.getSut(
+        isReplayRecording = false,
+        optionsConfiguration = { it.sessionReplay.setNetworkDetailAllowUrls(listOf(".*")) },
+      )
+
+    sut.newCall(postRequest()).execute().close()
+
+    val hint = argumentCaptor<Hint>()
+    verify(fixture.scopes).addBreadcrumb(any(), hint.capture())
+    assertThat(
+        hint.firstValue.getAs(
+          TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS,
+          NetworkRequestData::class.java,
+        ),
+      )
+      .isNull()
   }
 
   @SuppressWarnings("SwallowedException")
@@ -425,7 +449,7 @@ class SentryOkHttpInterceptorTest {
         beforeSpan = { span, _, _ ->
           span.description = "overwritten description"
           span
-        }
+        },
       )
     val request = getRequest()
     sut.newCall(request).execute()
@@ -444,7 +468,7 @@ class SentryOkHttpInterceptorTest {
           assertEquals(request.method, request.method)
           assertNotNull(response) { assertEquals(201, it.code) }
           span
-        }
+        },
       )
     val request = getRequest()
     sut.newCall(request).execute()
@@ -473,7 +497,7 @@ class SentryOkHttpInterceptorTest {
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
             error("callback failed")
-          }
+          },
         )
       fixture.sentryTracer.spanContext.sampled = sampled
       fixture.options.onDiscard = onDiscard
@@ -497,7 +521,7 @@ class SentryOkHttpInterceptorTest {
         beforeSpan = { span, _, _ ->
           span.description = "partially modified"
           throw failure
-        }
+        },
       )
     fixture.options.isDebug = true
     fixture.options.setLogger(logger)
@@ -554,7 +578,7 @@ class SentryOkHttpInterceptorTest {
         .getSut(
           beforeSpan = { _, _, _ ->
             throw IllegalStateException("callback failed")
-          }
+          },
         )
         .newBuilder()
         .addInterceptor { throw requestFailure }
@@ -826,9 +850,9 @@ class SentryOkHttpInterceptorTest {
                     .request()
                     .newBuilder()
                     .url(chain.request().url.newBuilder().addPathSegment("v1").build())
-                    .build()
+                    .build(),
                 )
-            }
+            },
           ),
       )
 
@@ -862,7 +886,7 @@ class SentryOkHttpInterceptorTest {
   fun `adds W3C traceparent header when propagateTraceparent is enabled`() {
     val client =
       fixture.getSut(
-        optionsConfiguration = Sentry.OptionsConfiguration { it.isPropagateTraceparent = true }
+        optionsConfiguration = Sentry.OptionsConfiguration { it.isPropagateTraceparent = true },
       )
 
     fixture.server.enqueue(MockResponse().setResponseCode(200))
@@ -879,7 +903,7 @@ class SentryOkHttpInterceptorTest {
   fun `does not add W3C traceparent header when propagateTraceparent is disabled`() {
     val client =
       fixture.getSut(
-        optionsConfiguration = Sentry.OptionsConfiguration { it.isPropagateTraceparent = false }
+        optionsConfiguration = Sentry.OptionsConfiguration { it.isPropagateTraceparent = false },
       )
 
     fixture.server.enqueue(MockResponse().setResponseCode(200))

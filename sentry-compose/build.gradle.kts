@@ -1,40 +1,31 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.kotlin.compose)
   id("com.android.library")
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish.multiplatform")
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric")
 }
 
 kotlin {
   explicitApi()
 
   androidTarget {
-    compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_11)
-      apiVersion.set(KotlinVersion.KOTLIN_1_9)
-      languageVersion.set(KotlinVersion.KOTLIN_1_9)
-    }
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
     publishLibraryVariants("release")
   }
-  jvm("desktop") {
-    compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_11)
-      apiVersion.set(KotlinVersion.KOTLIN_1_9)
-      languageVersion.set(KotlinVersion.KOTLIN_1_9)
-    }
-  }
-
-  coreLibrariesVersion = "1.8"
+  jvm("desktop") { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
 
   sourceSets.all {
     // Allow all experimental APIs, since MPP projects are themselves experimental
@@ -45,12 +36,6 @@ kotlin {
   }
 
   sourceSets {
-    getByName("commonMain") {
-      compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_1_9)
-        languageVersion.set(KotlinVersion.KOTLIN_1_9)
-      }
-    }
     getByName("androidMain") {
       dependencies {
         api(projects.sentry)
@@ -113,6 +98,10 @@ android {
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
+
+    // Lint 9.5 can't load the custom checks bundled with older androidx.lifecycle releases and
+    // reports that it skips them. They only cover lifecycle APIs this module doesn't call.
+    disable += "ObsoleteLintCustomCheck"
   }
 
   buildFeatures { buildConfig = true }
@@ -134,9 +123,9 @@ tasks.withType<DokkaTask>().configureEach {
   // suppress unattached source sets for docs
   dokkaSourceSets {
     matching {
-        it.name.contains("androidandroid", ignoreCase = true) ||
-          it.name.contains("testfixtures", ignoreCase = true)
-      }
+      it.name.contains("androidandroid", ignoreCase = true) ||
+        it.name.contains("testfixtures", ignoreCase = true)
+    }
       .configureEach { suppress.set(true) }
   }
 }

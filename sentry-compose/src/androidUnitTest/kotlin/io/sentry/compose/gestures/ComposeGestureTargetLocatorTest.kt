@@ -1,5 +1,8 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 
+// LayoutNode and Owner locals are typed explicitly: under these suppressions K2 infers their type
+// as an error type, and the test then fails with NoClassDefFoundError: error/NonExistentClass.
+
 package io.sentry.compose.gestures
 
 import androidx.compose.runtime.collection.mutableVectorOf
@@ -59,8 +62,8 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `returns null when no clickable elements`() {
-    val root = mockLayoutNode(isPlaced = true, tag = "root", width = 100, height = 100)
-    val owner = mockOwner(root)
+    val root: LayoutNode = mockLayoutNode(isPlaced = true, tag = "root", width = 100, height = 100)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNull(result)
@@ -68,7 +71,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `detects clickable via SemanticsModifier OnClick`() {
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "btn",
@@ -76,7 +79,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         semanticsKeys = listOf("OnClick"),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -84,7 +87,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(clickableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNotNull(result)
@@ -94,7 +97,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `detects scrollable via SemanticsModifier ScrollBy`() {
-    val scrollableChild =
+    val scrollableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "list",
@@ -102,7 +105,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         semanticsKeys = listOf("ScrollBy"),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -110,7 +113,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(scrollableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.SCROLLABLE)
     assertNotNull(result)
@@ -119,7 +122,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `detects clickable via ClickableElement modifier`() {
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "btn",
@@ -127,7 +130,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         nodeModifierClassName = "androidx.compose.foundation.ClickableElement",
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -135,7 +138,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(clickableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNotNull(result)
@@ -144,7 +147,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `detects clickable via CombinedClickableElement modifier`() {
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "btn",
@@ -152,7 +155,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         nodeModifierClassName = "androidx.compose.foundation.CombinedClickableElement",
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -160,7 +163,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(clickableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNotNull(result)
@@ -169,7 +172,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `detects scrollable via ScrollingLayoutElement modifier`() {
-    val scrollableChild =
+    val scrollableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "scroll",
@@ -177,7 +180,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         nodeModifierClassName = "androidx.compose.foundation.ScrollingLayoutElement",
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -185,7 +188,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(scrollableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.SCROLLABLE)
     assertNotNull(result)
@@ -194,7 +197,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `detects scrollable via ScrollingContainerElement modifier`() {
-    val scrollableChild =
+    val scrollableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "scroll",
@@ -202,7 +205,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         nodeModifierClassName = "androidx.compose.foundation.ScrollingContainerElement",
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -210,7 +213,32 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(scrollableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
+
+    val result = locator.locate(owner, 5f, 5f, UiElement.Type.SCROLLABLE)
+    assertNotNull(result)
+    assertEquals("scroll", result!!.tag)
+  }
+
+  @Test
+  fun `detects scrollable via ScrollableAreaElement modifier`() {
+    val scrollableChild: LayoutNode =
+      mockLayoutNode(
+        isPlaced = true,
+        tag = "scroll",
+        width = 50,
+        height = 50,
+        nodeModifierClassName = "androidx.compose.foundation.ScrollableAreaElement",
+      )
+    val root: LayoutNode =
+      mockLayoutNode(
+        isPlaced = true,
+        tag = null,
+        width = 100,
+        height = 100,
+        children = listOf(scrollableChild),
+      )
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.SCROLLABLE)
     assertNotNull(result)
@@ -219,7 +247,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `ignores clickable when looking for scrollable`() {
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "btn",
@@ -227,7 +255,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         semanticsKeys = listOf("OnClick"),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -235,7 +263,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(clickableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.SCROLLABLE)
     assertNull(result)
@@ -243,7 +271,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `ignores scrollable when looking for clickable`() {
-    val scrollableChild =
+    val scrollableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "list",
@@ -251,7 +279,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         semanticsKeys = listOf("ScrollBy"),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -259,7 +287,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(scrollableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNull(result)
@@ -267,7 +295,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `skips unplaced nodes`() {
-    val unplacedClickable =
+    val unplacedClickable: LayoutNode =
       mockLayoutNode(
         isPlaced = false,
         tag = "btn",
@@ -275,7 +303,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         semanticsKeys = listOf("OnClick"),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -283,7 +311,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(unplacedClickable),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNull(result)
@@ -291,7 +319,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `skips nodes outside bounds`() {
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "btn",
@@ -301,7 +329,7 @@ class ComposeGestureTargetLocatorTest {
         left = 200f,
         top = 200f,
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -309,7 +337,7 @@ class ComposeGestureTargetLocatorTest {
         height = 300,
         children = listOf(clickableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     // click at (5, 5) is outside the child bounds (200-250, 200-250)
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
@@ -318,7 +346,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `child inherits parent tag`() {
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -326,7 +354,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         semanticsKeys = listOf("OnClick"),
       )
-    val taggedParent =
+    val taggedParent: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "parent_tag",
@@ -334,7 +362,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(clickableChild),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -342,7 +370,7 @@ class ComposeGestureTargetLocatorTest {
         height = 200,
         children = listOf(taggedParent),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNotNull(result)
@@ -351,7 +379,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `returns deepest clickable for clicks`() {
-    val deepChild =
+    val deepChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "deep_btn",
@@ -359,7 +387,7 @@ class ComposeGestureTargetLocatorTest {
         height = 20,
         semanticsKeys = listOf("OnClick"),
       )
-    val parentClickable =
+    val parentClickable: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "parent_btn",
@@ -368,7 +396,7 @@ class ComposeGestureTargetLocatorTest {
         semanticsKeys = listOf("OnClick"),
         children = listOf(deepChild),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -376,7 +404,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(parentClickable),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNotNull(result)
@@ -385,7 +413,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `returns first scrollable immediately`() {
-    val deepScrollable =
+    val deepScrollable: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "deep_scroll",
@@ -393,7 +421,7 @@ class ComposeGestureTargetLocatorTest {
         height = 20,
         semanticsKeys = listOf("ScrollBy"),
       )
-    val parentScrollable =
+    val parentScrollable: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "parent_scroll",
@@ -402,7 +430,7 @@ class ComposeGestureTargetLocatorTest {
         semanticsKeys = listOf("ScrollBy"),
         children = listOf(deepScrollable),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -410,7 +438,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(parentScrollable),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.SCROLLABLE)
     assertNotNull(result)
@@ -419,7 +447,7 @@ class ComposeGestureTargetLocatorTest {
 
   @Test
   fun `returns null when node has no tag and no parent tag`() {
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -427,7 +455,7 @@ class ComposeGestureTargetLocatorTest {
         height = 50,
         semanticsKeys = listOf("OnClick"),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -435,7 +463,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(clickableChild),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNull(result)
@@ -444,7 +472,7 @@ class ComposeGestureTargetLocatorTest {
   @Test
   fun `finds tagged clickable nested under untagged containers`() {
     // Tree: root(no tag) -> container(no tag) -> container(no tag) -> clickable(tag="deep_btn")
-    val clickableChild =
+    val clickableChild: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = "deep_btn",
@@ -452,7 +480,7 @@ class ComposeGestureTargetLocatorTest {
         height = 10,
         semanticsKeys = listOf("OnClick"),
       )
-    val innerContainer =
+    val innerContainer: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -460,7 +488,7 @@ class ComposeGestureTargetLocatorTest {
         height = 30,
         children = listOf(clickableChild),
       )
-    val outerContainer =
+    val outerContainer: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -468,7 +496,7 @@ class ComposeGestureTargetLocatorTest {
         height = 60,
         children = listOf(innerContainer),
       )
-    val root =
+    val root: LayoutNode =
       mockLayoutNode(
         isPlaced = true,
         tag = null,
@@ -476,7 +504,7 @@ class ComposeGestureTargetLocatorTest {
         height = 100,
         children = listOf(outerContainer),
       )
-    val owner = mockOwner(root)
+    val owner: Owner = mockOwner(root)
 
     val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
     assertNotNull(result)
@@ -663,7 +691,7 @@ class ComposeGestureTargetLocatorTest {
                 config.set(SemanticsPropertyKey("TestTag") { s: String?, _: String? -> s }, tag)
                 return config
               }
-          }
+          },
         )
       return modifierInfo
     }
@@ -681,7 +709,7 @@ class ComposeGestureTargetLocatorTest {
                 }
                 return config
               }
-          }
+          },
         )
       return modifierInfo
     }
@@ -693,7 +721,7 @@ class ComposeGestureTargetLocatorTest {
             Class.forName(className)
           } catch (_: ClassNotFoundException) {
             Modifier::class.java
-          }
+          },
         ) as Modifier
       val modifierInfo = Mockito.mock(ModifierInfo::class.java)
       whenever(modifierInfo.modifier).thenReturn(modifierWithClassName)

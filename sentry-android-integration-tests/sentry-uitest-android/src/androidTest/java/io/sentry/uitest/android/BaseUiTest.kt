@@ -125,6 +125,9 @@ fun waitUntilIdle() {
   Espresso.onIdle()
 }
 
+/** Whether sentry-android-replay is on the classpath (APPLY_SENTRY_INTEGRATIONS=true). */
+fun isReplayAvailable(): Boolean = classExists("io.sentry.android.replay.ReplayIntegration")
+
 fun classExists(className: String): Boolean {
   try {
     Class.forName(className)

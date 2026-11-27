@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import io.sentry.DateUtils;
@@ -151,10 +150,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   @Override
   public void start() {
-    // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
-    // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;
-
     // When the first transaction is starting, we can start profiling
     if (!isRunning.getAndSet(true)) {
       // Let's initialize trace folder and profiling interval
@@ -179,7 +174,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
   }
 
-  @SuppressLint("NewApi")
   private boolean onFirstStart() {
     // init() didn't create profiler, should never happen
     if (profiler == null) {
@@ -225,7 +219,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         options);
   }
 
-  @SuppressLint("NewApi")
   private @Nullable ProfilingTraceData onTransactionFinish(
       final @NotNull String transactionName,
       final @NotNull String transactionId,
@@ -233,11 +226,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData,
       final @NotNull SentryOptions options) {
-
-    // onTransactionStart() is only available since Lollipop_MR1
-    // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-    // and SUPPORTED_ABIS since KITKAT
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return null;
 
     // check if profiler was created
     if (profiler == null) {

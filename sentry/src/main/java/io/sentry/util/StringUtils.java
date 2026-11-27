@@ -150,8 +150,6 @@ public final class StringUtils {
     // For specifying wrong message digest algorithms
     catch (NoSuchAlgorithmException e) {
       logger.log(SentryLevel.INFO, "SHA-1 isn't available to calculate the hash.", e);
-    } catch (Throwable e) {
-      logger.log(SentryLevel.INFO, "string: %s could not calculate its hash", e, str);
     }
     return null;
   }

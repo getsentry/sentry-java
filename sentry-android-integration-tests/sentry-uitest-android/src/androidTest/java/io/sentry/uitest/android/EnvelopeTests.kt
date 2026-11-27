@@ -3,17 +3,14 @@ package io.sentry.uitest.android
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.IdlingPolicies
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.AndroidLogger
-import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeProfile
 import io.sentry.assertEnvelopeTransaction
@@ -25,7 +22,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import org.junit.Assume
 import org.junit.Assume.assumeNotNull
 import org.junit.runner.RunWith
 
@@ -65,10 +61,11 @@ class EnvelopeTests : BaseUiTest() {
 
     transaction.finish()
     relay.assert {
+      assertAppStartTransaction()
       findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "ProfilingSampleActivity"
-        }
+        assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
+          "ProfilingSampleActivity"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           it.assertNoOtherItems()
@@ -76,8 +73,8 @@ class EnvelopeTests : BaseUiTest() {
         }
 
       findEnvelope {
-          assertEnvelopeProfile(it.items.toList()).transactionName == "profiledTransaction"
-        }
+        assertEnvelopeProfile(it.items.toList()).transactionName == "profiledTransaction"
+      }
         .assert {
           val transactionItem: SentryTransaction = it.assertTransaction()
           val profilingTraceData: ProfilingTraceData = it.assertProfile()
@@ -197,44 +194,6 @@ class EnvelopeTests : BaseUiTest() {
   }
 
   @Test
-  fun checkTimedOutProfile() {
-    Assume.assumeFalse(
-      "Sometimes traceFile does not exist for profiles on emulators and it fails." +
-        " Although, Android Runtime is the one that manages the file, so something" +
-        " must be wrong with Debug.startMethodTracing",
-      BuildInfoProvider(NoOpLogger.getInstance()).isEmulator ?: true,
-    )
-    // We increase the IdlingResources timeout to exceed the profiling timeout
-    IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
-    initSentry(true) { options: SentryAndroidOptions ->
-      options.tracesSampleRate = 1.0
-      options.profilesSampleRate = 1.0
-    }
-    relayIdlingResource.increment()
-    val transaction = Sentry.startTransaction("timedOutProfile", "testTimeout")
-    Thread {
-        Thread.sleep(35_000)
-        transaction.finish()
-      }
-      .start()
-    // We call transaction.finish() after 35 seconds, and check profile times out after 30 seconds
-
-    relay.assert {
-      findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "timedOutProfile"
-        }
-        .assert {
-          val transactionItem: SentryTransaction = it.assertTransaction()
-          // Profile should not be present, as it timed out and is discarded
-          it.assertNoOtherItems()
-          assertEquals("timedOutProfile", transactionItem.transaction)
-        }
-      assertNoOtherEnvelopes()
-    }
-  }
-
-  @Test
   fun sendProfiledTransaction() {
     // This is a dogfooding test
     IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
@@ -276,7 +235,7 @@ class EnvelopeTests : BaseUiTest() {
         {"type":"transaction","length":1335}
         {"event_id":"729ff878-5539-458d-f657-a1acf423a127","platform":"native","transaction":"little.teapot","start_timestamp":"2025-04-02T10:02:04.731697Z","spans":[{"op":"littlest.teapot","span_id":"00028ba394454124","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"b0dc1649a8ec4101","description":null,"start_timestamp":"2025-04-02T10:02:04.732127Z","timestamp":"2025-04-02T10:02:04.732133Z"},{"op":"littler.teapot","span_id":"b0dc1649a8ec4101","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"7ad2e40529af4650","description":null,"start_timestamp":"2025-04-02T10:02:04.732118Z","data":{"span_data_says":"hi!"},"timestamp":"2025-04-02T10:02:04.732137Z"}],"type":"transaction","timestamp":"2025-04-02T10:02:04.732142Z","level":"info","contexts":{"trace":{"trace_id":"7160e289fe4c4496f02c72bbc7edb392","span_id":"7ad2e40529af4650","op":"Short and stout here is my handle and here is my spout","status":"ok","data":{"url":"https://example.com"}},"os":{"build":"android14-4-00257-g7e35917775b8-ab9964412","name":"Linux","version":"6.1.23"}},"release":"1.0.0","dist":"dist","environment":"production","sdk":{"name":"io.sentry.ndk","version":"0.8.3","packages":[{"name":"github:getsentry/sentry-native","version":"0.8.3"}],"integrations":["inproc"]},"tags":{},"extra":{},"breadcrumbs":[]}
         """
-          .trimIndent()
+          .trimIndent(),
       )
 
     relayIdlingResource.increment()

@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.ExceptionUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -58,12 +59,8 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       return;
     }
 
-    try {
-      for (final SentryEnvelopeItem item : envelope.getItems()) {
-        recordLostEnvelopeItem(reason, item);
-      }
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope.");
+    for (final SentryEnvelopeItem item : envelope.getItems()) {
+      recordLostEnvelopeItem(reason, item);
     }
   }
 
@@ -125,6 +122,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         }
       }
     } catch (Throwable e) {
+      // getData() runs the item's data factory, which may also deserialize a dropped transaction,
+      // so we can't know what this throws. The lost item may not be counted in the client report.
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
     }
   }
@@ -137,12 +137,8 @@ public final class ClientReportRecorder implements IClientReportRecorder {
   @Override
   public void recordLostEvent(
       @NotNull DiscardReason reason, @NotNull DataCategory category, long count) {
-    try {
-      recordLostEventInternal(reason.getReason(), category.getCategory(), count);
-      executeOnDiscard(reason, category, count);
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost event.");
-    }
+    recordLostEventInternal(reason.getReason(), category.getCategory(), count);
+    executeOnDiscard(reason, category, count);
   }
 
   private void executeOnDiscard(

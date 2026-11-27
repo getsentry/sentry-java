@@ -8,7 +8,11 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric")
 }
 
 android {
@@ -71,10 +75,19 @@ android {
   }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-  options.errorprone {
-    check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
-    option("NullAway:AnnotatedPackages", "io.sentry")
+// net.ltgt.errorprone only configures Gradle's JVM source sets, not Android variants, so put Error
+// Prone on each variant's processor path and enable it ourselves.
+androidComponents.onVariants { variant ->
+  variant.annotationProcessorConfiguration.extendsFrom(configurations.errorprone.get())
+  variant.configureJavaCompileTask { task ->
+    // Tells Error Prone this is Android code, so it skips checks that don't apply there, such as
+    // DefaultCharset (Android's default charset is always UTF-8), and runs its Android checks.
+    task.options.compilerArgs.add("-XDandroidCompatible=true")
+    task.options.errorprone {
+      enabled = true
+      check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+      option("NullAway:AnnotatedPackages", "io.sentry")
+    }
   }
 }
 
@@ -101,6 +114,8 @@ dependencies {
   implementation(libs.androidx.core)
   // photo picker for user feedback screenshot attachments
   compileOnly(libs.androidx.activity)
+  // document-start script injection for WebView trace propagation
+  compileOnly(libs.androidx.webkit)
 
   implementation(libs.epitaph)
 
@@ -130,6 +145,8 @@ dependencies {
   testImplementation(projects.sentryAndroidNdk)
 
   testImplementation(libs.androidx.activity.compose)
+  testImplementation(libs.androidx.webkit)
+  testImplementation(libs.rhino)
   testImplementation(libs.androidx.compose.ui)
   testImplementation(libs.androidx.compose.foundation)
   testImplementation(libs.androidx.compose.foundation.layout)

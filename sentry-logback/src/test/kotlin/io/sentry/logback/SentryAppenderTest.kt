@@ -434,7 +434,7 @@ class SentryAppenderTest {
       .send(
         checkLogs { logs ->
           assertEquals("this should be captured as a log", logs.items.first().body)
-        }
+        },
       )
   }
 
@@ -533,7 +533,7 @@ class SentryAppenderTest {
           assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
           assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
           assertEquals("auto.log.logback", attributes["sentry.origin"]?.value)
-        }
+        },
       )
   }
 
@@ -554,7 +554,7 @@ class SentryAppenderTest {
           val attributes = log.attributes!!
           assertNull(attributes["sentry.message.template"])
           assertNull(attributes["sentry.message.parameter.0"])
-        }
+        },
       )
   }
 
@@ -580,7 +580,7 @@ class SentryAppenderTest {
           val attributes = log.attributes!!
           assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
           assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
-        }
+        },
       )
   }
 
@@ -607,7 +607,7 @@ class SentryAppenderTest {
           val attributes = log.attributes!!
           assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
           assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
-        }
+        },
       )
   }
 
@@ -723,7 +723,7 @@ class SentryAppenderTest {
               it.packageSet.any { pkg ->
                 "maven:io.sentry:sentry-logback" == pkg.name &&
                   BuildConfig.VERSION_NAME == pkg.version
-              }
+              },
             )
             assertTrue(it.integrationSet.contains("Logback"))
           }
@@ -787,7 +787,7 @@ class SentryAppenderTest {
     fixture = Fixture()
 
     fixture.logger.debug(
-      "this should not be a breadcrumb as the level is lower than the minimum INFO"
+      "this should not be a breadcrumb as the level is lower than the minimum INFO",
     )
     fixture.logger.info("this should be a breadcrumb")
     fixture.logger.warn("this should not be sent as the event but be a breadcrumb")
@@ -828,7 +828,7 @@ class SentryAppenderTest {
     fixture = Fixture(dsn = "DSN_IS_UNDEFINED", minimumEventLevel = Level.DEBUG)
 
     assertTrue(
-      fixture.loggerContext.statusManager.copyOfStatusList.none { it.level == Status.WARN }
+      fixture.loggerContext.statusManager.copyOfStatusList.none { it.level == Status.WARN },
     )
   }
 
@@ -875,7 +875,7 @@ class SentryAppenderTest {
           val log = logs.items.first()
           assertEquals("testing message without parameters", log.body)
           assertNull(log.attributes?.get("sentry.message.template"))
-        }
+        },
       )
   }
 
@@ -893,7 +893,25 @@ class SentryAppenderTest {
           assertEquals("testing message param", log.body)
           assertEquals("testing message {}", log.attributes?.get("sentry.message.template")?.value)
           assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
-        }
+        },
+      )
+  }
+
+  @Test
+  fun `does not format an already formatted log message again`() {
+    fixture = Fixture(minimumLevel = Level.ERROR, logsEnabled = true)
+    fixture.logger.error("q={}", "PO%2010B")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("q=PO%2010B", log.body)
+          assertEquals("q={}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("PO%2010B", log.attributes?.get("sentry.message.parameter.0")?.value)
+        },
       )
   }
 
@@ -916,7 +934,7 @@ class SentryAppenderTest {
           assertEquals("param1", log.attributes?.get("sentry.message.parameter.0")?.value)
           assertEquals("param2", log.attributes?.get("sentry.message.parameter.1")?.value)
           assertNull(log.attributes?.get("sentry.message.parameter.2"))
-        }
+        },
       )
   }
 
@@ -942,7 +960,7 @@ class SentryAppenderTest {
           assertEquals("encoded testing message param", log.body)
           assertNull(log.attributes?.get("sentry.message.template"))
           assertNull(log.attributes?.get("sentry.message.parameter.0"))
-        }
+        },
       )
   }
 
@@ -969,7 +987,7 @@ class SentryAppenderTest {
           assertThat(log.attributes?.get("sentry.message.template")?.value)
             .isEqualTo("testing message {}")
           assertThat(log.attributes?.get("sentry.message.parameter.0")?.value).isEqualTo("param")
-        }
+        },
       )
   }
 
@@ -995,7 +1013,7 @@ class SentryAppenderTest {
           assertEquals("encoded testing message param", log.body)
           assertEquals("testing message {}", log.attributes?.get("sentry.message.template")?.value)
           assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
-        }
+        },
       )
   }
 
@@ -1017,7 +1035,7 @@ class SentryAppenderTest {
           val attributes = log.attributes!!
           assertEquals("someValue", attributes["mdc.someTag"]?.value)
           assertNull(attributes["otherTag"])
-        }
+        },
       )
   }
 }

@@ -169,8 +169,8 @@ class AppStartMetricsTestApi35 {
       .thenReturn(
         mapOf(
           ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to
-            TimeUnit.MILLISECONDS.toNanos(onCreateStartUptimeMs)
-        )
+            TimeUnit.MILLISECONDS.toNanos(onCreateStartUptimeMs),
+        ),
       )
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
     SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_CACHED)
@@ -255,7 +255,7 @@ class AppStartMetricsTestApi35 {
   @Test
   fun `does not crash when getHistoricalProcessStartReasons throws RuntimeException`() {
     SentryShadowActivityManager.setHistoricalProcessStartReasonsException(
-      RuntimeException("isolated process")
+      RuntimeException("isolated process"),
     )
     val metrics = AppStartMetrics.getInstance()
 
@@ -367,7 +367,9 @@ class AppStartMetricsTestApi35 {
     // User opens the app 20s later (under the 1-minute warm threshold).
     val activityCreatedUptimeMs = 20_000L
     SystemClock.setCurrentTimeMillis(activityCreatedUptimeMs)
-    metrics.onActivityCreated(mock<Activity>(), null)
+    val activity = mock<Activity>()
+    metrics.onActivityPreCreated(activity, null)
+    metrics.onActivityCreated(activity, null)
 
     // Re-classified as a warm start re-anchored at activity creation.
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)

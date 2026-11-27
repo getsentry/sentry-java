@@ -94,7 +94,6 @@ public class Contexts implements JsonSerializable {
   }
 
   public void setProfile(final @Nullable ProfileContext profileContext) {
-    Objects.requireNonNull(profileContext, "profileContext is required");
     this.put(ProfileContext.TYPE, profileContext);
   }
 

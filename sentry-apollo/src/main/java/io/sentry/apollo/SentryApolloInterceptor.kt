@@ -144,7 +144,7 @@ class SentryApolloInterceptor(
   private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
     val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-    if (attachTracingHeaders && scopes.options.isTraceSampling && !isIgnored()) {
+    if (attachTracingHeaders && !isIgnored()) {
       // we have no access to URI, no way to verify tracing origins
       TracingUtils.trace(
           scopes,

@@ -1,7 +1,11 @@
 plugins {
   id("com.android.application")
   id("io.sentry.android.gradle")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 android {
   namespace = "io.sentry.tests.size"
@@ -13,7 +17,7 @@ android {
     minSdk = libs.versions.minSdk.get().toInt()
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = 1
-    versionName = project.version.toString()
+    versionName = sentryVersion
   }
 
   buildTypes {
@@ -31,7 +35,7 @@ android {
     targetCompatibility = JavaVersion.VERSION_17
   }
   androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    it.enable = it.buildType != "debug"
   }
 }
 
@@ -42,12 +46,12 @@ configurations.configureEach {
 }
 
 dependencies {
-  implementation(projects.sentryAndroid)
-  implementation(projects.sentryAndroidTimber)
-  implementation(projects.sentryAndroidSqlite)
-  implementation(projects.sentryOkhttp)
-  implementation(projects.sentryCompose)
-  implementation(projects.sentryAndroidFragment)
+  implementation("io.sentry:sentry-android:$sentryVersion")
+  implementation("io.sentry:sentry-android-timber:$sentryVersion")
+  implementation("io.sentry:sentry-android-sqlite:$sentryVersion")
+  implementation("io.sentry:sentry-okhttp:$sentryVersion")
+  implementation("io.sentry:sentry-compose:$sentryVersion")
+  implementation("io.sentry:sentry-android-fragment:$sentryVersion")
 }
 
 sentry {

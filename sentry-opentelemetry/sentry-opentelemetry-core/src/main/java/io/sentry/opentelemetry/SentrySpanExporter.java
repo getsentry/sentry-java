@@ -3,9 +3,11 @@ package io.sentry.opentelemetry;
 import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
 import static io.sentry.opentelemetry.OtelInternalSpanDetectionUtil.isSentryRequest;
+import static io.sentry.opentelemetry.OtelSpanUtils.getMessagingSystem;
 import static io.sentry.opentelemetry.OtelSpanUtils.maybeTransferOtelAttribute;
 
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -27,7 +29,9 @@ import io.sentry.SentryDate;
 import io.sentry.SentryInstantDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
+import io.sentry.SentrySpanKind;
 import io.sentry.SpanContext;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
@@ -119,7 +123,7 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull SentryInstantDate now = new SentryInstantDate();
 
     final @NotNull List<SpanData> nonExpired =
-        remaining.stream().filter((span) -> !isSpanTooOld(span, now)).collect(Collectors.toList());
+        remaining.stream().filter(span -> !isSpanTooOld(span, now)).collect(Collectors.toList());
 
     this.finishedSpans.addAll(nonExpired);
 
@@ -145,7 +149,7 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private @NotNull List<SpanData> filterOutSentrySpans(final @NotNull Collection<SpanData> spans) {
     return spans.stream()
-        .filter((span) -> !isSentryRequest(scopes, span.getKind(), span.getAttributes()))
+        .filter(span -> !isSentryRequest(scopes, span.getKind(), span.getAttributes()))
         .collect(Collectors.toList());
   }
 
@@ -176,8 +180,8 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     return remaining.stream()
-        .map((node) -> node.getSpan())
-        .filter((it) -> it != null)
+        .map(node -> node.getSpan())
+        .filter(it -> it != null)
         .collect(Collectors.toList());
   }
 
@@ -240,6 +244,8 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
     setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
+    setSentrySpanKind(spanData, sentryChildSpan);
+    transferMessagingSystem(spanData, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
       createAndFinishSpanForOtelSpan(childNode, sentryChildSpan, remaining);
@@ -355,12 +361,15 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(span, sentryTransaction);
     setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
+    setSentrySpanKind(span, sentryTransaction);
+    if (SpanKind.SERVER.equals(span.getKind())) {
+      maybeTransferOtelAttribute(span, sentryTransaction, HttpAttributes.HTTP_RESPONSE_STATUS_CODE);
+    }
 
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
 
-    maybeTransferOtelAttribute(
-        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+    transferMessagingSystem(span, sentryTransaction);
     maybeTransferOtelAttribute(
         span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME);
     maybeTransferOtelAttribute(
@@ -379,9 +388,18 @@ public final class SentrySpanExporter implements SpanExporter {
     return sentryTransaction;
   }
 
+  @SuppressWarnings("deprecation")
+  private static void transferMessagingSystem(
+      final @NotNull SpanData span, final @NotNull ISpan sentrySpan) {
+    final @Nullable String messagingSystem = getMessagingSystem(span.getAttributes());
+    if (messagingSystem != null) {
+      sentrySpan.setData(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), messagingSystem);
+    }
+  }
+
   private List<SpanNode> findCompletedRootNodes(final @NotNull List<SpanNode> grouped) {
     final @NotNull Predicate<SpanNode> isRootPredicate =
-        (node) -> {
+        node -> {
           return node.getParentNode() == null && node.getSpan() != null;
         };
     return grouped.stream().filter(isRootPredicate).collect(Collectors.toList());
@@ -509,15 +527,14 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>();
 
     if (attributes != null) {
-      attributes.forEach(
-          (key, value) -> {
-            if (key != null) {
-              final @NotNull String stringKey = key.getKey();
-              if (!shouldRemoveAttribute(stringKey)) {
-                mapWithStringKeys.put(stringKey, value);
-              }
-            }
-          });
+      attributes.forEach((key, value) -> {
+        if (key != null) {
+          final @NotNull String stringKey = key.getKey();
+          if (!shouldRemoveAttribute(stringKey)) {
+            mapWithStringKeys.put(stringKey, value);
+          }
+        }
+      });
     }
 
     return mapWithStringKeys;
@@ -553,6 +570,13 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private void setOtelSpanKind(final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
     sentrySpan.setData("otel.kind", otelSpan.getKind().name());
+  }
+
+  private void setSentrySpanKind(
+      final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
+    if (SpanKind.SERVER.equals(otelSpan.getKind())) {
+      sentrySpan.setData(SpanDataConvention.SENTRY_KIND_KEY, SentrySpanKind.SERVER);
+    }
   }
 
   @Override

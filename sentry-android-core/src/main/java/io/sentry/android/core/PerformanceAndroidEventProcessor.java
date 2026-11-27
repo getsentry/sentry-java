@@ -40,12 +40,9 @@ final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
   private static final String APP_METRICS_ORIGIN = "auto.ui";
 
   private static final String APP_METRICS_CONTENT_PROVIDER_OP = "contentprovider.load";
-  private static final String APP_METRICS_ACTIVITIES_OP = "activity.load";
   private static final String APP_METRICS_APPLICATION_OP = "application.load";
   private static final String APP_METRICS_PROCESS_INIT_OP = "process.load";
   private static final long MAX_PROCESS_INIT_APP_START_DIFF_MS = 10000;
-
-  private boolean sentStartMeasurement = false;
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();

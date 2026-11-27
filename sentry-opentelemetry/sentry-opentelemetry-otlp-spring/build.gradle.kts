@@ -1,6 +1,9 @@
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 dependencies {

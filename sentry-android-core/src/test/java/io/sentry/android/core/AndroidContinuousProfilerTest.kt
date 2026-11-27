@@ -19,6 +19,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
+import io.sentry.util.LoadClass
 import java.io.File
 import java.util.concurrent.Future
 import kotlin.test.AfterTest
@@ -212,7 +213,7 @@ class AndroidContinuousProfilerTest {
           assertContains(it.measurements, ProfileMeasurement.ID_CPU_USAGE)
           assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_FOOTPRINT)
           assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT)
-        }
+        },
       )
   }
 
@@ -300,17 +301,6 @@ class AndroidContinuousProfilerTest {
     verify(fixture.mockLogger).log(eq(SentryLevel.DEBUG), eq("Profiler is already running."))
     assertTrue(profiler.isRunning)
     assertEquals(0, profiler.rootSpanCounter)
-  }
-
-  @Test
-  fun `profiler works only on api 22+`() {
-    val buildInfo =
-      mock<BuildInfoProvider> {
-        whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-      }
-    val profiler = fixture.getSut(buildInfo)
-    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-    assertFalse(profiler.isRunning)
   }
 
   @Test

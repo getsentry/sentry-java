@@ -10,6 +10,7 @@ import io.sentry.android.replay.OnRootViewsChangedListener
 import io.sentry.android.replay.phoneWindow
 import io.sentry.android.replay.util.FixedWindowCallback
 import io.sentry.util.AutoClosableReentrantLock
+import io.sentry.util.ExceptionUtils
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 
@@ -99,6 +100,10 @@ internal class GestureRecorder(
         try {
           touchRecorderCallback?.onTouchEvent(copy)
         } catch (e: Throwable) {
+          // This runs inside the app's touch dispatch, so a failure while recording the gesture
+          // must not cost the app its touch. The gesture is missing from the replay, and the touch
+          // still reaches the app below.
+          ExceptionUtils.rethrowIfFatal(e)
           options.logger.log(ERROR, "Error dispatching touch event", e)
         } finally {
           copy.recycle()

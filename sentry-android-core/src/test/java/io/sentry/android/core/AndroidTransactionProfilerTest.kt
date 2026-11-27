@@ -16,6 +16,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
+import io.sentry.util.LoadClass
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
@@ -238,17 +239,6 @@ class AndroidTransactionProfilerTest {
     assertNotNull(profilingTraceData)
     assertNull(profilingTraceData2)
     assertEquals(profilingTraceData.transactionId, fixture.transaction1.eventId.toString())
-  }
-
-  @Test
-  fun `profiler works only on api 22+`() {
-    val buildInfo =
-      mock<BuildInfoProvider> {
-        whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-      }
-    val profiler = fixture.getSut(context, buildInfo)
-    profiler.start()
-    assertFalse(profiler.isRunning)
   }
 
   @Test

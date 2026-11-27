@@ -13,11 +13,11 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class NetworkRequestData {
   private @Nullable final String method;
-  private @Nullable Integer statusCode;
-  private @Nullable Long requestBodySize;
-  private @Nullable Long responseBodySize;
-  private @Nullable ReplayNetworkRequestOrResponse request;
-  private @Nullable ReplayNetworkRequestOrResponse response;
+
+  // volatile: both sides are filled in by the thread running the call and reading the body, and
+  // read by the replay thread.
+  private volatile @Nullable ReplayNetworkRequestOrResponse request;
+  private volatile @Nullable ReplayNetworkRequestOrResponse response;
 
   public NetworkRequestData(@Nullable final String method) {
     this.method = method;
@@ -28,15 +28,18 @@ public final class NetworkRequestData {
   }
 
   public @Nullable Integer getStatusCode() {
-    return statusCode;
+    final ReplayNetworkRequestOrResponse responseData = response;
+    return responseData == null ? null : responseData.getStatusCode();
   }
 
   public @Nullable Long getRequestBodySize() {
-    return requestBodySize;
+    final ReplayNetworkRequestOrResponse requestData = request;
+    return requestData == null ? null : requestData.getSize();
   }
 
   public @Nullable Long getResponseBodySize() {
-    return responseBodySize;
+    final ReplayNetworkRequestOrResponse responseData = response;
+    return responseData == null ? null : responseData.getSize();
   }
 
   public @Nullable ReplayNetworkRequestOrResponse getRequest() {
@@ -53,18 +56,19 @@ public final class NetworkRequestData {
    */
   public void setRequestDetails(@NotNull final ReplayNetworkRequestOrResponse requestData) {
     this.request = requestData;
-    this.requestBodySize = requestData.getSize();
   }
 
   /**
-   * Populates this instance with request details obtained via {@link
-   * NetworkDetailCaptureUtils#createResponse}
+   * Populates this instance with response details obtained via {@link
+   * NetworkDetailCaptureUtils#createResponse}.
+   *
+   * <p>May be called from another thread than the one that created this instance, and after the
+   * instance was handed to the scope. A later call replaces the details of an earlier one, so an
+   * integration can record the status code and the headers as soon as the response arrives and add
+   * the body once it has been consumed.
    */
-  public void setResponseDetails(
-      final int statusCode, @NotNull final ReplayNetworkRequestOrResponse responseData) {
-    this.statusCode = statusCode;
+  public void setResponseDetails(@NotNull final ReplayNetworkRequestOrResponse responseData) {
     this.response = responseData;
-    this.responseBodySize = responseData.getSize();
   }
 
   @Override
@@ -73,12 +77,6 @@ public final class NetworkRequestData {
         + "method='"
         + method
         + '\''
-        + ", statusCode="
-        + statusCode
-        + ", requestBodySize="
-        + requestBodySize
-        + ", responseBodySize="
-        + responseBodySize
         + ", request="
         + request
         + ", response="

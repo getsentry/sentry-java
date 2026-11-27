@@ -11,6 +11,7 @@ import io.sentry.Integration;
 import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -78,6 +79,7 @@ public final class FeedbackShakeIntegration
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public synchronized void enableOnShake() {
     final @Nullable SentryAndroidOptions options = this.options;
     if (enabled || options == null) {
@@ -154,6 +156,7 @@ public final class FeedbackShakeIntegration
     }
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private boolean removeDialog(final @NotNull Dialog dialog) {
     boolean removed = false;
     for (final @NotNull VisibleDialog visibleDialog : visibleDialogs) {
@@ -169,6 +172,7 @@ public final class FeedbackShakeIntegration
     return removed;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private boolean hasDialogOn(final @NotNull Activity activity) {
     for (final @NotNull VisibleDialog visibleDialog : visibleDialogs) {
       if (visibleDialog.dialogRef.get() != null && visibleDialog.activityRef.get() == activity) {
@@ -226,6 +230,7 @@ public final class FeedbackShakeIntegration
   }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public void onActivityPaused(final @NotNull Activity activity) {
     // Only stop if this is the activity we're tracking. When transitioning between
     // activities, B.onResume may fire before A.onPause — stopping unconditionally
@@ -274,6 +279,7 @@ public final class FeedbackShakeIntegration
           final @Nullable WeakReference<Activity> ref = currentActivityRef;
           final Activity active = ref != null ? ref.get() : null;
           final Boolean inBackground = AppState.getInstance().isInBackground();
+          final @Nullable SentryAndroidOptions options = this.options;
           if (active == null
               || options == null
               || !enabled
@@ -281,30 +287,29 @@ public final class FeedbackShakeIntegration
               || Boolean.TRUE.equals(inBackground)) {
             return;
           }
-          active.runOnUiThread(
-              () -> {
-                // Re-check on the main thread: shake-to-report may have been disabled, or an
-                // earlier queued shake may have shown a dialog in the meantime (the dialog reports
-                // itself synchronously in onStart).
-                if (!enabled
-                    || hasDialogOn(active)
-                    || active.isFinishing()
-                    || active.isDestroyed()) {
-                  return;
-                }
-                @Nullable Dialog dialog = null;
-                try {
-                  dialog = dialogFactory.create(active);
-                  dialog.show();
-                } catch (Throwable e) {
-                  if (dialog != null) {
-                    onDialogGone(dialog);
-                  }
-                  options
-                      .getLogger()
-                      .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
-                }
-              });
+          active.runOnUiThread(() -> {
+            // Re-check on the main thread: shake-to-report may have been disabled, or an
+            // earlier queued shake may have shown a dialog in the meantime (the dialog reports
+            // itself synchronously in onStart).
+            if (!enabled || hasDialogOn(active) || active.isFinishing() || active.isDestroyed()) {
+              return;
+            }
+            @Nullable Dialog dialog = null;
+            try {
+              dialog = dialogFactory.create(active);
+              dialog.show();
+            } catch (Throwable e) {
+              // show() adds a window over Binder and the dialog inflates with the app's theme, so
+              // we can't know what this throws. No dialog is shown for this shake.
+              ExceptionUtils.rethrowIfFatal(e);
+              if (dialog != null) {
+                onDialogGone(dialog);
+              }
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
+            }
+          });
         });
   }
 

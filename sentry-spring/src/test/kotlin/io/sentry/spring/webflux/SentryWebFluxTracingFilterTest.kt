@@ -9,6 +9,7 @@ import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
@@ -87,7 +88,10 @@ class SentryWebFluxTracingFilterTest {
       )
       exchange.response.statusCode = status
       whenever(
-          scopes.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })
+          scopes.startTransaction(
+            any(),
+            check<TransactionOptions> { assertTrue(it.isBindToScope) },
+          ),
         )
         .thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
       whenever(scopes.isEnabled).thenReturn(isEnabled)
@@ -99,7 +103,7 @@ class SentryWebFluxTracingFilterTest {
             it.arguments[0] as String?,
             it.arguments[1] as List<String>?,
             null,
-          )
+          ),
         )
       }
       return SentryWebFilter(scopes)
@@ -144,6 +148,32 @@ class SentryWebFluxTracingFilterTest {
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
             assertThat(it.contexts.response!!.statusCode).isEqualTo(200)
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+              .isEqualTo("server")
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+              .isEqualTo(200)
+          },
+          anyOrNull<TraceContext>(),
+          anyOrNull(),
+          anyOrNull(),
+        )
+    }
+  }
+
+  @Test
+  fun `records not found response status`() {
+    val filter = fixture.getSut(status = HttpStatus.NOT_FOUND)
+
+    withMockScopes {
+      filter.filter(fixture.exchange, fixture.chain).block()
+
+      verify(fixture.scopes)
+        .captureTransaction(
+          check {
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+              .isEqualTo("server")
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+              .isEqualTo(404)
           },
           anyOrNull<TraceContext>(),
           anyOrNull(),
@@ -216,7 +246,13 @@ class SentryWebFluxTracingFilterTest {
 
       verify(fixture.scopes)
         .captureTransaction(
-          check { assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId) },
+          check {
+            assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+              .isEqualTo("server")
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+              .isEqualTo(200)
+          },
           anyOrNull<TraceContext>(),
           anyOrNull(),
           anyOrNull(),
@@ -327,7 +363,7 @@ class SentryWebFluxTracingFilterTest {
     val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
     val baggageHeaderStrings =
       listOf(
-        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
+        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET",
       )
     fixture.options.tracesSampleRate = null
     val filter =
@@ -359,7 +395,7 @@ class SentryWebFluxTracingFilterTest {
     val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
     val baggageHeaderStrings =
       listOf(
-        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
+        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET",
       )
     fixture.options.tracesSampleRate = null
     fixture.options.setIgnoredSpanOrigins(listOf("auto.spring.webflux"))

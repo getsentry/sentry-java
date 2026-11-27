@@ -7,8 +7,10 @@ public final class io/sentry/graphql/SentryInstrumentation : graphql/execution/i
 	public static final field SENTRY_EXCEPTIONS_CONTEXT_KEY Ljava/lang/String;
 	public static final field SENTRY_SCOPES_CONTEXT_KEY Ljava/lang/String;
 	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;)V
+	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;Z)V
 	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Z)V
 	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;ZLjava/util/List;)V
+	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;ZLjava/util/List;Z)V
 	public fun <init> (Lio/sentry/graphql/SentrySubscriptionHandler;Z)V
 	public fun beginExecuteOperation (Lgraphql/execution/instrumentation/parameters/InstrumentationExecuteOperationParameters;)Lgraphql/execution/instrumentation/InstrumentationContext;
 	public fun beginExecution (Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;)Lgraphql/execution/instrumentation/InstrumentationContext;

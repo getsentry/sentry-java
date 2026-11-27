@@ -33,7 +33,6 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
   private final @NotNull Context context;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  private @Nullable SentryOptions options;
 
   @TestOnly @Nullable volatile NetworkBreadcrumbsNetworkCallback networkCallback;
 
@@ -53,8 +52,6 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.options = options;
-
     options
         .getLogger()
         .log(
@@ -63,12 +60,6 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
             androidOptions.isEnableNetworkEventBreadcrumbs());
 
     if (androidOptions.isEnableNetworkEventBreadcrumbs()) {
-
-      // The specific error is logged in the ConnectivityChecker method
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-        options.getLogger().log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
-        return;
-      }
 
       try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
         networkCallback =
@@ -195,7 +186,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     }
   }
 
-  static class NetworkBreadcrumbConnectionDetail {
+  static final class NetworkBreadcrumbConnectionDetail {
     final int downBandwidth, upBandwidth, signalStrength;
     private long timestampNanos;
     final boolean isVpn;
@@ -237,7 +228,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       // This means that if the new connection detail come less than 5 seconds after the previous
       //  one, we'll report the signal and bandwidth as similar, regardless of their real value.
       boolean isTimestampSimilar =
-          DateUtils.nanosToMillis(Math.abs(timestampNanos - other.timestampNanos)) < 5000;
+          DateUtils.nanosToMillis((double) Math.abs(timestampNanos - other.timestampNanos)) < 5000;
       boolean isSignalSimilar = isTimestampSimilar || signalDiff <= 5;
       boolean isDownBandwidthSimilar =
           isTimestampSimilar || downBandwidthDiff <= Math.max(1000, Math.abs(downBandwidth) * 0.1);
