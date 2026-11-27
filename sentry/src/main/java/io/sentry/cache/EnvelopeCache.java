@@ -82,6 +82,13 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    */
   private @Nullable String lastPersistedSessionId;
 
+  /**
+   * Whether this process already moved the last run's session out of the current session file.
+   * After that, the current session file holds a session of this process, so the init-time {@link
+   * #movePreviousSession(File, File)} must not move it.
+   */
+  private boolean previousSessionMoved;
+
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
     final int maxCacheItems = options.getMaxCacheItems();
@@ -141,7 +148,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session startingSession = readSessionFromEnvelope(envelope);
         if (!isAlreadyPersisted(startingSession)) {
-          movePreviousSession(currentSessionFile, previousSessionFile);
+          moveCurrentToPreviousSession(currentSessionFile, previousSessionFile);
           if (startingSession != null) {
             writeSessionToDisk(currentSessionFile, startingSession);
           }
@@ -388,9 +395,14 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   @ApiStatus.Internal
   public void persistCurrentSession(final @NotNull Session session) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
-      final boolean written =
-          writeSessionToDisk(
-              getCurrentSessionFile(directory.getOrCreate().getAbsolutePath()), session);
+      final String directoryPath = directory.getOrCreate().getAbsolutePath();
+      final File currentSessionFile = getCurrentSessionFile(directoryPath);
+      // this can run before the init-time move, so move the last run's session first instead of
+      // overwriting it
+      if (!previousSessionMoved) {
+        moveCurrentToPreviousSession(currentSessionFile, getPreviousSessionFile(directoryPath));
+      }
+      final boolean written = writeSessionToDisk(currentSessionFile, session);
       // a failed write truncates the file, so there is no good copy left to protect
       lastPersistedSessionId = written ? session.getSessionId() : null;
     }
@@ -506,9 +518,27 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     previousSessionLatch.countDown();
   }
 
+  /**
+   * Moves the last run's session to the previous session file. Does nothing if this process already
+   * did that, because the current session file then holds the live session.
+   */
   public void movePreviousSession(
       final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (previousSessionMoved) {
+        options
+            .getLogger()
+            .log(DEBUG, "Previous session was already moved, not moving the live session.");
+        return;
+      }
+      moveCurrentToPreviousSession(currentSessionFile, previousSessionFile);
+    }
+  }
+
+  private void moveCurrentToPreviousSession(
+      final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      previousSessionMoved = true;
       if (!currentSessionFile.exists()) {
         return;
       }

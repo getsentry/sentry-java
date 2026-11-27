@@ -821,4 +821,48 @@ class EnvelopeCacheTest {
     assertTrue(previousSessionFile.exists())
     assertEquals("current session content", previousSessionFile.readText())
   }
+
+  @Test
+  fun `persistCurrentSession before the init-time move keeps both sessions in place`() {
+    val cache = fixture.getSUT()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    val liveSession = createSession()
+
+    // a hybrid SDK persists the live session before the executor runs MovePreviousSession
+    cache.persistCurrentSession(liveSession)
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(liveSession.sessionId)
+  }
+
+  @Test
+  fun `SessionStart before the init-time move keeps both sessions in place`() {
+    val cache = fixture.getSUT()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    val liveSession = createSession()
+
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, liveSession, null),
+      HintUtils.createWithTypeCheckHint(SessionStartHint()),
+    )
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(liveSession.sessionId)
+  }
 }
