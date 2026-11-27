@@ -746,6 +746,7 @@ public final class io/sentry/android/core/anr/AnrProfile {
 }
 
 public final class io/sentry/android/core/anr/AnrProfileManager : java/lang/AutoCloseable {
+	public static final field MAX_NUM_STACKTRACES I
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/io/File;)V
 	public fun add (Lio/sentry/android/core/anr/AnrStackTrace;)V
@@ -914,6 +915,12 @@ public final class io/sentry/android/core/hang/ThreadHangSignal : io/sentry/andr
 public abstract interface class io/sentry/android/core/hang/ThreadPoster {
 	public abstract fun post (Ljava/lang/Runnable;)V
 	public abstract fun remove (Ljava/lang/Runnable;)V
+}
+
+public final class io/sentry/android/core/hang/ThreadSampleCollector : io/sentry/android/core/hang/HangDataCollector {
+	public fun <init> (Ljava/lang/Thread;)V
+	public fun sample (Lio/sentry/time/Timestamp;)Lio/sentry/android/core/anr/AnrStackTrace;
+	public synthetic fun sample (Lio/sentry/time/Timestamp;)Ljava/lang/Object;
 }
 
 public abstract class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {

@@ -10,6 +10,7 @@ import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.hang.HangManager.DEFAULT_MAX_RECORDING_TIME_MS
 import io.sentry.android.core.hang.HangManager.DEFAULT_POLLING_INTERVAL_MS
 import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.time.EpochClock
 import io.sentry.time.JavaMonotonicTicker
@@ -21,6 +22,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.HOURS
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import java.util.concurrent.locks.LockSupport
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.mockito.kotlin.any
@@ -1121,20 +1123,31 @@ class HangManagerTest {
   }
 
   @Test
-  fun `manager on the default executor posts the probe of a thread signal`() {
-    val posted = CountDownLatch(1)
+  fun `manager on the default executor records the stack of the watched thread`() {
+    val parked = Thread { while (!Thread.currentThread().isInterrupted) LockSupport.park() }
+    parked.isDaemon = true
+    parked.start()
+    var posts = 0
     val poster =
       object : ThreadPoster {
-        override fun post(runnable: Runnable) = posted.countDown()
+        // The probe runs only at the 10th tick, so the thread looks blocked for about 600 ms.
+        override fun post(runnable: Runnable) {
+          if (++posts == 10) {
+            runnable.run()
+          }
+        }
 
         override fun remove(runnable: Runnable) = Unit
       }
+    val ticker = JavaMonotonicTicker.getInstance()
+    val recorded = CountDownLatch(1)
+    var record: HangRecord? = null
     appStateProvider.foreground()
     val created =
       HangManager(
-        options,
+        SentryOptions().apply { executorService = ImmediateExecutorService() },
         appStateProvider,
-        JavaMonotonicTicker.getInstance(),
+        ticker,
         epochClock,
         DEFAULT_POLLING_INTERVAL_MS,
         DEFAULT_MAX_RECORDING_TIME_MS,
@@ -1150,16 +1163,36 @@ class HangManagerTest {
             ),
           )
         },
-        emptyList(),
+        listOf(
+          HangCollectorSetup(
+            ThreadSampleCollector(parked),
+            { stackTrace, builder -> builder.addStackTrace(stackTrace) },
+            null,
+          ),
+        ),
       )
 
-    created.subscribe(listener)
+    val recordingListener =
+      object : HangRecordingListener {
+        override fun onHangStarted() = HangRecordingRequest(true, false)
+
+        override fun onHangRecorded(hangRecord: HangRecord) {
+          record = hangRecord
+          recorded.countDown()
+        }
+      }
+
+    created.subscribe(recordingListener)
 
     try {
-      assertThat(posted.await(10, TimeUnit.SECONDS)).isTrue()
+      assertThat(recorded.await(10, TimeUnit.SECONDS)).isTrue()
     } finally {
-      created.unsubscribe(listener)
+      created.unsubscribe(recordingListener)
+      parked.interrupt()
+      parked.join()
     }
+    assertThat(record!!.stackTraces).isNotEmpty()
+    assertThat(record!!.stackTraces.first().stack.map { it.methodName }).contains("park")
   }
 
   private class FakeAppStateProvider : AppStateProvider {
