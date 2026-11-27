@@ -69,10 +69,22 @@ fun SentryTransaction.hasSpanWithOp(
   return featureFlag == null || matchesFlag(data, featureFlag)
 }
 
-fun SentryTransaction.hasSpanWithOpAndDescription(op: String, description: String): Boolean {
-  if (spans.none { it.op == op && it.description == description }) {
+/** Matches a span with [op] and [description] whose data contains every entry of [data]. */
+fun SentryTransaction.hasSpanWithOpAndDescription(
+  op: String,
+  description: String,
+  data: Map<String, Any?> = emptyMap(),
+): Boolean {
+  val candidates = spans.filter { it.op == op && it.description == description }
+  if (candidates.isEmpty()) {
     return mismatch(
       "Unable to find span with op $op and description $description in transaction:",
+      this,
+    )
+  }
+  if (candidates.none { span -> data.all { (key, value) -> span.data?.get(key) == value } }) {
+    return mismatch(
+      "No span with op $op and description $description has data $data in transaction:",
       this,
     )
   }
