@@ -40,7 +40,7 @@ import io.sentry.android.core.ActivityLifecycleIntegration
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.performance.AppStartMetrics
-import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import org.junit.After
 import org.junit.Test

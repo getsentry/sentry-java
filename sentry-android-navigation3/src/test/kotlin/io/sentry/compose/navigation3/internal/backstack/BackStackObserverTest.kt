@@ -21,8 +21,8 @@ import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.SentryNavOptions
-import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
-import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
 import io.sentry.compose.navigation3.internal.lifecycle.NavScopes
@@ -683,18 +683,17 @@ class BackStackObserverTest {
     assertThat(fixture.startedTransactions).hasSize(2)
     val profileTransaction = fixture.startedTransactions.last()
     assertThat(profileTransaction.isFinished).isFalse()
-    assertThat(profileTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
+    assertThat(profileTransaction.name).isEqualTo(UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.transaction).isSameInstanceAs(profileTransaction)
-    assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
-    assertThat(fixture.scope.contexts.app?.viewNames)
-      .isEqualTo(listOf(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME))
+    assertThat(fixture.scope.screen).isEqualTo(UNKNOWN_ENTRY_NAME)
+    assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf(UNKNOWN_ENTRY_NAME))
     assertThat(fixture.breadcrumbs).hasSize(2)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly("from", "/home", "to", NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
+      .containsExactly("from", "/home", "to", UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
         ),
       )
@@ -706,20 +705,19 @@ class BackStackObserverTest {
     assertThat(fixture.startedTransactions).hasSize(3)
     val cartTransaction = fixture.startedTransactions.last()
     assertThat(cartTransaction.isFinished).isFalse()
-    assertThat(cartTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
+    assertThat(cartTransaction.name).isEqualTo(UNKNOWN_ENTRY_NAME)
     assertThat(cartTransaction.getData("arguments"))
       .isEqualTo(mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"))
     assertThat(fixture.scope.transaction).isSameInstanceAs(cartTransaction)
-    assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
-    assertThat(fixture.scope.contexts.app?.viewNames)
-      .isEqualTo(listOf(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME))
+    assertThat(fixture.scope.screen).isEqualTo(UNKNOWN_ENTRY_NAME)
+    assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf(UNKNOWN_ENTRY_NAME))
     assertThat(fixture.breadcrumbs).hasSize(3)
     assertThat(fixture.breadcrumbs.last().data)
       .containsExactly(
         "from",
-        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+        UNKNOWN_ENTRY_NAME,
         "to",
-        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+        UNKNOWN_ENTRY_NAME,
         "to_arguments",
         mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
       )
@@ -727,10 +725,10 @@ class BackStackObserverTest {
       .isEqualTo(
         listOf(
           mapOf(
-            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+            "entry" to UNKNOWN_ENTRY_NAME,
             "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
           ),
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
         ),
       )
@@ -751,7 +749,7 @@ class BackStackObserverTest {
     assertThat(fixture.breadcrumbs.last().data)
       .containsExactly(
         "from",
-        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+        UNKNOWN_ENTRY_NAME,
         "from_arguments",
         mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
         "to",
@@ -762,10 +760,10 @@ class BackStackObserverTest {
         listOf(
           mapOf("entry" to "/settings"),
           mapOf(
-            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+            "entry" to UNKNOWN_ENTRY_NAME,
             "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
           ),
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
         ),
       )

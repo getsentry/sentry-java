@@ -13,6 +13,7 @@ import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.kotlin.any

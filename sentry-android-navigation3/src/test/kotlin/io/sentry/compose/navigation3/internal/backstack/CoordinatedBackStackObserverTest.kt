@@ -19,8 +19,8 @@ import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.compose.navigation3.SentryNavOptions
+import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.internal.lifecycle.INavStatePublisher
-import io.sentry.compose.navigation3.internal.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
 import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
 import io.sentry.protocol.TransactionNameSource
