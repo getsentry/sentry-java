@@ -21,12 +21,36 @@ internal const val BREADCRUMB_FROM_KEY = "from"
 internal const val BREADCRUMB_TO_KEY = "to"
 internal const val BREADCRUMB_FROM_ARGUMENTS_KEY = "from_arguments"
 internal const val BREADCRUMB_TO_ARGUMENTS_KEY = "to_arguments"
+internal const val BREADCRUMB_FROM_UNKNOWN_ENTRY_REASON_KEY = "from_unknown_entry_reason"
+internal const val BREADCRUMB_TO_UNKNOWN_ENTRY_REASON_KEY = "to_unknown_entry_reason"
 
 internal const val NAVIGATION_OP = "navigation"
 internal const val NAVIGATION_TRANSACTION_ORIGIN = "auto.navigation.nav3"
 
 /** The string displayed in the Sentry UI if the name of a back stack entry can't be determined. */
 internal const val UNKNOWN_ENTRY_NAME = "/unknown"
+
+/**
+ * Why a back stack entry was reported as [UNKNOWN_ENTRY_NAME].
+ *
+ * Recorded under [UNKNOWN_ENTRY_REASON_KEY] (prefixed with `to_` or `from_` on breadcrumbs).
+ */
+internal enum class UnknownEntryReason(val serializedValue: String) {
+
+  /** The mapper returned a name that was empty after trimming. */
+  BLANK_NAME("blank_name"),
+
+  /** The mapper threw. */
+  MAPPING_FAILED("mapping_failed"),
+
+  /** The mapper returned `null`, i.e., it chose not to name the entry. */
+  UNMAPPED("unmapped");
+
+  companion object {
+
+    const val UNKNOWN_ENTRY_REASON_KEY: String = "unknown_entry_reason"
+  }
+}
 
 /**
  * Why host-provided arguments were unavailable in emitted nav state.
@@ -41,7 +65,6 @@ internal enum class ArgumentDropReason(
   CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
   DUPLICATE_KEY("duplicate_key"),
   INVALID_STRUCTURE("invalid_structure"),
-  MAPPING_FAILED("mapping_failed"),
   MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),
   SANITIZATION_FAILED("sanitization_failed");
 

@@ -12,7 +12,10 @@ import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.internal.contract.BACK_STACK_ENTRY_ARGUMENTS_KEY
 import io.sentry.compose.navigation3.internal.contract.BACK_STACK_ENTRY_KEY
+import io.sentry.compose.navigation3.internal.contract.TRANSACTION_ARGUMENTS_KEY
 import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason.Companion.UNKNOWN_ENTRY_REASON_KEY
 import io.sentry.util.ExceptionUtils
 import java.util.IdentityHashMap
 
@@ -81,12 +84,15 @@ internal class BackStackConverter<T : Any>(
         warningState.logMapperFailureWarning(logger, t)
         return NormalizedSentryBackStackEntry(
           name = UNKNOWN_ENTRY_NAME,
-          argumentDropReason = ArgumentDropReason.MAPPING_FAILED,
+          unknownEntryReason = UnknownEntryReason.MAPPING_FAILED,
         )
       }
 
     if (info == null) {
-      return NormalizedSentryBackStackEntry(name = UNKNOWN_ENTRY_NAME)
+      return NormalizedSentryBackStackEntry(
+        name = UNKNOWN_ENTRY_NAME,
+        unknownEntryReason = UnknownEntryReason.UNMAPPED,
+      )
     }
 
     val sanitizedArguments =
@@ -104,6 +110,7 @@ internal class BackStackConverter<T : Any>(
         name = UNKNOWN_ENTRY_NAME,
         arguments = sanitizedArguments.values,
         argumentDropReason = sanitizedArguments.dropReason,
+        unknownEntryReason = UnknownEntryReason.BLANK_NAME,
       )
     } else {
       NormalizedSentryBackStackEntry(
@@ -376,6 +383,8 @@ internal data class NormalizedSentryBackStackEntry(
    * The reason why the SDK dropped host-provided arguments, or null if no arguments were dropped.
    */
   val argumentDropReason: ArgumentDropReason? = null,
+  /** Why the entry was recorded as [UNKNOWN_ENTRY_NAME], or `null` if it has a name. */
+  val unknownEntryReason: UnknownEntryReason? = null,
 ) {
 
   companion object {
@@ -415,13 +424,28 @@ internal data class NormalizedSentryBackStackEntry(
    *    }
    *  }
    * ```
+   *
+   * An unnamed entry also has its [unknownEntryReason], e.g.:
+   * ```
+   *  {
+   *    "entry": "/unknown"
+   *    "unknown_entry_reason": "unmapped"
+   *  }
+   * ```
    */
   fun serialize(): Map<String, Any?> = buildMap {
     put(BACK_STACK_ENTRY_KEY, name)
+    unknownEntryReason?.let { put(UNKNOWN_ENTRY_REASON_KEY, it.serializedValue) }
     argumentsWithMetadata()
       .takeIf { it.isNotEmpty() }
       ?.let { put(BACK_STACK_ENTRY_ARGUMENTS_KEY, it) }
   }
+}
+
+/** Returns the data to set on the nav transaction of a destination this entry is the top of. */
+internal fun NormalizedSentryBackStackEntry.transactionData(): Map<String, Any> = buildMap {
+  argumentsWithMetadata().takeIf { it.isNotEmpty() }?.let { put(TRANSACTION_ARGUMENTS_KEY, it) }
+  unknownEntryReason?.let { put(UNKNOWN_ENTRY_REASON_KEY, it.serializedValue) }
 }
 
 internal fun List<NormalizedSentryBackStackEntry>.serialize(): List<Map<String, Any?>> =

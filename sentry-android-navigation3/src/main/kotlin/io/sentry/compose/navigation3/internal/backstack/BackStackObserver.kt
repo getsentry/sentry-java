@@ -18,8 +18,10 @@ import io.sentry.compose.navigation3.internal.backstack.PreparedChange.BackStack
 import io.sentry.compose.navigation3.internal.contract.BACK_STACK_KEY
 import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_FROM_ARGUMENTS_KEY
 import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_FROM_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_FROM_UNKNOWN_ENTRY_REASON_KEY
 import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_TO_ARGUMENTS_KEY
 import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_TO_KEY
+import io.sentry.compose.navigation3.internal.contract.BREADCRUMB_TO_UNKNOWN_ENTRY_REASON_KEY
 import io.sentry.compose.navigation3.internal.contract.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.internal.contract.NAVIGATION_OP
 import io.sentry.compose.navigation3.internal.lifecycle.INavScope
@@ -242,7 +244,7 @@ internal class BackStackObserver<T : Any>(
 
     return NavTransactionRequest.forDestination(
       name = top.name,
-      arguments = top.argumentsWithMetadata(),
+      data = top.transactionData(),
       contexts = navContext.forTransaction(backStack.capturedEntriesNormalized),
       viewNames = if (scopes.options.isEnableScreenTracking) listOf(top.name) else null,
       options = scopes.options,
@@ -363,6 +365,9 @@ private class NavBreadcrumbs(private val scopes: INavScopes) {
 
         fromEntry?.let { entry ->
           data[BREADCRUMB_FROM_KEY] = entry.name
+          entry.unknownEntryReason?.let {
+            data[BREADCRUMB_FROM_UNKNOWN_ENTRY_REASON_KEY] = it.serializedValue
+          }
           entry
             .argumentsWithMetadata()
             .takeIf { it.isNotEmpty() }
@@ -372,6 +377,9 @@ private class NavBreadcrumbs(private val scopes: INavScopes) {
         }
 
         data[BREADCRUMB_TO_KEY] = toEntry.name
+        toEntry.unknownEntryReason?.let {
+          data[BREADCRUMB_TO_UNKNOWN_ENTRY_REASON_KEY] = it.serializedValue
+        }
         toEntry
           .argumentsWithMetadata()
           .takeIf { it.isNotEmpty() }
