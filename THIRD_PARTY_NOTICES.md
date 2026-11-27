@@ -489,7 +489,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK's SQL analyzer test suite includes test inputs adapted from the SQL analyzer tests in `instrumentation-api-incubator/src/test/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/`. The adapted inputs reside in `sentry/src/test/resources/sql/analyzer-cases.json` (cases whose `source` starts with `otel-java:`), `sentry/src/test/java/io/sentry/util/sql/SqlQueryAnalyzerPathologicalTest.kt` and `sentry/src/test/java/io/sentry/util/sql/SqlQueryAnalyzerFuzzTest.kt`. These are test sources and are not part of the published artifacts.
+The Sentry Java SDK's SQL analyzer test suite includes test inputs adapted from the SQL analyzer tests in `instrumentation-api-incubator/src/test/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/`. The adapted inputs reside in `sentry/src/test/resources/sql/analyzer-cases.json` (cases whose `source` starts with `otel-java:`) and `sentry/src/test/java/io/sentry/util/sql/SqlQueryAnalyzerPathologicalTest.kt`. These are test sources and are not part of the published artifacts.
 
 ```
 Copyright The OpenTelemetry Authors
@@ -518,7 +518,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK's SQL analyzer test suite includes test inputs adapted from `test/OpenTelemetry.Contrib.Shared.Tests/SqlProcessorTests.cs` and `test/OpenTelemetry.Contrib.Shared.Tests/SqlProcessorTestCases.json`. The adapted inputs reside in `sentry/src/test/resources/sql/analyzer-cases.json` (cases whose `source` starts with `otel-dotnet:`) and `sentry/src/test/java/io/sentry/util/sql/SqlQueryAnalyzerPathologicalTest.kt`. These are test sources and are not part of the published artifacts.
+The Sentry Java SDK's SQL analyzer test suite includes test inputs adapted from `test/OpenTelemetry.Contrib.Shared.Tests/SqlProcessorTests.cs` and `test/OpenTelemetry.Contrib.Shared.Tests/SqlProcessorTestCases.json`. The adapted inputs reside in `sentry/src/test/resources/sql/analyzer-cases.json` (cases whose `source` starts with `otel-dotnet:`). These are test sources and are not part of the published artifacts.
 
 ```
 Copyright The OpenTelemetry Authors

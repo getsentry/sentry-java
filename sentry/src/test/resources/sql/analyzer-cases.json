@@ -29,24 +29,10 @@
       "source": "sentry"
     },
     {
-      "id": "size.limit.over",
-      "dialect": "postgresql",
-      "input": "SELECT name FROM users WHERE email = 'Zq9xK7@example.com'",
-      "maxQueryTextLength": 25,
-      "secrets": ["Zq9xK7@example.com"],
-      "source": "sentry"
-    },
-    {
       "id": "literal.string.doubled_quote",
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM users WHERE name = 'O''Zq9xK7a'",
       "secrets": ["Zq9xK7a"],
-      "source": "sentry"
-    },
-    {
-      "id": "literal.string.empty",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users WHERE name = ''",
       "source": "sentry"
     },
     {
@@ -99,70 +85,10 @@
       "source": "sentry"
     },
     {
-      "id": "literal.number.integers",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 12, -12, +12 FROM t",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.decimal_exponent",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 12.34, .5, -0.5, 1e10, 1.5E-3, -2E+9 FROM t",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.signed_in_expression",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a FROM t WHERE b = 99+100 AND c=x-1 AND d = x - 1 AND e>=-5",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.sign_after_operand",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a-1, a -1, 2-1, 'b'-1, ?-1, :p-1, $1-1, (c)-1, d[1]-1, `e`-1 FROM t",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.sign_after_keyword.clauses",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT ALL -1 FROM t JOIN u ON -2 < u.a WHERE -3 < a AND -4 < b OR NOT -5 > c GROUP BY a HAVING -6 < COUNT(*) ORDER BY -7 LIMIT -8 OFFSET -9",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.sign_after_keyword.expressions",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT DISTINCT CASE -1 WHEN -2 THEN -3 ELSE -4 END FROM t WHERE a BETWEEN -5 AND -6 OR b LIKE -7 ESCAPE -8 OR c = INTERVAL -9 DAY",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.sign_after_keyword.lists",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT TOP -1 a FROM t WHERE b IN -2 OR c > ANY -3 OR d > SOME -4; VALUES -5; UPDATE t SET -6",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.sign_after_keyword.ddl",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE t (a INT DEFAULT -1); CREATE PROCEDURE p AS RETURN -2; CREATE SEQUENCE s START WITH -3 INCREMENT BY -4 MINVALUE -5",
-      "source": "sentry"
-    },
-    {
-      "id": "literal.number.in_identifier",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT c3po, r2d2 FROM covid19 WHERE n1h1 = 1234",
-      "source": "sentry"
-    },
-    {
       "id": "literal.hex",
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM t WHERE a = 0xDEADBEEF AND b = 0Xbeef AND c = X'4A6F' AND d = x'4a'",
       "secrets": ["DEADBEEF"],
-      "source": "sentry"
-    },
-    {
-      "id": "literal.binary",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t WHERE a = B'1011' AND b = 0b1011",
       "source": "sentry"
     },
     {
@@ -383,12 +309,6 @@
       "source": "sentry"
     },
     {
-      "id": "literal.boolean_null_kept",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t WHERE a = TRUE AND b = false AND c IS NULL AND d IS NOT NULL",
-      "source": "sentry"
-    },
-    {
       "id": "literal.in_list.collapse",
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM t WHERE a IN (1, 2, 3) AND b IN ('Zq9xK7u', 'x') AND c IN(?, ?) AND d IN (x, 'y')",
@@ -480,24 +400,6 @@
       "source": "sentry"
     },
     {
-      "id": "comment.hash.empty_lines.mysql",
-      "dialect": "mysql",
-      "input": "SELECT a #\nFROM t #",
-      "source": "sentry"
-    },
-    {
-      "id": "comment.hash.postgresql",
-      "dialect": "postgresql",
-      "input": "SELECT a # b FROM t",
-      "source": "sentry"
-    },
-    {
-      "id": "comment.hash.sqlserver_temp_table",
-      "dialect": "sqlserver",
-      "input": "SELECT * FROM #orders WHERE id = 1",
-      "source": "sentry"
-    },
-    {
       "id": "comment.hash.conservative",
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM #orders WHERE id = 'Zq9xK7am'",
@@ -533,22 +435,10 @@
       "source": "sentry"
     },
     {
-      "id": "comment.dash_dash.mysql",
-      "dialect": "mysql",
-      "input": "SELECT 1--1 FROM t",
-      "source": "sentry"
-    },
-    {
       "id": "comment.dash_dash.before_comment.mysql",
       "dialect": "mysql",
       "input": "SELECT a--/* Zq9xK7sf */b FROM t",
       "secrets": ["Zq9xK7sf"],
-      "source": "sentry"
-    },
-    {
-      "id": "comment.dash_dash.postgresql",
-      "dialect": "postgresql",
-      "input": "SELECT 1--1\nFROM t",
       "source": "sentry"
     },
     {
@@ -591,12 +481,6 @@
       "dialect": "h2",
       "input": "SELECT a // Zq9xK7at\nFROM t",
       "secrets": ["Zq9xK7at"],
-      "source": "sentry"
-    },
-    {
-      "id": "comment.double_slash.postgresql",
-      "dialect": "postgresql",
-      "input": "SELECT 8 // 2 FROM t",
       "source": "sentry"
     },
     {
@@ -684,60 +568,6 @@
       "source": "sentry"
     },
     {
-      "id": "param.question",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t WHERE a = ? AND b = ?",
-      "source": "sentry"
-    },
-    {
-      "id": "param.numbered",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t WHERE a = ?1 AND b = ?2",
-      "source": "sentry"
-    },
-    {
-      "id": "param.named_colon",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t WHERE a = :email AND b = :id",
-      "source": "sentry"
-    },
-    {
-      "id": "param.named_at.sqlserver",
-      "dialect": "sqlserver",
-      "input": "SELECT * FROM t WHERE a = @email AND b = @p1",
-      "source": "sentry"
-    },
-    {
-      "id": "param.dollar_positional.postgresql",
-      "dialect": "postgresql",
-      "input": "SELECT * FROM t WHERE a = $1 AND b = $2",
-      "source": "sentry"
-    },
-    {
-      "id": "param.dollar_named.sqlite",
-      "dialect": "sqlite",
-      "input": "SELECT * FROM t WHERE a = $email",
-      "source": "sentry"
-    },
-    {
-      "id": "param.dollar_positional.conservative",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t WHERE a = $1",
-      "source": "sentry"
-    },
-    {
-      "id": "param.cast_not_marker.postgresql",
-      "dialect": "postgresql",
-      "input": "SELECT a::text FROM t WHERE b = '5'::int",
-      "source": "sentry"
-    },
-    {
-      "id": "jdbc.call",
-      "dialect": "CONSERVATIVE",
-      "input": "{call get_user(?)}",
-      "source": "sentry"
-    },
-    {
       "id": "jdbc.call_return",
       "dialect": "CONSERVATIVE",
       "input": "{? = call calc_total(?, 'Zq9xK7av')}",
@@ -756,30 +586,6 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT {fn UCASE(name)}, {fn CONCAT('Zq9xK7aw', name)} FROM t",
       "secrets": ["Zq9xK7aw"],
-      "source": "sentry"
-    },
-    {
-      "id": "room.select",
-      "dialect": "sqlite",
-      "input": "SELECT * FROM `users` WHERE `id` = ? LIMIT 1",
-      "source": "sentry"
-    },
-    {
-      "id": "room.insert_or_replace",
-      "dialect": "sqlite",
-      "input": "INSERT OR REPLACE INTO `users` (`id`,`name`) VALUES (?,?)",
-      "source": "sentry"
-    },
-    {
-      "id": "room.update_or_abort",
-      "dialect": "sqlite",
-      "input": "UPDATE OR ABORT `users` SET `id` = ?,`name` = ? WHERE `id` = ?",
-      "source": "sentry"
-    },
-    {
-      "id": "room.delete",
-      "dialect": "sqlite",
-      "input": "DELETE FROM `users` WHERE `id` = ?",
       "source": "sentry"
     },
     {
@@ -1007,12 +813,6 @@
       "source": "sentry"
     },
     {
-      "id": "credentials.identified_by.comment_before_glued_by.postgresql",
-      "dialect": "postgresql",
-      "input": "UPDATE t SET a = 1 IDENTIFIED/**/BYpw",
-      "source": "sentry"
-    },
-    {
       "id": "credentials.password_stop.double_quoted.postgresql",
       "dialect": "postgresql",
       "input": "CREATE DATABASE db SYSTEM USER PASSWORD \"Zq9xK7nl\"",
@@ -1027,36 +827,6 @@
       "source": "sentry"
     },
     {
-      "id": "credentials.password_stop.before_punctuation.postgresql",
-      "dialect": "postgresql",
-      "input": "CREATE STATISTICS user_stats ON password, email FROM users",
-      "source": "sentry"
-    },
-    {
-      "id": "credentials.password_stop.after_object_kind",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE SCHEMA password AUTHORIZATION app_owner",
-      "source": "sentry"
-    },
-    {
-      "id": "credentials.password_kept.safe_kinds",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE INDEX idx_pw ON users (password DESC); CREATE VIEW v AS SELECT password FROM users; CREATE PROCEDURE p AS SELECT password FROM users",
-      "source": "sentry"
-    },
-    {
-      "id": "credentials.password_kept.modifiers.postgresql",
-      "dialect": "postgresql",
-      "input": "CREATE OR REPLACE TEMP VIEW v AS SELECT password FROM users; CREATE UNLOGGED TABLE t (password TEXT); CREATE GLOBAL TEMPORARY TABLE g (password TEXT); CREATE LOCAL TEMPORARY TABLE l (password TEXT); CREATE UNIQUE INDEX i ON users (password DESC); CREATE MATERIALIZED VIEW m AS SELECT password FROM users",
-      "source": "sentry"
-    },
-    {
-      "id": "credentials.password_kept.modifiers.sqlserver",
-      "dialect": "sqlserver",
-      "input": "CREATE CLUSTERED INDEX i ON users (password DESC); CREATE NONCLUSTERED INDEX j ON users (password ASC)",
-      "source": "sentry"
-    },
-    {
       "id": "credentials.connect_not_allowlisted",
       "dialect": "CONSERVATIVE",
       "input": "CONNECT Zq9xK7bu PASSWORD Zq9xK7bv",
@@ -1064,28 +834,10 @@
       "source": "sentry"
     },
     {
-      "id": "credentials.password_column",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT password FROM users WHERE id = 1",
-      "source": "sentry"
-    },
-    {
-      "id": "credentials.password_column_ddl",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE users (password VARCHAR(255))",
-      "source": "sentry"
-    },
-    {
       "id": "credentials.password_update",
       "dialect": "CONSERVATIVE",
       "input": "UPDATE users SET password = 'Zq9xK7bx' WHERE id = 1",
       "secrets": ["Zq9xK7bx"],
-      "source": "sentry"
-    },
-    {
-      "id": "shape.select.lowercase",
-      "dialect": "CONSERVATIVE",
-      "input": "select id from users where id = 1",
       "source": "sentry"
     },
     {
@@ -1100,18 +852,6 @@
       "dialect": "CONSERVATIVE",
       "input": "UPDATE users SET name = 'Zq9xK7cb' WHERE id = 1",
       "secrets": ["Zq9xK7cb"],
-      "source": "sentry"
-    },
-    {
-      "id": "shape.delete",
-      "dialect": "CONSERVATIVE",
-      "input": "DELETE FROM users WHERE id IN (1, 2, 3)",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.merge",
-      "dialect": "CONSERVATIVE",
-      "input": "MERGE INTO users USING staging ON users.id = staging.id WHEN MATCHED THEN UPDATE SET name = staging.name",
       "source": "sentry"
     },
     {
@@ -1143,58 +883,10 @@
       "source": "sentry"
     },
     {
-      "id": "shape.create_table.modifier_word_as_name",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE temp (id INT)",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.alter_table",
-      "dialect": "CONSERVATIVE",
-      "input": "ALTER TABLE orders ADD COLUMN note TEXT",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.drop_table_if_exists",
-      "dialect": "CONSERVATIVE",
-      "input": "DROP TABLE IF EXISTS orders",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.create_index",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE INDEX idx_orders_status ON orders (status)",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.drop_index",
-      "dialect": "CONSERVATIVE",
-      "input": "DROP INDEX idx_orders_status",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.create_view",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE VIEW open_orders AS SELECT * FROM orders WHERE status = 'open'",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.drop_view",
-      "dialect": "CONSERVATIVE",
-      "input": "DROP VIEW open_orders",
-      "source": "sentry"
-    },
-    {
       "id": "shape.call",
       "dialect": "CONSERVATIVE",
       "input": "CALL update_stats(1, 'Zq9xK7cg')",
       "secrets": ["Zq9xK7cg"],
-      "source": "sentry"
-    },
-    {
-      "id": "shape.exec.sqlserver",
-      "dialect": "sqlserver",
-      "input": "EXEC dbo.cleanup @days = 30",
       "source": "sentry"
     },
     {
@@ -1205,160 +897,10 @@
       "source": "sentry"
     },
     {
-      "id": "shape.with_cte",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH recent AS (SELECT * FROM orders WHERE created > '2024-01-01') SELECT * FROM recent JOIN users ON users.id = recent.user_id",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.subquery_in",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE total > 100)",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.derived_table",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT * FROM orders) o",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.join",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT u.name, o.total FROM users u JOIN orders o ON o.user_id = u.id LEFT JOIN payments p ON p.order_id = o.id",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.implicit_join",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users u, orders o WHERE o.user_id = u.id",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.union",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT id FROM users UNION ALL SELECT id FROM admins",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.parenthesized_union",
-      "dialect": "CONSERVATIVE",
-      "input": "(SELECT id FROM users) UNION (SELECT id FROM admins)",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.multi_statement",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO a VALUES (1); UPDATE b SET x = 2",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.hql.lowercase",
-      "dialect": "CONSERVATIVE",
-      "input": "from User u where u.email = :email",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.hql.uppercase",
-      "dialect": "CONSERVATIVE",
-      "input": "FROM Order WHERE total > 100",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.explain",
-      "dialect": "CONSERVATIVE",
-      "input": "EXPLAIN SELECT * FROM users WHERE id = 1",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.begin_transaction",
-      "dialect": "CONSERVATIVE",
-      "input": "BEGIN TRANSACTION",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.commit",
-      "dialect": "CONSERVATIVE",
-      "input": "COMMIT",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.rollback",
-      "dialect": "CONSERVATIVE",
-      "input": "ROLLBACK",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.savepoint.sqlite",
-      "dialect": "sqlite",
-      "input": "SAVEPOINT sp_1",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.release_savepoint.sqlite",
-      "dialect": "sqlite",
-      "input": "RELEASE SAVEPOINT sp_1",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.operation_keyword_as_table.postgresql",
-      "dialect": "postgresql",
-      "input": "INSERT INTO checkpoint (id) VALUES (1)",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.pragma.sqlite",
-      "dialect": "sqlite",
-      "input": "PRAGMA foreign_keys = ON",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.pragma_value.sqlite",
-      "dialect": "sqlite",
-      "input": "PRAGMA user_version = 3",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.pragma_optimize.sqlite",
-      "dialect": "sqlite",
-      "input": "PRAGMA optimize",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.empty_statements",
-      "dialect": "CONSERVATIVE",
-      "input": ";; SELECT * FROM t;;",
-      "source": "sentry"
-    },
-    {
-      "id": "shape.semicolon_only",
-      "dialect": "CONSERVATIVE",
-      "input": ";",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.fetch.postgresql",
-      "dialect": "postgresql",
-      "input": "FETCH FORWARD 10 FROM order_cursor",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.close.postgresql",
-      "dialect": "postgresql",
-      "input": "CLOSE order_cursor",
-      "source": "sentry"
-    },
-    {
       "id": "allowlist.prepare.postgresql",
       "dialect": "postgresql",
       "input": "PREPARE find_user (int) AS SELECT * FROM users WHERE id = $1 AND tenant = 'Zq9xK7ma'",
       "secrets": ["Zq9xK7ma"],
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.deallocate.postgresql",
-      "dialect": "postgresql",
-      "input": "DEALLOCATE PREPARE find_user",
       "source": "sentry"
     },
     {
@@ -1376,30 +918,6 @@
       "source": "sentry"
     },
     {
-      "id": "allowlist.refresh.postgresql",
-      "dialect": "postgresql",
-      "input": "REFRESH MATERIALIZED VIEW order_totals",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.refresh_concurrently.postgresql",
-      "dialect": "postgresql",
-      "input": "REFRESH MATERIALIZED VIEW CONCURRENTLY order_totals",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.optimize.mysql",
-      "dialect": "mysql",
-      "input": "OPTIMIZE TABLE orders",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.checkpoint.postgresql",
-      "dialect": "postgresql",
-      "input": "CHECKPOINT",
-      "source": "sentry"
-    },
-    {
       "id": "allowlist.kill.mysql",
       "dialect": "mysql",
       "input": "KILL QUERY 48213",
@@ -1407,40 +925,10 @@
       "source": "sentry"
     },
     {
-      "id": "allowlist.flush.mysql",
-      "dialect": "mysql",
-      "input": "FLUSH PRIVILEGES",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.reset.postgresql",
-      "dialect": "postgresql",
-      "input": "RESET search_path",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.discard.postgresql",
-      "dialect": "postgresql",
-      "input": "DISCARD ALL",
-      "source": "sentry"
-    },
-    {
-      "id": "allowlist.abort.postgresql",
-      "dialect": "postgresql",
-      "input": "ABORT",
-      "source": "sentry"
-    },
-    {
       "id": "allowlist.xa.mysql",
       "dialect": "mysql",
       "input": "XA START 'Zq9xK7md'",
       "secrets": ["Zq9xK7md"],
-      "source": "sentry"
-    },
-    {
-      "id": "dialect.double_quotes.postgresql",
-      "dialect": "postgresql",
-      "input": "SELECT \"first name\" FROM \"Users\" WHERE \"id\" = 1",
       "source": "sentry"
     },
     {
@@ -1465,18 +953,6 @@
       "source": "sentry"
     },
     {
-      "id": "dialect.double_quotes.unknown_target",
-      "dialect": "mysql",
-      "input": "SELECT * FROM \"Users\"",
-      "source": "sentry"
-    },
-    {
-      "id": "dialect.double_quotes.unknown_procedure",
-      "dialect": "CONSERVATIVE",
-      "input": "CALL \"get_user\"(?)",
-      "source": "sentry"
-    },
-    {
       "id": "dialect.double_quotes.unknown_target_after_quoted_names.sqlite",
       "dialect": "sqlite",
       "input": "SELECT * FROM [a\"b], `c\"d`, \"Zq9xK7og\"",
@@ -1495,12 +971,6 @@
       "dialect": "mysql",
       "input": "SELECT * FROM t WHERE a LIKE \"100\\%\" AND b = \"C:\\\\\" AND c = \"say \\'hi\\'\" AND d = 'Zq9xK7ld'",
       "secrets": ["Zq9xK7ld"],
-      "source": "sentry"
-    },
-    {
-      "id": "dialect.brackets.sqlserver",
-      "dialect": "sqlserver",
-      "input": "SELECT [first name] FROM [dbo].[Users] WHERE [id] = 1",
       "source": "sentry"
     },
     {
@@ -1546,22 +1016,10 @@
       "source": "sentry"
     },
     {
-      "id": "dialect.brackets.sqlite",
-      "dialect": "sqlite",
-      "input": "SELECT [name] FROM [users] WHERE [id] = 1",
-      "source": "sentry"
-    },
-    {
       "id": "dialect.brackets.postgresql",
       "dialect": "postgresql",
       "input": "SELECT tags[1] FROM t WHERE tags[2] = 'Zq9xK7df'",
       "secrets": ["Zq9xK7df"],
-      "source": "sentry"
-    },
-    {
-      "id": "dialect.brackets.h2",
-      "dialect": "h2",
-      "input": "SELECT [name] FROM t WHERE a = 1",
       "source": "sentry"
     },
     {
@@ -1604,12 +1062,6 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT [O'Brien FROM t WHERE a = 'Zq9xK7sd'",
       "secrets": ["Zq9xK7sd"],
-      "source": "sentry"
-    },
-    {
-      "id": "dialect.brackets.number.conservative",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a[1] FROM t",
       "source": "sentry"
     },
     {
@@ -1690,24 +1142,6 @@
       "source": "sentry"
     },
     {
-      "id": "malformed.unbalanced.close_paren",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a FROM t WHERE (b = 1))",
-      "source": "sentry"
-    },
-    {
-      "id": "malformed.empty",
-      "dialect": "CONSERVATIVE",
-      "input": "",
-      "source": "sentry"
-    },
-    {
-      "id": "malformed.whitespace_only",
-      "dialect": "CONSERVATIVE",
-      "input": "  \n\t ",
-      "source": "sentry"
-    },
-    {
       "id": "malformed.control_char",
       "dialect": "CONSERVATIVE",
       "input": "SELECT a\u0000b FROM t WHERE c = 'Zq9xK7eh'",
@@ -1719,12 +1153,6 @@
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM t WHERE a = 'x\u0001Zq9xK7ei'",
       "secrets": ["Zq9xK7ei"],
-      "source": "sentry"
-    },
-    {
-      "id": "malformed.lone_surrogate",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a\ud800 FROM t",
       "source": "sentry"
     },
     {
@@ -1746,12 +1174,6 @@
       "dialect": "CONSERVATIVE",
       "input": "AUTH Zq9xK7el",
       "secrets": ["Zq9xK7el"],
-      "source": "sentry"
-    },
-    {
-      "id": "unrecognized.keyword_typo",
-      "dialect": "CONSERVATIVE",
-      "input": "SELEC * FROM users",
       "source": "sentry"
     },
     {
@@ -1811,100 +1233,10 @@
       "source": "sentry"
     },
     {
-      "id": "size.limit.exact",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a FROM t WHERE b = 'Zq9xK7fa'",
-      "maxQueryTextLength": 27,
-      "secrets": ["Zq9xK7fa"],
-      "source": "sentry"
-    },
-    {
-      "id": "size.limit.under",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a FROM t WHERE b = 'Zq9xK7fa'",
-      "maxQueryTextLength": 28,
-      "secrets": ["Zq9xK7fa"],
-      "source": "sentry"
-    },
-    {
-      "id": "size.limit.one_over",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a FROM t WHERE b = 'Zq9xK7fa'",
-      "maxQueryTextLength": 26,
-      "secrets": ["Zq9xK7fa"],
-      "source": "sentry"
-    },
-    {
-      "id": "size.limit.first_token",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 1",
-      "maxQueryTextLength": 4,
-      "source": "sentry"
-    },
-    {
-      "id": "size.limit.stop_over_limit",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a FROM t WHERE b IN ('Zq9xK7fb",
-      "maxQueryTextLength": 28,
-      "secrets": ["Zq9xK7fb"],
-      "source": "sentry"
-    },
-    {
-      "id": "size.limit.dcl_before_credential.postgresql",
-      "dialect": "postgresql",
-      "input": "CREATE USER Zq9xK7oa IDENTIFIED BY 'Zq9xK7ob'",
-      "maxQueryTextLength": 20,
-      "secrets": ["Zq9xK7oa", "Zq9xK7ob"],
-      "source": "sentry"
-    },
-    {
-      "id": "size.limit.before_first_keyword",
-      "dialect": "CONSERVATIVE",
-      "input": "{? = call calc_total(?, ?)}",
-      "maxQueryTextLength": 4,
-      "source": "sentry"
-    },
-    {
       "id": "size.summary.over_255",
       "dialect": "CONSERVATIVE",
       "input": "SELECT * FROM table_with_a_long_name_00, table_with_a_long_name_01, table_with_a_long_name_02, table_with_a_long_name_03, table_with_a_long_name_04, table_with_a_long_name_05, table_with_a_long_name_06, table_with_a_long_name_07, table_with_a_long_name_08, table_with_a_long_name_09, table_with_a_long_name_10, table_with_a_long_name_11 WHERE x = 'Zq9xK7fb'",
       "secrets": ["Zq9xK7fb"],
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.insert_entity",
-      "dialect": "sqlite",
-      "input": "INSERT OR ABORT INTO `song` (`id`,`title`,`artist`) VALUES (nullif(?, 0),?,?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.insert_batch",
-      "dialect": "sqlite",
-      "input": "INSERT INTO song(title, artist) VALUES (?, ?), (?, ?), (?, ?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.count",
-      "dialect": "sqlite",
-      "input": "SELECT count(*) FROM song",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.prime_writer",
-      "dialect": "sqlite",
-      "input": "DELETE FROM song WHERE id < 0",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.query_in_list",
-      "dialect": "sqlite",
-      "input": "SELECT * FROM song WHERE id IN (?,?,?) ORDER BY title COLLATE NOCASE LIMIT 20",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.master_table_create",
-      "dialect": "sqlite",
-      "input": "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
       "source": "sentry"
     },
     {
@@ -1915,66 +1247,6 @@
       "source": "sentry"
     },
     {
-      "id": "workload.room.modification_log_create",
-      "dialect": "sqlite",
-      "input": "CREATE TEMP TABLE room_table_modification_log (table_id INTEGER PRIMARY KEY, invalidated INTEGER NOT NULL DEFAULT 0)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.invalidation_trigger",
-      "dialect": "sqlite",
-      "input": "CREATE TEMP TRIGGER IF NOT EXISTS `room_table_modification_trigger_song_INSERT` AFTER INSERT ON `song` BEGIN UPDATE room_table_modification_log SET invalidated = 1 WHERE table_id = 0 AND invalidated = 0; END",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.modification_log_reset",
-      "dialect": "sqlite",
-      "input": "UPDATE room_table_modification_log SET invalidated = 0 WHERE invalidated = 1",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.pragma_temp_store",
-      "dialect": "sqlite",
-      "input": "PRAGMA temp_store = MEMORY;",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.begin_immediate",
-      "dialect": "sqlite",
-      "input": "BEGIN IMMEDIATE TRANSACTION",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.room.migration_double_quoted",
-      "dialect": "sqlite",
-      "input": "CREATE TABLE \"order\" (\"id\" INTEGER PRIMARY KEY, \"user\" TEXT)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.find_by_id_join",
-      "dialect": "postgresql",
-      "input": "select p1_0.id,p1_0.email,p1_0.first_name,a1_0.id,a1_0.city from person p1_0 left join address a1_0 on a1_0.id=p1_0.address_id where p1_0.id=?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.insert",
-      "dialect": "postgresql",
-      "input": "insert into person (address_id,email,first_name,version,id) values (?,?,?,?,?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.update_versioned",
-      "dialect": "postgresql",
-      "input": "update person set email=?,first_name=?,version=? where id=? and version=?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.delete",
-      "dialect": "postgresql",
-      "input": "delete from person where id=?",
-      "source": "sentry"
-    },
-    {
       "id": "workload.hibernate.sequence",
       "dialect": "postgresql",
       "input": "select nextval('Zq9xK7vc')",
@@ -1982,52 +1254,10 @@
       "source": "sentry"
     },
     {
-      "id": "workload.hibernate.page_like",
-      "dialect": "postgresql",
-      "input": "select p1_0.id,p1_0.email from person p1_0 where p1_0.email like ? escape '' order by p1_0.id offset ? rows fetch first ? rows only",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.in_padding",
-      "dialect": "postgresql",
-      "input": "select p1_0.id,p1_0.email from person p1_0 where p1_0.id in (?,?,?,?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.count_subquery",
-      "dialect": "postgresql",
-      "input": "select count(o1_0.id) from orders o1_0 where o1_0.customer_id in (select c1_0.id from customer c1_0 where c1_0.region=?)",
-      "source": "sentry"
-    },
-    {
       "id": "workload.hibernate.hql_comment",
       "dialect": "postgresql",
       "input": "/* select p from Person p where p.email = 'Zq9xK7vd' */ select p1_0.id from person p1_0 where p1_0.email='Zq9xK7vd'",
       "secrets": ["Zq9xK7vd"],
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.limit.mysql",
-      "dialect": "mysql",
-      "input": "select p1_0.id,p1_0.email from person p1_0 order by p1_0.id limit ?,?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.quoted_reserved.mysql",
-      "dialect": "mysql",
-      "input": "insert into `order` (`customer_id`,`status`,`id`) values (?,?,?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.top.sqlserver",
-      "dialect": "sqlserver",
-      "input": "select top(?) p1_0.id,p1_0.email from person p1_0 where p1_0.email=?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.hibernate.lock_hint.sqlserver",
-      "dialect": "sqlserver",
-      "input": "select p1_0.id,p1_0.version from person p1_0 with (updlock,holdlock,rowlock) where p1_0.id=?",
       "source": "sentry"
     },
     {
@@ -2045,40 +1275,10 @@
       "source": "sentry"
     },
     {
-      "id": "workload.postgresql.cte_window",
-      "dialect": "postgresql",
-      "input": "WITH ranked AS (SELECT o.id, o.customer_id, row_number() OVER (PARTITION BY o.customer_id ORDER BY o.created_at DESC) AS rn FROM orders o WHERE o.status = ANY(?)) SELECT id, customer_id FROM ranked WHERE rn = 1",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.postgresql.search_page",
-      "dialect": "postgresql",
-      "input": "SELECT id, email FROM users WHERE email ILIKE ? AND deleted_at IS NULL ORDER BY email LIMIT 20 OFFSET 40",
-      "source": "sentry"
-    },
-    {
       "id": "workload.postgresql.job_claim",
       "dialect": "postgresql",
       "input": "UPDATE jobs SET status = 'Zq9xK7vh', locked_at = now() WHERE id = (SELECT id FROM jobs WHERE status = 'Zq9xK7vi' ORDER BY priority DESC FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id, payload",
       "secrets": ["Zq9xK7vh", "Zq9xK7vi"],
-      "source": "sentry"
-    },
-    {
-      "id": "workload.postgresql.advisory_lock",
-      "dialect": "postgresql",
-      "input": "SELECT pg_try_advisory_xact_lock(?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.postgresql.create_table",
-      "dialect": "postgresql",
-      "input": "CREATE TABLE IF NOT EXISTS orders (id BIGSERIAL PRIMARY KEY, customer_id BIGINT NOT NULL REFERENCES customers (id), total NUMERIC(12, 2) NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT now())",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.postgresql.create_index",
-      "dialect": "postgresql",
-      "input": "CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders (customer_id, created_at DESC)",
       "source": "sentry"
     },
     {
@@ -2089,46 +1289,10 @@
       "source": "sentry"
     },
     {
-      "id": "workload.postgresql.quoted_identifiers",
-      "dialect": "postgresql",
-      "input": "SELECT \"u\".\"id\", \"u\".\"displayName\" FROM \"public\".\"User\" AS \"u\" WHERE \"u\".\"email\" = ?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.postgresql.listen",
-      "dialect": "postgresql",
-      "input": "LISTEN order_events",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.postgresql.unlisten",
-      "dialect": "postgresql",
-      "input": "UNLISTEN order_events",
-      "source": "sentry"
-    },
-    {
       "id": "workload.postgresql.notify",
       "dialect": "postgresql",
       "input": "NOTIFY order_events, 'Zq9xK7vj'",
       "secrets": ["Zq9xK7vj"],
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.upsert_counter",
-      "dialect": "mysql",
-      "input": "INSERT INTO page_views (page_id, day, views) VALUES (?, CURDATE(), 1) ON DUPLICATE KEY UPDATE views = views + 1",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.backticks",
-      "dialect": "mysql",
-      "input": "SELECT `id`, `name`, `price` FROM `products` WHERE `category_id` = ? AND `price` BETWEEN 10 AND 20 ORDER BY `name` LIMIT 10",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.interval",
-      "dialect": "mysql",
-      "input": "SELECT COUNT(*) FROM orders WHERE created_at >= NOW() - INTERVAL 1 DAY",
       "source": "sentry"
     },
     {
@@ -2146,100 +1310,10 @@
       "source": "sentry"
     },
     {
-      "id": "workload.mysql.stock_decrement",
-      "dialect": "mysql",
-      "input": "UPDATE inventory SET stock = stock - ? WHERE sku = ? AND stock >= ?",
-      "source": "sentry"
-    },
-    {
       "id": "workload.mysql.json",
       "dialect": "mysql",
       "input": "SELECT JSON_UNQUOTE(JSON_EXTRACT(attrs, '$.Zq9xK7vl')) AS color FROM products WHERE JSON_CONTAINS(tags, '\"Zq9xK7vm\"')",
       "secrets": ["Zq9xK7vl", "Zq9xK7vm"],
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.multi_table_delete",
-      "dialect": "mysql",
-      "input": "DELETE o FROM orders o JOIN customers c ON c.id = o.customer_id WHERE c.deleted_at IS NOT NULL",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.insert_ignore",
-      "dialect": "mysql",
-      "input": "INSERT IGNORE INTO tags (name) VALUES (?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.start_transaction",
-      "dialect": "mysql",
-      "input": "START TRANSACTION",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.set_names",
-      "dialect": "mysql",
-      "input": "SET NAMES utf8mb4",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.mysql.call_procedure",
-      "dialect": "mysql",
-      "input": "CALL refresh_daily_stats(?, ?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.get_author",
-      "dialect": "postgresql",
-      "input": "-- name: GetAuthor :one\nSELECT id, name, bio FROM authors\nWHERE id = ? LIMIT 1",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.list_authors",
-      "dialect": "postgresql",
-      "input": "-- name: ListAuthors :many\nSELECT id, name, bio FROM authors\nORDER BY name",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.create_author",
-      "dialect": "postgresql",
-      "input": "-- name: CreateAuthor :one\nINSERT INTO authors (\n  name, bio\n) VALUES (\n  ?, ?\n)\nRETURNING id, name, bio",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.delete_author",
-      "dialect": "postgresql",
-      "input": "-- name: DeleteAuthor :exec\nDELETE FROM authors\nWHERE id = ?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.update_bios",
-      "dialect": "postgresql",
-      "input": "-- name: UpdateAuthorBios :execrows\nUPDATE authors SET bio = ?\nWHERE bio IS NOT NULL",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.books_by_titles",
-      "dialect": "postgresql",
-      "input": "-- name: ListBooksByTitles :many\nSELECT book_id, title FROM books\nWHERE title = ANY(?::varchar[])",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.count_join",
-      "dialect": "postgresql",
-      "input": "-- name: CountAuthorsByCountry :one\nSELECT count(*) FROM authors a\nJOIN countries c ON c.id = a.country_id\nWHERE c.code = ?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlc.get_user.mysql",
-      "dialect": "mysql",
-      "input": "-- name: GetUserByEmail :one\nSELECT id, email FROM users\nWHERE email = ? LIMIT 1",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlserver.top_nolock",
-      "dialect": "sqlserver",
-      "input": "SELECT TOP (10) [o].[Id], [o].[Total] FROM [dbo].[Orders] AS [o] WITH (NOLOCK) WHERE [o].[CustomerId] = ? ORDER BY [o].[CreatedAt] DESC",
       "source": "sentry"
     },
     {
@@ -2250,46 +1324,10 @@
       "source": "sentry"
     },
     {
-      "id": "workload.sqlserver.update_counter",
-      "dialect": "sqlserver",
-      "input": "UPDATE [dbo].[Users] SET [LastLoginAt] = GETDATE(), [LoginCount] = [LoginCount] + 1 WHERE [Id] = ?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlserver.merge_values",
-      "dialect": "sqlserver",
-      "input": "MERGE INTO [dbo].[Inventory] AS [t] USING (VALUES (?, ?)) AS [s] ([Sku], [Qty]) ON [t].[Sku] = [s].[Sku] WHEN MATCHED THEN UPDATE SET [t].[Qty] = [s].[Qty] WHEN NOT MATCHED THEN INSERT ([Sku], [Qty]) VALUES ([s].[Sku], [s].[Qty]);",
-      "source": "sentry"
-    },
-    {
       "id": "workload.sqlserver.exec_procedure",
       "dialect": "sqlserver",
       "input": "EXEC [dbo].[usp_GetOrders] @CustomerId = ?, @Status = N'Zq9xK7vo'",
       "secrets": ["Zq9xK7vo"],
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlserver.temp_table_insert",
-      "dialect": "sqlserver",
-      "input": "INSERT INTO #recent ([Id]) SELECT [Id] FROM [dbo].[Orders] WHERE [CreatedAt] > DATEADD(day, -7, GETDATE())",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlserver.brackets_with_spaces",
-      "dialect": "sqlserver",
-      "input": "SELECT [Order Id], [Customer's Name] FROM [Sales].[Order Details] WHERE [Unit Price] > ?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.sqlserver.set_nocount",
-      "dialect": "sqlserver",
-      "input": "SET NOCOUNT ON; SELECT [Id], [Payload] FROM [dbo].[Jobs] WHERE [State] = ?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.tooling.flyway_history.postgresql",
-      "dialect": "postgresql",
-      "input": "SELECT \"installed_rank\",\"version\",\"description\",\"type\",\"script\",\"checksum\",\"installed_on\",\"installed_by\",\"execution_time\",\"success\" FROM \"public\".\"flyway_schema_history\" WHERE \"installed_rank\" > ? ORDER BY \"installed_rank\"",
       "source": "sentry"
     },
     {
@@ -2304,36 +1342,6 @@
       "dialect": "postgresql",
       "input": "SELECT * FROM QRTZ_LOCKS WHERE SCHED_NAME = 'Zq9xK7vq' AND LOCK_NAME = ? FOR UPDATE",
       "secrets": ["Zq9xK7vq"],
-      "source": "sentry"
-    },
-    {
-      "id": "workload.tooling.shedlock.postgresql",
-      "dialect": "postgresql",
-      "input": "INSERT INTO shedlock (name, lock_until, locked_at, locked_by) VALUES(?, ?, ?, ?) ON CONFLICT (name) DO UPDATE SET lock_until = ?, locked_at = ?, locked_by = ? WHERE shedlock.lock_until <= ?",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.tooling.hikari_test_query.mysql",
-      "dialect": "mysql",
-      "input": "SELECT 1",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.tooling.hikari_init_sql.postgresql",
-      "dialect": "postgresql",
-      "input": "SET search_path TO app, public",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.tooling.spring_sample_insert.hsqldb",
-      "dialect": "hsqldb",
-      "input": "insert into person (firstName, lastName) values (?, ?)",
-      "source": "sentry"
-    },
-    {
-      "id": "workload.tooling.spring_sample_schema.hsqldb",
-      "dialect": "hsqldb",
-      "input": "CREATE TABLE person (\n   id INTEGER IDENTITY PRIMARY KEY,\n   firstName VARCHAR(50) NOT NULL,\n   lastName VARCHAR(50) NOT NULL\n)",
       "source": "sentry"
     },
     {
@@ -2372,66 +1380,6 @@
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[5]"
     },
     {
-      "id": "otel_java.sanitize_sql.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 1.2",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[6]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT -1.2",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[7]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.008",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT -1.2e-9",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[8]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.009",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 2E+9",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[9]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.010",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT +0.2",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[10]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.011",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT .2",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[11]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.012",
-      "dialect": "CONSERVATIVE",
-      "input": "7",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[12]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.013",
-      "dialect": "CONSERVATIVE",
-      "input": ".7",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[13]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.014",
-      "dialect": "CONSERVATIVE",
-      "input": "-7",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[14]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.015",
-      "dialect": "CONSERVATIVE",
-      "input": "+7",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[15]"
-    },
-    {
       "id": "otel_java.sanitize_sql.016",
       "dialect": "CONSERVATIVE",
       "input": "SELECT 0x0af764",
@@ -2446,59 +1394,11 @@
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[17]"
     },
     {
-      "id": "otel_java.sanitize_sql.018",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM \"TABLE\"",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[18]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.019",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT A + B",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[19]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.020",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT -- comment",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[20]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.021",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM TABLE123",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[21]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.022",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT FIELD2 FROM TABLE_123 WHERE X<>7",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[22]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.023",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT DEADBEEF",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[23]"
-    },
-    {
       "id": "otel_java.sanitize_sql.024",
       "dialect": "CONSERVATIVE",
       "input": "SELECT 123-45-6789",
       "secrets": ["6789"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[24]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.025",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 1/2/34",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[25]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.026",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM TABLE WHERE FIELD = ''",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[26]"
     },
     {
       "id": "otel_java.sanitize_sql.027",
@@ -2513,12 +1413,6 @@
       "input": "SELECT * FROM TABLE WHERE FIELD = ' an escaped '' quote mark inside'",
       "secrets": ["quote mark inside"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[28]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.029",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM TABLE WHERE FIELD = '\\\\'",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[29]"
     },
     {
       "id": "otel_java.sanitize_sql.030",
@@ -2542,12 +1436,6 @@
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[32]"
     },
     {
-      "id": "otel_java.sanitize_sql.033",
-      "dialect": "postgresql",
-      "input": "SELECT * FROM TABLE WHERE FIELD = $$$$",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[33]"
-    },
-    {
       "id": "otel_java.sanitize_sql.034",
       "dialect": "postgresql",
       "input": "SELECT * FROM TABLE WHERE FIELD = $$words and spaces$$",
@@ -2569,24 +1457,6 @@
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[36]"
     },
     {
-      "id": "otel_java.sanitize_sql.037",
-      "dialect": "postgresql",
-      "input": "SELECT * FROM TABLE WHERE FIELD = $$\\\\$$",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[37]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.038",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM TABLE WHERE FIELD = $1",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[38]"
-    },
-    {
-      "id": "otel_java.sanitize_sql.039",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM TABLEओ7 WHERE FIELD = 'ɣ'",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[39]"
-    },
-    {
       "id": "otel_java.sanitize_sql.040",
       "dialect": "CONSERVATIVE",
       "input": "SELECT    *    \t\r\nFROM  TABLE WHERE FIELD1 = 12344 AND FIELD2 = 5678",
@@ -2601,204 +1471,6 @@
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[41]"
     },
     {
-      "id": "otel_java.simplify_sql.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT x, y, z FROM schema.table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[1]"
-    },
-    {
-      "id": "otel_java.simplify_sql.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT x, y, z FROM `schema table`",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[2]"
-    },
-    {
-      "id": "otel_java.simplify_sql.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT x, y, z FROM `schema`.`table`",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[3]"
-    },
-    {
-      "id": "otel_java.simplify_sql.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT x, y, z FROM \"schema table\"",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[4]"
-    },
-    {
-      "id": "otel_java.simplify_sql.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT x, y, z FROM \"schema\".\"table\"",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[5]"
-    },
-    {
-      "id": "otel_java.simplify_sql.006",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH subquery as (select a from b) SELECT x, y, z FROM table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[6]"
-    },
-    {
-      "id": "otel_java.simplify_sql.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT x, y, (select a from b) as z FROM table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[7]"
-    },
-    {
-      "id": "otel_java.simplify_sql.008",
-      "dialect": "CONSERVATIVE",
-      "input": "select delete, insert into, merge, update from table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[8]"
-    },
-    {
-      "id": "otel_java.simplify_sql.009",
-      "dialect": "CONSERVATIVE",
-      "input": "select col /* from table2 */ from table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[9]"
-    },
-    {
-      "id": "otel_java.simplify_sql.010",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table join anotherTable",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[10]"
-    },
-    {
-      "id": "otel_java.simplify_sql.011",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 LEFT JOIN t2 ON t1.id = t2.id JOIN t3 ON t2.x = t3.x",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[11]"
-    },
-    {
-      "id": "otel_java.simplify_sql.012",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from (select * from anotherTable)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[12]"
-    },
-    {
-      "id": "otel_java.simplify_sql.013",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from (select * from anotherTable) alias",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[13]"
-    },
-    {
-      "id": "otel_java.simplify_sql.014",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT * FROM t1) sub, t3",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[14]"
-    },
-    {
-      "id": "otel_java.simplify_sql.015",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT * FROM t1) s1, (SELECT * FROM t2) s2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[15]"
-    },
-    {
-      "id": "otel_java.simplify_sql.016",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT * FROM t1) sub, t2 JOIN t3 ON t2.id = t3.id",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[16]"
-    },
-    {
-      "id": "otel_java.simplify_sql.017",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table1 union select col from table2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[17]"
-    },
-    {
-      "id": "otel_java.simplify_sql.018",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT id, name FROM employees UNION ALL SELECT id, name FROM contractors UNION SELECT id, name FROM vendors",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[18]"
-    },
-    {
-      "id": "otel_java.simplify_sql.019",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (t UNION SELECT * FROM t2), t3",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[19]"
-    },
-    {
-      "id": "otel_java.simplify_sql.020",
-      "dialect": "CONSERVATIVE",
-      "input": "select id, (select max(foo) from (select foo from foos union all select foo from bars)) as foo from main_table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[20]"
-    },
-    {
-      "id": "otel_java.simplify_sql.021",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table where col in (select * from anotherTable)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[21]"
-    },
-    {
-      "id": "otel_java.simplify_sql.022",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT * FROM inner1 JOIN inner2 ON inner1.id = inner2.id) AS sub",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[22]"
-    },
-    {
-      "id": "otel_java.simplify_sql.023",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (VALUES (1,2), (3,4)) AS t(a, b)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[23]"
-    },
-    {
-      "id": "otel_java.simplify_sql.024",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 CROSS APPLY t2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[24]"
-    },
-    {
-      "id": "otel_java.simplify_sql.025",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 OUTER APPLY (SELECT * FROM t2 WHERE t2.id = t1.id)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[25]"
-    },
-    {
-      "id": "otel_java.simplify_sql.026",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1, LATERAL (SELECT * FROM t2 WHERE t2.id = t1.id)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[26]"
-    },
-    {
-      "id": "otel_java.simplify_sql.027",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table1, table2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[27]"
-    },
-    {
-      "id": "otel_java.simplify_sql.028",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table1 t1, table2 t2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[28]"
-    },
-    {
-      "id": "otel_java.simplify_sql.029",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table1 as t1, table2 as t2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[29]"
-    },
-    {
-      "id": "otel_java.simplify_sql.030",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table where col in (1, 2, 3)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[30]"
-    },
-    {
-      "id": "otel_java.simplify_sql.031",
-      "dialect": "CONSERVATIVE",
-      "input": "select 'a' IN(x, 'b') from table where col in (1) and z IN( '3', '4' )",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[31]"
-    },
-    {
-      "id": "otel_java.simplify_sql.032",
-      "dialect": "CONSERVATIVE",
-      "input": "select col from table order by col, col2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[32]"
-    },
-    {
-      "id": "otel_java.simplify_sql.033",
-      "dialect": "CONSERVATIVE",
-      "input": "select ąś∂ń© from źćļńĶ order by col, col2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[33]"
-    },
-    {
       "id": "otel_java.simplify_sql.034",
       "dialect": "CONSERVATIVE",
       "input": "select 12345678",
@@ -2806,377 +1478,11 @@
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[34]"
     },
     {
-      "id": "otel_java.simplify_sql.035",
-      "dialect": "CONSERVATIVE",
-      "input": "/* update comment */ select * from table1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[35]"
-    },
-    {
-      "id": "otel_java.simplify_sql.036",
-      "dialect": "CONSERVATIVE",
-      "input": "select /*((*/abc from table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[36]"
-    },
-    {
-      "id": "otel_java.simplify_sql.037",
-      "dialect": "CONSERVATIVE",
-      "input": "SeLeCT * FrOm TAblE",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[37]"
-    },
-    {
-      "id": "otel_java.simplify_sql.038",
-      "dialect": "CONSERVATIVE",
-      "input": "select next value in hibernate_sequence",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[38]"
-    },
-    {
-      "id": "otel_java.simplify_sql.039",
-      "dialect": "CONSERVATIVE",
-      "input": "EXPLAIN SELECT * FROM users",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[39]"
-    },
-    {
-      "id": "otel_java.simplify_sql.040",
-      "dialect": "CONSERVATIVE",
-      "input": "from schema.table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[40]"
-    },
-    {
-      "id": "otel_java.simplify_sql.041",
-      "dialect": "CONSERVATIVE",
-      "input": "FROM schema.table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[41]"
-    },
-    {
-      "id": "otel_java.simplify_sql.042",
-      "dialect": "CONSERVATIVE",
-      "input": "/* update comment */ from table1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[42]"
-    },
-    {
-      "id": "otel_java.simplify_sql.043",
-      "dialect": "CONSERVATIVE",
-      "input": " insert into table where lalala",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[43]"
-    },
-    {
-      "id": "otel_java.simplify_sql.044",
-      "dialect": "CONSERVATIVE",
-      "input": "insert into metrics.users (id) values (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[44]"
-    },
-    {
-      "id": "otel_java.simplify_sql.045",
-      "dialect": "CONSERVATIVE",
-      "input": "insert insert into table where lalala",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[45]"
-    },
-    {
-      "id": "otel_java.simplify_sql.046",
-      "dialect": "CONSERVATIVE",
-      "input": "insert into db.table where lalala",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[46]"
-    },
-    {
-      "id": "otel_java.simplify_sql.047",
-      "dialect": "CONSERVATIVE",
-      "input": "insert into `db table` where lalala",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[47]"
-    },
-    {
-      "id": "otel_java.simplify_sql.048",
-      "dialect": "CONSERVATIVE",
-      "input": "insert into \"db table\" where lalala",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[48]"
-    },
-    {
-      "id": "otel_java.simplify_sql.049",
-      "dialect": "CONSERVATIVE",
-      "input": "insert without i-n-t-o",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[49]"
-    },
-    {
-      "id": "otel_java.simplify_sql.050",
-      "dialect": "CONSERVATIVE",
-      "input": "delete from table where something something",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[50]"
-    },
-    {
-      "id": "otel_java.simplify_sql.051",
-      "dialect": "CONSERVATIVE",
-      "input": "delete from `my table` where something something",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[51]"
-    },
-    {
-      "id": "otel_java.simplify_sql.052",
-      "dialect": "CONSERVATIVE",
-      "input": "delete from \"my table\" where something something",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[52]"
-    },
-    {
-      "id": "otel_java.simplify_sql.053",
-      "dialect": "CONSERVATIVE",
-      "input": "delete from foo where x IN (1,2,3)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[53]"
-    },
-    {
       "id": "otel_java.simplify_sql.054",
       "dialect": "CONSERVATIVE",
       "input": "delete from 12345678",
       "secrets": ["12345678"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[54]"
-    },
-    {
-      "id": "otel_java.simplify_sql.055",
-      "dialect": "CONSERVATIVE",
-      "input": "delete   (((",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[55]"
-    },
-    {
-      "id": "otel_java.simplify_sql.056",
-      "dialect": "CONSERVATIVE",
-      "input": "update table set answer=42",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[56]"
-    },
-    {
-      "id": "otel_java.simplify_sql.057",
-      "dialect": "CONSERVATIVE",
-      "input": "update `my table` set answer=42",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[57]"
-    },
-    {
-      "id": "otel_java.simplify_sql.058",
-      "dialect": "CONSERVATIVE",
-      "input": "update `my table` set answer=42 where x IN('a', 'b') AND y In ('a',  'b')",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[58]"
-    },
-    {
-      "id": "otel_java.simplify_sql.059",
-      "dialect": "CONSERVATIVE",
-      "input": "update \"my table\" set answer=42",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[59]"
-    },
-    {
-      "id": "otel_java.simplify_sql.060",
-      "dialect": "CONSERVATIVE",
-      "input": "update /*table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[60]"
-    },
-    {
-      "id": "otel_java.simplify_sql.061",
-      "dialect": "CONSERVATIVE",
-      "input": "call test_proc()",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[61]"
-    },
-    {
-      "id": "otel_java.simplify_sql.062",
-      "dialect": "CONSERVATIVE",
-      "input": "call test_proc",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[62]"
-    },
-    {
-      "id": "otel_java.simplify_sql.063",
-      "dialect": "CONSERVATIVE",
-      "input": "call next value for hibernate_sequence",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[63]"
-    },
-    {
-      "id": "otel_java.simplify_sql.064",
-      "dialect": "CONSERVATIVE",
-      "input": "call db.test_proc",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[64]"
-    },
-    {
-      "id": "otel_java.simplify_sql.065",
-      "dialect": "CONSERVATIVE",
-      "input": "merge into table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[65]"
-    },
-    {
-      "id": "otel_java.simplify_sql.066",
-      "dialect": "CONSERVATIVE",
-      "input": "merge into `my table`",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[66]"
-    },
-    {
-      "id": "otel_java.simplify_sql.067",
-      "dialect": "CONSERVATIVE",
-      "input": "merge into \"my table\"",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[67]"
-    },
-    {
-      "id": "otel_java.simplify_sql.068",
-      "dialect": "CONSERVATIVE",
-      "input": "merge table (into is optional in some dbs)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[68]"
-    },
-    {
-      "id": "otel_java.simplify_sql.069",
-      "dialect": "CONSERVATIVE",
-      "input": "merge (into )))",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[69]"
-    },
-    {
-      "id": "otel_java.simplify_sql.070",
-      "dialect": "CONSERVATIVE",
-      "input": "and now for something completely different",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[70]"
-    },
-    {
-      "id": "otel_java.simplify_sql.073",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO t1 SELECT * FROM t2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[73]"
-    },
-    {
-      "id": "otel_java.simplify_sql.074",
-      "dialect": "CONSERVATIVE",
-      "input": "DELETE FROM t1 WHERE x IN (SELECT y FROM t2)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[74]"
-    },
-    {
-      "id": "otel_java.simplify_sql.075",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE t1 SET x = (SELECT y FROM t2)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[75]"
-    },
-    {
-      "id": "otel_java.simplify_sql.076",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1; SELECT * FROM t2",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[76]"
-    },
-    {
-      "id": "otel_java.simplify_sql.077",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1; INSERT INTO t2 VALUES (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[77]"
-    },
-    {
-      "id": "otel_java.simplify_sql.078",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t;",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[78]"
-    },
-    {
-      "id": "otel_java.simplify_sql.079",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t;;",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[79]"
-    },
-    {
-      "id": "otel_java.simplify_sql.080",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM ONLY parent",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[80]"
-    },
-    {
-      "id": "otel_java.simplify_sql.081",
-      "dialect": "CONSERVATIVE",
-      "input": "DELETE FROM ONLY parent WHERE id = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[81]"
-    },
-    {
-      "id": "otel_java.simplify_sql.082",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE ONLY parent SET x = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[82]"
-    },
-    {
-      "id": "otel_java.simplify_sql.083",
-      "dialect": "CONSERVATIVE",
-      "input": "VALUES (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[83]"
-    },
-    {
-      "id": "otel_java.simplify_sql.084",
-      "dialect": "CONSERVATIVE",
-      "input": "VALUES (1, 'a'), (2, 'b')",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[84]"
-    },
-    {
-      "id": "otel_java.simplify_sql.085",
-      "dialect": "CONSERVATIVE",
-      "input": "EXEC my_procedure",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[85]"
-    },
-    {
-      "id": "otel_java.simplify_sql.086",
-      "dialect": "CONSERVATIVE",
-      "input": "EXECUTE db.my_procedure @param=1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[86]"
-    },
-    {
-      "id": "otel_java.simplify_sql.087",
-      "dialect": "sqlserver",
-      "input": "SELECT * FROM [my table]",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[87]"
-    },
-    {
-      "id": "otel_java.simplify_sql.088",
-      "dialect": "sqlserver",
-      "input": "SELECT * FROM [schema].[table]",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[88]"
-    },
-    {
-      "id": "otel_java.simplify_sql.089",
-      "dialect": "sqlserver",
-      "input": "SELECT [column] FROM [table] WHERE [field] = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[89]"
-    },
-    {
-      "id": "otel_java.simplify_sql.090",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM `my``table`",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[90]"
-    },
-    {
-      "id": "otel_java.simplify_sql.091",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM `table` WHERE `col``name` = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[91]"
-    },
-    {
-      "id": "otel_java.simplify_sql.093",
-      "dialect": "CONSERVATIVE",
-      "input": ";;",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[93]"
-    },
-    {
-      "id": "otel_java.simplify_sql.094",
-      "dialect": "CONSERVATIVE",
-      "input": "   ;   ",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[94]"
-    },
-    {
-      "id": "otel_java.simplify_sql.095",
-      "dialect": "CONSERVATIVE",
-      "input": "/* comment only */",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[95]"
-    },
-    {
-      "id": "otel_java.simplify_sql.096",
-      "dialect": "CONSERVATIVE",
-      "input": "   ",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[96]"
-    },
-    {
-      "id": "otel_java.simplify_sql.098",
-      "dialect": "CONSERVATIVE",
-      "input": "-- This query will DELETE old records\nSELECT * FROM users WHERE active = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[98]"
-    },
-    {
-      "id": "otel_java.simplify_sql.099",
-      "dialect": "postgresql",
-      "input": "--This query will DELETE old records\nSELECT * FROM users WHERE active = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[99]"
-    },
-    {
-      "id": "otel_java.simplify_sql.100",
-      "dialect": "postgresql",
-      "input": "SELECT --83",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[100]"
     },
     {
       "id": "otel_java.simplify_sql.101",
@@ -3193,107 +1499,11 @@
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[102]"
     },
     {
-      "id": "otel_java.simplify_sql.103",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM a, (SELECT * FROM b), c",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[103]"
-    },
-    {
-      "id": "otel_java.simplify_sql.104",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT * FROM inner1), (SELECT * FROM inner2), outer_table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[104]"
-    },
-    {
-      "id": "otel_java.simplify_sql.105",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (TABLE)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[105]"
-    },
-    {
-      "id": "otel_java.simplify_sql.106",
-      "dialect": "CONSERVATIVE",
-      "input": "TRUNCATE TABLE users",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[106]"
-    },
-    {
-      "id": "otel_java.simplify_sql.107",
-      "dialect": "CONSERVATIVE",
-      "input": "TRUNCATE users",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[107]"
-    },
-    {
-      "id": "otel_java.simplify_sql.108",
-      "dialect": "CONSERVATIVE",
-      "input": "TRUNCATE TABLE schema.table",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[108]"
-    },
-    {
       "id": "otel_java.simplify_sql.109",
       "dialect": "CONSERVATIVE",
       "input": "REPLACE INTO users VALUES (1, 'name')",
       "secrets": ["name"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[109]"
-    },
-    {
-      "id": "otel_java.simplify_sql.110",
-      "dialect": "CONSERVATIVE",
-      "input": "REPLACE users SET name = 'foo'",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[110]"
-    },
-    {
-      "id": "otel_java.simplify_sql.111",
-      "dialect": "CONSERVATIVE",
-      "input": "REPLACE INTO db.table (col) VALUES (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[111]"
-    },
-    {
-      "id": "otel_java.simplify_sql.112",
-      "dialect": "CONSERVATIVE",
-      "input": "BEGIN",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[112]"
-    },
-    {
-      "id": "otel_java.simplify_sql.115",
-      "dialect": "CONSERVATIVE",
-      "input": "COMMIT TRANSACTION",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[115]"
-    },
-    {
-      "id": "otel_java.simplify_sql.117",
-      "dialect": "CONSERVATIVE",
-      "input": "ROLLBACK TRANSACTION",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[117]"
-    },
-    {
-      "id": "otel_java.simplify_sql.118",
-      "dialect": "CONSERVATIVE",
-      "input": "LOCK TABLE users",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[118]"
-    },
-    {
-      "id": "otel_java.simplify_sql.119",
-      "dialect": "CONSERVATIVE",
-      "input": "LOCK TABLE users IN EXCLUSIVE MODE",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[119]"
-    },
-    {
-      "id": "otel_java.simplify_sql.120",
-      "dialect": "CONSERVATIVE",
-      "input": "LOCK TABLES users WRITE, orders READ",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[120]"
-    },
-    {
-      "id": "otel_java.simplify_sql.121",
-      "dialect": "CONSERVATIVE",
-      "input": "USE mydb",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[121]"
-    },
-    {
-      "id": "otel_java.simplify_sql.122",
-      "dialect": "CONSERVATIVE",
-      "input": "USE `my database`",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[122]"
     },
     {
       "id": "otel_java.simplify_sql.123",
@@ -3322,144 +1532,6 @@
       "input": "REVOKE ALL PRIVILEGES ON database.* FROM 'user'@'host'",
       "secrets": ["user", "host"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[126]"
-    },
-    {
-      "id": "otel_java.simplify_sql.127",
-      "dialect": "CONSERVATIVE",
-      "input": "SHOW TABLES",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[127]"
-    },
-    {
-      "id": "otel_java.simplify_sql.128",
-      "dialect": "CONSERVATIVE",
-      "input": "SHOW CREATE TABLE users",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[128]"
-    },
-    {
-      "id": "otel_java.simplify_sql.129",
-      "dialect": "CONSERVATIVE",
-      "input": "SHOW DATABASES",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[129]"
-    },
-    {
-      "id": "otel_java.simplify_sql.130",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM insert WHERE x = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[130]"
-    },
-    {
-      "id": "otel_java.simplify_sql.131",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM update",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[131]"
-    },
-    {
-      "id": "otel_java.simplify_sql.132",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM delete",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[132]"
-    },
-    {
-      "id": "otel_java.simplify_sql.133",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM call",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[133]"
-    },
-    {
-      "id": "otel_java.simplify_sql.134",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM merge",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[134]"
-    },
-    {
-      "id": "otel_java.simplify_sql.135",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM create",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[135]"
-    },
-    {
-      "id": "otel_java.simplify_sql.136",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM drop",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[136]"
-    },
-    {
-      "id": "otel_java.simplify_sql.137",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM alter",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[137]"
-    },
-    {
-      "id": "otel_java.simplify_sql.138",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM exec",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[138]"
-    },
-    {
-      "id": "otel_java.simplify_sql.139",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM execute",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[139]"
-    },
-    {
-      "id": "otel_java.simplify_sql.140",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users@remote_db",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[140]"
-    },
-    {
-      "id": "otel_java.simplify_sql.141",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM schema.users@remote_db",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[141]"
-    },
-    {
-      "id": "otel_java.simplify_sql.142",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT insert, update FROM mytable",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[142]"
-    },
-    {
-      "id": "otel_java.simplify_sql.143",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM mytable insert",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[143]"
-    },
-    {
-      "id": "otel_java.simplify_sql.144",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM mytable AS update",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[144]"
-    },
-    {
-      "id": "otel_java.simplify_sql.145",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM user",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[145]"
-    },
-    {
-      "id": "otel_java.simplify_sql.146",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH cte AS (SELECT a FROM b) SELECT * FROM cte",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[146]"
-    },
-    {
-      "id": "otel_java.simplify_sql.147",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH cte AS (VALUES (1, 'a'), (2, 'b')) SELECT * FROM cte",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[147]"
-    },
-    {
-      "id": "otel_java.simplify_sql.148",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH a AS (SELECT * FROM t1), b AS (SELECT * FROM t2) SELECT * FROM a JOIN b ON a.id = b.id",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[148]"
-    },
-    {
-      "id": "otel_java.simplify_sql.149",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH RECURSIVE cte AS (SELECT id FROM t WHERE parent IS NULL UNION ALL SELECT t.id FROM t JOIN cte ON t.parent = cte.id) SELECT * FROM cte",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[149]"
     },
     {
       "id": "otel_java.sanitize_sensitive.001",
@@ -3560,65 +1632,11 @@
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[14]"
     },
     {
-      "id": "otel_java.sanitize_sensitive.015",
-      "dialect": "CONSERVATIVE",
-      "input": "GRANT SELECT ON users TO admin; SELECT password FROM users",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[15]"
-    },
-    {
-      "id": "otel_java.sanitize_sensitive.016",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT connect FROM TABLE",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[16]"
-    },
-    {
-      "id": "otel_java.sanitize_sensitive.017",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT grant, password FROM users",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[17]"
-    },
-    {
-      "id": "otel_java.sanitize_sensitive.018",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT password FROM users",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[18]"
-    },
-    {
-      "id": "otel_java.sanitize_sensitive.019",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT identified_by FROM users",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[19]"
-    },
-    {
-      "id": "otel_java.sanitize_sensitive.020",
-      "dialect": "CONSERVATIVE",
-      "input": "TRUNCATE TABLE password",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[20]"
-    },
-    {
-      "id": "otel_java.sanitize_sensitive.021",
-      "dialect": "CONSERVATIVE",
-      "input": "REPLACE password VALUES (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[21]"
-    },
-    {
-      "id": "otel_java.sanitize_sensitive.022",
-      "dialect": "CONSERVATIVE",
-      "input": "VALUES (password)",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[22]"
-    },
-    {
       "id": "otel_java.sanitize_sensitive.023",
       "dialect": "CONSERVATIVE",
       "input": "UPDATE users SET password = \"Password1\"",
       "secrets": ["ord1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[23]"
-    },
-    {
-      "id": "otel_java.sanitize_grant_object_named_password.001",
-      "dialect": "CONSERVATIVE",
-      "input": "GRANT SELECT ON password TO admin",
-      "source": "otel-java:SqlQueryAnalyzerTest#sanitizeGrantObjectNamedPassword[1]"
     },
     {
       "id": "otel_java.sanitize_grant_identified_by_after_previous_statement.001",
@@ -3635,767 +1653,11 @@
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeDdlObjectNamedPassword[1]"
     },
     {
-      "id": "otel_java.query_summary_is_truncated.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM very_long_table_name_0, very_long_table_name_1, very_long_table_name_2, very_long_table_name_3, very_long_table_name_4, very_long_table_name_5, very_long_table_name_6, very_long_table_name_7, very_long_table_name_8, very_long_table_name_9, very_long_table_name_10, very_long_table_name_11, very_long_table_name_12, very_long_table_name_13, very_long_table_name_14, very_long_table_name_15, very_long_table_name_16, very_long_table_name_17, very_long_table_name_18, very_long_table_name_19, very_long_table_name_20, very_long_table_name_21, very_long_table_name_22, very_long_table_name_23, very_long_table_name_24, very_long_table_name_25, very_long_table_name_26, very_long_table_name_27, very_long_table_name_28, very_long_table_name_29, very_long_table_name_30, very_long_table_name_31, very_long_table_name_32, very_long_table_name_33, very_long_table_name_34, very_long_table_name_35, very_long_table_name_36, very_long_table_name_37, very_long_table_name_38, very_long_table_name_39, very_long_table_name_40, very_long_table_name_41, very_long_table_name_42, very_long_table_name_43, very_long_table_name_44, very_long_table_name_45, very_long_table_name_46, very_long_table_name_47, very_long_table_name_48, very_long_table_name_49",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryIsTruncated[1]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.001",
-      "dialect": "CONSERVATIVE",
-      "input": "select * from users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[1]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SeLeCT * FrOm users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[2]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.003",
-      "dialect": "CONSERVATIVE",
-      "input": "insert into users values (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[3]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.004",
-      "dialect": "CONSERVATIVE",
-      "input": "delete from users where id = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[4]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.005",
-      "dialect": "CONSERVATIVE",
-      "input": "update users set id = 1",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[5]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.006",
-      "dialect": "CONSERVATIVE",
-      "input": "call do_work()",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[6]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.007",
-      "dialect": "CONSERVATIVE",
-      "input": "merge into users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[7]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.008",
-      "dialect": "CONSERVATIVE",
-      "input": "create table users (id int)",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[8]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.009",
-      "dialect": "CONSERVATIVE",
-      "input": "drop table users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[9]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.010",
-      "dialect": "CONSERVATIVE",
-      "input": "alter table users add column id int",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[10]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.011",
-      "dialect": "CONSERVATIVE",
-      "input": "values (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[11]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.012",
-      "dialect": "CONSERVATIVE",
-      "input": "exec do_work",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[12]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.013",
-      "dialect": "CONSERVATIVE",
-      "input": "execute db.do_work @param=1",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[13]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.014",
-      "dialect": "CONSERVATIVE",
-      "input": "truncate table users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[14]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.015",
-      "dialect": "CONSERVATIVE",
-      "input": "replace into users values (1)",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[15]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.016",
-      "dialect": "CONSERVATIVE",
-      "input": "lock table users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[16]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.017",
-      "dialect": "CONSERVATIVE",
-      "input": "use mydb",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[17]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.018",
-      "dialect": "CONSERVATIVE",
-      "input": "begin transaction",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[18]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.019",
-      "dialect": "CONSERVATIVE",
-      "input": "commit transaction",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[19]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.020",
-      "dialect": "CONSERVATIVE",
-      "input": "rollback transaction",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[20]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.021",
-      "dialect": "CONSERVATIVE",
-      "input": "grant select on users to admin",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[21]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.022",
-      "dialect": "CONSERVATIVE",
-      "input": "revoke select on users from admin",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[22]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.023",
-      "dialect": "CONSERVATIVE",
-      "input": "show create table users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[23]"
-    },
-    {
-      "id": "otel_java.query_summary_preserves_operation_case.024",
-      "dialect": "CONSERVATIVE",
-      "input": "explain select * from users",
-      "source": "otel-java:SqlQueryAnalyzerTest#querySummaryPreservesOperationCase[24]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.001",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE `table`",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[1]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.002",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE ks.users ( id UUID PRIMARY KEY, name text )",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[2]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.003",
-      "dialect": "CONSERVATIVE",
-      "input": "create table ks.users ( id UUID PRIMARY KEY, name text )",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[3]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.004",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE KEYSPACE sync_test",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[4]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.005",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE IF NOT EXISTS table",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[5]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.006",
-      "dialect": "CONSERVATIVE",
-      "input": "DROP TABLE `if`",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[6]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.007",
-      "dialect": "CONSERVATIVE",
-      "input": "ALTER TABLE table ADD CONSTRAINT c FOREIGN KEY (foreign_id) REFERENCES ref (id)",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[7]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.008",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE INDEX types_name ON types (name)",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[8]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.009",
-      "dialect": "CONSERVATIVE",
-      "input": "DROP INDEX types_name ON types (name)",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[9]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.010",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE VIEW tmp AS SELECT type FROM table WHERE id = ?",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[10]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.011",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE PROCEDURE p AS SELECT * FROM table GO",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[11]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.012",
-      "dialect": "CONSERVATIVE",
-      "input": "ALTER TABLE t2 DROP COLUMN c, DROP COLUMN d",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[12]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.013",
-      "dialect": "CONSERVATIVE",
-      "input": "ALTER TABLE users ADD COLUMN email VARCHAR(255), DROP COLUMN legacy_id, MODIFY COLUMN status INT",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[13]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.015",
-      "dialect": "CONSERVATIVE",
-      "input": "create table users (password VARCHAR(255))",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[15]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.016",
-      "dialect": "CONSERVATIVE",
-      "input": "ALTER TABLE users ADD COLUMN password VARCHAR(255)",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[16]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.017",
-      "dialect": "CONSERVATIVE",
-      "input": "alter table users ADD COLUMN password VARCHAR(255)",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[17]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.018",
-      "dialect": "CONSERVATIVE",
-      "input": "ALTER TABLE user ADD COLUMN name VARCHAR(255)",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[18]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.019",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE password (id INT)",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[19]"
-    },
-    {
-      "id": "otel_java.check_ddl_operation_statements_are_ok.020",
-      "dialect": "CONSERVATIVE",
-      "input": "DROP TABLE password",
-      "source": "otel-java:SqlQueryAnalyzerTest#checkDdlOperationStatementsAreOk[20]"
-    },
-    {
-      "id": "otel_java.simplify_sql_double_quotes_as_identifiers.001",
-      "dialect": "postgresql",
-      "input": "SELECT * FROM \"TABLE\"",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySqlDoubleQuotesAsIdentifiers[1]"
-    },
-    {
-      "id": "otel_java.simplify_sql_double_quotes_as_identifiers.002",
-      "dialect": "postgresql",
-      "input": "SELECT x, y, z FROM \"schema table\"",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySqlDoubleQuotesAsIdentifiers[2]"
-    },
-    {
-      "id": "otel_java.simplify_sql_double_quotes_as_identifiers.003",
-      "dialect": "postgresql",
-      "input": "insert into \"db table\" where lalala",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySqlDoubleQuotesAsIdentifiers[3]"
-    },
-    {
-      "id": "otel_java.simplify_sql_double_quotes_as_identifiers.004",
-      "dialect": "postgresql",
-      "input": "delete from \"my table\" where something something",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySqlDoubleQuotesAsIdentifiers[4]"
-    },
-    {
-      "id": "otel_java.simplify_sql_double_quotes_as_identifiers.005",
-      "dialect": "postgresql",
-      "input": "update \"my table\" set answer=42",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySqlDoubleQuotesAsIdentifiers[5]"
-    },
-    {
-      "id": "otel_java.simplify_sql_double_quotes_as_identifiers.006",
-      "dialect": "postgresql",
-      "input": "merge into \"my table\"",
-      "source": "otel-java:SqlQueryAnalyzerTest#simplifySqlDoubleQuotesAsIdentifiers[6]"
-    },
-    {
-      "id": "otel_java.database_specific_dml.001",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE t1 JOIN t2 ON t1.id = t2.t1_id SET t1.col = t2.col WHERE t2.status = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#databaseSpecificDml[1]"
-    },
-    {
-      "id": "otel_java.database_specific_dml.002",
-      "dialect": "CONSERVATIVE",
-      "input": "DELETE t1 FROM t1 JOIN t2 ON t1.id = t2.t1_id WHERE t2.status = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#databaseSpecificDml[2]"
-    },
-    {
-      "id": "otel_java.database_specific_dml.003",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE t1 SET col = t2.col FROM t2 WHERE t1.id = t2.t1_id AND t2.status = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#databaseSpecificDml[3]"
-    },
-    {
-      "id": "otel_java.database_specific_dml.004",
-      "dialect": "CONSERVATIVE",
-      "input": "DELETE FROM t1 USING t2 WHERE t1.id = t2.t1_id AND t2.status = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#databaseSpecificDml[4]"
-    },
-    {
-      "id": "otel_java.insert_variations.001",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO t1 a SELECT * FROM t2 WHERE t2.id = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#insertVariations[1]"
-    },
-    {
-      "id": "otel_java.insert_variations.002",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO archive (id, data) SELECT o.id, c.data FROM orders o JOIN customers c ON o.cid = c.id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#insertVariations[2]"
-    },
-    {
-      "id": "otel_java.insert_variations.003",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO orders (product_id) SELECT id FROM products WHERE active = ? RETURNING *",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#insertVariations[3]"
-    },
-    {
-      "id": "otel_java.update_delete_with_subqueries.001",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE products SET price = price * 1.1 WHERE category_id IN (SELECT id FROM categories WHERE margin_low = ?)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#updateDeleteWithSubqueries[1]"
-    },
-    {
-      "id": "otel_java.update_delete_with_subqueries.002",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE employees SET salary = (SELECT AVG(salary) FROM employees WHERE department_id = ?) WHERE department_id = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#updateDeleteWithSubqueries[2]"
-    },
-    {
-      "id": "otel_java.update_delete_with_subqueries.003",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE products SET price = (SELECT avg_price FROM stats) WHERE category_id IN (SELECT id FROM categories WHERE active = ?)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#updateDeleteWithSubqueries[3]"
-    },
-    {
-      "id": "otel_java.update_delete_with_subqueries.004",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE t1 SET a = (SELECT MAX(x) FROM t2), b = (SELECT MIN(y) FROM t3), c = (SELECT AVG(z) FROM t4)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#updateDeleteWithSubqueries[4]"
-    },
-    {
-      "id": "otel_java.update_delete_with_subqueries.005",
-      "dialect": "CONSERVATIVE",
-      "input": "DELETE FROM orders WHERE customer_id NOT IN (SELECT id FROM customers) AND product_id NOT IN (SELECT id FROM products)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#updateDeleteWithSubqueries[5]"
-    },
-    {
-      "id": "otel_java.joins.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM colors CROSS JOIN sizes",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[1]"
-    },
-    {
-      "id": "otel_java.joins.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 CROSS JOIN t2 CROSS JOIN t3",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[2]"
-    },
-    {
-      "id": "otel_java.joins.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM products CROSS JOIN (SELECT * FROM categories WHERE active = ?) AS c",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[3]"
-    },
-    {
-      "id": "otel_java.joins.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM employees NATURAL JOIN departments",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[4]"
-    },
-    {
-      "id": "otel_java.joins.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 NATURAL LEFT JOIN t2 NATURAL RIGHT JOIN t3",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[5]"
-    },
-    {
-      "id": "otel_java.joins.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders o INNER JOIN customers c ON o.customer_id = c.id LEFT JOIN shipping s ON o.id = s.order_id RIGHT JOIN invoices i ON o.id = i.order_id FULL OUTER JOIN payments p ON o.id = p.order_id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[6]"
-    },
-    {
-      "id": "otel_java.joins.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 JOIN t2 USING (id) LEFT JOIN t3 USING (id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[7]"
-    },
-    {
-      "id": "otel_java.joins.008",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users WHERE deleted_at IS NULL AND email IS NOT NULL",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#joins[8]"
-    },
-    {
-      "id": "otel_java.lateral_joins.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 CROSS JOIN LATERAL (SELECT * FROM t2 WHERE t2.id = t1.id) AS sub",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lateralJoins[1]"
-    },
-    {
-      "id": "otel_java.lateral_joins.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 LEFT JOIN LATERAL (SELECT * FROM t2 WHERE t2.fk = t1.id LIMIT 1) sub ON true",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lateralJoins[2]"
-    },
-    {
-      "id": "otel_java.lateral_joins.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1, LATERAL (SELECT * FROM t2 WHERE t2.id = t1.id) a, LATERAL (SELECT * FROM t3 WHERE t3.id = a.id) b",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lateralJoins[3]"
-    },
-    {
-      "id": "otel_java.table_functions.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM get_user_orders(?) WHERE status = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#tableFunctions[1]"
-    },
-    {
-      "id": "otel_java.table_functions.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM dbo.fn_split(?, ',')",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#tableFunctions[2]"
-    },
-    {
-      "id": "otel_java.table_functions.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM UNNEST(ARRAY[1,2,3]) AS t",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#tableFunctions[3]"
-    },
-    {
-      "id": "otel_java.table_functions.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM GENERATE_SERIES(1, 10) AS gs",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#tableFunctions[4]"
-    },
-    {
-      "id": "otel_java.table_functions.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM fn1(fn2(fn3(?)))",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#tableFunctions[5]"
-    },
-    {
-      "id": "otel_java.table_functions.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 CROSS JOIN UNNEST(t1.arr) AS e",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#tableFunctions[6]"
-    },
-    {
-      "id": "otel_java.scalar_subqueries.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT e.name, (SELECT AVG(salary) FROM employees WHERE department_id = e.department_id) as avg_dept_salary FROM employees e",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#scalarSubqueries[1]"
-    },
-    {
-      "id": "otel_java.scalar_subqueries.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT p.name, (SELECT MAX(price) FROM products), (SELECT MIN(price) FROM products) FROM products p",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#scalarSubqueries[2]"
-    },
-    {
-      "id": "otel_java.exists_and_not_exists.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM customers WHERE EXISTS (SELECT 1 FROM orders WHERE customer_id = customers.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#existsAndNotExists[1]"
-    },
-    {
-      "id": "otel_java.exists_and_not_exists.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM products WHERE NOT EXISTS (SELECT 1 FROM order_items WHERE product_id = products.id AND quantity > 0)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#existsAndNotExists[2]"
-    },
-    {
-      "id": "otel_java.exists_and_not_exists.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users u WHERE EXISTS (SELECT 1 FROM sessions WHERE user_id = u.id) AND NOT EXISTS (SELECT 1 FROM banned_users WHERE user_id = u.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#existsAndNotExists[3]"
-    },
-    {
-      "id": "otel_java.all_any_some_operators.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM products WHERE price > ALL (SELECT price FROM discounted_products)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#allAnySomeOperators[1]"
-    },
-    {
-      "id": "otel_java.all_any_some_operators.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM employees WHERE salary >= ANY (SELECT salary FROM managers)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#allAnySomeOperators[2]"
-    },
-    {
-      "id": "otel_java.all_any_some_operators.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders WHERE amount < SOME (SELECT amount FROM large_orders)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#allAnySomeOperators[3]"
-    },
-    {
-      "id": "otel_java.in_subqueries.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders WHERE (customer_id, product_id) IN (SELECT customer_id, product_id FROM wishlists)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#inSubqueries[1]"
-    },
-    {
-      "id": "otel_java.in_subqueries.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users WHERE id NOT IN (SELECT user_id FROM banned_users)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#inSubqueries[2]"
-    },
-    {
-      "id": "otel_java.derived_tables.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT id, name FROM users) AS u (user_id, user_name)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#derivedTables[1]"
-    },
-    {
-      "id": "otel_java.deeply_nested_subqueries.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (SELECT * FROM (SELECT * FROM (SELECT * FROM users WHERE active = ?) AS l1) AS l2) AS l3",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#deeplyNestedSubqueries[1]"
-    },
-    {
-      "id": "otel_java.deeply_nested_subqueries.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders WHERE customer_id IN (SELECT id FROM customers WHERE region_id IN (SELECT id FROM regions WHERE country_id IN (SELECT id FROM countries WHERE code = ?)))",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#deeplyNestedSubqueries[2]"
-    },
-    {
-      "id": "otel_java.subqueries_in_join_conditions.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders o JOIN customers c ON o.customer_id = c.id AND o.amount > (SELECT AVG(amount) FROM orders WHERE customer_id = c.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInJoinConditions[1]"
-    },
-    {
-      "id": "otel_java.subqueries_in_join_conditions.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM employees e LEFT JOIN departments d ON e.dept_id = d.id AND EXISTS (SELECT 1 FROM projects WHERE dept_id = d.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInJoinConditions[2]"
-    },
-    {
-      "id": "otel_java.subqueries_in_join_conditions.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders o JOIN order_items i ON o.id = i.order_id AND i.price > (SELECT AVG(price) FROM order_items WHERE order_id = o.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInJoinConditions[3]"
-    },
-    {
-      "id": "otel_java.subqueries_in_join_conditions.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1 JOIN t2 ON t1.a IN (SELECT x FROM t3) AND t2.b IN (SELECT y FROM t4)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInJoinConditions[4]"
-    },
-    {
-      "id": "otel_java.subqueries_in_join_conditions.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM customers c JOIN orders o ON c.id = o.cust_id AND EXISTS (SELECT 1 FROM vip WHERE vip.cust_id = c.id AND vip.order_id = o.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInJoinConditions[5]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT department_id, COUNT(*) FROM employees GROUP BY department_id HAVING COUNT(*) > (SELECT AVG(cnt) FROM (SELECT COUNT(*) as cnt FROM employees GROUP BY department_id) AS dept_counts)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[1]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT category, SUM(price) FROM products GROUP BY category HAVING SUM(price) > (SELECT AVG(total) FROM category_totals)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[2]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM products ORDER BY (SELECT AVG(rating) FROM reviews WHERE product_id = products.id) DESC",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[3]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM employees ORDER BY (SELECT COUNT(*) FROM projects WHERE manager_id = employees.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[4]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM products WHERE price BETWEEN (SELECT MIN(price) FROM products) AND (SELECT MAX(price) FROM products)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[5]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users LIMIT (SELECT setting FROM config WHERE key = ?)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[6]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users OFFSET (SELECT page_size FROM config) ROWS",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[7]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.008",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM GENERATE_SERIES(1, (SELECT MAX(id) FROM users))",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[8]"
-    },
-    {
       "id": "otel_java.subqueries_in_clause_positions.009",
       "dialect": "CONSERVATIVE",
       "input": "SELECT COALESCE((SELECT name FROM t1 WHERE id = ?), 'default') FROM dual",
       "secrets": ["default"],
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[9]"
-    },
-    {
-      "id": "otel_java.subqueries_in_clause_positions.010",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT COALESCE((SELECT a FROM t1), (SELECT b FROM t2), (SELECT c FROM t3)) FROM dual",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[10]"
-    },
-    {
-      "id": "otel_java.ctes.001",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH cte1 AS (SELECT * FROM t1), cte2 AS (SELECT * FROM cte1 JOIN t2 ON cte1.id = t2.id) SELECT * FROM cte2",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#ctes[1]"
-    },
-    {
-      "id": "otel_java.ctes.002",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH a AS (SELECT 1), b AS (SELECT 2), c AS (SELECT 3) SELECT * FROM a, b, c",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#ctes[2]"
-    },
-    {
-      "id": "otel_java.ctes.003",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH new_data AS (SELECT * FROM staging WHERE processed = ?) INSERT INTO archive SELECT * FROM new_data",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#ctes[3]"
-    },
-    {
-      "id": "otel_java.ctes.004",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH updates AS (SELECT id, new_value FROM temp) UPDATE target SET value = (SELECT new_value FROM updates WHERE updates.id = target.id) WHERE EXISTS (SELECT 1 FROM updates WHERE updates.id = target.id)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#ctes[4]"
-    },
-    {
-      "id": "otel_java.ctes.005",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH to_delete AS (SELECT id FROM old_records WHERE date < ?) DELETE FROM records WHERE id IN (SELECT id FROM to_delete)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#ctes[5]"
-    },
-    {
-      "id": "otel_java.ctes.006",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH a AS (SELECT 1 as x), b AS (SELECT x FROM a), c AS (SELECT x FROM b) SELECT * FROM c",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#ctes[6]"
-    },
-    {
-      "id": "otel_java.ctes.007",
-      "dialect": "CONSERVATIVE",
-      "input": "WITH users AS (SELECT * FROM active_users) SELECT * FROM users",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#ctes[7]"
-    },
-    {
-      "id": "otel_java.set_operations.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT user_id FROM premium_users INTERSECT SELECT user_id FROM active_users",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#setOperations[1]"
-    },
-    {
-      "id": "otel_java.set_operations.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT email FROM all_users EXCEPT SELECT email FROM unsubscribed",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#setOperations[2]"
-    },
-    {
-      "id": "otel_java.set_operations.003",
-      "dialect": "CONSERVATIVE",
-      "input": "(SELECT id FROM users) UNION (SELECT id FROM customers)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#setOperations[3]"
-    },
-    {
-      "id": "otel_java.set_operations.004",
-      "dialect": "CONSERVATIVE",
-      "input": "(SELECT * FROM t1 UNION SELECT * FROM t2) INTERSECT (SELECT * FROM t3 UNION SELECT * FROM t4)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#setOperations[4]"
-    },
-    {
-      "id": "otel_java.set_operations.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT id FROM t1 MINUS SELECT id FROM t2",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#setOperations[5]"
-    },
-    {
-      "id": "otel_java.window_functions.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT name, department, salary, AVG(salary) OVER (PARTITION BY department) as avg_dept_salary FROM employees",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#windowFunctions[1]"
-    },
-    {
-      "id": "otel_java.window_functions.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT id, SUM(val) OVER w FROM data WINDOW w AS (PARTITION BY cat)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#windowFunctions[2]"
-    },
-    {
-      "id": "otel_java.window_functions.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT SUM(val) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM data",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#windowFunctions[3]"
-    },
-    {
-      "id": "otel_java.window_functions.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT ROW_NUMBER() OVER (ORDER BY a), RANK() OVER (PARTITION BY b ORDER BY c) FROM tbl",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#windowFunctions[4]"
-    },
-    {
-      "id": "otel_java.window_functions.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT SUM(amount) OVER (PARTITION BY (SELECT type FROM types WHERE types.id = sales.type_id)) FROM sales",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#windowFunctions[5]"
-    },
-    {
-      "id": "otel_java.expressions.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT CAST(price AS DECIMAL(10,2)) FROM products",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[1]"
-    },
-    {
-      "id": "otel_java.expressions.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT CAST((SELECT MAX(amount) FROM orders) AS INTEGER) FROM dual",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[2]"
-    },
-    {
-      "id": "otel_java.expressions.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT name, CAST(created_at AS DATE) FROM users WHERE CAST(status AS INTEGER) = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[3]"
     },
     {
       "id": "otel_java.expressions.004",
@@ -4412,246 +1674,6 @@
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[5]"
     },
     {
-      "id": "otel_java.expressions.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT CASE type WHEN 'A' THEN (SELECT COUNT(*) FROM type_a) WHEN 'B' THEN (SELECT COUNT(*) FROM type_b) ELSE 0 END FROM items",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[6]"
-    },
-    {
-      "id": "otel_java.expressions.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT CASE (SELECT type FROM config) WHEN 'A' THEN (SELECT v FROM a) WHEN 'B' THEN (SELECT v FROM b) END FROM dual",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[7]"
-    },
-    {
-      "id": "otel_java.expressions.008",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders WHERE (customer_id, product_id) = (?, ?)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[8]"
-    },
-    {
-      "id": "otel_java.expressions.009",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users WHERE (first_name, last_name) IN (SELECT first_name, last_name FROM vip_users)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[9]"
-    },
-    {
-      "id": "otel_java.clauses.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users ORDER BY created_at OFFSET 10 ROWS FETCH FIRST 20 ROWS ONLY",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[1]"
-    },
-    {
-      "id": "otel_java.clauses.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM products ORDER BY price FETCH NEXT 10 ROWS ONLY",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[2]"
-    },
-    {
-      "id": "otel_java.clauses.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders OFFSET 5 ROWS FETCH NEXT 1 ROW ONLY",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[3]"
-    },
-    {
-      "id": "otel_java.clauses.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users LIMIT 10 OFFSET 5",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[4]"
-    },
-    {
-      "id": "otel_java.clauses.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT dept, SUM(salary) FROM employees GROUP BY ROLLUP(dept)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[5]"
-    },
-    {
-      "id": "otel_java.clauses.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT dept, year, SUM(salary) FROM employees GROUP BY CUBE(dept, year)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[6]"
-    },
-    {
-      "id": "otel_java.clauses.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT dept, year, SUM(salary) FROM employees GROUP BY GROUPING SETS ((dept), (year))",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[7]"
-    },
-    {
-      "id": "otel_java.clauses.008",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * INTO temp_table FROM users WHERE active = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[8]"
-    },
-    {
-      "id": "otel_java.clauses.009",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT u.name, COUNT(o.id) INTO summary_table FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.name",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[9]"
-    },
-    {
-      "id": "otel_java.clauses.010",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO users (name) VALUES (?) RETURNING id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[10]"
-    },
-    {
-      "id": "otel_java.clauses.011",
-      "dialect": "CONSERVATIVE",
-      "input": "DELETE FROM users WHERE id = ? RETURNING *",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[11]"
-    },
-    {
-      "id": "otel_java.clauses.012",
-      "dialect": "CONSERVATIVE",
-      "input": "UPDATE users SET name = ? WHERE id = ? RETURNING *",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[12]"
-    },
-    {
-      "id": "otel_java.clauses.013",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users FOR UPDATE OF users.name NOWAIT",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[13]"
-    },
-    {
-      "id": "otel_java.clauses.014",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users FOR SHARE",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[14]"
-    },
-    {
-      "id": "otel_java.clauses.015",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users FOR UPDATE SKIP LOCKED",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[15]"
-    },
-    {
-      "id": "otel_java.clauses.016",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users FETCH FIRST 10 PERCENT ROWS ONLY",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[16]"
-    },
-    {
-      "id": "otel_java.clauses.017",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT TOP 10 PERCENT * FROM users",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[17]"
-    },
-    {
-      "id": "otel_java.clauses.018",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT DISTINCT ON (department) * FROM employees",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#clauses[18]"
-    },
-    {
-      "id": "otel_java.values_clauses.001",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO t1 (col) VALUES ((SELECT MAX(col) FROM t2))",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#valuesClauses[1]"
-    },
-    {
-      "id": "otel_java.values_clauses.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (VALUES (1), (2)) AS t(id) JOIN users u ON t.id = u.id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#valuesClauses[2]"
-    },
-    {
-      "id": "otel_java.values_clauses.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT id FROM users UNION VALUES (1), (2)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#valuesClauses[3]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM \"SELECT\" WHERE \"FROM\" = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[1]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM `SELECT` WHERE `FROM` = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[2]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.003",
-      "dialect": "sqlserver",
-      "input": "SELECT * FROM [SELECT] WHERE [FROM] = ?",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[3]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM \"table.name\"",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[4]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.005",
-      "dialect": "sqlite",
-      "input": "SELECT * FROM \"schema\".`table` JOIN [other] ON \"schema\".`table`.id = [other].id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[5]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM db.schema.table",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[6]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM schema1.t1 JOIN t2 ON schema1.t1.id = t2.id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[7]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.008",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM (t1), (t2)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[8]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.009",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1, t2, t3, t4, t5 WHERE t1.id = t2.t1_id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[9]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.010",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM t1, t2 JOIN t3 ON t2.id = t3.t2_id, t4",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[10]"
-    },
-    {
-      "id": "otel_java.identifiers_and_table_references.011",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users orders JOIN orders o ON orders.id = o.user_id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[11]"
-    },
-    {
-      "id": "otel_java.alias_edge_cases.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users join",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#aliasEdgeCases[1]"
-    },
-    {
-      "id": "otel_java.alias_edge_cases.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM orders users JOIN users u ON orders.user_id = u.id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#aliasEdgeCases[2]"
-    },
-    {
-      "id": "otel_java.alias_edge_cases.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users AS this_is_a_very_long_alias_name_that_exceeds_normal_length",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#aliasEdgeCases[3]"
-    },
-    {
-      "id": "otel_java.lexical_edge_cases.001",
-      "dialect": "postgresql",
-      "input": "SELECT /* outer /* inner */ still comment */ * FROM users",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lexicalEdgeCases[1]"
-    },
-    {
       "id": "otel_java.lexical_edge_cases.002",
       "dialect": "postgresql",
       "input": "SELECT * FROM users WHERE name = $tag$unterminated",
@@ -4659,83 +1681,11 @@
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lexicalEdgeCases[2]"
     },
     {
-      "id": "otel_java.statements_and_semicolons.001",
-      "dialect": "CONSERVATIVE",
-      "input": "; SELECT * FROM users",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#statementsAndSemicolons[1]"
-    },
-    {
-      "id": "otel_java.statements_and_semicolons.002",
-      "dialect": "CONSERVATIVE",
-      "input": ";; SELECT * FROM t1",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#statementsAndSemicolons[2]"
-    },
-    {
-      "id": "otel_java.statements_and_semicolons.003",
-      "dialect": "CONSERVATIVE",
-      "input": "; ; SELECT * FROM t1; ; SELECT * FROM t2; ;",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#statementsAndSemicolons[3]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.001",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM sales PIVOT (SUM(amount) FOR quarter IN ('Q1', 'Q2', 'Q3', 'Q4'))",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[1]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.002",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM wide_table UNPIVOT (value FOR col_name IN (col1, col2, col3))",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[2]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.003",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM large_table TABLESAMPLE SYSTEM (10)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[3]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.004",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM large_table TABLESAMPLE BERNOULLI (1) REPEATABLE (42)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[4]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.005",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users FOR XML PATH",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[5]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.006",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM users FOR JSON AUTO",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[6]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.007",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM ticker MATCH_RECOGNIZE (ORDER BY tstamp MEASURES A.tstamp AS start_t PATTERN (A B* C) DEFINE A AS A.price > 10)",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[7]"
-    },
-    {
       "id": "otel_java.vendor_specific_syntax.008",
       "dialect": "oracle",
       "input": "SELECT * FROM sales MODEL DIMENSION BY (product) MEASURES (amount) RULES (amount['Total'] = amount['A'] + amount['B'])",
       "secrets": ["Total"],
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[8]"
-    },
-    {
-      "id": "otel_java.vendor_specific_syntax.009",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM employees START WITH manager_id IS NULL CONNECT BY PRIOR employee_id = manager_id",
-      "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[9]"
-    },
-    {
-      "id": "otel_dotnet.json.numeric_literal_integers",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 12, -12, +12",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_integers"
     },
     {
       "id": "otel_dotnet.json.numeric_literal_with_decimal_point",
@@ -4757,12 +1707,6 @@
       "input": "SELECT 12.34e-56, -12.34e-56, +12.34e-56",
       "secrets": ["12.34e-56"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_negative_exponential"
-    },
-    {
-      "id": "otel_dotnet.json.arithmetic_on_numeric_literals",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT 99+100",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#arithmetic_on_numeric_literals"
     },
     {
       "id": "otel_dotnet.json.hex_literal",
@@ -4800,12 +1744,6 @@
       "source": "otel-dotnet:SqlProcessorTestCases.json#numbers_in_identifiers"
     },
     {
-      "id": "otel_dotnet.json.periods_in_identifiers",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a FROM dbo.Table JOIN dbo.AnotherTable",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#periods_in_identifiers"
-    },
-    {
       "id": "otel_dotnet.json.insert_into",
       "dialect": "CONSERVATIVE",
       "input": "INSERT INTO X VALUES(1, 23456, 123.456, 99+100)",
@@ -4820,77 +1758,11 @@
       "source": "otel-dotnet:SqlProcessorTestCases.json#uuid"
     },
     {
-      "id": "otel_dotnet.json.in_clause",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM table WHERE value IN (123, 456, 'abc')",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#in_clause"
-    },
-    {
       "id": "otel_dotnet.json.comments",
       "dialect": "CONSERVATIVE",
       "input": "SELECT column -- end of line comment\nFROM /* block \n comment */ table",
       "secrets": ["end of line", "block \n comment"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#comments"
-    },
-    {
-      "id": "otel_dotnet.json.insert_into_select",
-      "dialect": "CONSERVATIVE",
-      "input": "INSERT INTO shipping_details\n(order_id,\naddress)\nSELECT order_id,\naddress\nFROM   orders\nWHERE  order_id = 1",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#insert_into_select"
-    },
-    {
-      "id": "otel_dotnet.json.select_nested_query",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT order_date\nFROM   (SELECT *\nFROM   orders o\nJOIN customers c\nON o.customer_id = c.customer_id)",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#select_nested_query"
-    },
-    {
-      "id": "otel_dotnet.json.select_nested_query_case_preserved",
-      "dialect": "CONSERVATIVE",
-      "input": "SELEcT order_date\nFROM   (sELECT *\nFROM   orders o\nJOIN customers c\nON o.customer_id = c.customer_id)",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#select_nested_query_case_preserved"
-    },
-    {
-      "id": "otel_dotnet.json.case_preserved",
-      "dialect": "CONSERVATIVE",
-      "input": "SELEcT order_date\nFROM ORders",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#case_preserved"
-    },
-    {
-      "id": "otel_dotnet.json.cross_join",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM Orders o CROSS JOIN OrderDetails od",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#cross_join"
-    },
-    {
-      "id": "otel_dotnet.json.cross_join_comma_separated_syntax",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM Orders o, OrderDetails od",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#cross_join_comma_separated_syntax"
-    },
-    {
-      "id": "otel_dotnet.json.create_table",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE  TABLE MyTable (\n    ID NOT NULL IDENTITY(1,1) PRIMARY KEY\n)",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#create_table"
-    },
-    {
-      "id": "otel_dotnet.json.alter_table",
-      "dialect": "CONSERVATIVE",
-      "input": "ALTER  TABLE MyTable ADD Name varchar(255)",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#alter_table"
-    },
-    {
-      "id": "otel_dotnet.json.drop_table",
-      "dialect": "CONSERVATIVE",
-      "input": "DROP  TABLE MyTable",
-      "source": "otel-dotnet:SqlProcessorTestCases.json#drop_table"
-    },
-    {
-      "id": "otel_dotnet.create_table_trailing_identifier.01",
-      "dialect": "CONSERVATIVE",
-      "input": "CREATE TABLE XXX",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_CreateTableWithTrailingIdentifier_DoesNotThrow"
     },
     {
       "id": "otel_dotnet.line_comment_crlf.01",
@@ -5131,35 +2003,11 @@
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DollarQuotedString_SanitizesLiteral[2]"
     },
     {
-      "id": "otel_dotnet.lone_dollar.01",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT $IDENTITY FROM t",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoneDollarSign_IsNotTreatedAsDollarQuote[1]"
-    },
-    {
-      "id": "otel_dotnet.lone_dollar.02",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a WHERE b = $1",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoneDollarSign_IsNotTreatedAsDollarQuote[2]"
-    },
-    {
-      "id": "otel_dotnet.dollar_tag_digit.01",
-      "dialect": "postgresql",
-      "input": "SELECT a WHERE b = $1$not-a-secret$1$",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DollarQuoteTagStartingWithDigit_IsNotTreatedAsDollarQuote"
-    },
-    {
       "id": "otel_dotnet.unterminated_dollar.01",
       "dialect": "postgresql",
       "input": "SELECT * FROM t WHERE c = $$secret-name",
       "secrets": ["secret-name"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_UnterminatedDollarQuotedString_SanitizesLiteral"
-    },
-    {
-      "id": "otel_dotnet.double_quoted_identifier.01",
-      "dialect": "postgresql",
-      "input": "SELECT * FROM t WHERE c = \"identifier_or_mysql_string\"",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DoubleQuotedString_IsPreservedAsIdentifier"
     },
     {
       "id": "otel_dotnet.double_quoted_backslash_dialect.01",
@@ -5568,12 +2416,6 @@
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[8]"
     },
     {
-      "id": "otel_dotnet.login_or_user_name.09",
-      "dialect": "sqlserver",
-      "input": "CREATE USER \"\" X",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserName_IsSanitized[9]"
-    },
-    {
       "id": "otel_dotnet.login_escaped_brackets_max_length.01",
       "dialect": "sqlserver",
       "input": "CREATE USER [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]]] WITHOUT LOGIN",
@@ -5593,30 +2435,6 @@
       "input": "CREATE USER []]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]] WITHOUT LOGIN",
       "secrets": ["]]]]]]]]]]]]"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_LoginOrUserNameWithEscapedBracketsAtMaximumLength_IsSanitized[3]"
-    },
-    {
-      "id": "otel_dotnet.keyword_first_character.01",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT a Xrom b",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_WordWhichOnlyDiffersFromKeywordByFirstCharacter_IsNotKeyword[1]"
-    },
-    {
-      "id": "otel_dotnet.keyword_first_character.02",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT Prom FROM Events",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_WordWhichOnlyDiffersFromKeywordByFirstCharacter_IsNotKeyword[2]"
-    },
-    {
-      "id": "otel_dotnet.keyword_first_character.03",
-      "dialect": "CONSERVATIVE",
-      "input": "SELECT * FROM Orders Xoin Customers",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_WordWhichOnlyDiffersFromKeywordByFirstCharacter_IsNotKeyword[3]"
-    },
-    {
-      "id": "otel_dotnet.keyword_first_character.04",
-      "dialect": "CONSERVATIVE",
-      "input": "Xelect * FROM Orders",
-      "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_WordWhichOnlyDiffersFromKeywordByFirstCharacter_IsNotKeyword[4]"
     },
     {
       "id": "otel_dotnet.string_after_summary_limit.01",

@@ -124,7 +124,6 @@ otel_java.sanitize_sensitive.012
 otel_java.simplify_sql.123
 otel_java.simplify_sql.125
 otel_java.vendor_specific_syntax.008
-size.limit.dcl_before_credential.postgresql
 unrecognized.after_semicolon
 unrecognized.after_semicolon.backtick_name.mysql
 unrecognized.after_semicolon.bracket_name.sqlserver

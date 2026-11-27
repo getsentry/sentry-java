@@ -105,6 +105,13 @@ class SqlQueryAnalyzerTest {
     }
   }
 
+  private fun SqlQuery.fields(): Map<String, String?> =
+    mapOf(
+      "text" to queryText,
+      "summary" to querySummary,
+      "storedProcedure" to storedProcedureName,
+    )
+
   private fun fullText(sql: String): String =
     checkNotNull(SqlQueryAnalyzer.analyze(sql, null, Int.MAX_VALUE).queryText)
 
