@@ -6,6 +6,9 @@ internal const val DB_SYSTEM_IN_MEMORY = "in-memory"
 /** [DB_SYSTEM_KEY][io.sentry.SpanDataConvention.DB_SYSTEM_KEY] value for SQLite databases. */
 internal const val DB_SYSTEM_SQLITE = "sqlite"
 
+/** Maximum length of the sanitized query text on a span. */
+internal const val MAX_QUERY_TEXT_LENGTH = 8 * 1024
+
 /**
  * Sentinel file name that [SQLiteDriver.open][androidx.sqlite.SQLiteDriver.open] interprets as an
  * in-memory database (see docs
