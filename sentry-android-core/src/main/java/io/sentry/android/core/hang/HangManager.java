@@ -5,6 +5,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.AppStateProvider;
+import io.sentry.time.AnchoredClock;
 import io.sentry.time.EpochClock;
 import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
@@ -340,11 +341,15 @@ public final class HangManager implements Metronome, AppState.AppStateListener {
       if (activeRecorder != null) {
         return;
       }
-      final long nowTimestampMs = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
+      // One wall-clock reading for each hang, so a clock change during the hang does not move its
+      // samples.
+      final @NotNull AnchoredClock clock = AnchoredClock.create(epochClock, ticker);
+      final long nowTimestampMs = TimeUnit.NANOSECONDS.toMillis(clock.startTime().epochNanos());
       activeRecorder =
           HangRecorder.start(
               subscriptions,
               collectors,
+              clock,
               sinceMs,
               nowTimestampMs - (nowMs() - sinceMs),
               options.getLogger());
