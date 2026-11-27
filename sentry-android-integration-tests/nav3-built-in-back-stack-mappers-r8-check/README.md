@@ -2,7 +2,7 @@
 
 Checks that `BackStackEntryMapper.SerialName` works after R8 obfuscation:
 
-- Serial names, `/unknown` results, and warning reasons match expectations.
+- The names and `unknown_entry_reason`s that `SentryNavEffect` records in the `Navigation` context match expectations.
 - The compatibility probe succeeds conclusively.
 - R8 actually obfuscates a representative class.
 

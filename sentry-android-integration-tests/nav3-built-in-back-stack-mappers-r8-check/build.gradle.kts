@@ -2,6 +2,7 @@
 plugins {
   id("com.android.application")
   alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.kotlin.serialization)
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
@@ -61,7 +62,10 @@ android {
     }
   }
 
-  buildFeatures { buildConfig = true }
+  buildFeatures {
+    buildConfig = true
+    compose = true
+  }
 
   androidComponents.beforeVariants { it.enable = it.buildType == "release" }
 }
@@ -72,6 +76,10 @@ dependencies {
   implementation("io.sentry:sentry-android-core:$sentryVersion")
   // compileOnly in sentry-android-navigation3; always available for apps that use Nav3.
   implementation(libs.androidx.compose.runtime)
+  // Hosts SentryNavEffect, so the check reads names and reasons from what the SDK records. Compose
+  // UI 1.7+ provides the LocalLifecycleOwner the effect reads, as it does in every Nav3 app.
+  implementation(libs.androidx.activity.compose)
+  implementation(libs.androidx.compose.ui)
 
   // Strict, so that no other dependency can raise the version the check runs against.
   implementation(matrixLibs.kotlinxSerialization.core) { version { strictly(kotlinxVersion) } }

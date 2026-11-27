@@ -215,8 +215,8 @@ internal class KotlinxBackStackEntryMapper(
  *
  * Only decides what's logged. Whether a type is looked up again is up to the mapper.
  *
- * The R8 check reads each unnamed type's reason from these messages, so rewording one requires
- * updating the fragments in its `UnknownEntryReasonLogs.kt`
+ * The R8 check matches the start of [inconclusiveProbe]'s message, so rewording it requires
+ * updating `ProbeLogChecks.kt`
  * (`sentry-android-integration-tests/nav3-built-in-back-stack-mappers-r8-check`).
  */
 internal class KotlinxMapperDiagnostics(private val logger: () -> ILogger) {

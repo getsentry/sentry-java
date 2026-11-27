@@ -43,14 +43,15 @@ class RecordingLogger : ILogger {
 }
 
 /**
- * Initializes Sentry with [logger] and `debug` enabled, so the mapper's logs reach it. The DSN
- * points nowhere reachable; the check captures no events.
+ * Initializes Sentry with [logger] and `debug` enabled, so the mapper's logs reach it, and with
+ * [recorder] as `beforeSend`, which drops every event. The DSN points nowhere reachable.
  */
-fun initSentry(context: Context, logger: ILogger) {
+fun initSentry(context: Context, logger: ILogger, recorder: BackStackRecorder) {
   SentryAndroid.init(context) { options ->
     options.dsn = "https://key@localhost/0"
     options.isDebug = true
     options.setLogger(logger)
+    options.beforeSend = recorder
   }
 }
 
