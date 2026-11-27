@@ -2,6 +2,8 @@ name: 'Check vendored OpenTelemetry SQL grammar'
 on:
   pull_request:
     paths:
+      - '.github/workflows/check-vendored-otel-sql.yml'
+      - 'THIRD_PARTY_NOTICES.md'
       - 'scripts/sync-otel-sql.sh'
       - 'sentry/src/main/jflex/**'
       - 'sentry/src/main/java/io/sentry/vendor/otel/sql/**'

@@ -4,6 +4,7 @@
 #   sentry/src/main/jflex/SqlSanitizer.jflex          grammar; JFlex generates AutoSqlSanitizer
 #   sentry/src/main/java/io/sentry/vendor/otel/sql/   SqlQuery, SqlDialect, StringUtils
 #   sentry/src/main/java/io/sentry/vendor/otel/sql/UPSTREAM   repository, commit and paths
+#   THIRD_PARTY_NOTICES.md                            commit in the "SQL grammar" entry
 #
 # Usage:
 #   scripts/sync-otel-sql.sh <ref>     vendor the files at <ref> (commit, tag or branch), print
@@ -23,6 +24,9 @@ repository="open-telemetry/opentelemetry-java-instrumentation"
 root="$(git rev-parse --show-toplevel)"
 vendor_dir="$root/sentry/src/main/java/io/sentry/vendor/otel/sql"
 meta="$vendor_dir/UPSTREAM"
+notices="$root/THIRD_PARTY_NOTICES.md"
+# The commit in the notice entry for the grammar; \S+ is the em dash in the heading.
+notice_re='(## OpenTelemetry Java Instrumentation \S+ SQL grammar \(Apache 2\.0\)\n\n\*\*Source:\*\* \S+ \(Commit: )[0-9a-f]{40}'
 
 # Upstream path -> vendored path, relative to the repository roots.
 paths=(
@@ -161,7 +165,8 @@ resolve() {
     echo "$ref"
     return
   fi
-  lines="$(git ls-remote "https://github.com/$repository.git")" || die "could not list refs"
+  lines="$(git ls-remote --heads --tags "https://github.com/$repository.git")" ||
+    die "could not list refs"
   # A peeled annotated tag (^{}) names the commit; then a lightweight tag; then a branch.
   for name in "refs/tags/$ref^{}" "refs/tags/$ref" "refs/heads/$ref"; do
     awk -v name="$name" '$2 == name { print $1; found = 1 } END { exit !found }' <<<"$lines" &&
@@ -209,6 +214,12 @@ check() {
     echo "check failed: $meta differs from what the script writes" >&2
     failed=1
   fi
+  cp "$notices" "$tmp/notices"
+  label="THIRD_PARTY_NOTICES.md" rewrite "$tmp/notices" "s/$notice_re/\${1}$commit/"
+  if ! diff -u "$notices" "$tmp/notices" >&2; then
+    echo "check failed: the SQL grammar entry in $notices does not name commit $commit" >&2
+    failed=1
+  fi
   if ((failed)); then
     echo "Vendored files must only change through scripts/sync-otel-sql.sh." >&2
     return 1
@@ -226,11 +237,15 @@ sync() {
   # shellcheck disable=SC2064
   trap "rm -rf '$tmp'" EXIT
   derive "$commit" "$tmp"
+  # Rewritten in the temporary directory first, so a missing entry fails before any file changes.
+  cp "$notices" "$tmp/notices"
+  label="THIRD_PARTY_NOTICES.md" rewrite "$tmp/notices" "s/$notice_re/\${1}$commit/"
   for i in "${!paths[@]}"; do
     mkdir -p "$(dirname "$root/${targets[$i]}")"
     cp "$tmp/out/$i" "$root/${targets[$i]}"
   done
   cp "$tmp/out/UPSTREAM" "$meta"
+  cp "$tmp/notices" "$notices"
   echo "vendored $repository at $commit"
 
   if [[ -n "$old_commit" && "$old_commit" != "$commit" ]]; then
@@ -246,7 +261,7 @@ sync() {
 
 case "${1:-}" in
   --check) check ;;
-  "" | -h | --help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//' ;;
+  "" | -h | --help) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//' ;;
   -*) die "unknown option: $1" ;;
   *) sync "$1" ;;
 esac

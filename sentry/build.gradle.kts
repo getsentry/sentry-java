@@ -20,7 +20,11 @@ tasks.named<KotlinCompile>("compileKotlin") {
 }
 
 // Build-time only: JFlex generates the SQL lexer; the generated code has no runtime dependency.
-val jflex: Configuration = configurations.create("jflex")
+val jflex: Configuration =
+  configurations.create("jflex") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+  }
 
 dependencies {
   jflex(libs.jflex)
@@ -79,7 +83,7 @@ val generateJflex =
     description = "Generates the SQL lexer from src/main/jflex/SqlSanitizer.jflex."
     classpath(jflex)
     mainClass.set("jflex.Main")
-    inputs.file(jflexSourceFile)
+    inputs.file(jflexSourceFile).withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(jflexOutputDir)
     // Locals, not the script's vals: lambdas that reference script vals capture the script object,
     // which the configuration cache cannot serialize.

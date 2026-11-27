@@ -61,14 +61,16 @@ public final class SqlSpanData {
     if (dbSystem == null) {
       return null;
     }
-    switch (dbSystem.toLowerCase(Locale.ROOT)) {
+    final @NotNull String system = dbSystem.toLowerCase(Locale.ROOT);
+    switch (system) {
       case "postgresql":
       case "mysql":
       case "mariadb":
       case "sqlite":
       case "hsqldb":
       case "derby":
-        return dbSystem.toLowerCase(Locale.ROOT);
+      case "clickhouse":
+        return system;
       case "in-memory":
         return "sqlite";
       case "h2":
@@ -77,6 +79,10 @@ public final class SqlSpanData {
         return "microsoft.sql_server";
       case "oracle":
         return "oracle.db";
+      case "db2":
+        return "ibm.db2";
+      case "sap":
+        return "sap.hana";
       case "mongo":
         return "mongodb";
       default:
