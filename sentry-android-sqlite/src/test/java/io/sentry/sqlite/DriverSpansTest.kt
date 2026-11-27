@@ -306,7 +306,6 @@ class DriverSpansTest {
   }
 
   private companion object {
-    /** The integration's limit for the sanitized text. */
     const val LIMIT = 8 * 1024
   }
 }

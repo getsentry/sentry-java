@@ -6,7 +6,9 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.IScopes
 import io.sentry.NoOpSpan
+import io.sentry.SentryDateProvider
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
@@ -97,6 +99,43 @@ class OpenHelperSpansTest {
           expected.querySummary,
         )
     }
+  }
+
+  @Test
+  fun `performSql ends the span when the database call returns or throws, before the analysis`() {
+    var nowNanos = 0L
+    listOf<() -> Unit>(
+        { nowNanos += QUERY_NANOS },
+        {
+          nowNanos += QUERY_NANOS
+          throw SQLException()
+        },
+      )
+      .forEach { operation ->
+        val sut = fixture.getSut(databaseName = "tracks.db")
+        nowNanos = 1_000_000_000L
+        fixture.options.dateProvider = SentryDateProvider { SentryLongDate(nowNanos) }
+
+        Mockito.mockStatic(OtelSqlSanitizer::class.java, Mockito.CALLS_REAL_METHODS).use { sanitizer
+          ->
+          sanitizer
+            .`when`<Any> { OtelSqlSanitizer.sanitize(any(), any()) }
+            .thenAnswer {
+              nowNanos += 3_000_000L
+              it.callRealMethod()
+            }
+
+          runCatching { sut.performSql("SELECT a FROM t", operation) }
+        }
+
+        val span = fixture.sentryTracer.children.single()
+        assertWithMessage("${span.status}")
+          .that(span.startDate.nanoTimestamp())
+          .isEqualTo(1_000_000_000L)
+        assertWithMessage("${span.status}")
+          .that(span.finishDate?.nanoTimestamp())
+          .isEqualTo(1_000_000_000L + QUERY_NANOS)
+      }
   }
 
   @Test
@@ -248,7 +287,7 @@ class OpenHelperSpansTest {
   }
 
   private companion object {
-    /** The integration's limit for the sanitized text. */
+    const val QUERY_NANOS = 5_000_000L
     const val LIMIT = 8 * 1024
   }
 }

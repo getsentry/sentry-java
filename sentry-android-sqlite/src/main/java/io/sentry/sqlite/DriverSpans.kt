@@ -23,6 +23,7 @@ private val EMPTY_NANO_TIME = SentryNanotimeDate(0, 0L)
 internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: DbMetadata) {
 
   private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
+  private val dbSystemName = SqlSpanData.toDbSystemName(dbMetadata.system)
 
   /**
    * Returns a timestamp in nanoseconds for use with [record]. Timestamp is ns-precise if the active
@@ -75,9 +76,7 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
         setData(SpanDataConvention.DB_NAMESPACE_KEY, it)
       }
       setData(SpanDataConvention.DB_SYSTEM_KEY, dbMetadata.system)
-      SqlSpanData.toDbSystemName(dbMetadata.system)?.let {
-        setData(SpanDataConvention.DB_SYSTEM_NAME_KEY, it)
-      }
+      dbSystemName?.let { setData(SpanDataConvention.DB_SYSTEM_NAME_KEY, it) }
       finish(status, endTimestamp)
     }
   }
