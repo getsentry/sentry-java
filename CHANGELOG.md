@@ -141,6 +141,7 @@
 - Prevent changes to reused tracing options from affecting spans and transactions after creation ([#6417](https://github.com/getsentry/sentry-java/pull/6417))
 - Avoid duplicate serialization debug logs when calculating serialized object sizes ([#6255](https://github.com/getsentry/sentry-java/pull/6255))
 - `Contexts.setProfile(null)` now removes the profile context instead of throwing ([#6684](https://github.com/getsentry/sentry-java/pull/6684))
+- Do not capture failed Apollo 3, 4, and 5 requests when the GraphQL `errors` array is empty ([#6285](https://github.com/getsentry/sentry-java/pull/6285))
 
 ### Dependencies
 
