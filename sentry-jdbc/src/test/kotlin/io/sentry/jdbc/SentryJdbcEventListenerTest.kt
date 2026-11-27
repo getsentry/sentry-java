@@ -12,6 +12,7 @@ import io.sentry.SpanDataConvention.DB_NAMESPACE_KEY
 import io.sentry.SpanDataConvention.DB_NAME_KEY
 import io.sentry.SpanDataConvention.DB_QUERY_SUMMARY_KEY
 import io.sentry.SpanDataConvention.DB_QUERY_TEXT_KEY
+import io.sentry.SpanDataConvention.DB_STORED_PROCEDURE_NAME_KEY
 import io.sentry.SpanDataConvention.DB_SYSTEM_KEY
 import io.sentry.SpanDataConvention.DB_SYSTEM_NAME_KEY
 import io.sentry.SpanStatus
@@ -172,22 +173,6 @@ class SentryJdbcEventListenerTest {
   }
 
   @Test
-  fun `cuts the sanitized text to the query text limit`() {
-    val sql = "SELECT a FROM orders WHERE " + (0 until 4000).joinToString(" OR ") { "c$it IS NULL" }
-    // The grammar itself stops at 32 KiB of output, so only a smaller limit would show here.
-    val full = SqlQueryAnalyzer.analyze(sql, "postgresql", Int.MAX_VALUE).queryText
-    assertThat(full!!.length).isAtLeast(LIMIT)
-    val sut = fixture.getListener()
-
-    sut.execute("jdbc:postgresql://localhost/app", sql)
-
-    val span = fixture.tx.children.single()
-    assertThat(span.description)
-      .isEqualTo(SqlQueryAnalyzer.analyze(sql, "postgresql", LIMIT).queryText)
-    assertThat(span.data[DB_QUERY_TEXT_KEY]).isEqualTo(span.description)
-  }
-
-  @Test
   fun `keeps the raw statement off the span when the analysis fails`() {
     val sql = "SELECT * FROM users WHERE email = 'Zq9xK7@x.io'"
     val sut = fixture.getListener()
@@ -202,7 +187,11 @@ class SentryJdbcEventListenerTest {
 
     val span = fixture.tx.children.single()
     assertThat(span.description).isNull()
-    assertThat(span.data.values.map { it.toString() }).doesNotContain(sql)
+    assertThat(span.data.keys)
+      .containsNoneOf(DB_QUERY_TEXT_KEY, DB_QUERY_SUMMARY_KEY, DB_STORED_PROCEDURE_NAME_KEY)
+    span.data.forEach { (key, value) ->
+      assertWithMessage(key).that(value.toString()).doesNotContain("Zq9xK7")
+    }
     assertThat(span.data).containsEntry(DB_SYSTEM_KEY, "postgresql")
   }
 

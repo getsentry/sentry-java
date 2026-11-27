@@ -117,6 +117,8 @@ public final class DatabaseUtils {
     return new DatabaseDetails(dbSystem, null);
   }
 
+  private static final char[] FILE_DB_NAME_PROPERTY_SEPARATORS = {';', '?', '#'};
+
   /**
    * Cuts connection properties off a database name: {@code ;} (H2, HSQLDB, Derby) and {@code ?} or
    * {@code #} (SQLite and HSQLDB URIs). The properties can hold a database key or password.
@@ -124,7 +126,7 @@ public final class DatabaseUtils {
   private static @Nullable String fileDbNameWithoutProperties(
       final @NotNull String dbNameAndMaybeMore) {
     int end = dbNameAndMaybeMore.length();
-    for (final char separator : new char[] {';', '?', '#'}) {
+    for (final char separator : FILE_DB_NAME_PROPERTY_SEPARATORS) {
       final int index = dbNameAndMaybeMore.indexOf(separator);
       if (index >= 0 && index < end) {
         end = index;
@@ -139,7 +141,8 @@ public final class DatabaseUtils {
       final @NotNull URI url = new URI(urlString);
       String path = StringUtils.removePrefix(url.getPath(), "/");
       String pathWithoutProperties = StringUtils.substringBefore(path, ";");
-      return new DatabaseDetails(dbSystem, pathWithoutProperties);
+      return new DatabaseDetails(
+          dbSystem, pathWithoutProperties.isEmpty() ? null : pathWithoutProperties);
     } catch (Throwable t) {
       // ignore
     }

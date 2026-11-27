@@ -110,7 +110,14 @@ class DatabaseUtilsTest {
   fun `detects db system for mongo no db`() {
     val details = DatabaseUtils.parse("jdbc:mongo://some-server.com:1234")
     assertEquals("mongo", details.dbSystem)
-    assertEquals("", details.dbName)
+    assertNull(details.dbName)
+  }
+
+  @Test
+  fun `detects db system for postgres without database`() {
+    val details = DatabaseUtils.parse("jdbc:postgresql://localhost:5432/")
+    assertEquals("postgresql", details.dbSystem)
+    assertNull(details.dbName)
   }
 
   @Test
