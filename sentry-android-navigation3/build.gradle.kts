@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
+  alias(libs.plugins.kotlin.serialization)
   id("io.sentry.detekt")
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
@@ -14,6 +15,8 @@ plugins {
   id("io.sentry.api-validation")
   id("io.sentry.robolectric")
 }
+
+val kotlinxSerializationFloor = matrixLibs.versions.kotlinxSerialization.floor.get()
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -45,6 +48,8 @@ android {
       // AGP 9.5 can't create the Compose Preview task without it, which breaks any
       // build that creates every task, such as an LSP's Gradle import.
       isIncludeAndroidResources = true
+      // Lets tests check that MIN_KOTLINX_SERIALIZATION_VERSION matches the catalog's floor.
+      all { it.systemProperty("nav3.kotlinxSerializationFloor", kotlinxSerializationFloor) }
     }
   }
 
@@ -72,12 +77,24 @@ android {
 
 kotlin { explicitApi() }
 
+// Unit tests run against the kotlinx.serialization floor by default. CI also runs them against the
+// latest stable release, as apps may ship a newer kotlinx.serialization dependency.
+val testKotlinxVersion =
+  when (val selection = providers.gradleProperty("nav3TestKotlinx").getOrElse("floor")) {
+    "floor" -> kotlinxSerializationFloor
+    "latestStable" -> matrixLibs.versions.kotlinxSerialization.latestStable.get()
+    else -> error("nav3TestKotlinx must be floor or latestStable, but was $selection.")
+  }
+
 dependencies {
   implementation(projects.sentry)
-  compileOnly(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
   compileOnly(libs.androidx.compose.ui)
+  compileOnly(libs.androidx.lifecycle.runtime.compose)
+  compileOnly(matrixLibs.kotlinxSerialization.core) {
+    version { strictly(kotlinxSerializationFloor) }
+  }
 
   testImplementation(projects.sentryAndroidCore)
   testImplementation(projects.sentryTestSupport)
@@ -91,6 +108,9 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)
+  testImplementation(matrixLibs.kotlinxSerialization.core) {
+    version { strictly(testKotlinxVersion) }
+  }
 }
 
 tasks.withType<Detekt>().configureEach {

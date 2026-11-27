@@ -63,6 +63,16 @@ class NavDataContractTest {
         "mapping_failed",
         UnknownEntryReason.UNMAPPED,
         "unmapped",
+        UnknownEntryReason.ENTRY_NOT_ANNOTATED,
+        "entry_not_annotated",
+        UnknownEntryReason.GENERIC_ENTRY_TYPE,
+        "generic_entry_type",
+        UnknownEntryReason.KOTLINX_SERIALIZATION_VERSION,
+        "kotlinx_serialization_version",
+        UnknownEntryReason.SERIALIZER_ACCESS_THREW,
+        "serializer_access_threw",
+        UnknownEntryReason.SERIALIZER_NOT_FOUND,
+        "serializer_not_found",
       )
   }
 

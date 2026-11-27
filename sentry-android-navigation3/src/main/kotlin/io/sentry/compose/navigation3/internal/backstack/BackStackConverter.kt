@@ -16,6 +16,7 @@ import io.sentry.compose.navigation3.internal.contract.TRANSACTION_ARGUMENTS_KEY
 import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
 import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason.Companion.UNKNOWN_ENTRY_REASON_KEY
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReasonReporter
 import io.sentry.util.ExceptionUtils
 import java.util.IdentityHashMap
 
@@ -75,9 +76,9 @@ internal class BackStackConverter<T : Any>(
     sanitizer: ArgumentSanitizer,
     warningState: WarningState,
   ): NormalizedSentryBackStackEntry {
-    val info =
+    val (info, reportedReason) =
       try {
-        entryMapper.map(backStackEntry)
+        UnknownEntryReasonReporter.collect { entryMapper.map(backStackEntry) }
       } catch (t: Throwable) {
         // Back stack entry mappers are host app callbacks.
         ExceptionUtils.rethrowIfFatal(t)
@@ -91,7 +92,7 @@ internal class BackStackConverter<T : Any>(
     if (info == null) {
       return NormalizedSentryBackStackEntry(
         name = UNKNOWN_ENTRY_NAME,
-        unknownEntryReason = UnknownEntryReason.UNMAPPED,
+        unknownEntryReason = reportedReason ?: UnknownEntryReason.UNMAPPED,
       )
     }
 
@@ -429,7 +430,7 @@ internal data class NormalizedSentryBackStackEntry(
    * ```
    *  {
    *    "entry": "/unknown"
-   *    "unknown_entry_reason": "unmapped"
+   *    "unknown_entry_reason": "entry_not_annotated"
    *  }
    * ```
    */

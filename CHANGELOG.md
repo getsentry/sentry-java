@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Features
+
+- Nav3: Add `BackStackEntryMapper.SerialName`, a convenience mapper that names back stack entries after their [serial names](https://kotlinlang.org/api/kotlinx.serialization/kotlinx-serialization-core/kotlinx.serialization.descriptors/-serial-descriptor/serial-name.html) ([#6703](https://github.com/getsentry/sentry-java/pull/6703))
+
 ### Improvements
 
 - Nav3: Record why a back stack entry is `/unknown` via an `unknown_entry_reason` next to it in the Sentry UI ([#6801](https://github.com/getsentry/sentry-java/pull/6801))

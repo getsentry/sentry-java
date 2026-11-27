@@ -1,6 +1,145 @@
 package io.sentry.compose.navigation3
 
+import io.sentry.compose.navigation3.internal.backstack.BuiltInBackStackEntryMappers
 import org.jetbrains.annotations.ApiStatus
+
+/**
+ * Maps a back stack entry to a displayable name and optional diagnostic arguments.
+ *
+ * See [SerialName] for an out-of-the-box mapper, or else provide your own. (Custom implementations
+ * can optionally fall back to `SerialName` for any entries that don't have to be special-cased.)
+ *
+ * **Privacy / PII**
+ *
+ * Host apps are responsible for filtering their own arguments, including removing any sensitive or
+ * personal information. Only return names and arguments that are known to be safe or have been
+ * pre-scrubbed.
+ *
+ * **Performance**
+ *
+ * Mappers are invoked synchronously from [SentryNavEffect] on the same apply thread that runs the
+ * effect. Avoid non-performant mappings.
+ *
+ * **Choosing appropriate names**
+ *
+ * Return stable, low-cardinality names (e.g., `Home`, `DetailScreen`, etc.) that don't depend on
+ * object identity, argument values, or runtime class-name preservation.
+ *
+ * In particular, avoid `::class.simpleName`, as R8 obfuscates class names and may associate them
+ * with different symbols across builds.
+ *
+ * **Names fall back to "/unknown"**
+ *
+ * If [map] throws, returns `null`, or returns a blank [name][SentryBackStackEntry.name], Sentry
+ * records the destination as "/unknown". Doing so signals that name extraction needs to be fixed
+ * while avoiding misleading gaps in nav state.
+ *
+ * For instance, if a user navigates from /home -> /detail -> /settings, but the mapper for /detail
+ * throws, the back stack record will be /home -> /unknown -> /settings rather than /home ->
+ * /settings.
+ *
+ * Each "/unknown" entry records why it has no name under `unknown_entry_reason` (e.g.,
+ * `"mapping_failed"` if [map] threw).
+ *
+ * **Choosing appropriate arguments**
+ *
+ * Argument values may be any of the following scalar types:
+ *
+ * - [String]
+ * - [CharSequence]
+ * - [Char]
+ * - [Boolean]
+ * - any [Number] (`NaN` and infinite values are sent as the strings `"NaN"`, `"Infinity"`, and
+ *   `"-Infinity"`)
+ * - enums (via [Enum.name])
+ * - `null`
+ *
+ * Or any of the following container types:
+ *
+ * - primitive arrays
+ * - [Array]s
+ * - [Collection]s
+ * - [Map]s
+ *
+ * Containers may be nested, but they must bottom out in supported scalar types.
+ *
+ * **Unsupported arguments types are stringified or dropped**
+ *
+ * All non-supported argument types are stringified via `toString()`.
+ *
+ * No arguments are recorded for a back stack entry if [map] throws or returns `null`.
+ *
+ * The SDK also drops an entry's arguments if they are:
+ *
+ * - cyclic,
+ * - too deeply nested,
+ * - too large, or
+ * - contain a map with two keys stringified the same way (e.g., `1` and `"1"`).
+ *
+ * In that case, it records why under `dropped_by_sentry` in the entry's arguments (e.g.,
+ * `"max_argument_count_exceeded"`).
+ */
+@ApiStatus.Experimental
+public fun interface BackStackEntryMapper<in T : Any> {
+
+  public fun map(backStackEntry: T): SentryBackStackEntry?
+
+  public companion object {
+
+    /**
+     * A convenience [BackStackEntryMapper] for apps that use kotlinx.serialization and only need to
+     * track the [serial names][kotlinx.serialization.descriptors.SerialDescriptor.serialName] of
+     * their back stack entries.
+     *
+     * For instance, given:
+     * ```
+     * @Serializable
+     * @SerialName("ProductDetailScreen")
+     * data class ProductDetail(val productId: String) : NavKey
+     * ```
+     *
+     * this mapper returns `"ProductDetailScreen"` for `ProductDetail(productId = "zyx987")` but
+     * omits the destination's properties (`productId`).
+     *
+     * **Name == SerialDescriptor.serialName**
+     *
+     * Each back stack entry is named after its
+     * [`SerialDescriptor.serialName`][kotlinx.serialization.descriptors.SerialDescriptor.serialName],
+     * i.e.:
+     *
+     * - the entry's `@SerialName` if it has one; or else
+     * - the entry's fully qualified class name (e.g., "com.example.Home").
+     *
+     * **Sharing names**
+     *
+     * Entries will share a Sentry name if their serializers have the same serial name. In
+     * particular:
+     *
+     * - All constants of an enum share the enum class's serial name, regardless of any
+     *   `@SerialName` on the constants.
+     *
+     * - Classes that share a custom serializer (`@Serializable(with = ...)`) share its descriptor's
+     *   serial name, regardless of any `@SerialName` on the classes.
+     *
+     * To tell such entries apart, define a custom [BackStackEntryMapper], e.g., one that names enum
+     * constants after [Enum.name].
+     *
+     * **Unknown names**
+     *
+     * This mapper returns `null` for back stack entries that lack a `@Serializable` annotation, are
+     * generic, or whose serializers can't be found or used.
+     *
+     * Sentry displays `null` entries as "/unknown" with an `unknown_entry_reason`. With SDK
+     * debugging enabled, the first unnamed entry of each class also logs a warning.
+     *
+     * See the
+     * [Troubleshooting Guide](https://docs.sentry.io/platforms/android/integrations/navigation/#troubleshooting-kotlinxserialization-mappers)
+     * for more details.
+     */
+    public val SerialName: BackStackEntryMapper<Any>
+      get() = BuiltInBackStackEntryMappers.serialName
+  }
+}
 
 /** Info about a given back stack entry, suitable for display in Sentry. */
 @ApiStatus.Experimental
@@ -48,109 +187,4 @@ public class SentryBackStackEntry(
 
   /** Omits arguments because they may contain sensitive host-app data. */
   override fun toString(): String = "SentryBackStackEntry(name=$name)"
-}
-
-/**
- * Maps a back stack entry to a displayable name and optional diagnostic arguments.
- *
- * To be implemented by the host app.
- *
- * **Privacy / PII**
- *
- * Values returned from [map] are ***not*** scrubbed by the Sentry SDK before being sent to Sentry.
- * Only return names and arguments that are known to be safe or have been pre-scrubbed.
- *
- * **Performance**
- *
- * This mapper is invoked synchronously from [SentryNavEffect] on the same apply thread that runs
- * the effect. Avoid non-performant mappings.
- *
- * **Choosing appropriate names**
- *
- * Return stable, low-cardinality names that don't depend on object identity, argument values, or
- * runtime class-name preservation. E.g., `Home`, `DetailScreen`, etc.
- *
- * In particular, avoid `::class.simpleName`, as R8 obfuscates class names and may associate them
- * with different symbols across builds.
- *
- * **Names fall back to "/unknown"**
- *
- * If [map] throws, returns `null`, or returns a blank [name][SentryBackStackEntry.name], Sentry
- * records the destination as "/unknown". Doing so signals that name extraction needs to be fixed
- * while avoiding misleading gaps in nav state.
- *
- * For instance, if a user navigates from `/home -> /detail -> /settings`, but the mapper for
- * `/detail` throws, the back stack record will be `/home -> /unknown -> /settings` rather than
- * `/home -> /settings`.
- *
- * Each "/unknown" entry records why it has no name under `unknown_entry_reason` (e.g.,
- * `"mapping_failed"` if [map] threw).
- *
- * **Choosing appropriate arguments**
- *
- * Argument values may be any of the following scalar types:
- *
- * - [String]
- * - [CharSequence]
- * - [Char]
- * - [Boolean]
- * - any [Number] (`NaN` and infinite values are sent as the strings `"NaN"`, `"Infinity"`, and
- *   `"-Infinity"`, which JSON can represent)
- * - enums (via [Enum.name])
- * - `null`
- *
- * Or any of the following container types:
- *
- * - [Array]s
- * - primitive arrays
- * - [Map]s
- * - [Collection]s
- *
- * Containers may be nested, but they must bottom out in supported scalar types.
- *
- * **Arguments fall back to `toString()` or nothing**
- *
- * All non-supported argument types are stringified via `toString()`, as are map keys.
- *
- * No arguments will be recorded for a back stack entry if [map] throws or returns `null`, or if its
- * arguments are cyclic, too deeply nested, or too large, or contain a map with two keys that are
- * stringified the same way (e.g., `1` and `"1"`). If the SDK drops an entry's arguments, it adds a
- * `dropped_by_sentry` field and corresponding reason (e.g., `duplicate_key`) in the Sentry UI.
- *
- * **Using kotlinx.serialization**
- *
- * If your back stack contains `@Serializable` entry types, consider giving each entry an explicit
- * `@SerialName` and using its `descriptor.serialName`. For performance reasons, don't serialize
- * back stack keys in their entirety as `arguments` if they might be large, deeply nested, or
- * contain PII or other sensitive information.
- *
- * For instance:
- * ```kotlin
- * @Serializable
- * @SerialName("Home")
- * data class Home(val userName: String) : NavKey
- *
- * @Serializable
- * @SerialName("ProductDetail")
- * data class ProductDetail(val userName: String, val productId: String) : NavKey
- *
- * ...
- *
- * val backStackItemMapper = BackStackEntryMapper<NavKey> { entry ->
- *   when (entry) {
- *     is Home -> SentryBackStackEntry(Home.serializer().descriptor.serialName)
- *     is ProductDetail -> SentryBackStackEntry(
- *       name = ProductDetail.serializer().descriptor.serialName,
- *       // Select a subset of diagnostic arguments when serialization is unsafe
- *       // or non-performant.
- *       arguments = mapOf("product_id" to entry.productId)
- *     )
- *     ...
- *   }
- * }
- * ```
- */
-@ApiStatus.Experimental
-public fun interface BackStackEntryMapper<T : Any> {
-  public fun map(backStackEntry: T): SentryBackStackEntry?
 }
