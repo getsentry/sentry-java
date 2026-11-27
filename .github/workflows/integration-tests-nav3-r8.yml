@@ -1,0 +1,135 @@
+name: Nav3 Built-in Back Stack Mappers R8 Check
+
+# Verifies behavior of BackStackEntryMapper.SerialName from sentry-android-navigation3 in
+# R8-minified builds on an emulator. Runs tests in:
+#
+#  - R8 full mode against the compile floor of kotlinx-serialization-core and its latest stable
+#    release; and
+#  - R8 compat mode against the compile floor.
+#
+# Also runs all the module's unit tests against the latest stable release. See
+# sentry-android-integration-tests/nav3-built-in-back-stack-mappers-r8-check/README.md.
+
+# Only runs for the paths below. Not a required check, so skipped runs don't block PRs. Catalog
+# filters match whole files, including changes to unrelated dependencies.
+on:
+  push:
+    branches:
+      - main
+    paths: &nav3-r8-paths
+      - 'sentry-android-navigation3/**'
+      - 'sentry-android-integration-tests/nav3-built-in-back-stack-mappers-r8-check/**'
+      # The settings, build script, and properties of the build that produces the check's APKs.
+      - 'sentry-android-integration-tests/*.gradle.kts'
+      - 'sentry-android-integration-tests/*.properties'
+      - 'scripts/test-nav3-built-in-back-stack-mappers-r8.sh'
+      - '.github/workflows/integration-tests-nav3-r8.yml'
+      # Build settings, R8 flags, build logic, the Gradle version, and the version catalogs
+      # (Kotlin, AGP and its R8, Compose, Nav3, and the kotlinx.serialization matrix).
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
+      - 'gradle/wrapper/**'
+      - 'gradle/libs.versions.toml'
+      - 'gradle/dependency-matrix.versions.toml'
+      - 'buildSrc/**'
+      - 'build-logic/**'
+      # Utilities the mapper uses to handle exceptions.
+      - 'sentry/src/main/java/io/sentry/util/**'
+  pull_request:
+    paths: *nav3-r8-paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APK_DIR: "nav3-r8-check-apks"
+  APK_ARTIFACT_NAME: "nav3-r8-check-apks"
+
+jobs:
+  # Runs separately from the APK builds, so a unit test failure doesn't hide the R8 check's results.
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # Apps may ship a newer kotlinx.serialization than sentry-android-navigation3 compiles
+      # against. The Build workflow runs the unit tests against the floor.
+      - name: Run unit tests against the latest stable kotlinx.serialization
+        run: ./gradlew :sentry-android-navigation3:testReleaseUnitTest -Pnav3TestKotlinx=latestStable
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Build APKs
+        run: ./scripts/test-nav3-built-in-back-stack-mappers-r8.sh build "${{ env.APK_DIR }}"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ env.APK_ARTIFACT_NAME }}
+          path: ${{ env.APK_DIR }}
+          retention-days: 1
+
+  # Run on API 23, Nav3's minSdk, to verify that the minified app and its dependencies work on the
+  # oldest supported runtime.
+  run:
+    name: Run on API Level 23
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: ${{ env.APK_ARTIFACT_NAME }}
+          path: ${{ env.APK_DIR }}
+
+      - name: Run check
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
+        with:
+          api-level: 23
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          disable-spellchecker: true
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          script: ./scripts/test-nav3-built-in-back-stack-mappers-r8.sh run "${{ env.APK_DIR }}"
