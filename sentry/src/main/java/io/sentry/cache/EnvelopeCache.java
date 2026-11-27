@@ -411,7 +411,13 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         }
       }
       final boolean written = writeSessionToDisk(currentSessionFile, session);
-      // a failed write truncates the file, so there is no good copy left to protect
+      // a failed write truncates the file, so there is no good copy left to protect. Delete it, so
+      // a later move does not put it over the last run's session in the previous session file.
+      if (!written && !currentSessionFile.delete()) {
+        options
+            .getLogger()
+            .log(WARNING, "Unable to delete the current session file after a failed write.");
+      }
       lastPersistedSessionId = written ? session.getSessionId() : null;
     }
   }

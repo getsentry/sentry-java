@@ -227,7 +227,7 @@ class EnvelopeCacheTest {
     assertTrue(currentSessionFile.delete())
     assertTrue(currentSessionFile.mkdir())
     cache.persistCurrentSession(newerSession)
-    assertTrue(currentSessionFile.delete())
+    assertThat(currentSessionFile.exists()).isFalse()
 
     val delayedStart = createSession(sessionId = sid)
     val envelope = SentryEnvelope.from(fixture.options.serializer, delayedStart, null)
@@ -345,6 +345,27 @@ class EnvelopeCacheTest {
     cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
 
     verify(serializer).serialize(same(delayedStart), any<Writer>())
+  }
+
+  @Test
+  fun `failed persist after the move keeps the last run's session from the next SessionStart`() {
+    val liveSession = createSession()
+    val serializer = mock<ISerializer>()
+    whenever(serializer.serialize(same(liveSession), any<Writer>()))
+      .thenThrow(RuntimeException("forced ex"))
+    whenever(serializer.deserialize(any(), eq(Session::class.java))).thenReturn(liveSession)
+    val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+
+    cache.persistCurrentSession(liveSession)
+    assertThat(currentSessionFile.exists()).isFalse()
+
+    val envelope = SentryEnvelope.from(SentryOptions.empty().serializer, liveSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
   }
 
   @Test
