@@ -44,7 +44,6 @@ import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingScopeObserver
-import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
@@ -57,6 +56,7 @@ import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
 import io.sentry.util.thread.IThreadChecker
+import io.sentry.vendor.tape.QueueFile
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Date

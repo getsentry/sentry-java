@@ -23,7 +23,6 @@ import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.SentryReplayDebug
-import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findTextColor
 import io.sentry.android.replay.util.isMaskableImage
 import io.sentry.android.replay.util.toOpaque
@@ -31,6 +30,7 @@ import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
+import io.sentry.vendor.androidx.compose.boundsInWindow
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 

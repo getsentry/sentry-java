@@ -2,16 +2,18 @@ package io.sentry.android.core;
 
 import android.os.Handler;
 import android.os.Looper;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-final class MainLooperHandler {
+@ApiStatus.Internal
+public final class MainLooperHandler {
   private final @NotNull Handler handler;
 
-  MainLooperHandler() {
+  public MainLooperHandler() {
     this(Looper.getMainLooper());
   }
 
-  MainLooperHandler(final @NotNull Looper looper) {
+  public MainLooperHandler(final @NotNull Looper looper) {
     handler = new Handler(looper);
   }
 

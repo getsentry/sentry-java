@@ -10,6 +10,8 @@ import io.sentry.hints.SubmissionResult;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
+import io.sentry.vendor.commons.collections.CircularFifoQueue;
+import io.sentry.vendor.commons.collections.SynchronizedQueue;
 import java.io.File;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;

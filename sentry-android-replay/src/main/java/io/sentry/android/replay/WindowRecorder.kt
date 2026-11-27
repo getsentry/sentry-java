@@ -16,6 +16,8 @@ import io.sentry.android.replay.util.addOnPreDrawListenerSafe
 import io.sentry.android.replay.util.hasSize
 import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
 import io.sentry.util.AutoClosableReentrantLock
+import io.sentry.vendor.curtains.OnRootViewsChangedListener
+import io.sentry.vendor.curtains.phoneWindow
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService

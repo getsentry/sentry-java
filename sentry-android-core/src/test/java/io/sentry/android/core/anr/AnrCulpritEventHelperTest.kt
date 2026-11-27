@@ -30,7 +30,7 @@ class AnrCulpritEventHelperTest {
     assertThat(exceptions!!).hasSize(1)
     val exception = exceptions[0]
     assertThat(exception.type).isEqualTo("ApplicationNotResponding")
-    assertThat(exception.module).isEqualTo("io.sentry.android.core")
+    assertThat(exception.module).isEqualTo("io.sentry.vendor.anrwatchdog")
     assertThat(exception.value).isEqualTo("com.example.Foo.bar")
     assertThat(exception.mechanism!!.type).isEqualTo("ANR")
     assertThat(exception.stacktrace!!.frames!!.map { it.function }).containsExactly("loop", "bar")

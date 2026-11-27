@@ -18,12 +18,12 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
-import io.sentry.android.replay.phoneWindow
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MaskRenderer
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
+import io.sentry.vendor.curtains.phoneWindow
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.LazyThreadSafetyMode.NONE

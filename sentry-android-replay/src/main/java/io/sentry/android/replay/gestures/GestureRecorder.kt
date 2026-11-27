@@ -6,11 +6,11 @@ import android.view.Window
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
-import io.sentry.android.replay.OnRootViewsChangedListener
-import io.sentry.android.replay.phoneWindow
-import io.sentry.android.replay.util.FixedWindowCallback
 import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.ExceptionUtils
+import io.sentry.vendor.curtains.FixedWindowCallback
+import io.sentry.vendor.curtains.OnRootViewsChangedListener
+import io.sentry.vendor.curtains.phoneWindow
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 

@@ -9,6 +9,8 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.util.HintUtils
+import io.sentry.vendor.anrwatchdog.ANRWatchDog
+import io.sentry.vendor.anrwatchdog.ApplicationNotResponding
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

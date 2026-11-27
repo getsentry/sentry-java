@@ -142,7 +142,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of Square's Tape library, a file-based FIFO queue implementation used for reliable event storage. The code resides in the `io.sentry.cache.tape` package and includes `QueueFile`, `FileObjectQueue`, and `ObjectQueue`.
+The Sentry Java SDK includes an adapted version of Square's Tape library, a file-based FIFO queue implementation used for reliable event storage. The code resides in the `io.sentry.vendor.tape` package and includes `QueueFile`, `FileObjectQueue`, and `ObjectQueue`.
 
 Upstream was archived on 2024-10-25 and is no longer maintained. This copy is maintained in-tree and has diverged from the linked commit: it recovers from file corruption by recreating the file, bounds the queue to a maximum number of elements, and supports optional buffered writes flushed by an explicit `sync()`.
 
@@ -172,7 +172,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of Square's Seismic shake detection algorithm. The rolling sample window approach and `SampleQueue`/`SamplePool` data structures in `io.sentry.android.core.SentryShakeDetector` are based on Seismic's `ShakeDetector`.
+The Sentry Java SDK includes an adapted version of Square's Seismic shake detection algorithm. The rolling sample window approach and `SampleQueue`/`SamplePool` data structures in `io.sentry.vendor.seismic.SentryShakeDetector` are based on Seismic's `ShakeDetector`.
 
 ```
 Copyright 2010 Square, Inc.
@@ -200,7 +200,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes adapted versions of Square's Curtains library for null-safe `Window.Callback` handling and for tracking attached window roots. The code resides in `io.sentry.android.replay.util.FixedWindowCallback` and `io.sentry.android.replay.Windows`.
+The Sentry Java SDK includes adapted versions of Square's Curtains library for null-safe `Window.Callback` handling and for tracking attached window roots. The code resides in the `io.sentry.vendor.curtains` package.
 
 ```
 Copyright 2021 Square Inc.
@@ -228,7 +228,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes adapted versions of `CircularFifoQueue`, `SynchronizedCollection`, and `SynchronizedQueue` from Apache Commons Collections. The code resides in `io.sentry.CircularFifoQueue`, `io.sentry.SynchronizedCollection`, and `io.sentry.SynchronizedQueue`.
+The Sentry Java SDK includes adapted versions of `CircularFifoQueue`, `SynchronizedCollection`, and `SynchronizedQueue` from Apache Commons Collections. The code resides in the `io.sentry.vendor.commons.collections` package.
 
 ```
 Licensed to the Apache Software Foundation (ASF) under one or more
@@ -257,7 +257,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of `ReusableCountLatch` from the JavaFixes library for concurrent synchronization. The code resides in `io.sentry.transport.ReusableCountLatch`.
+The Sentry Java SDK includes an adapted version of `ReusableCountLatch` from the JavaFixes library for concurrent synchronization. The code resides in `io.sentry.vendor.javafixes.concurrent.ReusableCountLatch`.
 
 ```
 Copyright (C) 2016 Matej Tymes
@@ -285,7 +285,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted UUID generation implementation from the Dynamic-Datasource library. The code resides in `io.sentry.util.UUIDGenerator`.
+The Sentry Java SDK includes an adapted UUID generation implementation from the Dynamic-Datasource library. The code resides in `io.sentry.vendor.dynamicdatasource.UUIDGenerator`.
 
 ```
 Copyright © 2018 organization baomidou
@@ -313,7 +313,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of `FirstDrawDoneListener` from the Firebase Android SDK for detecting initial display time via `OnDrawListener`. The code resides in `io.sentry.android.core.internal.util.FirstDrawDoneListener`.
+The Sentry Java SDK includes an adapted version of `FirstDrawDoneListener` from the Firebase Android SDK for detecting initial display time via `OnDrawListener`. The code resides in `io.sentry.vendor.firebase.FirstDrawDoneListener`.
 
 ```
 Copyright 2022 Google LLC
@@ -341,7 +341,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes adapted thread state and stack trace parsing code from the Android Open Source Project's bugreport tools. The code resides in the `io.sentry.android.core.internal.threaddump` package and includes `ThreadDumpParser`, `Line`, and `Lines`.
+The Sentry Java SDK includes adapted thread state and stack trace parsing code from the Android Open Source Project's bugreport tools. The code resides in the `io.sentry.vendor.aosp.threaddump` package and includes `ThreadDumpParser`, `Line`, and `Lines`.
 
 ```
 Copyright (C) 2016 The Android Open Source Project
@@ -370,7 +370,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Android Replay SDK includes code adapted from Jetpack Compose UI, used to compute Compose node bounds while traversing the view hierarchy for masking. The code resides in `io.sentry.android.replay.util.Nodes`: the `boundsInWindow` extension function (a faster copy of `LayoutCoordinates.boundsInWindow`) and the `fastMinOf`, `fastMaxOf`, `fastCoerceIn`, `fastCoerceAtLeast`, and `fastCoerceAtMost` numeric helpers (copied from `androidx.compose.ui.util.MathHelpers`).
+The Sentry Android Replay SDK includes code adapted from Jetpack Compose UI, used to compute Compose node bounds while traversing the view hierarchy for masking. The code resides in `io.sentry.vendor.androidx.compose.BoundsInWindow`: the `boundsInWindow` extension function (a faster copy of `LayoutCoordinates.boundsInWindow`) and the `fastMinOf`, `fastMaxOf`, `fastCoerceIn`, `fastCoerceAtLeast`, and `fastCoerceAtMost` numeric helpers (copied from `androidx.compose.ui.util.MathHelpers`).
 
 ```
 Copyright (C) 2019, 2020 The Android Open Source Project
@@ -398,7 +398,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK build includes an adapted version of the AndroidX build's POM rewriting, which adds `<type>aar</type>` to dependencies on Android libraries in published POMs. The code resides in the build logic at `build-logic/src/main/kotlin/io/sentry/gradle/AarTypes.kt` and is not part of the published artifacts.
+The Sentry Java SDK build includes an adapted version of the AndroidX build's POM rewriting, which adds `<type>aar</type>` to dependencies on Android libraries in published POMs. The code resides in the build logic at `build-logic/src/main/kotlin/io/sentry/vendor/androidx/maven/AarTypes.kt` and is not part of the published artifacts.
 
 ```
 Copyright 2018 The Android Open Source Project
@@ -426,7 +426,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of `ThreadLocalContextStorage` from the OpenTelemetry Java SDK for thread-local context storage. The code resides in `io.sentry.opentelemetry.SentryOtelThreadLocalStorage`.
+The Sentry Java SDK includes an adapted version of `ThreadLocalContextStorage` from the OpenTelemetry Java SDK for thread-local context storage. The code resides in `io.sentry.vendor.opentelemetry.SentryOtelThreadLocalStorage`.
 
 ```
 Copyright The OpenTelemetry Authors
@@ -455,7 +455,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of the ANR-WatchDog library for Application Not Responding (ANR) detection on Android. The code resides in `io.sentry.android.core.ANRWatchDog` and `io.sentry.android.core.ApplicationNotResponding` (adapted from `ANRError`).
+The Sentry Java SDK includes an adapted version of the ANR-WatchDog library for Application Not Responding (ANR) detection on Android. The code resides in `io.sentry.vendor.anrwatchdog.ANRWatchDog` and `io.sentry.vendor.anrwatchdog.ApplicationNotResponding` (adapted from `ANRError`).
 
 ```
 MIT License
@@ -490,7 +490,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted root detection implementation from the Ravencoin Android wallet (originally from breadwallet). The code resides in `io.sentry.android.core.internal.util.RootChecker`.
+The Sentry Java SDK includes an adapted root detection implementation from the Ravencoin Android wallet (originally from breadwallet). The code resides in `io.sentry.vendor.breadwallet.RootChecker`.
 
 ```
 MIT License
@@ -526,7 +526,7 @@ THE SOFTWARE.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted PCG-based random number generator from the pcg-java library for fast sampling. The code resides in `io.sentry.util.Random`.
+The Sentry Java SDK includes an adapted PCG-based random number generator from the pcg-java library for fast sampling. The code resides in `io.sentry.vendor.pcg.Random`.
 
 ```
 MIT License
@@ -562,7 +562,7 @@ SOFTWARE.
 
 ### Scope
 
-The Sentry Java SDK includes adapted UUID string manipulation utilities. The code resides in `io.sentry.util.UUIDStringUtils`.
+The Sentry Java SDK includes adapted UUID string manipulation utilities. The code resides in `io.sentry.vendor.fastuuid.UUIDStringUtils`.
 
 ```
 MIT License
@@ -598,7 +598,7 @@ SOFTWARE.
 
 ### Scope
 
-The Sentry Android Replay SDK includes adapted versions of the video encoding and muxing classes from the flutter_screen_recorder library, used to encode and mux replay video frames into an MP4 file. The code resides in the `io.sentry.android.replay.video` package and includes `SimpleFrameMuxer`, `SimpleMp4FrameMuxer`, and `SimpleVideoEncoder`.
+The Sentry Android Replay SDK includes adapted versions of the video encoding and muxing classes from the flutter_screen_recorder library, used to encode and mux replay video frames into an MP4 file. The code resides in the `io.sentry.vendor.flutterscreenrecorder` package and includes `SimpleFrameMuxer`, `SimpleMp4FrameMuxer`, and `SimpleVideoEncoder`.
 
 ```
 Copyright (c) 2021 fzyzcjy

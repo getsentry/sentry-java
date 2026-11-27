@@ -13,6 +13,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
+import io.sentry.vendor.seismic.SentryShakeDetector;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;

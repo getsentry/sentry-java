@@ -54,7 +54,9 @@ import io.sentry.transport.RateLimiter.IRateLimitObserver
 import io.sentry.util.FileUtils
 import io.sentry.util.HintUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
-import io.sentry.util.Random
+import io.sentry.vendor.curtains.OnRootViewsChangedListener
+import io.sentry.vendor.curtains.RootViewsSpy
+import io.sentry.vendor.pcg.Random
 import java.io.Closeable
 import java.io.File
 import java.util.Date

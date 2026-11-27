@@ -4799,53 +4799,6 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public static fun store (Lio/sentry/SentryOptions;Ljava/lang/Object;Ljava/lang/String;)V
 }
 
-public abstract class io/sentry/cache/tape/ObjectQueue : java/io/Closeable, java/lang/Iterable {
-	public fun <init> ()V
-	public abstract fun add (Ljava/lang/Object;)V
-	public fun asList ()Ljava/util/List;
-	public fun clear ()V
-	public static fun create (Lio/sentry/cache/tape/QueueFile;Lio/sentry/cache/tape/ObjectQueue$Converter;)Lio/sentry/cache/tape/ObjectQueue;
-	public static fun createEmpty ()Lio/sentry/cache/tape/ObjectQueue;
-	public abstract fun file ()Lio/sentry/cache/tape/QueueFile;
-	public fun isEmpty ()Z
-	public abstract fun peek ()Ljava/lang/Object;
-	public fun peek (I)Ljava/util/List;
-	public fun remove ()V
-	public abstract fun remove (I)V
-	public abstract fun size ()I
-	public fun sync ()V
-}
-
-public abstract interface class io/sentry/cache/tape/ObjectQueue$Converter {
-	public abstract fun from ([B)Ljava/lang/Object;
-	public abstract fun toStream (Ljava/lang/Object;Ljava/io/OutputStream;)V
-}
-
-public final class io/sentry/cache/tape/QueueFile : java/io/Closeable, java/lang/Iterable {
-	public fun add ([B)V
-	public fun add ([BII)V
-	public fun clear ()V
-	public fun close ()V
-	public fun file ()Ljava/io/File;
-	public fun isAtFullCapacity ()Z
-	public fun isEmpty ()Z
-	public fun iterator ()Ljava/util/Iterator;
-	public fun peek ()[B
-	public fun remove ()V
-	public fun remove (I)V
-	public fun size ()I
-	public fun sync ()V
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/cache/tape/QueueFile$Builder {
-	public fun <init> (Ljava/io/File;)V
-	public fun build ()Lio/sentry/cache/tape/QueueFile;
-	public fun size (I)Lio/sentry/cache/tape/QueueFile$Builder;
-	public fun synchronousWrites (Z)Lio/sentry/cache/tape/QueueFile$Builder;
-	public fun zero (Z)Lio/sentry/cache/tape/QueueFile$Builder;
-}
-
 public final class io/sentry/clientreport/ClientReport : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/util/Date;Ljava/util/List;)V
 	public fun getDiscardedEvents ()Ljava/util/List;
@@ -7550,16 +7503,6 @@ public abstract interface class io/sentry/transport/RateLimiterConfig {
 	public abstract fun getTimerExecutorService ()Lio/sentry/ISentryExecutorService;
 }
 
-public final class io/sentry/transport/ReusableCountLatch {
-	public fun <init> ()V
-	public fun <init> (I)V
-	public fun decrement ()V
-	public fun getCount ()I
-	public fun increment ()V
-	public fun waitTillZero ()V
-	public fun waitTillZero (JLjava/util/concurrent/TimeUnit;)Z
-}
-
 public final class io/sentry/transport/StdoutTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/ISerializer;)V
 	public fun close ()V
@@ -7879,26 +7822,6 @@ public final class io/sentry/util/PropagationTargetsUtils {
 	public static fun contain (Ljava/util/List;Ljava/net/URI;)Z
 }
 
-public final class io/sentry/util/Random : java/io/Serializable {
-	public fun <init> ()V
-	public fun <init> (JJ)V
-	public fun nextBoolean ()Z
-	public fun nextBoolean (D)Z
-	public fun nextByte ()B
-	public fun nextBytes ([B)V
-	public fun nextChar ()C
-	public fun nextDouble ()D
-	public fun nextDouble (ZZ)D
-	public fun nextFloat ()F
-	public fun nextFloat (ZZ)F
-	public fun nextInt ()I
-	public fun nextInt (I)I
-	public fun nextLong ()J
-	public fun nextLong (J)J
-	public fun nextShort ()S
-	public fun setSeed (JJ)V
-}
-
 public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
 	public static fun backfilledSampleRand (Lio/sentry/TracesSamplingDecision;)Lio/sentry/TracesSamplingDecision;
@@ -7922,7 +7845,7 @@ public final class io/sentry/util/SentryCallbackReentrancyGuard {
 
 public final class io/sentry/util/SentryRandom {
 	public fun <init> ()V
-	public static fun current ()Lio/sentry/util/Random;
+	public static fun current ()Lio/sentry/vendor/pcg/Random;
 }
 
 public final class io/sentry/util/SpanUtils {
@@ -7967,20 +7890,6 @@ public final class io/sentry/util/TracingUtils$TracingHeaders {
 	public fun getBaggageHeader ()Lio/sentry/BaggageHeader;
 	public fun getSentryTraceHeader ()Lio/sentry/SentryTraceHeader;
 	public fun getW3cTraceparentHeader ()Lio/sentry/W3CTraceparentHeader;
-}
-
-public final class io/sentry/util/UUIDGenerator {
-	public fun <init> ()V
-	public static fun randomHalfLengthUUID ()J
-	public static fun randomUUID ()Ljava/util/UUID;
-}
-
-public final class io/sentry/util/UUIDStringUtils {
-	public fun <init> ()V
-	public static fun toSentryIdString (JJ)Ljava/lang/String;
-	public static fun toSentryIdString (Ljava/util/UUID;)Ljava/lang/String;
-	public static fun toSentrySpanIdString (J)Ljava/lang/String;
-	public static fun toSentrySpanIdString (Ljava/util/UUID;)Ljava/lang/String;
 }
 
 public final class io/sentry/util/UrlUtils {
@@ -8113,6 +8022,74 @@ public final class io/sentry/vendor/SentryIso8601Utils {
 	public static fun parseTimestamp (Ljava/lang/String;)J
 }
 
+public final class io/sentry/vendor/commons/collections/CircularFifoQueue : java/util/AbstractCollection, java/io/Serializable, java/util/Queue {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public fun <init> (Ljava/util/Collection;)V
+	public fun add (Ljava/lang/Object;)Z
+	public fun clear ()V
+	public fun element ()Ljava/lang/Object;
+	public fun get (I)Ljava/lang/Object;
+	public fun isAtFullCapacity ()Z
+	public fun isEmpty ()Z
+	public fun isFull ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun maxSize ()I
+	public fun offer (Ljava/lang/Object;)Z
+	public fun peek ()Ljava/lang/Object;
+	public fun poll ()Ljava/lang/Object;
+	public fun remove ()Ljava/lang/Object;
+	public fun size ()I
+}
+
+public class io/sentry/vendor/commons/collections/SynchronizedCollection : java/io/Serializable, java/util/Collection {
+	public fun add (Ljava/lang/Object;)Z
+	public fun addAll (Ljava/util/Collection;)Z
+	public fun clear ()V
+	public fun contains (Ljava/lang/Object;)Z
+	public fun containsAll (Ljava/util/Collection;)Z
+	protected fun decorated ()Ljava/util/Collection;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun isEmpty ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun remove (Ljava/lang/Object;)Z
+	public fun removeAll (Ljava/util/Collection;)Z
+	public fun retainAll (Ljava/util/Collection;)Z
+	public fun size ()I
+	public static fun synchronizedCollection (Ljava/util/Collection;)Lio/sentry/vendor/commons/collections/SynchronizedCollection;
+	public fun toArray ()[Ljava/lang/Object;
+	public fun toArray ([Ljava/lang/Object;)[Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/vendor/commons/collections/SynchronizedQueue : io/sentry/vendor/commons/collections/SynchronizedCollection, java/util/Queue {
+	public fun element ()Ljava/lang/Object;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun offer (Ljava/lang/Object;)Z
+	public fun peek ()Ljava/lang/Object;
+	public fun poll ()Ljava/lang/Object;
+	public fun remove ()Ljava/lang/Object;
+	public static fun synchronizedQueue (Ljava/util/Queue;)Lio/sentry/vendor/commons/collections/SynchronizedQueue;
+	public fun toArray ()[Ljava/lang/Object;
+	public fun toArray ([Ljava/lang/Object;)[Ljava/lang/Object;
+}
+
+public final class io/sentry/vendor/dynamicdatasource/UUIDGenerator {
+	public fun <init> ()V
+	public static fun randomHalfLengthUUID ()J
+	public static fun randomUUID ()Ljava/util/UUID;
+}
+
+public final class io/sentry/vendor/fastuuid/UUIDStringUtils {
+	public fun <init> ()V
+	public static fun toSentryIdString (JJ)Ljava/lang/String;
+	public static fun toSentryIdString (Ljava/util/UUID;)Ljava/lang/String;
+	public static fun toSentrySpanIdString (J)Ljava/lang/String;
+	public static fun toSentrySpanIdString (Ljava/util/UUID;)Ljava/lang/String;
+}
+
 public class io/sentry/vendor/gson/internal/bind/util/ISO8601Utils {
 	public static final field TIMEZONE_UTC Ljava/util/TimeZone;
 	public fun <init> ()V
@@ -8191,5 +8168,82 @@ public final class io/sentry/vendor/gson/stream/MalformedJsonException : java/io
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/lang/Throwable;)V
+}
+
+public final class io/sentry/vendor/javafixes/concurrent/ReusableCountLatch {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public fun decrement ()V
+	public fun getCount ()I
+	public fun increment ()V
+	public fun waitTillZero ()V
+	public fun waitTillZero (JLjava/util/concurrent/TimeUnit;)Z
+}
+
+public final class io/sentry/vendor/pcg/Random : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (JJ)V
+	public fun nextBoolean ()Z
+	public fun nextBoolean (D)Z
+	public fun nextByte ()B
+	public fun nextBytes ([B)V
+	public fun nextChar ()C
+	public fun nextDouble ()D
+	public fun nextDouble (ZZ)D
+	public fun nextFloat ()F
+	public fun nextFloat (ZZ)F
+	public fun nextInt ()I
+	public fun nextInt (I)I
+	public fun nextLong ()J
+	public fun nextLong (J)J
+	public fun nextShort ()S
+	public fun setSeed (JJ)V
+}
+
+public abstract class io/sentry/vendor/tape/ObjectQueue : java/io/Closeable, java/lang/Iterable {
+	public fun <init> ()V
+	public abstract fun add (Ljava/lang/Object;)V
+	public fun asList ()Ljava/util/List;
+	public fun clear ()V
+	public static fun create (Lio/sentry/vendor/tape/QueueFile;Lio/sentry/vendor/tape/ObjectQueue$Converter;)Lio/sentry/vendor/tape/ObjectQueue;
+	public static fun createEmpty ()Lio/sentry/vendor/tape/ObjectQueue;
+	public abstract fun file ()Lio/sentry/vendor/tape/QueueFile;
+	public fun isEmpty ()Z
+	public abstract fun peek ()Ljava/lang/Object;
+	public fun peek (I)Ljava/util/List;
+	public fun remove ()V
+	public abstract fun remove (I)V
+	public abstract fun size ()I
+	public fun sync ()V
+}
+
+public abstract interface class io/sentry/vendor/tape/ObjectQueue$Converter {
+	public abstract fun from ([B)Ljava/lang/Object;
+	public abstract fun toStream (Ljava/lang/Object;Ljava/io/OutputStream;)V
+}
+
+public final class io/sentry/vendor/tape/QueueFile : java/io/Closeable, java/lang/Iterable {
+	public fun add ([B)V
+	public fun add ([BII)V
+	public fun clear ()V
+	public fun close ()V
+	public fun file ()Ljava/io/File;
+	public fun isAtFullCapacity ()Z
+	public fun isEmpty ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun peek ()[B
+	public fun remove ()V
+	public fun remove (I)V
+	public fun size ()I
+	public fun sync ()V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/vendor/tape/QueueFile$Builder {
+	public fun <init> (Ljava/io/File;)V
+	public fun build ()Lio/sentry/vendor/tape/QueueFile;
+	public fun size (I)Lio/sentry/vendor/tape/QueueFile$Builder;
+	public fun synchronousWrites (Z)Lio/sentry/vendor/tape/QueueFile$Builder;
+	public fun zero (Z)Lio/sentry/vendor/tape/QueueFile$Builder;
 }
 

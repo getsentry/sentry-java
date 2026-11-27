@@ -61,7 +61,7 @@
 # Sentry.init() checks this class by name, and OptionsContainer.create() instantiates it reflectively
 -keep class io.sentry.android.core.SentryAndroidOptions { public <init>(); }
 
--keepnames class io.sentry.android.core.ApplicationNotResponding
+-keepnames class io.sentry.vendor.anrwatchdog.ApplicationNotResponding
 
 
 ##---------------End: proguard configuration for android-core  ----------

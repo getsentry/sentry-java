@@ -71,6 +71,7 @@ import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.SentryRandom;
+import io.sentry.vendor.anrwatchdog.ApplicationNotResponding;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;

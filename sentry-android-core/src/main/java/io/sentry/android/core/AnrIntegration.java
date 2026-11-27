@@ -18,6 +18,8 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import io.sentry.vendor.anrwatchdog.ANRWatchDog;
+import io.sentry.vendor.anrwatchdog.ApplicationNotResponding;
 import java.io.Closeable;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;

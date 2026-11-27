@@ -144,7 +144,7 @@ public abstract interface class io/sentry/android/replay/gestures/TouchRecorderC
 	public abstract fun onTouchEvent (Landroid/view/MotionEvent;)V
 }
 
-public class io/sentry/android/replay/util/FixedWindowCallback : android/view/Window$Callback {
+public class io/sentry/vendor/curtains/FixedWindowCallback : android/view/Window$Callback {
 	public final field delegate Landroid/view/Window$Callback;
 	public fun <init> (Landroid/view/Window$Callback;)V
 	public fun dispatchGenericMotionEvent (Landroid/view/MotionEvent;)Z

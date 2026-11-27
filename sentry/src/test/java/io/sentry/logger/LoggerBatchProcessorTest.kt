@@ -16,8 +16,8 @@ import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
-import io.sentry.transport.ReusableCountLatch
 import io.sentry.util.JsonSerializationUtils
+import io.sentry.vendor.javafixes.concurrent.ReusableCountLatch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

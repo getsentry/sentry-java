@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.util.UUIDStringUtils
+import io.sentry.vendor.fastuuid.UUIDStringUtils
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals

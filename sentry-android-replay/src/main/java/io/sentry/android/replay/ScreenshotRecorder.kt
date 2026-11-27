@@ -17,6 +17,7 @@ import io.sentry.android.replay.screenshot.ScreenshotStrategy
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.removeOnDrawListenerSafe
+import io.sentry.vendor.curtains.phoneWindow
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean

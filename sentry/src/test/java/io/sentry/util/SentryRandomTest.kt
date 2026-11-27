@@ -1,5 +1,6 @@
 package io.sentry.util
 
+import io.sentry.vendor.pcg.Random
 import kotlin.test.Test
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
