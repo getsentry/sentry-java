@@ -844,6 +844,49 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `init-time move after a reset moves the session of the last initialization`() {
+    val cache = fixture.getSUT()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val firstInitSession = createSession()
+    cache.persistCurrentSession(firstInitSession)
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+    assertThat(currentSessionFile.exists()).isTrue()
+
+    // a re-init with the same options reuses this cache
+    cache.resetPreviousSessionMove()
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(currentSessionFile.exists()).isFalse()
+    val persistedPrevious =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedPrevious.sessionId).isEqualTo(firstInitSession.sessionId)
+  }
+
+  @Test
+  fun `failed move in persistCurrentSession keeps the last run's session for a later move`() {
+    val cache = fixture.getSUT()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    // a non-empty directory where the previous session file belongs makes the move fail
+    assertTrue(File(previousSessionFile, "blocker").mkdirs())
+
+    cache.persistCurrentSession(createSession())
+
+    assertThat(currentSessionFile.readText()).isEqualTo("session content from last run")
+
+    assertTrue(previousSessionFile.deleteRecursively())
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(currentSessionFile.exists()).isFalse()
+    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
+  }
+
+  @Test
   fun `SessionStart before the init-time move keeps both sessions in place`() {
     val cache = fixture.getSUT()
     val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)

@@ -544,6 +544,11 @@ public final class Sentry {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private static void movePreviousSession(final @NotNull SentryOptions options) {
+    // a re-init can reuse the cache of the last init, so let this init move the session file again
+    final IEnvelopeCache cache = options.getEnvelopeDiskCache();
+    if (cache instanceof EnvelopeCache) {
+      ((EnvelopeCache) cache).resetPreviousSessionMove();
+    }
     // enqueue a task to move previous unfinished session to its own file
     try {
       options.getExecutorService().submit(new MovePreviousSession(options));

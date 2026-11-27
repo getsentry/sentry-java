@@ -149,8 +149,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         final @Nullable Session startingSession = readSessionFromEnvelope(envelope);
         if (!isAlreadyPersisted(startingSession)) {
           moveCurrentToPreviousSession(currentSessionFile, previousSessionFile);
-          if (startingSession != null) {
-            writeSessionToDisk(currentSessionFile, startingSession);
+          if (startingSession != null && writeSessionToDisk(currentSessionFile, startingSession)) {
+            // even if the move failed, the file now holds this session and not the last run's
+            previousSessionMoved = true;
           }
         }
       }
@@ -401,6 +402,13 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       // overwriting it
       if (!previousSessionMoved) {
         moveCurrentToPreviousSession(currentSessionFile, getPreviousSessionFile(directoryPath));
+        if (!previousSessionMoved) {
+          options
+              .getLogger()
+              .log(WARNING, "Previous session could not be moved, not overwriting it.");
+          lastPersistedSessionId = null;
+          return;
+        }
       }
       final boolean written = writeSessionToDisk(currentSessionFile, session);
       // a failed write truncates the file, so there is no good copy left to protect
@@ -519,8 +527,21 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /**
-   * Moves the last run's session to the previous session file. Does nothing if this process already
-   * did that, because the current session file then holds the live session.
+   * Makes the next {@link #movePreviousSession(File, File)} move the current session file again.
+   * The SDK calls this on every init, because a re-init can reuse this cache while the current
+   * session file still holds the session of the last initialization.
+   */
+  @ApiStatus.Internal
+  public void resetPreviousSessionMove() {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      previousSessionMoved = false;
+    }
+  }
+
+  /**
+   * Moves the last run's session to the previous session file. Does nothing if that already
+   * happened since the last {@link #resetPreviousSessionMove()}, because the current session file
+   * then holds the live session.
    */
   public void movePreviousSession(
       final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
@@ -538,8 +559,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   private void moveCurrentToPreviousSession(
       final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
-      previousSessionMoved = true;
       if (!currentSessionFile.exists()) {
+        previousSessionMoved = true;
         return;
       }
 
@@ -556,6 +577,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
       try {
         final boolean renamed = currentSessionFile.renameTo(previousSessionFile);
+        // a failed rename leaves the last run's session in place, so a later move can retry it
+        previousSessionMoved = renamed;
         if (!renamed) {
           options.getLogger().log(WARNING, "Unable to move current session to previous session.");
         }
