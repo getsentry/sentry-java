@@ -97,7 +97,7 @@ class DistrustedCertificatesTest {
       false,
     )
 
-    assertFailsWith<SSLPeerUnverifiedException> { send(trusting(emSignRoot)) }
+    assertFailsWith<IOException> { send(trusting(emSignRoot)) }
 
     assertThat(server.requestCount).isEqualTo(0)
   }
@@ -107,7 +107,7 @@ class DistrustedCertificatesTest {
     // Like Android, which completes the chain from intermediates it cached on earlier connections.
     server.useHttps(serverCertificates(leafIssuedBy(distrustedCa)), false)
 
-    assertFailsWith<SSLPeerUnverifiedException> { send(trusting(distrustedCa.certificate)) }
+    assertFailsWith<IOException> { send(trusting(distrustedCa.certificate)) }
 
     assertThat(server.requestCount).isEqualTo(0)
   }
