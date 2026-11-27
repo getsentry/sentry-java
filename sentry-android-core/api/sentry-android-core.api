@@ -832,7 +832,7 @@ public final class io/sentry/android/core/hang/HangCollectorSetup {
 }
 
 public abstract interface class io/sentry/android/core/hang/HangDataCollector {
-	public abstract fun sample ()Ljava/lang/Object;
+	public abstract fun sample (Lio/sentry/time/Timestamp;)Ljava/lang/Object;
 }
 
 public final class io/sentry/android/core/hang/HangManager : io/sentry/android/core/AppState$AppStateListener, io/sentry/android/core/hang/Metronome {
@@ -934,9 +934,9 @@ public abstract interface class io/sentry/android/core/hang/ThreadPoster {
 }
 
 public final class io/sentry/android/core/hang/ThreadSampleCollector : io/sentry/android/core/hang/HangDataCollector {
-	public fun <init> (Lio/sentry/time/EpochClock;Ljava/lang/Thread;)V
-	public fun sample ()Lio/sentry/android/core/anr/AnrStackTrace;
-	public synthetic fun sample ()Ljava/lang/Object;
+	public fun <init> (Ljava/lang/Thread;)V
+	public fun sample (Lio/sentry/time/Timestamp;)Lio/sentry/android/core/anr/AnrStackTrace;
+	public synthetic fun sample (Lio/sentry/time/Timestamp;)Ljava/lang/Object;
 }
 
 public abstract class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {

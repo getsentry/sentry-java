@@ -4,6 +4,10 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.SentryLevel
 import io.sentry.android.core.anr.AnrStackTrace
+import io.sentry.time.AnchoredClock
+import io.sentry.time.EpochClock
+import io.sentry.time.TestMonotonicTicker
+import io.sentry.time.Timestamp
 import java.io.IOException
 import kotlin.test.Test
 import org.mockito.kotlin.any
@@ -25,7 +29,15 @@ class HangRecorderTest {
   private fun start(
     vararg listeners: FakeListener,
     collectors: List<HangCollectorSetup<*>> = listOf(HangCollectorSetup(collector, writer, store)),
-  ): HangRecorder = HangRecorder.start(listeners.toList(), collectors, 100, 5_000, logger)
+  ): HangRecorder =
+    HangRecorder.start(
+      listeners.toList(),
+      collectors,
+      AnchoredClock.create(EpochClock { Timestamp.ofEpochNanos(0) }, TestMonotonicTicker()),
+      100,
+      5_000,
+      logger,
+    )
 
   private fun HangRecord.values() = stackTraces.map { it.stack.single().methodName }
 
@@ -170,7 +182,7 @@ class HangRecorderTest {
     var sampleCount = 0
     var returnNull = false
 
-    override fun sample(): String? {
+    override fun sample(timestamp: Timestamp): String? {
       sampleCount++
       return if (returnNull) null else "$prefix$sampleCount"
     }
