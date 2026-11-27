@@ -10,6 +10,7 @@
 
 ### Breaking Changes
 
+- Move third-party-derived implementation classes to upstream-specific `io.sentry.vendor.*` packages. Code importing the old implementation packages must update its imports ([#6796](https://github.com/getsentry/sentry-java/pull/6796))
 - Android: Narrow the SDK's consumer keep rules, so R8 can optimize more of your app ([#6787](https://github.com/getsentry/sentry-java/pull/6787))
   - Members of `io.sentry` enums are no longer kept. Enum constants can be renamed or removed.
   - Only the name and no-arg constructor of `SentryAndroidOptions` are kept, instead of every member of every `SentryOptions` subclass.
