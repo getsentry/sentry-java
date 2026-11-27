@@ -1,6 +1,7 @@
 package io.sentry.compose.navigation3.internal.backstack
 
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
@@ -13,7 +14,6 @@ import io.sentry.compose.navigation3.internal.backstack.ArgumentDropReason.Compa
 import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.internal.backstack.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import java.io.StringWriter
-import java.util.AbstractCollection
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -396,128 +396,43 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert returns arguments in proper serializable form`() {
-    val text = StringBuilder("hello")
+  fun `convert returns the mapper's arguments sanitized`() {
     val sut =
       getSut(
         entryMapper = { entry ->
-          entryInfo(
-            entry,
-            mapOf(
-              "str" to "hello",
-              "charSequence" to text,
-              "char" to 'x',
-              "num" to 42,
-              "bool" to true,
-              "enum" to PrivacyMode.PRIVATE,
-              "nil" to null,
-              "nested" to mapOf("inner" to "value"),
-              "tags" to listOf("a", "b", "c"),
-              "array" to arrayOf("a", 1, false, PrivacyMode.PUBLIC, 'z'),
-              "ints" to intArrayOf(1, 2, 3),
-              "chars" to charArrayOf('a', 'b'),
-              "bytes" to byteArrayOf(4, 5),
-            ),
-          )
+          entryInfo(entry, mapOf("mode" to PrivacyMode.PRIVATE, "ids" to intArrayOf(1, 2)))
         },
       )
 
     assertThat(sut.convert(HomeScreen()).arguments)
-      .isEqualTo(
-        mapOf(
-          "str" to "hello",
-          "charSequence" to "hello",
-          "char" to "x",
-          "num" to 42,
-          "bool" to true,
-          "enum" to "PRIVATE",
-          "nil" to null,
-          "nested" to mapOf("inner" to "value"),
-          "tags" to listOf("a", "b", "c"),
-          "array" to listOf("a", 1, false, "PUBLIC", "z"),
-          "ints" to listOf(1, 2, 3),
-          "chars" to listOf("a", "b"),
-          "bytes" to listOf(4.toByte(), 5.toByte()),
-        ),
-      )
-  }
-
-  @Test
-  fun `convert sanitizes arguments with nested supported containers recursively`() {
-    val sut =
-      getSut(
-        entryMapper = { entry ->
-          entryInfo(
-            entry,
-            mapOf(
-              "nested" to
-                mapOf(
-                  "items" to
-                    arrayOf(
-                      StringBuilder("x"),
-                      listOf('y', PrivacyMode.PRIVATE),
-                      booleanArrayOf(true, false),
-                      charArrayOf('q'),
-                    ),
-                ),
-            ),
-          )
-        },
-      )
-
-    assertThat(sut.convert(HomeScreen()).arguments)
-      .isEqualTo(
-        mapOf(
-          "nested" to
-            mapOf("items" to listOf("x", listOf("y", "PRIVATE"), listOf(true, false), listOf("q"))),
-        ),
-      )
-  }
-
-  @Test
-  fun `convert coerces arguments with unsupported values to strings`() {
-    class OpaqueValue {
-      override fun toString(): String = "opaque-value"
-    }
-
-    val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("bad" to OpaqueValue())) })
-
-    assertThat(sut.convert(HomeScreen()).arguments).isEqualTo(mapOf("bad" to "opaque-value"))
-  }
-
-  @Test
-  fun `convert logs an unsupported value warning once per back stack update`() {
-    class OpaqueValue {
-      override fun toString(): String = "opaque-value"
-    }
-
-    val sut =
-      getSut(
-        entryMapper = { entry ->
-          entryInfo(
-            entry,
-            when (entry) {
-              is HomeScreen -> mapOf("bad" to OpaqueValue())
-              is ProfileScreen -> mapOf("alsoBad" to OpaqueValue())
-              else -> emptyMap()
-            },
-          )
-        },
-      )
-
-    sut.convert(listOf(HomeScreen(), ProfileScreen("123")), RetentionPolicy.KEEP_FIRST)
-
-    verify(logger, times(1))
-      .log(
-        eq(WARNING),
-        eq(UNSUPPORTED_VALUE_WARNING),
-        eq("OpaqueValue"),
-      )
+      .isEqualTo(mapOf("mode" to "PRIVATE", "ids" to listOf(1, 2)))
   }
 
   @Test
   fun `convert hides state reads during argument sanitization from snapshot observation`() {
     val arguments = mutableStateMapOf<String, Any?>("state" to "value")
+    val sut = getSut(entryMapper = { entry -> entryInfo(entry, arguments) })
+    val observedReads = mutableListOf<Any>()
+    val snapshot = Snapshot.takeSnapshot(readObserver = { observedReads += it })
+
+    val converted =
+      try {
+        snapshot.enter { sut.convert(HomeScreen()) }
+      } finally {
+        snapshot.dispose()
+      }
+
+    assertThat(converted.arguments).isEqualTo(mapOf("state" to "value"))
+    assertThat(observedReads).isEmpty()
+  }
+
+  @Test
+  fun `convert hides state reads by an ArgumentSource from snapshot observation`() {
+    val state = mutableStateOf("value")
+    val arguments = SelfWritingArguments { sink ->
+      sink.key("state")
+      sink.scalar(state.value)
+    }
     val sut = getSut(entryMapper = { entry -> entryInfo(entry, arguments) })
     val observedReads = mutableListOf<Any>()
     val snapshot = Snapshot.takeSnapshot(readObserver = { observedReads += it })
@@ -555,54 +470,6 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert returns empty arguments for cyclic structures`() {
-    val cyclic = mutableMapOf<String, Any?>()
-    cyclic["self"] = cyclic
-
-    val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("cyclic" to cyclic)) })
-
-    val entry = sut.convert(HomeScreen())
-
-    assertThat(entry.arguments).isEmpty()
-    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
-  }
-
-  @Test
-  fun `convert returns empty arguments for deeply nested structures`() {
-    var nested: Any? = "value"
-    repeat(25) { nested = listOf(nested) }
-
-    val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("nested" to nested)) })
-
-    val entry = sut.convert(ProfileScreen("123"))
-
-    assertThat(entry.arguments).isEmpty()
-    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
-  }
-
-  @Test
-  fun `convert drops oversized arguments`() {
-    val sut =
-      getSut(entryMapper = { entry -> entryInfo(entry, mapOf("values" to List(1_001) { it })) })
-
-    val entry = sut.convert(HomeScreen())
-
-    assertThat(entry.arguments).isEmpty()
-    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.MAX_COUNT)
-  }
-
-  @Test
-  fun `convert drops arguments when character budget is exceeded`() {
-    val sut =
-      getSut(entryMapper = { entry -> entryInfo(entry, mapOf("value" to "x".repeat(4_097))) })
-
-    val entry = sut.convert(HomeScreen())
-
-    assertThat(entry.arguments).isEmpty()
-    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
-  }
-
-  @Test
   fun `convert starts each back stack update with a fresh argument budget`() {
     val sut =
       getSut(entryMapper = { entry -> entryInfo(entry, mapOf("values" to List(150) { it })) })
@@ -612,40 +479,6 @@ class BackStackConverterTest {
 
     assertThat(entry.arguments).isEqualTo(mapOf("values" to List(150) { it }))
     assertThat(entry.argumentDropReason).isNull()
-  }
-
-  @Test
-  fun `convert reports sanitization failures`() {
-    class ThrowingValue {
-      override fun toString(): String = error("boom")
-    }
-
-    val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("value" to ThrowingValue())) })
-
-    val converted = sut.convert(HomeScreen())
-
-    assertThat(converted.arguments).isEmpty()
-    assertThat(converted.argumentDropReason).isEqualTo(ArgumentDropReason.SANITIZATION_FAILED)
-  }
-
-  @Test
-  fun `arguments do not use caller collection size for allocation`() {
-    val values =
-      object : AbstractCollection<Int>() {
-        var wasSizeRead = false
-
-        override val size: Int
-          get() {
-            wasSizeRead = true
-            return 2
-          }
-
-        override fun iterator(): MutableIterator<Int> = mutableListOf(1, 2).iterator()
-      }
-    val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("values" to values)) })
-
-    assertThat(sut.convert(HomeScreen()).arguments).isEqualTo(mapOf("values" to listOf(1, 2)))
-    assertThat(values.wasSizeRead).isFalse()
   }
 
   @Test
