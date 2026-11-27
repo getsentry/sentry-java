@@ -8,7 +8,6 @@ import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.internal.contract.NAVIGATION_OP
 import io.sentry.compose.navigation3.internal.contract.NAVIGATION_TRANSACTION_ORIGIN
-import io.sentry.compose.navigation3.internal.contract.TRANSACTION_ARGUMENTS_KEY
 import io.sentry.protocol.App
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.TransactionNameSource
@@ -44,7 +43,7 @@ internal class NavTransactionRequest(
     /** Creates a request whose transaction options are read when each transaction starts. */
     fun forDestination(
       name: String,
-      arguments: Map<String, Any?>,
+      data: Map<String, Any>,
       contexts: Map<String, Any>,
       viewNames: List<String>?,
       options: SentryOptions,
@@ -61,8 +60,7 @@ internal class NavTransactionRequest(
             it.origin = NAVIGATION_TRANSACTION_ORIGIN
           }
         },
-        data =
-          if (arguments.isNotEmpty()) mapOf(TRANSACTION_ARGUMENTS_KEY to arguments) else emptyMap(),
+        data = data,
         contexts = contexts,
         viewNames = viewNames,
       )
