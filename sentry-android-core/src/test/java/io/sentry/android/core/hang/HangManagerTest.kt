@@ -679,6 +679,23 @@ class HangManagerTest {
   }
 
   @Test
+  fun `a second suspicious during an unrecorded hang does not ask the subscribers again`() {
+    listener.request = null
+    startInForeground()
+    openHangInTick(300)
+    assertThat(listener.started).isEqualTo(1)
+
+    signal.report(HangSignal.State.SUSPICIOUS, 0)
+    assertThat(listener.started).isEqualTo(1)
+
+    signal.report(HangSignal.State.IDLE, 0)
+    signal.report(HangSignal.State.SUSPICIOUS, 0)
+    sdkExecutor.runAll()
+    assertThat(listener.started).isEqualTo(2)
+    assertThat(records).isEmpty()
+  }
+
+  @Test
   fun `idle without an open hang is ignored`() {
     startInForeground()
 

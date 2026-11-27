@@ -12,6 +12,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Records one hang: asks the listeners what they need, samples the collectors into the record, and
  * writes the samples to the stores.
+ *
+ * <p>The hang manager has one recorder for each open hang, so it can tell that a hang is open. If
+ * no listener asks for a record, the recorder samples nothing and gives no record.
  */
 final class HangRecorder {
 
@@ -43,9 +46,9 @@ final class HangRecorder {
    *
    * @param startTimeMs the start of the hang, as a monotonic time in milliseconds
    * @param startTimestampMs the start of the hang, as Unix time in milliseconds
-   * @return null if no listener asks for a record
+   * @return the recorder of this hang, which samples nothing if no listener asks for a record
    */
-  static @Nullable HangRecorder start(
+  static @NotNull HangRecorder start(
       final @NotNull Collection<HangRecordingListener> subscriptions,
       final @NotNull List<HangCollectorSetup<?>> collectors,
       final long startTimeMs,
@@ -62,15 +65,17 @@ final class HangRecorder {
         }
       }
     }
-    if (listeners.isEmpty()) {
-      return null;
-    }
     final @NotNull HangRecorder recorder =
         new HangRecorder(collectors, listeners, logger, startTimeMs, startTimestampMs, persist);
     if (persist) {
       recorder.clearStores();
     }
     return recorder;
+  }
+
+  /** Whether a listener asked for the record of this hang. */
+  boolean isRecording() {
+    return !listeners.isEmpty();
   }
 
   /** The start of the hang, as a monotonic time in milliseconds. */
@@ -85,7 +90,7 @@ final class HangRecorder {
   void sample(final int maxSamples) {
     // Stop sampling at the cap instead of rotating out samples: the early ones show how the hang
     // began.
-    if (samplingTicks >= maxSamples) {
+    if (!isRecording() || samplingTicks >= maxSamples) {
       return;
     }
     samplingTicks++;
