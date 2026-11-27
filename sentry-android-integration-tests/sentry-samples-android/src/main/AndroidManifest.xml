@@ -376,6 +376,9 @@
       android:name="io.sentry.anr.profiling.sample-rate"
       android:value="1.0" />
     <meta-data
+      android:name="io.sentry.anr.non-fatal.sample-rate"
+      android:value="1.0" />
+    <meta-data
       android:name="io.sentry.anr.enable-fingerprinting"
       android:value="true" />
     <!-- Enable feedback on shake globally -->
