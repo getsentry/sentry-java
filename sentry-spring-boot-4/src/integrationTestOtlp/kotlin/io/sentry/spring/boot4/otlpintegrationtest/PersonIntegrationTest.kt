@@ -14,6 +14,7 @@ import io.sentry.test.hasSpanWithOpAndDescription
 import io.sentry.test.logs
 import io.sentry.test.profileChunk
 import io.sentry.test.transaction
+import io.sentry.util.sql.SqlQueryAnalyzer
 import kotlin.test.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -113,10 +114,17 @@ class PersonIntegrationTest : IntegrationTest() {
     val transaction =
       server.awaitEnvelope { it.transaction()?.transaction == "POST /person/" }.transaction()!!
     assertThat(transaction.hasSpanWithOp("PersonService.create")).isTrue()
+    val insert =
+      SqlQueryAnalyzer.analyze(
+        "insert into person (firstName, lastName) values (?, ?)",
+        "hsqldb",
+        32 * 1024,
+      )
     assertThat(
         transaction.hasSpanWithOpAndDescription(
           "db.query",
-          "insert into person (firstName, lastName) values (?, ?)",
+          insert.queryText!!,
+          mapOf("db.query.summary" to insert.querySummary!!, "db.system.name" to "hsqldb"),
         ),
       )
       .isTrue()

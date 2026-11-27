@@ -48,6 +48,38 @@ class EnvelopeMatchersTest {
   }
 
   @Test
+  fun `matches span data on any span with the op and description`() {
+    val transaction = Sentry.startTransaction("name", "http.server")
+    for (system in listOf("postgresql", "mysql")) {
+      transaction.startChild("db.query", "select 1").apply {
+        setData("db.system.name", system)
+        finish()
+      }
+    }
+    transaction.finish()
+    Sentry.flush(5000)
+
+    val received = server.awaitEnvelope { it.transaction() != null }.transaction()!!
+
+    assertThat(
+        received.hasSpanWithOpAndDescription(
+          "db.query",
+          "select 1",
+          mapOf("db.system.name" to "mysql"),
+        ),
+      )
+      .isTrue()
+    assertThat(
+        received.hasSpanWithOpAndDescription(
+          "db.query",
+          "select 1",
+          mapOf("db.system.name" to "h2"),
+        ),
+      )
+      .isFalse()
+  }
+
+  @Test
   fun `matches an event by exception message and feature flag`() {
     Sentry.addFeatureFlag("my-flag", true)
     Sentry.captureException(RuntimeException("boom"))

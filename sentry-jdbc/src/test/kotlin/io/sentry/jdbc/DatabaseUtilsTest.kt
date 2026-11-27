@@ -1,5 +1,6 @@
 package io.sentry.jdbc
 
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -109,7 +110,14 @@ class DatabaseUtilsTest {
   fun `detects db system for mongo no db`() {
     val details = DatabaseUtils.parse("jdbc:mongo://some-server.com:1234")
     assertEquals("mongo", details.dbSystem)
-    assertEquals("", details.dbName)
+    assertNull(details.dbName)
+  }
+
+  @Test
+  fun `detects db system for postgres without database`() {
+    val details = DatabaseUtils.parse("jdbc:postgresql://localhost:5432/")
+    assertEquals("postgresql", details.dbSystem)
+    assertNull(details.dbName)
   }
 
   @Test
@@ -263,5 +271,25 @@ class DatabaseUtilsTest {
       )
     assertEquals("sqlserver", details.dbSystem)
     assertEquals("my_database", details.dbName)
+  }
+
+  @Test
+  fun `keeps connection properties out of file-based database names`() {
+    // url to expected db.name; the properties may hold the database key or password
+    val cases =
+      listOf(
+        "jdbc:sqlite:sample.db?journal_mode=WAL&password=secret" to "sample.db",
+        "jdbc:sqlite:/data/app.db?key=secret" to "/data/app.db",
+        "jdbc:sqlite:file:/data/app.db?key=secret#frag" to "/data/app.db",
+        "jdbc:sqlite:file:/data/app.db#secret" to "/data/app.db",
+        "jdbc:sqlite:file::memory:?cache=shared" to null,
+        "jdbc:p6spy:sqlite:sample.db?password=secret" to "sample.db",
+        "jdbc:hsqldb:file:db?password=secret" to "db",
+        "jdbc:h2:file:/data/app?key=secret" to "/data/app",
+      )
+
+    cases.forEach { (url, dbName) ->
+      assertWithMessage(url).that(DatabaseUtils.parse(url).dbName).isEqualTo(dbName)
+    }
   }
 }
