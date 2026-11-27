@@ -55,7 +55,7 @@ public final class CookieUtils {
         filteredHeaders.add(filteredHeader);
       }
     }
-    return filteredHeaders;
+    return filteredHeaders.isEmpty() ? null : filteredHeaders;
   }
 
   public static @Nullable String filterCookies(

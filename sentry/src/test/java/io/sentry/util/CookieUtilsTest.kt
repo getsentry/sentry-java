@@ -307,6 +307,30 @@ class CookieUtilsTest {
   }
 
   @Test
+  fun `empty cookie header list returns null`() {
+    assertThat(
+        CookieUtils.filterCookiesFromHeader(
+          emptyList(),
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        ),
+      )
+      .isNull()
+  }
+
+  @Test
+  fun `empty cookie header enumeration returns null`() {
+    assertThat(
+        CookieUtils.filterCookiesFromHeader(
+          java.util.Collections.enumeration(emptyList()),
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        ),
+      )
+      .isNull()
+  }
+
+  @Test
   fun `cookie header filter processes every header value`() {
     assertThat(
         CookieUtils.filterCookiesFromHeader(
