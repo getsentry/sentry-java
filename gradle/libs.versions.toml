@@ -53,7 +53,7 @@ springboot4 = "4.2.0"
 springKafka2 = "2.8.11"
 springKafka3 = "3.3.5"
 sqldelight = "2.4.1"
-tomcat9 = "9.0.108"
+tomcat9 = "11.0.29"
 tomcat11 = "11.0.27"
 vanniktechMavenPublish = "0.37.0"
 
@@ -269,7 +269,7 @@ gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", versio
 java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref = "java8Signature" }
 
 # tomcat libraries
-tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "8.5.100" }
+tomcat85-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version = "11.0.29" }
 tomcat9-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat9" }
 tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version.ref = "tomcat9" }
 tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat9" }
