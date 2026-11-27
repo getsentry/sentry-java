@@ -9,6 +9,7 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
+import io.sentry.util.sql.SqlSpanData
 
 private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
 
@@ -22,6 +23,7 @@ private val EMPTY_NANO_TIME = SentryNanotimeDate(0, 0L)
 internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: DbMetadata) {
 
   private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
+  private val dbSystemName = SqlSpanData.toDbSystemName(dbMetadata.system)
 
   /**
    * Returns a timestamp in nanoseconds for use with [record]. Timestamp is ns-precise if the active
@@ -37,7 +39,10 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
       // ...otherwise fall back to millisecond precision + allocate.
       ?: scopes.options.dateProvider.now().nanoTimestamp()
 
-  /** Records a `db.sql.query` span. */
+  /**
+   * Records a `db.sql.query` span with the sanitized [sql]. Does nothing, and doesn't analyze
+   * [sql], if there is no active parent span.
+   */
   fun record(
     sql: String,
     startTimestampNanos: Long,
@@ -45,12 +50,18 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
     status: SpanStatus,
     throwable: Throwable? = null,
   ) {
-    val parent = scopes.span ?: return
+    val parent = scopes.span
+    if (parent == null || parent.isNoOp) {
+      return
+    }
     val startTimestamp = SentryLongDate(startTimestampNanos)
     val endTimestamp = SentryLongDate(startTimestampNanos + durationNanos)
+    val queryData =
+      SqlSpanData.analyze(sql, dbMetadata.system, MAX_QUERY_TEXT_LENGTH, scopes.options.logger)
 
-    parent.startChild("db.sql.query", sql, startTimestamp).apply {
+    parent.startChild("db.sql.query", queryData.description, startTimestamp).apply {
       spanContext.origin = SQLITE_TRACE_ORIGIN
+      queryData.applyTo(this)
       throwable?.let { this.throwable = it }
 
       val isMainThread = scopes.options.threadChecker.isMainThread
@@ -60,8 +71,12 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
         setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
       }
 
-      dbMetadata.name?.let { setData(SpanDataConvention.DB_NAME_KEY, it) }
+      dbMetadata.name?.let {
+        setData(SpanDataConvention.DB_NAME_KEY, it)
+        setData(SpanDataConvention.DB_NAMESPACE_KEY, it)
+      }
       setData(SpanDataConvention.DB_SYSTEM_KEY, dbMetadata.system)
+      dbSystemName?.let { setData(SpanDataConvention.DB_SYSTEM_NAME_KEY, it) }
       finish(status, endTimestamp)
     }
   }

@@ -73,6 +73,25 @@ class DbMetadataTest {
   }
 
   @Test
+  fun `dbMetadataFromFileName drops URI parameters from the db name`() {
+    // A driver that opens URI filenames reads parameters such as an encryption key after ? or #.
+    listOf(
+        "file:/data/data/com.example/databases/tracks.db?key=Zq9xK7" to "tracks.db",
+        "/data/data/com.example/databases/tracks.db#Zq9xK7" to "tracks.db",
+        "tracks.db?mode=ro#Zq9xK7" to "tracks.db",
+        "tracks.db#a?Zq9xK7" to "tracks.db",
+        "?key=Zq9xK7" to null,
+      )
+      .forEach { (fileName, name) ->
+        assertEquals(
+          DbMetadata(name = name, system = DB_SYSTEM_SQLITE),
+          dbMetadataFromFileName(fileName),
+          fileName,
+        )
+      }
+  }
+
+  @Test
   fun `dbMetadataFromFileName returns sqlite system and unknown db name for empty fileName`() {
     assertEquals(DbMetadata(name = null, system = DB_SYSTEM_SQLITE), dbMetadataFromFileName(""))
   }

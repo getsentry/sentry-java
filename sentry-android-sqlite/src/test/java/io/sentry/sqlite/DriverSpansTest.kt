@@ -1,7 +1,10 @@
 package io.sentry.sqlite
 
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.IScopes
 import io.sentry.ISpan
+import io.sentry.NoOpSpan
 import io.sentry.SentryDateProvider
 import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
@@ -10,7 +13,9 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.util.sql.SqlQueryAnalyzer
 import io.sentry.util.thread.IThreadChecker
+import io.sentry.vendor.otel.sql.OtelSqlSanitizer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -18,6 +23,8 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.mockito.Mockito
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
@@ -130,6 +137,83 @@ class DriverSpansTest {
   }
 
   @Test
+  fun `record method describes the span with the sanitized query`() {
+    // The analyzer treats double quotes in SQLite as strings today; the expected text follows if
+    // that changes.
+    val sql = "SELECT a FROM t WHERE p = \"secret\""
+    val expected = SqlQueryAnalyzer.analyze(sql, "sqlite", LIMIT)
+    assertThat(expected.querySummary).isNotNull()
+    val sut = fixture.getSut(fileName = "tracks.db")
+
+    sut.record(sql, sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isEqualTo(expected.queryText)
+    assertThat(span.data)
+      .containsAtLeast(
+        SpanDataConvention.DB_QUERY_TEXT_KEY,
+        expected.queryText,
+        SpanDataConvention.DB_QUERY_SUMMARY_KEY,
+        expected.querySummary,
+      )
+  }
+
+  @Test
+  fun `record method limits the sanitized query to 8 KiB`() {
+    val sql = "SELECT a FROM t WHERE " + (0 until 1000).joinToString(" OR ") { "c$it IS NULL" }
+    val expected = SqlQueryAnalyzer.analyze(sql, "sqlite", LIMIT).queryText
+    assertThat(expected).isNotEqualTo(SqlQueryAnalyzer.analyze(sql, "sqlite", 32 * 1024).queryText)
+    val sut = fixture.getSut(fileName = "tracks.db")
+
+    sut.record(sql, sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isEqualTo(expected)
+    assertThat(span.data).containsEntry(SpanDataConvention.DB_QUERY_TEXT_KEY, expected)
+  }
+
+  @Test
+  fun `record method keeps the raw query off the span when the analysis fails`() {
+    val sql = "SELECT * FROM users WHERE email = 'Zq9xK7@x.io'"
+    val sut = fixture.getSut(fileName = "tracks.db")
+
+    Mockito.mockStatic(OtelSqlSanitizer::class.java).use { sanitizer ->
+      sanitizer
+        .`when`<Any> { OtelSqlSanitizer.sanitize(any(), any()) }
+        .thenThrow(IllegalStateException("lexer bug"))
+
+      sut.record(sql, sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+    }
+
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isNull()
+    assertThat(span.data.keys)
+      .containsNoneOf(
+        SpanDataConvention.DB_QUERY_TEXT_KEY,
+        SpanDataConvention.DB_QUERY_SUMMARY_KEY,
+        SpanDataConvention.DB_STORED_PROCEDURE_NAME_KEY,
+      )
+    span.data.forEach { (key, value) ->
+      assertWithMessage(key).that(value.toString()).doesNotContain("Zq9xK7")
+    }
+    assertThat(span.data).containsEntry(SpanDataConvention.DB_SYSTEM_KEY, "sqlite")
+  }
+
+  @Test
+  fun `record method does not analyze the query without an active parent span`() {
+    listOf(null, NoOpSpan.getInstance()).forEach { parent ->
+      val sut = fixture.getSut()
+      whenever(fixture.scopes.span).thenReturn(parent)
+
+      Mockito.mockStatic(OtelSqlSanitizer::class.java).use { sanitizer ->
+        sut.record("SELECT a FROM t", 0L, 1_000_000, SpanStatus.OK)
+
+        sanitizer.verifyNoInteractions()
+      }
+    }
+  }
+
+  @Test
   fun `record method sets finishDate equal to startDate + durationNanos`() {
     val sut = fixture.getSut()
     val start = sut.startTimestamp()
@@ -163,10 +247,12 @@ class DriverSpansTest {
     val span = fixture.sentryTracer.children.first()
     assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
     assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_NAME_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAMESPACE_KEY])
   }
 
   @Test
-  fun `record method sets db system only when fileName is the in-memory sentinel`() {
+  fun `record method sets db system but no db name when fileName is the in-memory sentinel`() {
     val sut = fixture.getSut(fileName = ":memory:")
     val start = sut.startTimestamp()
     sut.record("SELECT 1", start, 1_000_000, SpanStatus.OK)
@@ -174,6 +260,8 @@ class DriverSpansTest {
     val span = fixture.sentryTracer.children.first()
     assertEquals("in-memory", span.data[SpanDataConvention.DB_SYSTEM_KEY])
     assertNull(span.data[SpanDataConvention.DB_NAME_KEY])
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_NAME_KEY])
+    assertNull(span.data[SpanDataConvention.DB_NAMESPACE_KEY])
   }
 
   @Test
@@ -215,5 +303,9 @@ class DriverSpansTest {
     fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
     whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
     return DriverSpans.fromFileName(":memory:", fixture.scopes)
+  }
+
+  private companion object {
+    const val LIMIT = 8 * 1024
   }
 }
