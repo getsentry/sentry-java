@@ -332,6 +332,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private @Nullable Double anrProfilingSampleRate;
 
+  private @Nullable Double nonFatalAnrSampleRate;
+
+  private long nonFatalAnrThresholdMs = 700;
+
   private boolean enableAnrFingerprinting = true;
 
   private volatile @Nullable HangManager hangManager;
@@ -401,7 +405,11 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Sets ANR (Application Not Responding) to enabled or disabled on Debug mode Default is disabled
+   * Sets whether {@link AnrIntegration} (ANR v1, below Android 11) reports ANRs while a debugger is
+   * connected. Default is disabled.
+   *
+   * <p>Only ANR v1 uses this flag. Non-fatal ANR reporting and ANR profiling always ignore hangs
+   * while a debugger is connected.
    *
    * @param anrReportInDebug true for enabled and false for disabled
    */
@@ -1007,6 +1015,66 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
+  }
+
+  /**
+   * Returns the sample rate for reporting non-fatal ANRs: main-thread hangs that recover. A hang
+   * that does not recover is reported only as a fatal ANR.
+   *
+   * @return the non-fatal ANR sample rate, or {@code null} when reporting is disabled (default)
+   */
+  public @Nullable Double getNonFatalAnrSampleRate() {
+    return nonFatalAnrSampleRate;
+  }
+
+  /**
+   * Sets the sample rate for reporting non-fatal ANRs. The sampling decision is made for each hang.
+   *
+   * <p>Use {@code null} to disable (default). Values must be between {@code 0.0} and {@code 1.0}.
+   *
+   * @param nonFatalAnrSampleRate the sample rate, or {@code null} to disable
+   */
+  public void setNonFatalAnrSampleRate(final @Nullable Double nonFatalAnrSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(nonFatalAnrSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + nonFatalAnrSampleRate
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
+    }
+    this.nonFatalAnrSampleRate = nonFatalAnrSampleRate;
+  }
+
+  /**
+   * Returns the minimum duration in milliseconds a main-thread hang needs to be reported as a
+   * non-fatal ANR. Defaults to 700.
+   */
+  public long getNonFatalAnrThresholdMs() {
+    return nonFatalAnrThresholdMs;
+  }
+
+  /**
+   * Sets the minimum duration in milliseconds a main-thread hang needs to be reported as a
+   * non-fatal ANR. Defaults to 700. Only used if {@link #getNonFatalAnrSampleRate()} is set.
+   *
+   * <p>Detection starts after 300 ms, so a lower value behaves like 300 ms. A negative value is
+   * ignored.
+   *
+   * @param nonFatalAnrThresholdMs the threshold in milliseconds
+   */
+  public void setNonFatalAnrThresholdMs(final long nonFatalAnrThresholdMs) {
+    if (nonFatalAnrThresholdMs < 0) {
+      getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "The non-fatal ANR threshold %d ms is negative and is ignored.",
+              nonFatalAnrThresholdMs);
+      return;
+    }
+    this.nonFatalAnrThresholdMs = nonFatalAnrThresholdMs;
+  }
+
+  boolean isNonFatalAnrEnabled() {
+    return nonFatalAnrSampleRate != null && nonFatalAnrSampleRate > 0;
   }
 
   /**

@@ -232,6 +232,8 @@ final class ManifestMetadataReader {
   static final String SCREENSHOT_MASK_ALL_IMAGES = "io.sentry.screenshot.mask-all-images";
 
   static final String ANR_PROFILING_SAMPLE_RATE = "io.sentry.anr.profiling.sample-rate";
+  static final String NON_FATAL_ANR_SAMPLE_RATE = "io.sentry.anr.non-fatal.sample-rate";
+  static final String NON_FATAL_ANR_THRESHOLD_MS = "io.sentry.anr.non-fatal.threshold-ms";
 
   static final String ENABLE_ANR_FINGERPRINTING = "io.sentry.anr.enable-fingerprinting";
 
@@ -823,6 +825,20 @@ final class ManifestMetadataReader {
           if (anrProfilingSampleRate != -1) {
             options.setAnrProfilingSampleRate(anrProfilingSampleRate);
           }
+        }
+
+        if (options.getNonFatalAnrSampleRate() == null) {
+          final double nonFatalAnrSampleRate =
+              readDouble(metadata, logger, NON_FATAL_ANR_SAMPLE_RATE);
+          if (nonFatalAnrSampleRate != -1) {
+            options.setNonFatalAnrSampleRate(nonFatalAnrSampleRate);
+          }
+        }
+
+        final long nonFatalAnrThresholdMs =
+            readLong(metadata, logger, NON_FATAL_ANR_THRESHOLD_MS, -1);
+        if (nonFatalAnrThresholdMs != -1) {
+          options.setNonFatalAnrThresholdMs(nonFatalAnrThresholdMs);
         }
 
         options.setEnableAnrFingerprinting(

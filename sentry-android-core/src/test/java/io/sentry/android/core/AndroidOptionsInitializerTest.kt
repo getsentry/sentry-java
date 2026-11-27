@@ -1168,6 +1168,22 @@ class AndroidOptionsInitializerTest {
     assertNull(anrv1Integration)
   }
 
+  @Config(sdk = [30])
+  @Test
+  fun `NonFatalAnrIntegration added to integrations list for API 30 and above`() {
+    fixture.initSut(useRealContext = true)
+
+    assertNotNull(fixture.sentryOptions.integrations.firstOrNull { it is NonFatalAnrIntegration })
+  }
+
+  @Config(sdk = [29])
+  @Test
+  fun `NonFatalAnrIntegration not added to integrations list below API 30`() {
+    fixture.initSut(useRealContext = true)
+
+    assertNull(fixture.sentryOptions.integrations.firstOrNull { it is NonFatalAnrIntegration })
+  }
+
   @Test
   fun `MemoryLimiterIntegration added to integrations list for API 37 and above`() {
     val options = SentryAndroidOptions()
