@@ -13,6 +13,7 @@ plugins {
   id("io.sentry.jdk-target")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.ksp)
   alias(libs.plugins.sentry) apply false
   alias(libs.plugins.sqldelight)
