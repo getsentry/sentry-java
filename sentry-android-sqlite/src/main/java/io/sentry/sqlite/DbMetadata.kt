@@ -19,6 +19,12 @@ private const val IN_MEMORY_DB_FILENAME = ":memory:"
 /** Path separators matching [File.separatorChar][java.io.File.separatorChar]. */
 private val FILE_NAME_PATH_SEPARATORS = charArrayOf('/', '\\')
 
+/**
+ * Start of the query and fragment of a URI filename, which can hold parameters such as an
+ * encryption key.
+ */
+private val URI_PARAMETER_STARTS = charArrayOf('?', '#')
+
 internal data class DbMetadata(val name: String?, val system: String)
 
 /**
@@ -30,7 +36,9 @@ internal fun dbMetadataFromFileName(fileName: String): DbMetadata {
     return DbMetadata(name = null, system = DB_SYSTEM_IN_MEMORY)
   }
 
-  val trimmed = fileName.trimEnd { it in FILE_NAME_PATH_SEPARATORS }
+  val parametersStart = fileName.indexOfAny(URI_PARAMETER_STARTS)
+  val path = if (parametersStart >= 0) fileName.substring(0, parametersStart) else fileName
+  val trimmed = path.trimEnd { it in FILE_NAME_PATH_SEPARATORS }
   if (trimmed.isEmpty()) {
     return DbMetadata(name = null, system = DB_SYSTEM_SQLITE)
   }
