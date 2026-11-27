@@ -112,6 +112,20 @@ class ThreadHangSignalTest {
   }
 
   @Test
+  fun `a thread blocked from the start is detected also with a negative clock`() {
+    signal.stop()
+    ticker = TestMonotonicTicker(-HOURS.toNanos(30))
+    metronome = FakeMetronome(ticker)
+    signal = createSignal(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
+    val start = nowMs
+    signal.start(listener)
+
+    advanceAndTick(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS + 1)
+
+    assertThat(listener.changes).containsExactly(HangSignal.State.SUSPICIOUS to start)
+  }
+
+  @Test
   fun `suspicious threshold comes from the constructor`() {
     signal.stop()
     signal = createSignal(1_000)
