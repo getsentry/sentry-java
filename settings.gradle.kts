@@ -38,6 +38,11 @@ dependencyResolutionManagement {
         mavenCentral()
         mavenLocal()
     }
+    versionCatalogs {
+        create("matrixLibs") {
+            from(files("gradle/dependency-matrix.versions.toml"))
+        }
+    }
 }
 
 rootProject.name = "sentry-root"

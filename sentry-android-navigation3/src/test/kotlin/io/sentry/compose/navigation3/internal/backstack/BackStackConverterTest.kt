@@ -13,6 +13,7 @@ import io.sentry.compose.navigation3.internal.backstack.BackStackConverter.Reten
 import io.sentry.compose.navigation3.internal.contract.ArgumentDropReason
 import io.sentry.compose.navigation3.internal.contract.UNKNOWN_ENTRY_NAME
 import io.sentry.compose.navigation3.internal.contract.UnknownEntryReason
+import io.sentry.compose.navigation3.internal.contract.UnknownEntryReasonReporter
 import java.io.StringWriter
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -44,6 +45,13 @@ class BackStackConverterTest {
   private val defaultEntryMapper =
     BackStackEntryMapper<Any> { entry ->
       SentryBackStackEntry(entry::class.simpleName ?: "<unknown>")
+    }
+
+  /** Reports a reason and returns `null`, like a built-in mapper that can't name an entry. */
+  private val entryNotAnnotatedMapper =
+    BackStackEntryMapper<Any> {
+      UnknownEntryReasonReporter.report(UnknownEntryReason.ENTRY_NOT_ANNOTATED)
+      null
     }
 
   @Test
@@ -222,7 +230,7 @@ class BackStackConverterTest {
   }
 
   @Test
-  fun `convert() - returns unknown name with the unmapped reason if mapper returns null`() {
+  fun `convert() - returns unknown name with the unmapped reason if mapper returns null without a report`() {
     val converter = newConverter(entryMapper = { null })
 
     assertThat(converter.convert(HomeScreen()))
@@ -232,6 +240,60 @@ class BackStackConverterTest {
           unknownEntryReason = UnknownEntryReason.UNMAPPED,
         ),
       )
+  }
+
+  @Test
+  fun `convert() - returns unknown name with the reported reason if mapper reports one and returns null`() {
+    val converter = newConverter(entryMapper = entryNotAnnotatedMapper)
+
+    assertThat(converter.convert(HomeScreen()))
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          UNKNOWN_ENTRY_NAME,
+          unknownEntryReason = UnknownEntryReason.ENTRY_NOT_ANNOTATED,
+        ),
+      )
+  }
+
+  @Test
+  fun `convert() - returns the reported reason if a custom mapper forwards a reporting mapper's null`() {
+    val converter = newConverter(entryMapper = { entry -> entryNotAnnotatedMapper.map(entry) })
+
+    assertThat(converter.convert(HomeScreen()).unknownEntryReason)
+      .isEqualTo(UnknownEntryReason.ENTRY_NOT_ANNOTATED)
+  }
+
+  @Test
+  fun `convert() - returns a named entry if a custom mapper names an entry after a reporting mapper's null`() {
+    val converter =
+      newConverter(
+        entryMapper = { entry ->
+          entryNotAnnotatedMapper.map(entry) ?: SentryBackStackEntry("fallback")
+        },
+      )
+
+    assertThat(converter.convert(HomeScreen()))
+      .isEqualTo(NormalizedSentryBackStackEntry(name = "/fallback"))
+  }
+
+  @Test
+  fun `convert() - does not carry a reported reason over to the next back stack entry`() {
+    val converter =
+      newConverter(
+        entryMapper = { entry ->
+          when (entry) {
+            is HomeScreen -> entryNotAnnotatedMapper.map(entry)
+            else -> null
+          }
+        },
+      )
+
+    val routes =
+      converter.convert(listOf(HomeScreen(), ProfileScreen("123")), RetentionPolicy.KEEP_FIRST)
+
+    assertThat(routes.map { it.unknownEntryReason })
+      .containsExactly(UnknownEntryReason.ENTRY_NOT_ANNOTATED, UnknownEntryReason.UNMAPPED)
+      .inOrder()
   }
 
   @Test
@@ -251,6 +313,20 @@ class BackStackConverterTest {
         eq(MAPPER_FAILURE_WARNING),
         any<Throwable>(),
       )
+  }
+
+  @Test
+  fun `convert() - returns the mapping failed reason if mapper throws after reporting a reason`() {
+    val converter =
+      newConverter(
+        entryMapper = { entry ->
+          entryNotAnnotatedMapper.map(entry)
+          error("boom")
+        },
+      )
+
+    assertThat(converter.convert(HomeScreen()).unknownEntryReason)
+      .isEqualTo(UnknownEntryReason.MAPPING_FAILED)
   }
 
   @Test

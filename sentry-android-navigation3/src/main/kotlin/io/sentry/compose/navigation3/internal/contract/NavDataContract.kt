@@ -37,14 +37,57 @@ internal const val UNKNOWN_ENTRY_NAME = "/unknown"
  */
 internal enum class UnknownEntryReason(val serializedValue: String) {
 
+  // General reasons
+
   /** The mapper returned a name that was empty after trimming. */
   BLANK_NAME("blank_name"),
 
   /** The mapper threw. */
   MAPPING_FAILED("mapping_failed"),
 
-  /** The mapper returned `null`, i.e., it chose not to name the entry. */
-  UNMAPPED("unmapped");
+  /**
+   * The mapper returned `null` without a built-in mapper reporting why, i.e., a custom mapper chose
+   * not to name the entry.
+   */
+  UNMAPPED("unmapped"),
+
+  // Reasons specific to built-in mappers
+
+  /**
+   * A built-in mapper couldn't name the entry because the entry's class wasn't annotated with
+   * `@Serializable`.
+   */
+  ENTRY_NOT_ANNOTATED("entry_not_annotated"),
+
+  /**
+   * A built-in mapper couldn't name the entry because the entry's `@Serializable` class had one or
+   * more type parameters (of any sort).
+   *
+   * Looking up a generic type's serializer requires serializers for its type arguments, which the
+   * mapper can't recover from the entry at runtime.
+   *
+   * Detected from the entry class's generic signature. If R8 removes that signature, the entry will
+   * be assigned [SERIALIZER_NOT_FOUND] instead.
+   */
+  GENERIC_ENTRY_TYPE("generic_entry_type"),
+
+  /**
+   * A built-in mapper couldn't be created because the host app uses a missing or incompatible
+   * version of `kotlinx-serialization-core`.
+   */
+  KOTLINX_SERIALIZATION_VERSION("kotlinx_serialization_version"),
+
+  /**
+   * A built-in mapper couldn't name the entry because an exception was thrown while trying to read
+   * the entry's class's annotations, serializer, or descriptor.
+   */
+  SERIALIZER_ACCESS_THREW("serializer_access_threw"),
+
+  /**
+   * A built-in mapper can't name the entry because it couldn't find the entry class's serializer,
+   * e.g., because R8 removed what the lookup needs.
+   */
+  SERIALIZER_NOT_FOUND("serializer_not_found");
 
   companion object {
 
