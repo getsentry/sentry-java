@@ -213,7 +213,7 @@ public final class io/sentry/android/core/AppStartExtension$ExtendedAppStart {
 	public fun <init> (Lio/sentry/ITransaction;Lio/sentry/ISpan;)V
 }
 
-public final class io/sentry/android/core/AppState : java/io/Closeable {
+public final class io/sentry/android/core/AppState : io/sentry/android/core/AppStateProvider, java/io/Closeable {
 	public fun addAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/android/core/AppState;
@@ -444,6 +444,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
+	public fun getHangManager ()Lio/sentry/android/core/hang/HangManager;
 	public fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkAppHangTimeoutIntervalMillis ()J
@@ -514,6 +515,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
+	public fun setHangManager (Lio/sentry/android/core/hang/HangManager;)V
 	public fun setMemoryLimiterEnabled (Z)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
@@ -763,6 +765,14 @@ public final class io/sentry/android/core/anr/AnrProfileRotationHelper {
 	public static fun rotate ()V
 }
 
+public final class io/sentry/android/core/anr/AnrProfileStore : io/sentry/android/core/hang/HangSampleStore {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun add (Lio/sentry/android/core/anr/AnrStackTrace;)V
+	public synthetic fun add (Ljava/lang/Object;)V
+	public fun clear ()V
+	public fun close ()V
+}
+
 public final class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable, java/lang/Runnable {
 	public static final field POLLING_INTERVAL_MS J
 	public static final field THRESHOLD_ANR_MS J
@@ -809,6 +819,12 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static fun markTombstoneReported (Lio/sentry/SentryOptions;J)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
+}
+
+public final class io/sentry/android/core/hang/HandlerThreadPoster : io/sentry/android/core/hang/ThreadPoster {
+	public fun <init> (Landroid/os/Handler;)V
+	public fun post (Ljava/lang/Runnable;)V
+	public fun remove (Ljava/lang/Runnable;)V
 }
 
 public final class io/sentry/android/core/hang/HangCollectorSetup {

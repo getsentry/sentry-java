@@ -14,6 +14,7 @@ import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.hang.HangManager;
 import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
@@ -332,6 +333,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   private @Nullable Double anrProfilingSampleRate;
 
   private boolean enableAnrFingerprinting = true;
+
+  private volatile @Nullable HangManager hangManager;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -977,6 +980,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Sets the sample rate for capturing main-thread stack profiles when a foreground ANR is
    * detected. The profile is attached to the ANR event on the next app start.
    *
+   * <p>The sampling decision is made at each hang. Stack sampling starts after the main thread was
+   * blocked for 300 ms. An unsampled hang captures no stacks, unless another feature, such as
+   * non-fatal ANR reporting, needs them.
+   *
    * <p>Use {@code null} to disable ANR profiling (default). Values must be between {@code 0.0} and
    * {@code 1.0}.
    *
@@ -1000,6 +1007,20 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
+  }
+
+  /**
+   * The hang manager that the ANR integrations share. Null if {@link #getCacheDirPath()} was null
+   * at init.
+   */
+  @ApiStatus.Internal
+  public @Nullable HangManager getHangManager() {
+    return hangManager;
+  }
+
+  @ApiStatus.Internal
+  public void setHangManager(final @Nullable HangManager hangManager) {
+    this.hangManager = hangManager;
   }
 
   /**

@@ -5,358 +5,234 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.android.core.AppState
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.test.getProperty
-import io.sentry.time.TestMonotonicTicker
-import java.util.concurrent.TimeUnit.HOURS
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import kotlin.test.AfterTest
+import io.sentry.android.core.hang.HangManager
+import io.sentry.android.core.hang.HangRecordingListener
+import io.sentry.util.Random
+import io.sentry.util.SentryRandom
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 
 @RunWith(AndroidJUnit4::class)
 class AnrProfilingIntegrationTest {
 
   @get:Rule val tmpDir = TemporaryFolder()
 
-  private lateinit var mockScopes: IScopes
-  private lateinit var mockLogger: ILogger
+  private val scopes = mock<IScopes>()
+  private val mockLogger = mock<ILogger>()
+  private val manager = mock<HangManager>()
   private lateinit var options: SentryAndroidOptions
-  private lateinit var ticker: TestMonotonicTicker
 
   @BeforeTest
   fun setup() {
-    // A tick origin far from zero, as on any device that has been up a while. Starting at zero
-    // would let a reading taken against a different origin pass unnoticed.
-    ticker = TestMonotonicTicker(HOURS.toNanos(30))
-    mockScopes = mock()
-    mockLogger = mock()
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
     options =
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
+        isDebug = true
         anrProfilingSampleRate = 1.0
+        hangManager = manager
       }
-    AppState.getInstance().resetInstance()
   }
 
-  @AfterTest
-  fun cleanup() {
-    AppState.getInstance().resetInstance()
-  }
-
-  /** `SentryAndroidOptions` is final and has no ticker setter, so a spy supplies [ticker]. */
-  private fun withTestTicker(options: SentryAndroidOptions): SentryAndroidOptions =
-    spy(options).also { whenever(it.monotonicTicker).thenReturn(ticker) }
-
-  @Test
-  fun `onForeground starts monitoring thread`() {
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
-
-    integration.onForeground()
-    Thread.sleep(100) // Allow thread to start
-
-    val thread = integration.getProperty<Thread?>("thread")
-    assertNotNull(thread)
-    assertTrue(thread.isAlive)
-    assertEquals("AnrProfilingIntegration", thread.name)
+  private fun subscribed(): HangRecordingListener {
+    AnrProfilingIntegration().register(scopes, options)
+    val captor = argumentCaptor<HangRecordingListener>()
+    verify(manager).subscribe(captor.capture())
+    return captor.firstValue
   }
 
   @Test
-  fun `onBackground pauses monitoring thread`() {
+  fun `register subscribes to the hang manager when ANR profiling is enabled`() {
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
+
+    integration.register(scopes, options)
+
+    verify(manager, times(1)).subscribe(any())
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("AnrProfiling")
+  }
+
+  @Test
+  fun `register subscribes without a draw`() {
+    // Enabled, but only a draw of exactly 0.0 is below it.
+    options.anrProfilingSampleRate = Double.MIN_VALUE
+    val integration = AnrProfilingIntegration()
+
+    integration.register(scopes, options)
+
+    verify(manager, times(1)).subscribe(any())
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations).contains("AnrProfiling")
+  }
+
+  @Test
+  fun `sampled hang asks the hang manager to persist`() {
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted()!!.shouldPersist()).isTrue()
+  }
+
+  @Test
+  fun `unsampled hang needs nothing from the hang manager`() {
+    options.anrProfilingSampleRate = Double.MIN_VALUE
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted()).isNull()
+  }
+
+  @Test
+  fun `a new random number is drawn at each hang`() {
+    val draws = Random(SEED, 0).let { listOf(it.nextDouble(), it.nextDouble()) }
+    assertThat(draws[0]).isLessThan(draws[1])
+    options.anrProfilingSampleRate = draws[1]
+    val listener = subscribed()
+    SentryRandom.current().setSeed(SEED, 0)
+
+    assertThat(listener.onHangStarted()!!.shouldPersist()).isTrue()
+    assertThat(listener.onHangStarted()).isNull()
+  }
+
+  @Test
+  fun `sample rate is read again at each hang`() {
+    val listener = subscribed()
+    assertThat(listener.onHangStarted()!!.shouldPersist()).isTrue()
+
+    options.anrProfilingSampleRate = Double.MIN_VALUE
+
+    assertThat(listener.onHangStarted()).isNull()
+  }
+
+  @Test
+  fun `hang after the sample rate became null needs nothing from the hang manager`() {
+    val listener = subscribed()
+
+    options.anrProfilingSampleRate = null
+
+    assertThat(listener.onHangStarted()).isNull()
+  }
+
+  @Test
+  fun `sampled hang asks for a record`() {
+    val listener = subscribed()
+
+    assertThat(listener.onHangStarted()!!.shouldRecord()).isTrue()
+  }
+
+  @Test
+  fun `register does not subscribe when ANR profiling is disabled`() {
+    options.anrProfilingSampleRate = null
+    val integration = AnrProfilingIntegration()
+
+    integration.register(scopes, options)
+
+    verify(manager, never()).subscribe(any())
+  }
+
+  @Test
+  fun `register does not subscribe when cacheDirPath is null`() {
+    options.cacheDirPath = null
+    val integration = AnrProfilingIntegration()
+
+    integration.register(scopes, options)
+
+    verify(manager, never()).subscribe(any())
+    verify(mockLogger)
+      .log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set")
+  }
+
+  @Test
+  fun `register does nothing when there is no hang manager`() {
+    options.hangManager = null
+    val integration = AnrProfilingIntegration()
+
+    integration.register(scopes, options)
+    integration.close()
+
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain("AnrProfiling")
+  }
+
+  @Test
+  fun `register requires SentryAndroidOptions`() {
+    val integration = AnrProfilingIntegration()
+
+    assertFailsWith<IllegalArgumentException> { integration.register(scopes, SentryOptions()) }
+  }
+
+  @Test
+  fun `close unsubscribes the listener it subscribed`() {
+    val integration = AnrProfilingIntegration()
+    integration.register(scopes, options)
+
+    integration.close()
+
+    val subscribed = argumentCaptor<HangRecordingListener>()
+    verify(manager).subscribe(subscribed.capture())
+    verify(manager).unsubscribe(subscribed.firstValue)
+  }
+
+  @Test
+  fun `close unsubscribes only once`() {
+    val integration = AnrProfilingIntegration()
+    integration.register(scopes, options)
+
+    integration.close()
+    integration.close()
+
+    verify(manager, times(1)).unsubscribe(any())
+  }
+
+  @Test
+  fun `close does not unsubscribe when not subscribed`() {
+    options.anrProfilingSampleRate = null
+    val integration = AnrProfilingIntegration()
+    integration.register(scopes, options)
+
+    integration.close()
+
+    verify(manager, never()).unsubscribe(any())
+  }
+
+  @Test
+  fun `two integrations on one hang manager use distinct subscriptions`() {
+    val first = AnrProfilingIntegration()
+    val second = AnrProfilingIntegration()
+    first.register(scopes, options)
+    second.register(scopes, options)
+
+    val subscribed = argumentCaptor<HangRecordingListener>()
+    verify(manager, times(2)).subscribe(subscribed.capture())
+    assertThat(subscribed.firstValue).isNotSameInstanceAs(subscribed.secondValue)
+  }
+
+  @Test
+  @Suppress("DEPRECATION")
+  fun `deprecated lifecycle and run methods do nothing`() {
+    val integration = AnrProfilingIntegration()
+    integration.register(scopes, options)
+    verify(manager).subscribe(any())
+
     integration.onForeground()
-    Thread.sleep(100)
-
-    val thread = integration.getProperty<Thread?>("thread")
-    assertNotNull(thread)
-
     integration.onBackground()
-    Thread.sleep(200) // Allow thread to enter wait state
+    integration.run()
 
-    // Thread should still be alive but waiting
-    assertTrue(thread.isAlive)
-
-    integration.close()
-    thread.join(2000)
-    assertFalse(thread.isAlive)
+    verifyNoMoreInteractions(manager)
   }
 
-  @Test
-  fun `close disables integration and interrupts thread`() {
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
-    integration.onForeground()
-    Thread.sleep(100)
-
-    val thread = integration.getProperty<Thread?>("thread")
-    assertNotNull(thread)
-
-    assertTrue(AppState.getInstance().lifecycleObserver!!.listeners.isNotEmpty())
-
-    integration.close()
-    thread.join(2000)
-
-    assertTrue(!thread.isAlive)
-    val enabled = integration.getProperty<java.util.concurrent.atomic.AtomicBoolean>("enabled")
-    assertTrue(!enabled.get())
-    assertTrue(AppState.getInstance().lifecycleObserver!!.listeners.isEmpty())
-  }
-
-  @Test
-  fun `lifecycle methods have no influence after close`() {
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
-    integration.close()
-    integration.onForeground()
-    integration.onBackground()
-
-    val thread = integration.getProperty<Thread?>("thread")
-    assertTrue(thread == null || !thread.isAlive)
-  }
-
-  @Test
-  fun `multiple foreground calls do not create multiple threads`() {
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
-
-    integration.onForeground()
-    Thread.sleep(100)
-    val thread1 = integration.getProperty<Thread?>("thread")
-
-    integration.onForeground()
-    Thread.sleep(100)
-    val thread2 = integration.getProperty<Thread?>("thread")
-
-    assertNotNull(thread1)
-    assertNotNull(thread2)
-    assertEquals(thread1, thread2, "Should reuse the same thread")
-
-    integration.close()
-  }
-
-  @Test
-  fun `foreground after background reuses thread`() {
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
-
-    integration.onForeground()
-    Thread.sleep(100)
-    val thread1 = integration.getProperty<Thread?>("thread")
-
-    integration.onBackground()
-    integration.onForeground()
-
-    Thread.sleep(100)
-    val thread2 = integration.getProperty<Thread?>("thread")
-
-    assertNotNull(thread1)
-    assertNotNull(thread2)
-    assertSame(thread1, thread2, "Should reuse the same thread after background")
-    assertTrue(thread1.isAlive)
-
-    integration.close()
-  }
-
-  @Test
-  fun `properly walks through state transitions and collects stack traces`() {
-    val mainThread = Thread.currentThread()
-
-    val androidOptions =
-      SentryAndroidOptions().apply {
-        cacheDirPath = tmpDir.root.absolutePath
-        setLogger(mockLogger)
-        anrProfilingSampleRate = 1.0
-      }
-
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, withTestTicker(androidOptions))
-    // Drive the state machine synchronously to avoid racing the background polling thread.
-
-    ticker.advance(900, MILLISECONDS)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
-    assertTrue(integration.profileManager.load().stacks.isEmpty())
-
-    ticker.advance(2_000, MILLISECONDS)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.SUSPICIOUS, integration.state)
-
-    ticker.advance(3_000, MILLISECONDS)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
-    assertEquals(2, integration.profileManager.load().stacks.size)
-
-    for (i in 0 until AnrProfilingIntegration.MAX_NUM_STACKS + 1) {
-      integration.checkMainThread(mainThread)
-    }
-    assertEquals(AnrProfilingIntegration.MAX_NUM_STACKS, integration.numCollectedStacks.get())
-  }
-
-  @Test
-  fun `debugger pauses are treated as idle`() {
-    val mainThread = Thread.currentThread()
-    var debuggerConnected = true
-
-    val androidOptions =
-      SentryAndroidOptions().apply {
-        cacheDirPath = tmpDir.root.absolutePath
-        setLogger(mockLogger)
-        anrProfilingSampleRate = 1.0
-        debugManager = { debuggerConnected }
-      }
-
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, withTestTicker(androidOptions))
-
-    ticker.advance(19_000, MILLISECONDS)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
-    assertEquals(0, integration.numCollectedStacks.get())
-
-    // the time spent paused must not count towards an ANR once the debugger detaches
-    debuggerConnected = false
-    ticker.advance(100, MILLISECONDS)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
-  }
-
-  @Test
-  fun `background foreground transitions don't trigger an ANR`() {
-    val mainThread = Thread.currentThread()
-
-    val androidOptions =
-      SentryAndroidOptions().apply {
-        cacheDirPath = tmpDir.root.absolutePath
-        setLogger(mockLogger)
-        anrProfilingSampleRate = 1.0
-      }
-
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, withTestTicker(androidOptions))
-    integration.onBackground()
-
-    ticker.advance(19_000, MILLISECONDS)
-    integration.onForeground()
-
-    Thread.sleep(100)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
-  }
-
-  @Test
-  fun `does not report a stall when the ticker origin is far from zero`() {
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, withTestTicker(options))
-
-    integration.checkMainThread(Thread.currentThread())
-
-    assertThat(integration.state).isEqualTo(AnrProfilingIntegration.MainThreadState.IDLE)
-    assertThat(integration.profileManager.load().stacks).isEmpty()
-  }
-
-  @Test
-  fun `does not register when options is not SentryAndroidOptions`() {
-    val plainOptions =
-      SentryOptions().apply {
-        cacheDirPath = tmpDir.root.absolutePath
-        setLogger(mockLogger)
-      }
-
-    val integration = AnrProfilingIntegration()
-
-    try {
-      integration.register(mockScopes, plainOptions)
-    } catch (e: IllegalArgumentException) {
-      // ignored
-    }
-
-    // Verify no listeners were added
-    val lifecycleObserver = AppState.getInstance().lifecycleObserver
-    if (lifecycleObserver != null) {
-      assertTrue(lifecycleObserver.listeners.isEmpty())
-    }
-  }
-
-  @Test
-  fun `does not register when ANR profiling is disabled`() {
-    val androidOptions =
-      SentryAndroidOptions().apply {
-        cacheDirPath = tmpDir.root.absolutePath
-        setLogger(mockLogger)
-        anrProfilingSampleRate = null
-      }
-
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
-
-    // When ANR profiling is disabled, the integration doesn't add itself to AppState
-    // So the lifecycle observer may be null or have no listeners
-    val lifecycleObserver = AppState.getInstance().lifecycleObserver
-    if (lifecycleObserver != null) {
-      assertTrue(lifecycleObserver.listeners.isEmpty())
-    }
-  }
-
-  @Test
-  fun `does not collect stacks when sample rate is zero`() {
-    val mainThread = Thread.currentThread()
-
-    val androidOptions =
-      SentryAndroidOptions().apply {
-        cacheDirPath = tmpDir.root.absolutePath
-        setLogger(mockLogger)
-        anrProfilingSampleRate = 0.0
-      }
-
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, withTestTicker(androidOptions))
-    integration.onForeground()
-
-    // Transition to suspicious
-    ticker.advance(2_900, MILLISECONDS)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.SUSPICIOUS, integration.state)
-
-    // Transition to ANR
-    ticker.advance(3_000, MILLISECONDS)
-    integration.checkMainThread(mainThread)
-    assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
-
-    // No stacks should have been collected
-    assertEquals(0, integration.numCollectedStacks.get())
-  }
-
-  @Test
-  fun `registers when ANR profiling is enabled`() {
-    val androidOptions =
-      SentryAndroidOptions().apply {
-        cacheDirPath = tmpDir.root.absolutePath
-        setLogger(mockLogger)
-        anrProfilingSampleRate = 1.0
-      }
-
-    val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
-
-    assertFalse(AppState.getInstance().lifecycleObserver!!.listeners.isEmpty())
-    assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("AnrProfiling"))
-
-    integration.close()
+  private companion object {
+    const val SEED = 1L
   }
 }

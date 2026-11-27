@@ -2,37 +2,32 @@ package io.sentry.android.core.anr;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
-import android.os.Handler;
-import android.os.Looper;
-import io.sentry.IDebugManager;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
-import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
-import io.sentry.NoOpLogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
-import io.sentry.time.MonotonicTicker;
-import io.sentry.time.Stopwatch;
-import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.android.core.hang.HangManager;
+import io.sentry.android.core.hang.HangRecord;
+import io.sentry.android.core.hang.HangRecordingListener;
+import io.sentry.android.core.hang.HangRecordingRequest;
 import io.sentry.util.Objects;
 import io.sentry.util.SentryRandom;
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.jetbrains.annotations.ApiStatus;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 /**
  * Captures main-thread stack profiles while the app is unresponsive and attaches them to ANR events
  * on the next app start.
+ *
+ * <p>Subscribes to the {@link HangManager} of the options for the SDK lifetime, and draws the
+ * sample rate at each hang. The hang manager writes the stacks of a sampled hang to disk. An
+ * unsampled hang needs nothing from the hang manager.
  *
  * <p>Enable via {@link SentryAndroidOptions#setAnrProfilingSampleRate(Double)} or the {@code
  * io.sentry.anr.profiling.sample-rate} manifest metadata.
@@ -40,309 +35,92 @@ import org.jetbrains.annotations.TestOnly;
 public final class AnrProfilingIntegration
     implements Integration, Closeable, AppState.AppStateListener, Runnable {
 
-  public static final long POLLING_INTERVAL_MS = 66;
-  private static final long THRESHOLD_SUSPICION_MS = 1000;
+  // StackTraceConverter expects the samples this far apart.
+  public static final long POLLING_INTERVAL_MS = HangManager.DEFAULT_POLLING_INTERVAL_MS;
   public static final long THRESHOLD_ANR_MS = 4000;
-  static final int MAX_NUM_STACKS = (int) (10_000 / POLLING_INTERVAL_MS);
 
-  private final AtomicBoolean enabled = new AtomicBoolean(true);
-
-  private volatile @Nullable MonotonicTicker ticker;
-
-  private final @NotNull Runnable updater =
-      () -> {
-        final @Nullable MonotonicTicker currentTicker = ticker;
-        if (currentTicker != null) {
-          lastMainThreadExecutionNanos = currentTicker.tickNanos();
-        }
-      };
-
-  private final @NotNull AutoClosableReentrantLock lifecycleLock = new AutoClosableReentrantLock();
-  private final @NotNull AutoClosableReentrantLock profileManagerLock =
-      new AutoClosableReentrantLock();
-
-  private volatile long lastMainThreadExecutionNanos;
-  final AtomicInteger numCollectedStacks = new AtomicInteger();
-  private volatile MainThreadState mainThreadState = MainThreadState.IDLE;
-  private volatile @Nullable AnrProfileManager profileManager;
-  private volatile @NotNull ILogger logger = NoOpLogger.getInstance();
-  private volatile @Nullable SentryAndroidOptions options;
-  private volatile @Nullable IDebugManager debugManager;
-  private volatile @Nullable Thread thread = null;
-  private volatile boolean sampled = false;
-  private volatile boolean inForeground = false;
-  private volatile @Nullable Handler mainHandler;
-  private volatile @Nullable Thread mainThread;
+  private final @NotNull AtomicReference<HangManager> subscribedManager = new AtomicReference<>();
+  private final @NotNull AtomicReference<HangRecordingListener> subscription =
+      new AtomicReference<>();
 
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    this.options =
+    final @NotNull SentryAndroidOptions androidOptions =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
-    this.logger = options.getLogger();
-    final @NotNull MonotonicTicker ticker = options.getMonotonicTicker();
-    // A tick's origin is arbitrary, so the default of 0 would read as a stall of unknown length.
-    this.lastMainThreadExecutionNanos = ticker.tickNanos();
-    this.ticker = ticker;
-    this.debugManager = this.options.getDebugManager();
-
-    if (this.options.isAnrProfilingEnabled()) {
-      if (this.options.getCacheDirPath() == null) {
-        logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
-        return;
-      }
-
-      final Looper mainLooper = Looper.getMainLooper();
-      this.mainThread = mainLooper.getThread();
-      this.mainHandler = new Handler(mainLooper);
-
-      addIntegrationToSdkVersion("AnrProfiling");
-      AppState.getInstance().addAppStateListener(this);
+    if (!androidOptions.isAnrProfilingEnabled()) {
+      return;
     }
+    final @NotNull ILogger logger = options.getLogger();
+    if (androidOptions.getCacheDirPath() == null) {
+      logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
+      return;
+    }
+    final @Nullable HangManager manager = androidOptions.getHangManager();
+    if (manager == null) {
+      logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but there is no hang manager");
+      return;
+    }
+    if (!subscribedManager.compareAndSet(null, manager)) {
+      return;
+    }
+    final @NotNull HangRecordingListener listener = new ProfileSampler(androidOptions);
+    subscription.set(listener);
+    manager.subscribe(listener);
+    addIntegrationToSdkVersion("AnrProfiling");
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void close() throws IOException {
-    enabled.set(false);
-    AppState.getInstance().removeAppStateListener(this);
-
-    // Remove any pending updater callbacks from the main handler
-    final @Nullable Handler handler = mainHandler;
-    if (handler != null) {
-      handler.removeCallbacks(updater);
-    }
-
-    // Wake and interrupt the thread so it exits
-    final @Nullable Thread t = thread;
-    if (t != null) {
-      synchronized (this) {
-        notifyAll();
-      }
-      t.interrupt();
-    }
-
-    final @Nullable SentryAndroidOptions opts = options;
-    final @Nullable AnrProfileManager pm;
-    try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
-      pm = profileManager;
-      profileManager = null;
-    }
-    if (opts != null) {
-      try {
-        opts.getExecutorService()
-            .submit(() -> {
-              if (pm == null) {
-                return;
-              }
-
-              try {
-                pm.close();
-              } catch (IOException e) {
-                logger.log(SentryLevel.WARNING, "Failed to close AnrProfileManager");
-              }
-            });
-      } catch (Throwable e) {
-        logger.log(SentryLevel.WARNING, "Failed to submit AnrProfileManager close");
-      }
+    final @Nullable HangManager manager = subscribedManager.getAndSet(null);
+    final @Nullable HangRecordingListener listener = subscription.getAndSet(null);
+    if (manager != null && listener != null) {
+      manager.unsubscribe(listener);
     }
   }
 
+  /**
+   * @deprecated Not used by the SDK any more.
+   */
+  @Deprecated
   @Override
-  public void onForeground() {
-    if (!enabled.get()) {
-      return;
-    }
-    try (final @NotNull ISentryLifecycleToken ignored = lifecycleLock.acquire()) {
-      if (inForeground) {
-        return;
-      }
-      inForeground = true;
-      updater.run();
+  public void onForeground() {}
 
-      final @Nullable Thread existingThread = thread;
-      if (existingThread != null && existingThread.isAlive()) {
-        // Wake the existing thread
-        synchronized (this) {
-          notifyAll();
-        }
-      }
-      if (existingThread == null || !existingThread.isAlive()) {
-        final @NotNull Thread profilingThread = new Thread(this, "AnrProfilingIntegration");
-        profilingThread.setDaemon(true);
-        profilingThread.start();
-        thread = profilingThread;
-      }
-    }
-  }
-
+  /**
+   * @deprecated Not used by the SDK any more.
+   */
+  @Deprecated
   @Override
-  public void onBackground() {
-    if (!enabled.get()) {
-      return;
-    }
-    try (final @NotNull ISentryLifecycleToken ignored = lifecycleLock.acquire()) {
-      inForeground = false;
-    }
-  }
+  public void onBackground() {}
 
+  /**
+   * @deprecated Not used by the SDK any more.
+   */
+  @Deprecated
   @Override
-  public void run() {
-    final @Nullable Handler handler = mainHandler;
-    final @Nullable Thread mt = mainThread;
-    if (handler == null || mt == null) {
-      return;
+  public void run() {}
+
+  private static final class ProfileSampler implements HangRecordingListener {
+
+    private final @NotNull SentryAndroidOptions options;
+
+    ProfileSampler(final @NotNull SentryAndroidOptions options) {
+      this.options = options;
     }
 
-    try {
-      while (enabled.get() && !Thread.currentThread().isInterrupted()) {
-        try {
-          if (!inForeground) {
-            // Wait until we're back in the foreground or disabled
-            synchronized (this) {
-              while (!inForeground && enabled.get()) {
-                wait();
-              }
-            }
-            // Reset the updater timestamp after waking to avoid false suspicion
-            updater.run();
-            continue;
-          }
-
-          checkMainThread(mt);
-
-          handler.removeCallbacks(updater);
-          handler.post(updater);
-
-          // noinspection BusyWait
-          Thread.sleep(POLLING_INTERVAL_MS);
-        } catch (InterruptedException e) {
-          // Restore interrupt status and exit the polling loop
-          Thread.currentThread().interrupt();
-          return;
-        }
-      }
-    } catch (Throwable t) {
-      logger.log(SentryLevel.WARNING, "Failed to execute AnrStacktraceIntegration", t);
-    }
-  }
-
-  @ApiStatus.Internal
-  void checkMainThread(final @NotNull Thread mainThread) throws IOException {
-    if (debugManager != null && debugManager.isDebuggerConnected()) {
-      // The main thread can sit at a breakpoint for a long time, which is not an ANR. Reset the
-      // timestamp, so the paused time does not count against us after the debugger detaches.
-      mainThreadState = MainThreadState.IDLE;
-      sampled = false;
-      updater.run();
-      return;
-    }
-
-    final @Nullable MonotonicTicker currentTicker = ticker;
-    if (currentTicker == null) {
-      return;
-    }
-    final long diff =
-        TimeUnit.NANOSECONDS.toMillis(currentTicker.tickNanos() - lastMainThreadExecutionNanos);
-
-    if (diff < THRESHOLD_SUSPICION_MS) {
-      mainThreadState = MainThreadState.IDLE;
-      sampled = false;
-    }
-
-    if (mainThreadState == MainThreadState.IDLE && diff > THRESHOLD_SUSPICION_MS) {
-      if (logger.isEnabled(SentryLevel.DEBUG)) {
-        logger.log(SentryLevel.DEBUG, "ANR: main thread is suspicious");
-      }
-      mainThreadState = MainThreadState.SUSPICIOUS;
-
-      final @Nullable SentryAndroidOptions opts = options;
-      final @Nullable Double sampleRate = opts != null ? opts.getAnrProfilingSampleRate() : null;
+    @Override
+    public @Nullable HangRecordingRequest onHangStarted() {
+      final @Nullable Double sampleRate = options.getAnrProfilingSampleRate();
       if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
-        sampled = true;
+        return new HangRecordingRequest(true, true);
       }
-
-      if (sampled) {
-        clearStacks();
-      }
+      return null;
     }
 
-    // if we are suspicious and sampled, we need to collect stack traces
-    if (sampled
-        && (mainThreadState == MainThreadState.SUSPICIOUS
-            || mainThreadState == MainThreadState.ANR_DETECTED)) {
-      if (numCollectedStacks.get() < MAX_NUM_STACKS) {
-        final @NotNull Stopwatch stopwatch = Stopwatch.started(currentTicker);
-        final @NotNull AnrStackTrace trace =
-            new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
-        if (logger.isEnabled(SentryLevel.DEBUG)) {
-          logger.log(
-              SentryLevel.DEBUG,
-              "AnrWatchdog: capturing main thread stacktrace took "
-                  + stopwatch.elapsed(TimeUnit.MILLISECONDS)
-                  + "ms");
-        }
-        addStackTrace(trace);
-      } else {
-        if (logger.isEnabled(SentryLevel.DEBUG)) {
-          logger.log(
-              SentryLevel.DEBUG,
-              "ANR: reached maximum number of collected stack traces, skipping further collection");
-        }
-      }
+    @Override
+    public void onHangRecorded(final @NotNull HangRecord record) {
+      // The fatal path reads the profile from disk at the next launch, it needs no record.
     }
-
-    if (mainThreadState == MainThreadState.SUSPICIOUS && diff > THRESHOLD_ANR_MS) {
-      if (logger.isEnabled(SentryLevel.DEBUG)) {
-        logger.log(SentryLevel.DEBUG, "ANR: main thread ANR threshold reached");
-      }
-      mainThreadState = MainThreadState.ANR_DETECTED;
-    }
-  }
-
-  @TestOnly
-  @NotNull
-  MainThreadState getState() {
-    return mainThreadState;
-  }
-
-  @TestOnly
-  @NotNull
-  AnrProfileManager getProfileManager() {
-    try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
-      if (profileManager == null) {
-        final @NotNull SentryOptions opts =
-            Objects.requireNonNull(options, "Options can't be null");
-        final @Nullable String cacheDirPath = opts.getCacheDirPath();
-        if (cacheDirPath == null) {
-          throw new IllegalStateException("cacheDirPath is required for ANR profiling");
-        }
-        final @NotNull File currentFile =
-            AnrProfileRotationHelper.getFileForRecording(new File(cacheDirPath));
-        profileManager = new AnrProfileManager(opts, currentFile);
-      }
-
-      return profileManager;
-    }
-  }
-
-  private void clearStacks() throws IOException {
-    numCollectedStacks.set(0);
-    getProfileManager().clear();
-  }
-
-  private void addStackTrace(@NotNull final AnrStackTrace trace) throws IOException {
-    if (!enabled.get()) {
-      return;
-    }
-    numCollectedStacks.incrementAndGet();
-    getProfileManager().add(trace);
-  }
-
-  protected enum MainThreadState {
-    IDLE,
-    SUSPICIOUS,
-    ANR_DETECTED,
   }
 }

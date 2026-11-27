@@ -4,12 +4,15 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.CompositePerformanceCollector
 import io.sentry.DefaultCompositePerformanceCollector
 import io.sentry.IConnectionStatusProvider
 import io.sentry.IContinuousProfiler
+import io.sentry.IDebugManager
 import io.sentry.ILogger
 import io.sentry.ISocketTagger
 import io.sentry.ITransaction
@@ -20,7 +23,18 @@ import io.sentry.NoOpTransactionProfiler
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
+import io.sentry.android.core.anr.AnrProfileManager
+import io.sentry.android.core.anr.AnrProfileStore
+import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.hang.HangCollectorSetup
+import io.sentry.android.core.hang.HangDataCollector
+import io.sentry.android.core.hang.HangManager
+import io.sentry.android.core.hang.HangRecord
+import io.sentry.android.core.hang.HangRecordWriter
+import io.sentry.android.core.hang.HangSignal
+import io.sentry.android.core.hang.ThreadHangSignal
+import io.sentry.android.core.hang.ThreadSampleCollector
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
@@ -38,6 +52,8 @@ import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.getProperty
+import io.sentry.time.JavaMonotonicTicker
 import io.sentry.transport.ITransportGate
 import io.sentry.util.thread.IThreadChecker
 import java.io.File
@@ -680,6 +696,106 @@ class AndroidOptionsInitializerTest {
       fixture.sentryOptions.integrations.indexOfFirst { it is AppLifecycleIntegration }
     val anrIndex = fixture.sentryOptions.integrations.indexOfFirst { it is AnrIntegration }
     assertTrue { appLifecycleIndex < anrIndex }
+  }
+
+  @Test
+  fun `HangManager is created and stored in the options`() {
+    fixture.initSut()
+
+    val manager = fixture.sentryOptions.hangManager
+    assertThat(manager).isNotNull()
+    assertThat(manager!!.getProperty<Any>("appStateProvider"))
+      .isSameInstanceAs(AppState.getInstance())
+    assertThat(manager.getProperty<Any>("ticker"))
+      .isSameInstanceAs(JavaMonotonicTicker.getInstance())
+    assertThat(manager.getProperty<Any>("epochClock"))
+      .isSameInstanceAs(fixture.sentryOptions.epochClock)
+    assertThat(manager.getProperty<Long>("pollingIntervalMs"))
+      .isEqualTo(HangManager.DEFAULT_POLLING_INTERVAL_MS)
+    assertThat(manager.getProperty<Long>("maxRecordingTimeMs"))
+      .isEqualTo(HangManager.DEFAULT_MAX_RECORDING_TIME_MS)
+    assertThat(manager.getProperty<Int>("maxSamples"))
+      .isEqualTo(AnrProfileManager.MAX_NUM_STACKTRACES)
+    assertThat(manager.getProperty<Any>("executorFactory"))
+      .isSameInstanceAs(HangManager.DEFAULT_EXECUTOR_FACTORY)
+  }
+
+  @Test
+  fun `HangManager signal is a ThreadHangSignal with the AndroidDebugManager`() {
+    fixture.initSut()
+
+    val signal =
+      fixture.sentryOptions.hangManager!!.getProperty<List<HangSignal>>("signals").single()
+    assertThat(signal).isInstanceOf(ThreadHangSignal::class.java)
+    assertThat(signal.getProperty<Any>("debugManager"))
+      .isSameInstanceAs(fixture.sentryOptions.debugManager)
+    assertThat(fixture.sentryOptions.debugManager).isInstanceOf(AndroidDebugManager::class.java)
+    assertThat(signal.getProperty<Any>("metronome"))
+      .isSameInstanceAs(fixture.sentryOptions.hangManager)
+    assertThat(signal.getProperty<Long>("suspiciousThresholdMs"))
+      .isEqualTo(HangManager.DEFAULT_SUSPICIOUS_THRESHOLD_MS)
+  }
+
+  @Test
+  fun `HangManager signal uses a debug manager that is already set`() {
+    val debugManager = IDebugManager { false }
+    fixture.sentryOptions.debugManager = debugManager
+
+    fixture.initSut()
+
+    val signal =
+      fixture.sentryOptions.hangManager!!.getProperty<List<HangSignal>>("signals").single()
+    assertThat(signal.getProperty<Any>("debugManager")).isSameInstanceAs(debugManager)
+  }
+
+  @Test
+  fun `HangManager collector samples the main thread into the ANR profile store`() {
+    fixture.initSut()
+
+    val setup =
+      fixture.sentryOptions.hangManager!!
+        .getProperty<List<HangCollectorSetup<*>>>("collectors")
+        .single()
+    val collector = setup.getProperty<HangDataCollector<*>>("collector")
+    assertThat(collector).isInstanceOf(ThreadSampleCollector::class.java)
+    assertThat(collector.getProperty<Thread>("thread"))
+      .isSameInstanceAs(Looper.getMainLooper().thread)
+    val store = setup.getProperty<Any>("store")
+    assertThat(store).isInstanceOf(AnrProfileStore::class.java)
+    assertThat(store.getProperty<Any>("options")).isSameInstanceAs(fixture.sentryOptions)
+  }
+
+  @Test
+  fun `HangManager writes the main thread samples into the record as stack traces`() {
+    fixture.initSut()
+    val setup =
+      fixture.sentryOptions.hangManager!!
+        .getProperty<List<HangCollectorSetup<*>>>("collectors")
+        .single()
+    val writer = setup.getProperty<HangRecordWriter<AnrStackTrace>>("writer")
+    val stackTrace = AnrStackTrace(1, emptyArray())
+    val builder = HangRecord.Builder()
+
+    writer.write(stackTrace, builder)
+
+    assertThat(builder.build().stackTraces).containsExactly(stackTrace)
+  }
+
+  @Test
+  fun `HangManager that is already set is kept`() {
+    val existing = mock<HangManager>()
+    fixture.sentryOptions.hangManager = existing
+
+    fixture.initSut()
+
+    assertThat(fixture.sentryOptions.hangManager).isSameInstanceAs(existing)
+  }
+
+  @Test
+  fun `HangManager is not created when cacheDirPath is null`() {
+    fixture.initSut(configureOptions = { cacheDirPath = null })
+
+    assertThat(fixture.sentryOptions.hangManager).isNull()
   }
 
   @Test

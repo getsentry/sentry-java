@@ -11,6 +11,7 @@ import android.os.Looper
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
@@ -31,6 +32,7 @@ import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.anr.AnrProfilingIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.hang.HangManager
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.replay.ReplayIntegration
@@ -198,6 +200,35 @@ class SentryAndroidTest {
     fixture.initSut(logger = mock())
 
     assertTrue(Sentry.isEnabled())
+  }
+
+  @Test
+  fun `close unsubscribes the ANR profiling integration from the hang manager`() {
+    val manager = mock<HangManager>()
+    fixture.initSut {
+      it.hangManager = manager
+      it.anrProfilingSampleRate = 1.0
+    }
+    verify(manager).subscribe(any())
+
+    Sentry.close()
+
+    verify(manager).unsubscribe(any())
+  }
+
+  @Test
+  fun `re-init creates a new hang manager`() {
+    val previous = mock<HangManager>()
+    fixture.initSut { it.hangManager = previous }
+    var options: SentryAndroidOptions? = null
+
+    fixture.initSut {
+      it.cacheDirPath = tmpDir.newFolder().absolutePath
+      options = it
+    }
+
+    assertThat(options!!.hangManager).isNotNull()
+    assertThat(options!!.hangManager).isNotSameInstanceAs(previous)
   }
 
   @Test
