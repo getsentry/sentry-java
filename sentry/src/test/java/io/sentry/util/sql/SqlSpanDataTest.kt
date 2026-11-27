@@ -21,9 +21,9 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 /**
- * What the JDBC and Android SQLite integrations put on a span (plan 07, D52): the analyzer's text
- * as description and `db.query.text`, summary and stored procedure only when present. The values
- * themselves are the analyzer's; [SqlQueryAnalyzerTest] owns those.
+ * What the JDBC and Android SQLite integrations put on a span: the analyzer's text as description
+ * and `db.query.text`, summary and stored procedure only when present. The values themselves are
+ * tested in [SqlQueryAnalyzerTest].
  */
 class SqlSpanDataTest {
 
@@ -90,7 +90,6 @@ class SqlSpanDataTest {
 
   @Test
   fun `query over 1 MiB gives no description, no query keys and no failure log`() {
-    // D66: skipping is not an analysis failure.
     val logger = mock<ILogger>()
     val sql = "SELECT '" + "x".repeat(1024 * 1024) + "'"
     val data = SqlSpanData.analyze(sql, "postgresql", LIMIT, logger)
@@ -123,10 +122,7 @@ class SqlSpanDataTest {
     assertThat(message.firstValue).doesNotContain("Zq9xK7")
   }
 
-  /**
-   * D55: the integrations' `db.system` values mapped to OTel semconv `db.system.name` values
-   * (`semantic-conventions` `model/db/registry.yaml`). Unknown systems get no value.
-   */
+  // Expected values: semantic-conventions model/db/registry.yaml.
   @Test
   fun `db system values map to semconv db system names`() {
     val expected =

@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SqlQueryAnalyzer {
 
   /**
-   * Longest input that is analyzed, in characters (D66). The grammar reads a single huge literal or
+   * Longest input that is analyzed, in characters. The grammar reads a single huge literal or
    * comment to its end on the caller's thread, however short the output.
    */
   static final int MAX_INPUT_LENGTH = 1024 * 1024;
@@ -57,7 +57,7 @@ public final class SqlQueryAnalyzer {
           result.getQuerySummary(),
           result.getStoredProcedureName());
     } catch (RuntimeException e) {
-      // R5: a bug in the vendored grammar must neither crash the caller nor return unsanitized
+      // A bug in the vendored grammar must neither crash the caller nor return unsanitized
       // text, so any RuntimeException gives an empty result. Errors are not caught. The input is
       // never logged: it may contain the values this class exists to remove.
       return SqlQuery.EMPTY;
@@ -65,9 +65,9 @@ public final class SqlQueryAnalyzer {
   }
 
   /**
-   * Cuts sanitized text to {@code maxLength} at the last whitespace within the limit (D5), or at
-   * the limit if there is none, without splitting a surrogate pair. Literals are already replaced,
-   * so any cut point is safe; whitespace only keeps the last token whole.
+   * Cuts sanitized text to {@code maxLength} at the last whitespace within the limit, or at the
+   * limit if there is none, without splitting a surrogate pair. Literals are already replaced, so
+   * any cut point is safe; whitespace only keeps the last token whole.
    */
   private static @Nullable String cut(final @Nullable String text, final int maxLength) {
     if (text == null || text.length() <= maxLength) {

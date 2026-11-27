@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SqlQuery {
 
-  /** No text, summary or stored procedure: {@code null} or skipped input, or an internal error. */
   static final @NotNull SqlQuery EMPTY = new SqlQuery(null, null, null);
 
   private final @Nullable String queryText;

@@ -38,7 +38,7 @@ public final class SqlSpanData {
     final @NotNull SqlQuery query =
         SqlQueryAnalyzer.analyze(sql, toDbSystemName(dbSystem), maxQueryTextLength);
     // No text for input that was analyzed means an internal failure. Null input and input over
-    // 1 MiB (D66) have no text by design and are not logged.
+    // 1 MiB have no text by design and are not logged.
     if (query.getQueryText() == null
         && sql != null
         && sql.length() <= SqlQueryAnalyzer.MAX_INPUT_LENGTH) {

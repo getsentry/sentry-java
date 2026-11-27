@@ -9,10 +9,9 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 
 /**
- * Owns what [SqlQueryAnalyzer] adds around the vendored grammar: `null` and oversized input, the
- * length limit, the dialect choice and the error path (plan 08, Wrapper). The grammar's own output
- * is not asserted: a sync must not mean re-baselining. Where a test needs a fact about that output
- * (that a keyword or an identifier is kept), it checks the fact first as a precondition.
+ * Tests what [SqlQueryAnalyzer] adds around the vendored grammar. The grammar's output is not
+ * asserted, so syncing upstream never means updating expectations; where a test relies on a fact
+ * about that output, it checks the fact first as a precondition.
  */
 class SqlQueryAnalyzerTest {
 
@@ -75,7 +74,6 @@ class SqlQueryAnalyzerTest {
   fun `double quotes are identifiers only for databases that use them so`() {
     val sql = "SELECT \"Zq9xK7\" FROM t"
 
-    // R8: upstream's forDbSystemName, e.g. PostgreSQL yes, MySQL and unknown databases no.
     assertThat(SqlQueryAnalyzer.analyze(sql, "postgresql", LIMIT).queryText).contains("Zq9xK7")
     assertThat(SqlQueryAnalyzer.analyze(sql, "mysql", LIMIT).queryText).doesNotContain("Zq9xK7")
     assertThat(SqlQueryAnalyzer.analyze(sql, null, LIMIT).queryText).doesNotContain("Zq9xK7")

@@ -14,10 +14,9 @@ import java.util.concurrent.TimeoutException
 import kotlin.test.Test
 
 /**
- * Owns what upstream's tests don't cover: deep and large input on a smaller stack than upstream
- * runs on. [SqlQueryAnalyzer.analyze] must complete within [TIME_BOUND_MILLIS] on a
- * [STACK_SIZE_BYTES] stack, about half of an Android background thread's, without a
- * `StackOverflowError` or an internal failure. Outputs are not asserted (plan 08, Tests).
+ * Deep and large input on a smaller stack than upstream's tests run on: [SqlQueryAnalyzer.analyze]
+ * must complete within [TIME_BOUND_MILLIS] on a [STACK_SIZE_BYTES] stack without a
+ * `StackOverflowError` or an internal failure.
  */
 class SqlQueryAnalyzerPathologicalTest {
 
@@ -46,7 +45,7 @@ class SqlQueryAnalyzerPathologicalTest {
               throw AssertionError("$describe threw ${e.cause}", e.cause)
             }
 
-          assertWithMessage("no text, so the analyzer failed internally (R5); %s", describe)
+          assertWithMessage("no text, so the analyzer failed internally; %s", describe)
             .that(query.queryText)
             .isNotNull()
         }
@@ -57,7 +56,6 @@ class SqlQueryAnalyzerPathologicalTest {
   }
 
   private companion object {
-    /** Bound recorded in plan 01, step 6. */
     const val TIME_BOUND_MILLIS = 2_000L
 
     /** Below the default for Android background threads and HotSpot (both about 1 MiB). */
@@ -70,7 +68,7 @@ class SqlQueryAnalyzerPathologicalTest {
         "10k nested parens" to "SELECT " + "(".repeat(10_000) + "1" + ")".repeat(10_000),
         "10001-item IN list" to "select col from table where col in (" + "?,".repeat(10_000) + "?)",
         // The grammar stops once its output passes 32 KiB, but reads a single token to its end:
-        // the slowest input it gets is one literal just under the 1 MiB skip limit (D66).
+        // the slowest input it gets is one literal just under the 1 MiB skip limit.
         "1 MiB string literal" to "SELECT '" + "x".repeat(MIB - "SELECT ''".length) + "'",
       )
   }

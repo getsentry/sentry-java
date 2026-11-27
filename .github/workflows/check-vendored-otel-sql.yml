@@ -26,6 +26,5 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      # Re-derives the vendored files from upstream at the recorded commit; fails on any hand edit.
       - name: Compare vendored files with upstream
         run: ./scripts/sync-otel-sql.sh --check

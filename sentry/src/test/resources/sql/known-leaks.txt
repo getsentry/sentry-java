@@ -1,7 +1,6 @@
 # Corpus cases (sql/analyzer-cases.json) whose declared secret appears in the output of the
-# unchanged OpenTelemetry grammar for the full input: accepted leaks (D69, plan 08). Owned by
-# SqlQueryAnalyzerKnownLeakTest. Fixes go upstream (patch-inventory.md section 5); a case that
-# no longer leaks after a sync is reported by the test and removed here.
+# unchanged OpenTelemetry grammar: accepted leaks, to be fixed upstream. Checked by
+# SqlQueryAnalyzerKnownLeakTest, which reports cases that no longer leak after a sync.
 bracket.array_literal.conservative
 bracket.array_literal.postgresql
 bracket.subscript_string.conservative

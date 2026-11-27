@@ -68,8 +68,8 @@ rewrite() {
   ' "$1" "$2" "${label:-$1}" || exit 1
 }
 
-# header <file> <upstream path> <commit> <changes>: prepends the attribution header (AGENTS.md).
-# The upstream license comment stays in place below it.
+# Prepends our attribution header. Upstream's license comment stays below it: Apache 2.0 requires
+# keeping the original notice.
 header() {
   local file="$1" path="$2" commit="$3" changes="$4" tmp
   tmp="$file.header"
@@ -105,7 +105,6 @@ string_utils_import() {
   rewrite "$1" 's/\bio\.opentelemetry\.instrumentation\.api\.internal\.StringUtils\b/io.sentry.vendor.otel.sql.StringUtils/g'
 }
 
-# transform <index> <file> <commit>: applies every change for upstream file <index> to <file>.
 transform() {
   local index="$1" file="$2" commit="$3" semconv="io.opentelemetry.instrumentation.api.incubator.semconv.db"
   case "$index" in
@@ -175,7 +174,6 @@ resolve() {
   die "$ref is neither a full commit hash, a tag nor a branch"
 }
 
-# fetch <commit> <dir>: downloads the upstream files at <commit> into <dir>/<index>.
 fetch() {
   local commit="$1" dir="$2" i
   for i in "${!paths[@]}"; do
@@ -184,8 +182,6 @@ fetch() {
   done
 }
 
-# derive <commit> <dir>: downloads and transforms the files at <commit>; writes <dir>/out/<index>
-# and <dir>/out/UPSTREAM.
 derive() {
   local commit="$1" dir="$2" i
   mkdir -p "$dir/new" "$dir/out"

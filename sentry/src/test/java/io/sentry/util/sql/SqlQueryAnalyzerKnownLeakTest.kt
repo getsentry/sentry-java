@@ -8,18 +8,14 @@ import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 
 /**
- * Owns the accepted leaks of the unchanged grammar (D69): a corpus case (`sql/analyzer-cases.json`)
- * leaks when one of its declared secrets appears whole in the text, summary or stored procedure of
- * its full input. Every leaking case must be listed in `sql/known-leaks.txt`, so a sync that adds a
- * leak fails here. A listed case that no longer leaks only prints a note: an upstream fix must not
- * fail the build. Prefixes are not analyzed: truncated input does not reach the analyzer
- * (patch-inventory section 5).
+ * Leaks of the unchanged grammar: a corpus case (`sql/analyzer-cases.json`) leaks when one of its
+ * declared secrets appears whole in the text, summary or stored procedure. Every leaking case must
+ * be listed in `sql/known-leaks.txt`, so a sync that adds a leak fails here. A listed case that no
+ * longer leaks only prints a note: an upstream fix must not fail the build.
  *
  * Cases are analyzed without a length limit: a cut can hide a leak that production limits (32 KiB
- * for JDBC, 8 KiB for Android SQLite) would not. The cut is owned by [SqlQueryAnalyzerTest].
- *
- * Every case must also give a text: `null` text for analyzed input means an internal failure (R5),
- * which would hide a leak. Other robustness of the grammar is upstream's to test (plan 08, Tests).
+ * for JDBC, 8 KiB for Android SQLite) would not. Every case must also give a text: `null` text
+ * means an internal failure, which would hide a leak.
  */
 class SqlQueryAnalyzerKnownLeakTest {
 
@@ -42,7 +38,7 @@ class SqlQueryAnalyzerKnownLeakTest {
           fixed.sorted().joinToString("\n"),
       )
     }
-    assertWithMessage("cases without text, so the analyzer failed internally (R5)")
+    assertWithMessage("cases without text, so the analyzer failed internally")
       .that(failed)
       .isEmpty()
     assertWithMessage("cases that leak but are not listed in %s", KNOWN_LEAKS)

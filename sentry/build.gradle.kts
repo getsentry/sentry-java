@@ -19,7 +19,6 @@ tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
-// Build-time only: JFlex generates the SQL lexer; the generated code has no runtime dependency.
 val jflex: Configuration =
   configurations.create("jflex") {
     isCanBeConsumed = false
@@ -74,7 +73,6 @@ tasks {
   }
 }
 
-// Generates the SQL lexer from OpenTelemetry's grammar, vendored by scripts/sync-otel-sql.sh.
 val jflexSourceFile = layout.projectDirectory.file("src/main/jflex/SqlSanitizer.jflex")
 val jflexOutputDir = layout.buildDirectory.dir("generated/sources/jflex")
 
