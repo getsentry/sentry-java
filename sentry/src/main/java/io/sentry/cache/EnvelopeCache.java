@@ -527,21 +527,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /**
-   * Makes the next {@link #movePreviousSession(File, File)} move the current session file again.
-   * The SDK calls this on every init, because a re-init can reuse this cache while the current
-   * session file still holds the session of the last initialization.
-   */
-  @ApiStatus.Internal
-  public void resetPreviousSessionMove() {
-    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
-      previousSessionMoved = false;
-    }
-  }
-
-  /**
-   * Moves the last run's session to the previous session file. Does nothing if that already
-   * happened since the last {@link #resetPreviousSessionMove()}, because the current session file
-   * then holds the live session.
+   * Moves the last run's session to the previous session file. Does nothing if this process already
+   * did that, because the current session file then holds the live session.
    */
   public void movePreviousSession(
       final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {

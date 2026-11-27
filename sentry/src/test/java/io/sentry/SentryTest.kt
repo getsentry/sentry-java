@@ -1730,23 +1730,6 @@ class SentryTest {
   }
 
   @Test
-  fun `init resets the previous session move before queueing it`() {
-    val cache = mock<EnvelopeCache>()
-    val mockExecutorService = mock<ISentryExecutorService>()
-
-    initForTest {
-      it.dsn = dsn
-      it.cacheDirPath = getTempPath()
-      it.setEnvelopeDiskCache(cache)
-      it.executorService = mockExecutorService
-    }
-
-    val inOrder = inOrder(cache, mockExecutorService)
-    inOrder.verify(cache).resetPreviousSessionMove()
-    inOrder.verify(mockExecutorService).submit(any<MovePreviousSession>())
-  }
-
-  @Test
   fun `init moves previous session to its own file`() {
     val cacheDir = tmpDir.newFolder().absolutePath
     lateinit var currentSessionFile: File
