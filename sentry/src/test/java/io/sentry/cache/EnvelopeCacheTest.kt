@@ -227,7 +227,7 @@ class EnvelopeCacheTest {
     assertTrue(currentSessionFile.delete())
     assertTrue(currentSessionFile.mkdir())
     cache.persistCurrentSession(newerSession)
-    assertTrue(currentSessionFile.delete())
+    assertThat(currentSessionFile.exists()).isFalse()
 
     val delayedStart = createSession(sessionId = sid)
     val envelope = SentryEnvelope.from(fixture.options.serializer, delayedStart, null)
@@ -345,6 +345,27 @@ class EnvelopeCacheTest {
     cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
 
     verify(serializer).serialize(same(delayedStart), any<Writer>())
+  }
+
+  @Test
+  fun `failed persist after the move keeps the last run's session from the next SessionStart`() {
+    val liveSession = createSession()
+    val serializer = mock<ISerializer>()
+    whenever(serializer.serialize(same(liveSession), any<Writer>()))
+      .thenThrow(RuntimeException("forced ex"))
+    whenever(serializer.deserialize(any(), eq(Session::class.java))).thenReturn(liveSession)
+    val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+
+    cache.persistCurrentSession(liveSession)
+    assertThat(currentSessionFile.exists()).isFalse()
+
+    val envelope = SentryEnvelope.from(SentryOptions.empty().serializer, liveSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
   }
 
   @Test
@@ -820,5 +841,95 @@ class EnvelopeCacheTest {
     assertFalse(currentSessionFile.exists())
     assertTrue(previousSessionFile.exists())
     assertEquals("current session content", previousSessionFile.readText())
+  }
+
+  @Test
+  fun `persistCurrentSession before the init-time move keeps both sessions in place`() {
+    val cache = fixture.getSUT()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    val liveSession = createSession()
+
+    // a hybrid SDK persists the live session before the executor runs MovePreviousSession
+    cache.persistCurrentSession(liveSession)
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(liveSession.sessionId)
+  }
+
+  @Test
+  fun `failed move in persistCurrentSession still writes the live session for the init-time move to skip`() {
+    val cache = fixture.getSUT()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    // a non-empty directory where the previous session file belongs makes the move fail
+    assertTrue(File(previousSessionFile, "blocker").mkdirs())
+    val liveSession = createSession()
+
+    cache.persistCurrentSession(liveSession)
+    assertTrue(previousSessionFile.deleteRecursively())
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(previousSessionFile.exists()).isFalse()
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(liveSession.sessionId)
+  }
+
+  @Test
+  fun `failed move and failed write in persistCurrentSession leave the file for a later move`() {
+    val liveSession = createSession()
+    val serializer = mock<ISerializer>()
+    whenever(serializer.serialize(same(liveSession), any<Writer>()))
+      .thenThrow(RuntimeException("forced ex"))
+    val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    assertTrue(File(previousSessionFile, "blocker").mkdirs())
+
+    cache.persistCurrentSession(liveSession)
+    // the file may still be the last run's session, so it is not deleted
+    assertThat(currentSessionFile.exists()).isTrue()
+
+    assertTrue(previousSessionFile.deleteRecursively())
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(currentSessionFile.exists()).isFalse()
+    assertThat(previousSessionFile.exists()).isTrue()
+  }
+
+  @Test
+  fun `SessionStart before the init-time move keeps both sessions in place`() {
+    val cache = fixture.getSUT()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    currentSessionFile.writeText("session content from last run")
+    val liveSession = createSession()
+
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, liveSession, null),
+      HintUtils.createWithTypeCheckHint(SessionStartHint()),
+    )
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertThat(previousSessionFile.readText()).isEqualTo("session content from last run")
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(liveSession.sessionId)
   }
 }
