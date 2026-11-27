@@ -1165,7 +1165,7 @@ class HangManagerTest {
         },
         listOf(
           HangCollectorSetup(
-            ThreadSampleCollector(epochClock, parked),
+            ThreadSampleCollector(parked),
             { stackTrace, builder -> builder.addStackTrace(stackTrace) },
             null,
           ),

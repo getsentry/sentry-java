@@ -918,9 +918,9 @@ public abstract interface class io/sentry/android/core/hang/ThreadPoster {
 }
 
 public final class io/sentry/android/core/hang/ThreadSampleCollector : io/sentry/android/core/hang/HangDataCollector {
-	public fun <init> (Lio/sentry/time/EpochClock;Ljava/lang/Thread;)V
-	public fun sample ()Lio/sentry/android/core/anr/AnrStackTrace;
-	public synthetic fun sample ()Ljava/lang/Object;
+	public fun <init> (Ljava/lang/Thread;)V
+	public fun sample (Lio/sentry/time/Timestamp;)Lio/sentry/android/core/anr/AnrStackTrace;
+	public synthetic fun sample (Lio/sentry/time/Timestamp;)Ljava/lang/Object;
 }
 
 public abstract class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {
