@@ -67,46 +67,24 @@ internal object SentryKtorClientUtils {
     scopes.captureEvent(event, hint)
   }
 
-  private fun getRequestHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      val requestHeaders =
-        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
-      return HttpUtils.filterHeaders(
-          requestHeaders,
-          scopes.options.dataCollectionResolver.httpRequestHeaders,
-        )
-        .toMutableMap()
-    }
-    return getHeaders(scopes, headers)
+  private fun getRequestHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String> {
+    val requestHeaders =
+      headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+    return HttpUtils.filterHeaders(
+        requestHeaders,
+        scopes.options.dataCollectionResolver.httpRequestHeaders,
+      )
+      .toMutableMap()
   }
 
-  private fun getResponseHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      val responseHeaders =
-        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
-      return HttpUtils.filterHeaders(
-          responseHeaders,
-          scopes.options.dataCollectionResolver.httpResponseHeaders,
-        )
-        .toMutableMap()
-    }
-    return getHeaders(scopes, headers)
-  }
-
-  @Suppress("DEPRECATION")
-  private fun getHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
-    // Headers are only sent if isSendDefaultPii is enabled due to PII
-    if (!scopes.options.isSendDefaultPii) {
-      return null
-    }
-
-    val res = mutableMapOf<String, String>()
-    headers.toMap().forEach { (key, values) ->
-      if (!HttpUtils.containsSensitiveHeader(key)) {
-        res[key] = values.joinToString(",")
-      }
-    }
-    return res
+  private fun getResponseHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String> {
+    val responseHeaders =
+      headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+    return HttpUtils.filterHeaders(
+        responseHeaders,
+        scopes.options.dataCollectionResolver.httpResponseHeaders,
+      )
+      .toMutableMap()
   }
 
   internal fun addBreadcrumb(

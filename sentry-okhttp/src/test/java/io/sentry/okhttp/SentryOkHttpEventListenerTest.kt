@@ -53,7 +53,6 @@ class SentryOkHttpEventListenerTest {
       isSpanActive: Boolean = true,
       useInterceptor: Boolean = false,
       httpStatusCode: Int = 201,
-      sendDefaultPii: Boolean = false,
       configureOptions: (options: SentryOptions) -> Unit = {},
       eventListener: EventListener? = null,
       eventListenerFactory: EventListener.Factory? = null,
@@ -61,7 +60,6 @@ class SentryOkHttpEventListenerTest {
       options =
         SentryOptions().apply {
           dsn = "https://key@sentry.io/proj"
-          isSendDefaultPii = sendDefaultPii
           configureOptions(this)
         }
       whenever(scopes.options).thenReturn(options)

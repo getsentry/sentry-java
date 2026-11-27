@@ -53,31 +53,12 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `setting an empty data collection preserves legacy mode`() {
+  fun `setting an empty data collection leaves all overrides unset`() {
     val options = SentryOptions()
 
     options.dataCollection = DataCollection()
 
     assertThat(options.dataCollection.isExplicitlyConfigured()).isFalse()
-  }
-
-  @Test
-  fun `forcing empty data collection marks it explicitly configured`() {
-    val options = SentryOptions()
-
-    options.dataCollection.forceDataCollection()
-
-    assertThat(options.dataCollection.isExplicitlyConfigured()).isTrue()
-  }
-
-  @Test
-  fun `forcing data collection preserves existing options`() {
-    val options = SentryOptions()
-    options.dataCollection.setUserInfo(false)
-
-    options.dataCollection.forceDataCollection()
-
-    assertThat(options.dataCollection.userInfo).isFalse()
   }
 
   @Test
@@ -107,7 +88,7 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `merging absent external data collection preserves legacy mode`() {
+  fun `merging absent external data collection leaves all overrides unset`() {
     val options = SentryOptions()
 
     options.merge(ExternalOptions())
@@ -169,24 +150,6 @@ class SentryOptionsTest {
     assertThat(options.dataCollection.graphql.variables).isFalse()
     assertThat(options.dataCollection.databaseQueryData).isFalse()
     assertThat(options.dataCollection.filePaths).isFalse()
-  }
-
-  @Test
-  fun `external data collection takes precedence over send default PII`() {
-    val externalOptions =
-      ExternalOptions().apply {
-        isSendDefaultPii = false
-        dataCollection = DataCollection().apply { cookies = KeyValueCollectionBehavior.off() }
-      }
-    val options = SentryOptions()
-
-    options.merge(externalOptions)
-
-    assertThat(options.isSendDefaultPii).isFalse()
-    assertThat(options.dataCollection.isExplicitlyConfigured()).isTrue()
-    assertThat(options.dataCollectionResolver.isUserInfo).isTrue()
-    assertThat(options.dataCollectionResolver.isDatabaseQueryData).isTrue()
-    assertThat(options.dataCollectionResolver.cookies).isEqualTo(KeyValueCollectionBehavior.off())
   }
 
   @Test
@@ -580,7 +543,6 @@ class SentryOptionsTest {
     externalOptions.isEnableDatabaseTransactionTracing = true
     externalOptions.isEnableCacheTracing = true
     externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
-    externalOptions.isSendDefaultPii = true
     externalOptions.isForceInit = true
     externalOptions.cron =
       SentryOptions.Cron().apply {
@@ -658,7 +620,6 @@ class SentryOptionsTest {
     assertEquals(40L, options.cron?.defaultFailureIssueThreshold)
     assertEquals(50L, options.cron?.defaultRecoveryThreshold)
     assertEquals("America/New_York", options.cron?.defaultTimezone)
-    assertTrue(options.isSendDefaultPii)
     assertEquals(RequestSize.MEDIUM, options.maxRequestBodySize)
     assertTrue(options.isEnableSpotlight)
     assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)

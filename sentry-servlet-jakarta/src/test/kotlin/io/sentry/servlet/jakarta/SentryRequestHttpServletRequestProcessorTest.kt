@@ -9,9 +9,7 @@ import java.net.URI
 import java.util.Collections
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -59,17 +57,15 @@ class SentryRequestHttpServletRequestProcessorTest {
   }
 
   @Test
-  fun `does not attach cookies`() {
+  fun `attaches cookies by default`() {
     val request =
       mockRequest(url = "http://example.com?param1=xyz", headers = mapOf("Cookie" to "name=value"))
-    val sentryOptions = SentryOptions()
-    sentryOptions.isSendDefaultPii = false
-    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
+    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
     val event = SentryEvent()
 
     eventProcessor.process(event, Hint())
 
-    assertNotNull(event.request) { assertNull(it.cookies) }
+    assertNotNull(event.request) { assertEquals("name=value", it.cookies) }
   }
 
   @Test
@@ -118,7 +114,7 @@ class SentryRequestHttpServletRequestProcessorTest {
   }
 
   @Test
-  fun `does not attach sensitive headers`() {
+  fun `filters sensitive headers`() {
     val request =
       mockRequest(
         url = "http://example.com?param1=xyz",
@@ -131,19 +127,17 @@ class SentryRequestHttpServletRequestProcessorTest {
             "Cookie" to "some cookies",
           ),
       )
-    val sentryOptions = SentryOptions()
-    sentryOptions.isSendDefaultPii = false
-    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
+    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
     val event = SentryEvent()
 
     eventProcessor.process(event, Hint())
 
     assertNotNull(event.request) { req ->
       assertNotNull(req.headers) {
-        assertFalse(it.containsKey("X-FORWARDED-FOR"))
-        assertFalse(it.containsKey("Authorization"))
-        assertFalse(it.containsKey("authorization"))
-        assertFalse(it.containsKey("Cookies"))
+        assertEquals("192.168.0.1", it["X-FORWARDED-FOR"])
+        assertEquals("[Filtered]", it["Authorization"])
+        assertEquals("[Filtered]", it["authorization"])
+        assertEquals("[Filtered]", it["Cookie"])
         assertTrue(it.containsKey("some-header"))
       }
     }

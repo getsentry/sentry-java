@@ -82,7 +82,6 @@ class SentryKtorClientPluginTest {
         listOf(
           HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX),
         ),
-      sendDefaultPii: Boolean = false,
       optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
       httpClientEngine: HttpClientEngine = Java.create(),
     ): HttpClient {
@@ -95,7 +94,6 @@ class SentryKtorClientPluginTest {
           } else if (!keepDefaultTracePropagationTargets) {
             it.setTracePropagationTargets(listOf("other-api"))
           }
-          it.isSendDefaultPii = sendDefaultPii
         }
       scope = Scope(options)
       whenever(scopes.options).thenReturn(options)
@@ -205,7 +203,6 @@ class SentryKtorClientPluginTest {
         captureFailedRequests = true,
         httpStatusCode = statusCode,
         responseBody = responseBody,
-        sendDefaultPii = true,
       )
 
     val requestBody = "test"
@@ -328,7 +325,6 @@ class SentryKtorClientPluginTest {
       fixture.getSut(
         captureFailedRequests = true,
         httpStatusCode = 500,
-        sendDefaultPii = true,
         optionsConfiguration =
           Sentry.OptionsConfiguration {
             it.dataCollection.cookies = KeyValueCollectionBehavior.off()
@@ -451,9 +447,8 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
-  fun `does not capture headers when sendDefaultPii is disabled`(): Unit = runBlocking {
-    val sut =
-      fixture.getSut(captureFailedRequests = true, httpStatusCode = 500, sendDefaultPii = false)
+  fun `captures headers by default`(): Unit = runBlocking {
+    val sut = fixture.getSut(captureFailedRequests = true, httpStatusCode = 500)
 
     sut.get(fixture.server.url("/hello").toString()) { headers["myHeader"] = "myValue" }
 
@@ -461,10 +456,10 @@ class SentryKtorClientPluginTest {
       .captureEvent(
         check<SentryEvent> {
           val sentryRequest = it.request!!
-          assertEquals(null, sentryRequest.headers)
+          assertEquals("myValue", sentryRequest.headers?.get("myHeader"))
 
           val sentryResponse = it.contexts.response!!
-          assertEquals(null, sentryResponse.headers)
+          assertNotNull(sentryResponse.headers)
         },
         any<Hint>(),
       )
@@ -591,7 +586,7 @@ class SentryKtorClientPluginTest {
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertThat(httpClientSpan.description).isEqualTo("GET ${fixture.server.url("/hello")}")
     assertThat(httpClientSpan.data[SpanDataConvention.HTTP_QUERY_KEY])
-      .isEqualTo("token=secret&page=1")
+      .isEqualTo("token=[Filtered]&page=1")
     assertThat(httpClientSpan.data[SpanDataConvention.HTTP_FRAGMENT_KEY]).isEqualTo("results")
   }
 

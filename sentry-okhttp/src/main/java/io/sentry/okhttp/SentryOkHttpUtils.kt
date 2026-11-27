@@ -69,59 +69,30 @@ internal object SentryOkHttpUtils {
   private fun getRequestHeaders(
     scopes: IScopes,
     requestHeaders: Headers,
-  ): MutableMap<String, String>? {
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      val headers = mutableMapOf<String, String>()
-      for (i in 0 until requestHeaders.size) {
-        headers[requestHeaders.name(i)] = requestHeaders.value(i)
-      }
-      return HttpUtils.filterHeaders(
-          headers,
-          scopes.options.dataCollectionResolver.httpRequestHeaders,
-        )
-        .toMutableMap()
+  ): MutableMap<String, String> {
+    val headers = mutableMapOf<String, String>()
+    for (i in 0 until requestHeaders.size) {
+      headers[requestHeaders.name(i)] = requestHeaders.value(i)
     }
-    return getHeaders(scopes, requestHeaders)
+    return HttpUtils.filterHeaders(
+        headers,
+        scopes.options.dataCollectionResolver.httpRequestHeaders,
+      )
+      .toMutableMap()
   }
 
   private fun getResponseHeaders(
     scopes: IScopes,
     responseHeaders: Headers,
-  ): MutableMap<String, String>? {
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      val headers = mutableMapOf<String, String>()
-      for (i in 0 until responseHeaders.size) {
-        headers[responseHeaders.name(i)] = responseHeaders.value(i)
-      }
-      return HttpUtils.filterHeaders(
-          headers,
-          scopes.options.dataCollectionResolver.httpResponseHeaders,
-        )
-        .toMutableMap()
-    }
-    return getHeaders(scopes, responseHeaders)
-  }
-
-  @Suppress("DEPRECATION")
-  private fun getHeaders(scopes: IScopes, requestHeaders: Headers): MutableMap<String, String>? {
-    // Headers are only sent if isSendDefaultPii is enabled due to PII
-    if (!scopes.options.isSendDefaultPii) {
-      return null
-    }
-
+  ): MutableMap<String, String> {
     val headers = mutableMapOf<String, String>()
-
-    for (i in 0 until requestHeaders.size) {
-      val name = requestHeaders.name(i)
-
-      // header is only sent if isn't sensitive
-      if (HttpUtils.containsSensitiveHeader(name)) {
-        continue
-      }
-
-      val value = requestHeaders.value(i)
-      headers[name] = value
+    for (i in 0 until responseHeaders.size) {
+      headers[responseHeaders.name(i)] = responseHeaders.value(i)
     }
-    return headers
+    return HttpUtils.filterHeaders(
+        headers,
+        scopes.options.dataCollectionResolver.httpResponseHeaders,
+      )
+      .toMutableMap()
   }
 }

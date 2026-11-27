@@ -35,7 +35,7 @@ constructor(@ApiStatus.Internal private val scopes: IScopes = ScopesAdapter.getI
         .addHttpHeader(OPERATION_NAME_HEADER_NAME, encodeHeaderValue(request.operation.name()))
         .addHttpHeader(OPERATION_TYPE_HEADER_NAME, encodeHeaderValue(operationType(request)))
 
-    if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+    if (scopes.options.dataCollectionResolver.isGraphqlVariables) {
       request.scalarAdapters?.let {
         builder.addHttpHeader(
           VARIABLES_HEADER_NAME,

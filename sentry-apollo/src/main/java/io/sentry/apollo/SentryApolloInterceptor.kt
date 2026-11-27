@@ -86,7 +86,7 @@ class SentryApolloInterceptor(
       val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
 
       span.setData("operationId", requestWithHeader.operation.operationId())
-      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+      if (scopes.options.dataCollectionResolver.isGraphqlVariables) {
         span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
       }
 

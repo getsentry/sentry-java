@@ -13,7 +13,6 @@ public abstract interface annotation class io/sentry/spring/EnableSentry : java/
 	public abstract fun dsn ()Ljava/lang/String;
 	public abstract fun exceptionResolverOrder ()I
 	public abstract fun maxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
-	public abstract fun sendDefaultPii ()Z
 }
 
 public final class io/sentry/spring/HttpServletRequestSentryUserProvider : io/sentry/spring/SentryUserProvider {

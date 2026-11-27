@@ -3091,46 +3091,7 @@ class ScopesTest {
   }
 
   @Test
-  fun `adds user fields to log attributes if sendDefaultPii is true`() {
-    val (sut, mockClient) =
-      getEnabledScopes {
-        it.distinctId = "distinctId"
-        it.isSendDefaultPii = true
-      }
-
-    sut.configureScope { scope ->
-      scope.user =
-        User().also {
-          it.id = "usrid"
-          it.username = "usrname"
-          it.email = "user@sentry.io"
-        }
-    }
-    sut.logger().log(SentryLogLevel.WARN, "log message")
-
-    verify(mockClient)
-      .captureLog(
-        check {
-          assertEquals("log message", it.body)
-
-          val userId = it.attributes?.get("user.id")!!
-          assertEquals("usrid", userId.value)
-          assertEquals("string", userId.type)
-
-          val userName = it.attributes?.get("user.name")!!
-          assertEquals("usrname", userName.value)
-          assertEquals("string", userName.type)
-
-          val userEmail = it.attributes?.get("user.email")!!
-          assertEquals("user@sentry.io", userEmail.value)
-          assertEquals("string", userEmail.type)
-        },
-        anyOrNull(),
-      )
-  }
-
-  @Test
-  fun `adds user fields to log attributes even if sendDefaultPii is false`() {
+  fun `adds user fields to log attributes`() {
     val (sut, mockClient) =
       getEnabledScopes {
         it.distinctId = "distinctId"
@@ -3212,11 +3173,7 @@ class ScopesTest {
 
   @Test
   fun `missing user fields do not break attributes`() {
-    val (sut, mockClient) =
-      getEnabledScopes {
-        it.isSendDefaultPii = true
-        it.distinctId = "distinctId"
-      }
+    val (sut, mockClient) = getEnabledScopes { it.distinctId = "distinctId" }
 
     sut.configureScope { scope -> scope.user = User() }
     sut.logger().log(SentryLogLevel.WARN, "log message")
@@ -4094,47 +4051,7 @@ class ScopesTest {
   }
 
   @Test
-  fun `adds user fields to metric attributes if sendDefaultPii is true`() {
-    val (sut, mockClient) =
-      getEnabledScopes {
-        it.distinctId = "distinctId"
-        it.isSendDefaultPii = true
-      }
-
-    sut.configureScope { scope ->
-      scope.user =
-        User().also {
-          it.id = "usrid"
-          it.username = "usrname"
-          it.email = "user@sentry.io"
-        }
-    }
-    sut.metrics().count("metric name")
-
-    verify(mockClient)
-      .captureMetric(
-        check {
-          assertEquals("metric name", it.name)
-
-          val userId = it.attributes?.get("user.id")!!
-          assertEquals("usrid", userId.value)
-          assertEquals("string", userId.type)
-
-          val userName = it.attributes?.get("user.name")!!
-          assertEquals("usrname", userName.value)
-          assertEquals("string", userName.type)
-
-          val userEmail = it.attributes?.get("user.email")!!
-          assertEquals("user@sentry.io", userEmail.value)
-          assertEquals("string", userEmail.type)
-        },
-        anyOrNull(),
-        anyOrNull(),
-      )
-  }
-
-  @Test
-  fun `adds user fields to metric attributes even if sendDefaultPii is false`() {
+  fun `adds user fields to metric attributes`() {
     val (sut, mockClient) = getEnabledScopes { it.distinctId = "distinctId" }
 
     sut.configureScope { scope ->
@@ -4210,11 +4127,7 @@ class ScopesTest {
 
   @Test
   fun `missing user fields do not break attributes for metrics`() {
-    val (sut, mockClient) =
-      getEnabledScopes {
-        it.isSendDefaultPii = true
-        it.distinctId = "distinctId"
-      }
+    val (sut, mockClient) = getEnabledScopes { it.distinctId = "distinctId" }
 
     sut.configureScope { scope -> scope.user = User() }
     sut.metrics().count("metric name")

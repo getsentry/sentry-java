@@ -23,8 +23,8 @@ public final class GraphqlUtils {
   public static @Nullable String filterRequestBody(
       final @NotNull String body, final @NotNull SentryOptions options) {
     final @NotNull DataCollectionResolver resolver = options.getDataCollectionResolver();
-    final boolean includeDocument = resolver.isGraphqlDocumentWithLegacyAlways();
-    final boolean includeVariables = resolver.isGraphqlVariablesWithLegacyAlways();
+    final boolean includeDocument = resolver.isGraphqlDocument();
+    final boolean includeVariables = resolver.isGraphqlVariables();
 
     if (includeDocument && includeVariables) {
       return body;

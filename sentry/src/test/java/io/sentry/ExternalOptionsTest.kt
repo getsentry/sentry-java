@@ -103,18 +103,6 @@ class ExternalOptionsTest {
   }
 
   @Test
-  fun `external data collection takes precedence over external send default PII`() {
-    withPropertiesFile(listOf("send-default-pii=false", "data-collection.cookies.mode=off")) {
-      externalOptions ->
-      val options = SentryOptions().apply { merge(externalOptions) }
-
-      assertThat(options.isSendDefaultPii).isFalse()
-      assertThat(options.dataCollectionResolver.isUserInfo).isTrue()
-      assertThat(options.dataCollectionResolver.cookies).isEqualTo(KeyValueCollectionBehavior.off())
-    }
-  }
-
-  @Test
   fun `creates options with proxy using external properties`() {
     withPropertiesFile(
       listOf(
@@ -566,13 +554,6 @@ class ExternalOptionsTest {
       assertEquals("America/New_York", options.cron?.defaultTimezone)
       assertEquals(40L, options.cron?.defaultFailureIssueThreshold)
       assertEquals(50L, options.cron?.defaultRecoveryThreshold)
-    }
-  }
-
-  @Test
-  fun `creates options with sendDefaultPii set to true`() {
-    withPropertiesFile("send-default-pii=true") { options ->
-      assertTrue(options.isSendDefaultPii == true)
     }
   }
 

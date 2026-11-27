@@ -31,13 +31,6 @@ public @interface EnableSentry {
   String dsn() default "";
 
   /**
-   * Whether to send personal identifiable information along with events.
-   *
-   * @return true if send default PII or false otherwise.
-   */
-  boolean sendDefaultPii() default false;
-
-  /**
    * Determines whether all web exceptions are reported or only uncaught exceptions.
    *
    * @return the order to use for {@link SentryExceptionResolver}

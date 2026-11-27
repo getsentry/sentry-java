@@ -56,7 +56,6 @@ class SentryAppenderTest {
     contextTags: List<String>? = null,
     encoder: Encoder<ILoggingEvent>? = null,
     includeUnencodedMessage: Boolean = false,
-    sendDefaultPii: Boolean = false,
     logsEnabled: Boolean = false,
     options: SentryOptions = SentryOptions(),
     startLater: Boolean = false,
@@ -73,7 +72,6 @@ class SentryAppenderTest {
       whenever(this.transportFactory.create(any(), any())).thenReturn(transport)
       this.encoder = encoder
       options.dsn = dsn
-      options.isSendDefaultPii = sendDefaultPii
       options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
         LoggerBatchProcessor(options, client, ImmediateExecutorService())
       }
@@ -171,7 +169,12 @@ class SentryAppenderTest {
   fun `encodes message`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoderadded %msg"
-    fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder, sendDefaultPii = true)
+    fixture =
+      Fixture(
+        minimumEventLevel = Level.DEBUG,
+        encoder = encoder,
+        includeUnencodedMessage = true,
+      )
     fixture.logger.info("testing encoding {}", "param1")
 
     verify(fixture.transport)
@@ -189,10 +192,10 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `if encoder is set treats raw message and params as PII`() {
+  fun `if encoder is set omits raw message and params by default`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoderadded %msg"
-    fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder, sendDefaultPii = false)
+    fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder)
     fixture.logger.info("testing encoding {}", "param1")
 
     verify(fixture.transport)
@@ -252,31 +255,6 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `sendDefaultPii includes unencoded message when data collection is configured`() {
-    val encoder = PatternLayoutEncoder()
-    encoder.pattern = "encoded %msg"
-    val options = SentryOptions().apply { dataCollection.setFilePaths(false) }
-    fixture =
-      Fixture(
-        minimumEventLevel = Level.DEBUG,
-        encoder = encoder,
-        sendDefaultPii = true,
-        options = options,
-      )
-    fixture.logger.info("testing encoding {}", "param1")
-
-    verify(fixture.transport)
-      .send(
-        checkEvent { event ->
-          assertThat(event.message?.formatted).isEqualTo("encoded testing encoding param1")
-          assertThat(event.message?.message).isEqualTo("testing encoding {}")
-          assertThat(event.message?.params).containsExactly("param1")
-        },
-        anyOrNull(),
-      )
-  }
-
-  @Test
   fun `include unencoded message defaults to false and has no effect without encoder`() {
     fixture = Fixture(minimumEventLevel = Level.DEBUG, includeUnencodedMessage = true)
     fixture.logger.info("testing encoding {}", "param1")
@@ -313,7 +291,12 @@ class SentryAppenderTest {
   @Test
   fun `fallsback when encoder throws`() {
     var encoder = ThrowingEncoder()
-    fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder, sendDefaultPii = true)
+    fixture =
+      Fixture(
+        minimumEventLevel = Level.DEBUG,
+        encoder = encoder,
+        includeUnencodedMessage = true,
+      )
     fixture.logger.info("testing when encoder throws")
 
     verify(fixture.transport)
@@ -538,7 +521,7 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `does not send formatted log message if encoder is available but sendDefaultPii is off`() {
+  fun `does not send template attributes if encoder is available by default`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoderadded %msg"
     fixture = Fixture(minimumLevel = Level.TRACE, logsEnabled = true, encoder = encoder)
@@ -559,14 +542,14 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `sends formatted log message if encoder is available and sendDefaultPii is on but encoder throws`() {
+  fun `sends template attributes if encoder throws`() {
     var encoder = ThrowingEncoder()
     fixture =
       Fixture(
         minimumLevel = Level.TRACE,
         logsEnabled = true,
-        sendDefaultPii = true,
         encoder = encoder,
+        includeUnencodedMessage = true,
       )
     fixture.logger.trace("Testing {} level", "TRACE")
 
@@ -585,14 +568,14 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `sends formatted log message if encoder is available and sendDefaultPii is on`() {
+  fun `sends template attributes if unencoded message is included`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoderadded %msg"
     fixture =
       Fixture(
         minimumLevel = Level.TRACE,
         logsEnabled = true,
-        sendDefaultPii = true,
+        includeUnencodedMessage = true,
         encoder = encoder,
       )
     fixture.logger.trace("Testing {} level", "TRACE")
@@ -939,7 +922,7 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `does not set template or attributes on log with encoder when sendDefaultPii is false`() {
+  fun `does not set template or attributes on log with encoder by default`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoded %msg"
     fixture =
@@ -947,7 +930,6 @@ class SentryAppenderTest {
         minimumLevel = Level.ERROR,
         logsEnabled = true,
         encoder = encoder,
-        sendDefaultPii = false,
       )
     fixture.logger.error("testing message {}", "param")
 
@@ -987,32 +969,6 @@ class SentryAppenderTest {
           assertThat(log.attributes?.get("sentry.message.template")?.value)
             .isEqualTo("testing message {}")
           assertThat(log.attributes?.get("sentry.message.parameter.0")?.value).isEqualTo("param")
-        },
-      )
-  }
-
-  @Test
-  fun `sets template and attributes on log with encoder when sendDefaultPii is true`() {
-    var encoder = PatternLayoutEncoder()
-    encoder.pattern = "encoded %msg"
-    fixture =
-      Fixture(
-        minimumLevel = Level.ERROR,
-        logsEnabled = true,
-        encoder = encoder,
-        sendDefaultPii = true,
-      )
-    fixture.logger.error("testing message {}", "param")
-
-    Sentry.flush(1000)
-
-    verify(fixture.transport)
-      .send(
-        checkLogs { logs ->
-          val log = logs.items.first()
-          assertEquals("encoded testing message param", log.body)
-          assertEquals("testing message {}", log.attributes?.get("sentry.message.template")?.value)
-          assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
         },
       )
   }

@@ -19,9 +19,7 @@ class HttpServletRequestSentryUserProviderTest {
     request.addHeader("X-FORWARDED-FOR", "192.168.0.1,192.168.0.2")
     RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
 
-    val options = SentryOptions()
-    options.isSendDefaultPii = true
-    val userProvider = HttpServletRequestSentryUserProvider(options)
+    val userProvider = HttpServletRequestSentryUserProvider(SentryOptions())
     val result = userProvider.provideUser()
 
     assertNotNull(result)
@@ -36,9 +34,7 @@ class HttpServletRequestSentryUserProviderTest {
     request.userPrincipal = principal
     RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
 
-    val options = SentryOptions()
-    options.isSendDefaultPii = true
-    val userProvider = HttpServletRequestSentryUserProvider(options)
+    val userProvider = HttpServletRequestSentryUserProvider(SentryOptions())
     val result = userProvider.provideUser()
 
     assertNotNull(result)
@@ -53,11 +49,7 @@ class HttpServletRequestSentryUserProviderTest {
     request.userPrincipal = principal
     RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
 
-    val options =
-      SentryOptions().apply {
-        isSendDefaultPii = true
-        dataCollection.setUserInfo(false)
-      }
+    val options = SentryOptions().apply { dataCollection.setUserInfo(false) }
     val result = HttpServletRequestSentryUserProvider(options).provideUser()
 
     assertNull(result)
@@ -71,30 +63,10 @@ class HttpServletRequestSentryUserProviderTest {
     request.userPrincipal = principal
     RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
 
-    val options =
-      SentryOptions().apply {
-        isSendDefaultPii = false
-        dataCollection.setUserInfo(true)
-      }
+    val options = SentryOptions().apply { dataCollection.setUserInfo(true) }
     val result = HttpServletRequestSentryUserProvider(options).provideUser()
 
     assertNotNull(result)
     assertEquals("janesmith", result.username)
-  }
-
-  @Test
-  fun `when sendDefaultPii is set to false, does not attach user data Sentry Event`() {
-    val principal = mock<Principal>()
-    whenever(principal.name).thenReturn("janesmith")
-    val request = MockHttpServletRequest()
-    request.userPrincipal = principal
-    RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
-
-    val options = SentryOptions()
-    options.isSendDefaultPii = false
-    val userProvider = HttpServletRequestSentryUserProvider(options)
-    val result = userProvider.provideUser()
-
-    assertNull(result)
   }
 }

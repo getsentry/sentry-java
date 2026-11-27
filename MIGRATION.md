@@ -1,3 +1,36 @@
+# Migrating from 8.x to 9.x
+
+## Replace `sendDefaultPii` with Data Collection
+
+Version 9 removes `sendDefaultPii` from the Java API, external configuration, Android manifest metadata, and Spring's `@EnableSentry` annotation. Configure each category through `dataCollection` instead.
+
+When no Data Collection setting is specified, the SDK now uses these defaults:
+
+- User information, database query data, file paths, GraphQL documents and variables, and HTTP request and response bodies are enabled.
+- Cookies, URL query parameters, and HTTP request and response headers are collected with their default deny lists.
+
+Explicit settings still take precedence. If you relied on `sendDefaultPii=false` and want to disable these categories, configure them directly:
+
+```java
+Sentry.init(options -> {
+  DataCollection dataCollection = options.getDataCollection();
+  dataCollection.setUserInfo(false);
+  dataCollection.setDatabaseQueryData(false);
+  dataCollection.setFilePaths(false);
+  dataCollection.setCookies(KeyValueCollectionBehavior.off());
+  dataCollection.setUrlQueryParams(KeyValueCollectionBehavior.off());
+  dataCollection.setHttpBodies(java.util.Collections.emptySet());
+  dataCollection.getHttpHeaders().setRequest(KeyValueCollectionBehavior.off());
+  dataCollection.getHttpHeaders().setResponse(KeyValueCollectionBehavior.off());
+  dataCollection.getGraphql().setDocument(false);
+  dataCollection.getGraphql().setVariables(false);
+});
+```
+
+`DataCollection.forceDataCollection()` is also removed because the documented defaults now apply automatically.
+
+For Logback, use `includeUnencodedMessage` to control whether events include the original message template and parameters when an encoder is configured. OpenTelemetry-derived HTTP headers now follow `dataCollection.httpHeaders.request`.
+
 # Migrating from `sentry-java` to `sentry-android`
 
 #### Docs

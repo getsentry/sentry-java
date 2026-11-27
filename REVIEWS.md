@@ -48,8 +48,8 @@ rule file in [`.cursor/rules/`](.cursor/rules) for the area the diff touches (`a
 - Real secrets, tokens, or DSNs in code, logs, or configs. Obviously-fake DSNs in tests, samples,
   and docs are expected — do not flag those.
 - New code that collects user-identifiable data (headers, cookies, request/response bodies, URL
-  query strings, IPs, usernames, file paths, device identifiers) must be gated behind
-  `options.isSendDefaultPii()`, and must not be on by default otherwise.
+  query strings, IPs, usernames, file paths, device identifiers) must use the corresponding
+  `DataCollectionResolver` policy and follow the documented defaults.
 - Debug flags, verbose logging, or sampling overrides accidentally left enabled in production
   defaults.
 

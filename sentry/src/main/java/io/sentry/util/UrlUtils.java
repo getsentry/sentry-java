@@ -49,9 +49,7 @@ public final class UrlUtils {
 
   public static @Nullable String filterQueryParams(
       final @Nullable String query, final @NotNull DataCollectionResolver resolver) {
-    return resolver.isDataCollectionConfigured()
-        ? HttpUtils.filterQueryParams(query, resolver.getUrlQueryParams())
-        : query;
+    return HttpUtils.filterQueryParams(query, resolver.getUrlQueryParams());
   }
 
   private static boolean isValidAbsoluteUrl(final @NotNull URI uri) {

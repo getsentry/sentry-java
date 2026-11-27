@@ -119,7 +119,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final Message message = new Message();
 
     // Encoders may mask or strip PII. When one is configured, include the original message and
-    // parameters only if includeUnencodedMessage or the legacy sendDefaultPii option is enabled.
+    // parameters only if includeUnencodedMessage is enabled.
     if (shouldIncludeUnencodedMessage()) {
       message.setMessage(loggingEvent.getMessage());
       message.setParams(toParams(loggingEvent.getArgumentArray()));
@@ -179,7 +179,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final @NotNull String formattedMessage = formatted(loggingEvent);
 
     // Encoders may mask or strip PII. When one is configured, include the original message and
-    // parameters only if includeUnencodedMessage or the legacy sendDefaultPii option is enabled.
+    // parameters only if includeUnencodedMessage is enabled.
     if (shouldIncludeUnencodedMessage()) {
       final @Nullable String nonFormattedMessage = loggingEvent.getMessage();
       if (nonFormattedMessage != null && !formattedMessage.equals(nonFormattedMessage)) {
@@ -202,11 +202,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         .log(sentryLevel, params, formattedMessage, arguments != null ? arguments : new Object[0]);
   }
 
-  @SuppressWarnings("deprecation")
   private boolean shouldIncludeUnencodedMessage() {
-    return encoder == null
-        || includeUnencodedMessage
-        || ScopesAdapter.getInstance().getOptions().isSendDefaultPii();
+    return encoder == null || includeUnencodedMessage;
   }
 
   private String formatted(@NotNull ILoggingEvent loggingEvent) {

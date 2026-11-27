@@ -54,7 +54,6 @@ public final class ExternalOptions {
   private @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes;
 
   private @Nullable Boolean sendModules;
-  private @Nullable Boolean sendDefaultPii;
   private @Nullable DataCollection dataCollection;
   private @Nullable Boolean enableBackpressureHandling;
   private @Nullable Boolean enableDatabaseTransactionTracing;
@@ -159,7 +158,6 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("enable-pretty-serialization-output"));
 
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
-    options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
     options.setDataCollection(parseDataCollection(propertiesProvider));
 
     options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
@@ -626,14 +624,6 @@ public final class ExternalOptions {
 
   public void setSendModules(final @Nullable Boolean sendModules) {
     this.sendModules = sendModules;
-  }
-
-  public @Nullable Boolean isSendDefaultPii() {
-    return sendDefaultPii;
-  }
-
-  public void setSendDefaultPii(final @Nullable Boolean sendDefaultPii) {
-    this.sendDefaultPii = sendDefaultPii;
   }
 
   public @Nullable DataCollection getDataCollection() {

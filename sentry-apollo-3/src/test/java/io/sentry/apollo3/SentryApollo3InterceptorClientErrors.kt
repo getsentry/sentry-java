@@ -79,8 +79,7 @@ class SentryApollo3InterceptorClientErrors {
       failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
       httpStatusCode: Int = 200,
       responseBody: String = responseBodyOk,
-      sendDefaultPii: Boolean = false,
-      includeCookies: Boolean = sendDefaultPii,
+      includeCookies: Boolean = false,
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
       configureOptions: SentryOptions.() -> Unit = {},
     ): ApolloClient {
@@ -93,7 +92,6 @@ class SentryApollo3InterceptorClientErrors {
               SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
                 sdkVersion = SdkVersion("test", "1.2.3")
-                isSendDefaultPii = sendDefaultPii
                 configureOptions()
               },
             )
@@ -272,7 +270,7 @@ class SentryApollo3InterceptorClientErrors {
           assertEquals(193L, request.bodySize)
           assertEquals(body, request.data)
           assertNull(request.cookies)
-          assertNull(request.headers)
+          assertNotNull(request.headers)
         },
         any<Hint>(),
       )
@@ -393,7 +391,6 @@ class SentryApollo3InterceptorClientErrors {
     val sut =
       fixture.getSut(
         responseBody = fixture.responseBodyNotOk,
-        sendDefaultPii = true,
         includeCookies = true,
       ) {
         dataCollection.cookies = KeyValueCollectionBehavior.off()
@@ -426,8 +423,8 @@ class SentryApollo3InterceptorClientErrors {
   }
 
   @Test
-  fun `capture errors with more request context if sendDefaultPii is enabled`() {
-    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
+  fun `capture errors with request cookies`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, includeCookies = true)
     executeQuery(sut)
 
     verify(fixture.scopes)
@@ -435,7 +432,7 @@ class SentryApollo3InterceptorClientErrors {
         check {
           val request = it.request!!
 
-          assertEquals("theme=dark; sessionId=secret", request.cookies)
+          assertEquals("theme=dark; sessionId=[Filtered]", request.cookies)
           assertNotNull(request.headers)
           assertEquals("LaunchDetails", request.headers?.get("X-APOLLO-OPERATION-NAME"))
         },
@@ -457,7 +454,7 @@ class SentryApollo3InterceptorClientErrors {
           assertEquals(200, response.bodySize)
           assertEquals(fixture.responseBodyNotOk, response.data)
           assertNull(response.cookies)
-          assertNull(response.headers)
+          assertNotNull(response.headers)
         },
         any<Hint>(),
       )
@@ -516,8 +513,8 @@ class SentryApollo3InterceptorClientErrors {
   }
 
   @Test
-  fun `capture errors with more response context if sendDefaultPii is enabled`() {
-    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
+  fun `capture errors with response cookies`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, includeCookies = true)
     executeQuery(sut)
 
     verify(fixture.scopes)

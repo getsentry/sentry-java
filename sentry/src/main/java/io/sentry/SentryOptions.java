@@ -358,9 +358,6 @@ public class SentryOptions implements RateLimiterConfig {
   /** SdkVersion object that contains the Sentry Client Name and its version */
   private @Nullable SdkVersion sdkVersion;
 
-  /** whether to send personal identifiable information along with events */
-  private boolean sendDefaultPii = false;
-
   private @NotNull DataCollection dataCollection = new DataCollection();
 
   private final @NotNull DataCollectionResolver dataCollectionResolver =
@@ -1781,28 +1778,6 @@ public class SentryOptions implements RateLimiterConfig {
   }
 
   /**
-   * Returns whether personally identifiable information is sent by default.
-   *
-   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
-   */
-  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
-  @Deprecated
-  public boolean isSendDefaultPii() {
-    return sendDefaultPii;
-  }
-
-  /**
-   * Sets whether personally identifiable information is sent by default.
-   *
-   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
-   */
-  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
-  @Deprecated
-  public void setSendDefaultPii(boolean sendDefaultPii) {
-    this.sendDefaultPii = sendDefaultPii;
-  }
-
-  /**
    * Returns the configuration for data that the SDK collects automatically.
    *
    * <p>The returned object is always present. Accessing it does not configure data collection, but
@@ -1815,9 +1790,8 @@ public class SentryOptions implements RateLimiterConfig {
   /**
    * Replaces the configuration for data that the SDK collects automatically.
    *
-   * <p>This discards any Data Collection options already configured on this instance. To opt into
-   * the documented defaults while preserving them, call {@link
-   * DataCollection#forceDataCollection()} on the object returned by {@link #getDataCollection()}.
+   * <p>This discards any Data Collection options already configured on this instance. Options that
+   * are not explicitly configured use the documented defaults.
    */
   public void setDataCollection(final @NotNull DataCollection dataCollection) {
     if (dataCollection != null) {
@@ -3924,9 +3898,6 @@ public class SentryOptions implements RateLimiterConfig {
     }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());
-    }
-    if (options.isSendDefaultPii() != null) {
-      setSendDefaultPii(options.isSendDefaultPii());
     }
     if (options.getDataCollection() != null) {
       mergeDataCollection(options.getDataCollection());

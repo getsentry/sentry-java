@@ -14,7 +14,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("deprecation")
 @ApiStatus.Internal
 public final class CookieUtils {
 
@@ -61,9 +60,6 @@ public final class CookieUtils {
 
   public static @Nullable String filterCookies(
       final @Nullable String cookies, final @NotNull SentryOptions options) {
-    if (!options.getDataCollectionResolver().isDataCollectionConfigured()) {
-      return options.isSendDefaultPii() ? cookies : null;
-    }
     return filterCookies(cookies, options.getDataCollectionResolver().getCookies(), null);
   }
 
@@ -89,9 +85,6 @@ public final class CookieUtils {
 
   public static @Nullable String filterSetCookie(
       final @Nullable String cookie, final @NotNull SentryOptions options) {
-    if (!options.getDataCollectionResolver().isDataCollectionConfigured()) {
-      return options.isSendDefaultPii() ? cookie : null;
-    }
     return filterSetCookie(cookie, options.getDataCollectionResolver().getCookies());
   }
 

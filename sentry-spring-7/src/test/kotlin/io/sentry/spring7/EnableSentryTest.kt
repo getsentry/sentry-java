@@ -21,23 +21,17 @@ class EnableSentryTest {
     ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfig::class.java))
 
   @Test
-  fun `sets properties from environment on SentryOptions`() {
-    ApplicationContextRunner()
-      .withConfiguration(UserConfigurations.of(AppConfigWithDefaultSendPii::class.java))
-      .run {
-        assertThat(it).hasSingleBean(SentryOptions::class.java)
-        val options = it.getBean(SentryOptions::class.java)
-        assertThat(options.dsn).isEqualTo("http://key@localhost/proj")
-        assertThat(options.isSendDefaultPii).isTrue()
-      }
+  fun `sets dsn from annotation on SentryOptions`() {
+    contextRunner.run {
+      assertThat(it).hasSingleBean(SentryOptions::class.java)
+      assertThat(it.getBean(SentryOptions::class.java).dsn).isEqualTo("http://key@localhost/proj")
+    }
 
     ApplicationContextRunner()
       .withConfiguration(UserConfigurations.of(AppConfigWithEmptyDsn::class.java))
       .run {
         assertThat(it).hasSingleBean(SentryOptions::class.java)
-        val options = it.getBean(SentryOptions::class.java)
-        assertThat(options.dsn).isEmpty()
-        assertThat(options.isSendDefaultPii).isFalse()
+        assertThat(it.getBean(SentryOptions::class.java).dsn).isEmpty()
       }
   }
 
@@ -180,9 +174,6 @@ class EnableSentryTest {
   @EnableSentry(dsn = "http://key@localhost/proj") class AppConfig
 
   @EnableSentry(dsn = "") class AppConfigWithEmptyDsn
-
-  @EnableSentry(dsn = "http://key@localhost/proj", sendDefaultPii = true)
-  class AppConfigWithDefaultSendPii
 
   @EnableSentry(dsn = "http://key@localhost/proj", exceptionResolverOrder = Integer.MAX_VALUE)
   class AppConfigWithExceptionResolverOrderIntegerMaxValue

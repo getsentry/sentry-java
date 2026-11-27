@@ -15,6 +15,10 @@
   - Only the name and no-arg constructor of `SentryAndroidOptions` are kept, instead of every member of every `SentryOptions` subclass.
   - `sentry-android-ndk` no longer keeps native methods of all `io.sentry.**` classes. `sentry-native-ndk` still keeps its own.
   - If your code reaches any of these by name through JNI, reflection, or bindings, add your own keep rules for exactly what it uses.
+- Remove the deprecated `sendDefaultPii` option from Java APIs, properties and environment variables, Android manifest metadata, and Spring annotations ([#6793](https://github.com/getsentry/sentry-java/pull/6793))
+  - Configure automatically collected data with `dataCollection` instead. See the Data Collection documentation for [Android](https://docs.sentry.io/platforms/android/configuration/options/#dataCollection), [Java](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection), and [Spring Boot](https://docs.sentry.io/platforms/java/guides/spring-boot/configuration/options/#dataCollection). `DataCollection.forceDataCollection()` is also removed because the defaults now apply automatically.
+  - When no `dataCollection` setting is specified, user information, database query data, file paths, GraphQL documents and variables, and HTTP request and response bodies are enabled. Cookies, URL query parameters, and HTTP headers use their default deny lists.
+  - Logback raw message templates and parameters are controlled only by `includeUnencodedMessage` when an encoder is configured.
 - The Spring Boot 3 integrations are tested against Spring Boot 3.4 and newer. Spring Boot 3.2 and 3.3 are no longer supported ([#6656](https://github.com/getsentry/sentry-java/pull/6656))
 - Remove the deprecated `io.sentry.android.core.LoadClass`. Use `io.sentry.util.LoadClass` instead ([#6594](https://github.com/getsentry/sentry-java/pull/6594))
 - `SentryOptions.getIgnoredErrors()`, `getIgnoredTransactions()`, `getIgnoredCheckIns()` and `getIgnoredSpanOrigins()` now return `List<String>` instead of `List<FilterString>`, matching their setters ([#6489](https://github.com/getsentry/sentry-java/pull/6489))

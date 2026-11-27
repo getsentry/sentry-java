@@ -51,7 +51,6 @@ class MainEventProcessorTest {
       attachStackTrace: Boolean = true,
       environment: String? = "environment",
       tags: Map<String, String> = emptyMap(),
-      sendDefaultPii: Boolean? = null,
       serverName: String? = "server",
       host: String? = null,
       resolveHostDelay: Long? = null,
@@ -65,9 +64,6 @@ class MainEventProcessorTest {
       sentryOptions.environment = environment
       sentryOptions.serverName = serverName
       sentryOptions.setModulesLoader { modules }
-      if (sendDefaultPii != null) {
-        sentryOptions.isSendDefaultPii = sendDefaultPii
-      }
       if (proguardUuid != null) {
         sentryOptions.proguardUuid = proguardUuid
       }
@@ -302,24 +298,16 @@ class MainEventProcessorTest {
 
   @Test
   fun `when event does not have ip address set, sets {{auto}} as the ip address`() {
-    val sut = fixture.getSut(sendDefaultPii = true)
+    val sut = fixture.getSut()
     val event = SentryEvent()
     sut.process(event, Hint())
     assertNotNull(event.user) { assertEquals("{{auto}}", it.ipAddress) }
   }
 
   @Test
-  fun `when event does not have ip address set, do not enrich ip address if sendDefaultPii is false`() {
-    val sut = fixture.getSut(sendDefaultPii = false)
-    val event = SentryEvent()
-    sut.process(event, Hint())
-    assertNotNull(event.user) { assertNull(it.ipAddress) }
-  }
-
-  @Test
-  fun `when user info is disabled, do not enrich ip address if sendDefaultPii is true`() {
+  fun `when user info is disabled, do not enrich ip address`() {
     fixture.sentryOptions.dataCollection.setUserInfo(false)
-    val sut = fixture.getSut(sendDefaultPii = true)
+    val sut = fixture.getSut()
     val event = SentryEvent()
 
     sut.process(event, Hint())
@@ -328,9 +316,9 @@ class MainEventProcessorTest {
   }
 
   @Test
-  fun `when user info is enabled, enrich ip address if sendDefaultPii is false`() {
+  fun `when user info is enabled, enrich ip address`() {
     fixture.sentryOptions.dataCollection.setUserInfo(true)
-    val sut = fixture.getSut(sendDefaultPii = false)
+    val sut = fixture.getSut()
     val event = SentryEvent()
 
     sut.process(event, Hint())
@@ -341,7 +329,7 @@ class MainEventProcessorTest {
   @Test
   fun `when another data collection setting is configured, omitted user info uses its default`() {
     fixture.sentryOptions.dataCollection.cookies = KeyValueCollectionBehavior.off()
-    val sut = fixture.getSut(sendDefaultPii = false)
+    val sut = fixture.getSut()
     val event = SentryEvent()
 
     sut.process(event, Hint())
@@ -351,7 +339,7 @@ class MainEventProcessorTest {
 
   @Test
   fun `when event has ip address set, keeps original ip address`() {
-    val sut = fixture.getSut(sendDefaultPii = true)
+    val sut = fixture.getSut()
     val event = SentryEvent()
     event.user = User().apply { ipAddress = "192.168.0.1" }
     sut.process(event, Hint())
@@ -494,7 +482,7 @@ class MainEventProcessorTest {
 
   @Test
   fun `User is merged on transaction`() {
-    val processor = fixture.getSut(sendDefaultPii = true)
+    val processor = fixture.getSut()
 
     var transaction = SentryTransaction(fixture.sentryTracer)
     transaction = processor.process(transaction, Hint())
