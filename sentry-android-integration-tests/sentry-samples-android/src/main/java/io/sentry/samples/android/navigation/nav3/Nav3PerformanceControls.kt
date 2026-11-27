@@ -52,6 +52,7 @@ internal class Nav3PerformanceState(
   var autoNavigate by mutableStateOf(false)
   var extractorMode by mutableStateOf(Nav3PerformanceExtractorMode.NORMAL)
   var argumentMode by mutableStateOf(Nav3PerformanceArgumentMode.FLAT)
+  var mapperMode by mutableStateOf(Nav3PerformanceMapperMode.CUSTOM)
   var integrationMode by mutableStateOf(Nav3PerformanceIntegrationMode.FULL_STACK)
     private set
 
@@ -321,6 +322,7 @@ internal class Nav3PerformanceState(
     appendLine("status=$performanceStatus")
     appendLine("route=$currentRoute")
     appendLine("tracked_stack=$backStack")
+    appendLine("mapper_mode=${mapperMode.label}")
     appendLine("recomposition_requests=$recompositionRequests")
     appendLine("navigation_mutations=$navigationMutations")
     appendLine("destination_changes=$destinationChanges")
@@ -408,7 +410,7 @@ internal class Nav3PerformanceState(
     pendingOperation = null
   }
 
-  fun recordNameExtraction(sectionName: String, block: () -> String): String {
+  fun <T> recordNameExtraction(sectionName: String, block: () -> T): T {
     val startedAt = System.nanoTime()
     Trace.beginSection(sectionName)
     try {
@@ -510,6 +512,17 @@ internal enum class Nav3PerformanceArgumentMode(val label: String) {
   FLAT("Flat"),
   NESTED("Nested"),
   LARGE("Large"),
+}
+
+/**
+ * Selects the performance scenario's mapper.
+ *
+ * [CUSTOM] provides synthetic arguments and separate extractor timings. [SERIAL_NAME] uses the
+ * built-in mapper, which extracts names only; each of its calls is timed as name extraction.
+ */
+internal enum class Nav3PerformanceMapperMode(val label: String) {
+  CUSTOM("Custom"),
+  SERIAL_NAME("SerialName"),
 }
 
 internal enum class Nav3PerformanceIntegrationMode(
@@ -874,19 +887,33 @@ internal fun Nav3PerformancePanel(
 
     if (showExtractorControls) {
       PerfCard(title = "Extractor Inputs") {
+        val customExtractorControlsEnabled =
+          !state.performanceRunActive && state.mapperMode == Nav3PerformanceMapperMode.CUSTOM
+
+        PerfModeRow(
+          label = "Mapper",
+          selectedLabel = state.mapperMode.label,
+          enabled = !state.performanceRunActive,
+          options =
+            Nav3PerformanceMapperMode.entries.map { mode ->
+              mode.label to { state.mapperMode = mode }
+            },
+        )
+
         PerfModeRow(
           label = "Extractor cost",
           selectedLabel = state.extractorMode.label,
-          enabled = !state.performanceRunActive,
+          enabled = customExtractorControlsEnabled,
           options =
             Nav3PerformanceExtractorMode.entries.map { mode ->
               mode.label to { state.extractorMode = mode }
             },
         )
+
         PerfModeRow(
           label = "Argument shape",
           selectedLabel = state.argumentMode.label,
-          enabled = !state.performanceRunActive,
+          enabled = customExtractorControlsEnabled,
           options =
             Nav3PerformanceArgumentMode.entries.map { mode ->
               mode.label to { state.argumentMode = mode }
@@ -901,16 +928,19 @@ internal fun Nav3PerformancePanel(
         state.recompositionRequests.toString(),
         tag = navPerformanceTag("recomposition_requests"),
       )
+
       PerfInfoRow(
         "Navigation mutations",
         state.navigationMutations.toString(),
         tag = navPerformanceTag("navigation_mutations"),
       )
+
       PerfInfoRow(
         "Destination changes",
         state.destinationChanges.toString(),
         tag = navPerformanceTag("destination_changes"),
       )
+
       if (showExtractorControls) {
         if (state.performanceRunActive) {
           Text("Metrics are published when the fixed run completes.")
@@ -972,6 +1002,7 @@ internal fun Nav3PerformancePanel(
           )
         }
       }
+
       Button(
         enabled = !state.performanceRunActive,
         onClick = { state.resetCounters() },
@@ -979,6 +1010,7 @@ internal fun Nav3PerformancePanel(
       ) {
         Text("Reset Counters")
       }
+
       Button(
         enabled = !state.performanceRunActive,
         onClick = { state.publishDiagnostics(currentRoute = currentRoute, backStack = backStack) },
@@ -1243,7 +1275,7 @@ private fun Nav3PerformanceState.argumentsExtractorAverageMicros(): String =
   averageMicros(argumentsExtractorNanos, argumentsExtractorCalls)
 
 private fun averageMicros(totalNanos: Long, count: Int): String =
-  if (count == 0) "0 us" else "${totalNanos / count / 1_000} us"
+  if (count == 0) "0 us" else String.format(Locale.US, "%.2f us", totalNanos / count / 1_000.0)
 
 private fun formatNanos(durationNanos: Long): String =
   if (durationNanos < 1_000_000L) {
