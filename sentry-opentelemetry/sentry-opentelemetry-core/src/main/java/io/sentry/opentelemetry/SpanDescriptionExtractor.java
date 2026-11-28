@@ -3,6 +3,7 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.semconv.DbAttributes;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
@@ -33,8 +34,9 @@ public final class SpanDescriptionExtractor {
       return descriptionForHttpMethod(otelSpan, httpMethod);
     }
 
-    final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
-    if (dbSystem != null) {
+    final @Nullable String dbSystemName = attributes.get(DbAttributes.DB_SYSTEM_NAME);
+    final @Nullable String legacyDbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
+    if (dbSystemName != null || legacyDbSystem != null) {
       return descriptionForDbSystem(otelSpan);
     }
 
@@ -149,13 +151,13 @@ public final class SpanDescriptionExtractor {
   @SuppressWarnings("deprecation")
   private OtelSpanInfo descriptionForDbSystem(final @NotNull SpanData otelSpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
-    @Nullable String dbStatement = attributes.get(DbIncubatingAttributes.DB_STATEMENT);
-    if (dbStatement != null) {
-      return new OtelSpanInfo("db", dbStatement, TransactionNameSource.TASK);
-    }
-    @Nullable String dbQueryText = attributes.get(DbIncubatingAttributes.DB_QUERY_TEXT);
+    final @Nullable String dbQueryText = attributes.get(DbAttributes.DB_QUERY_TEXT);
     if (dbQueryText != null) {
-      return new OtelSpanInfo("db", dbQueryText, TransactionNameSource.TASK);
+      return new OtelSpanInfo("db.query", dbQueryText, TransactionNameSource.TASK);
+    }
+    final @Nullable String dbStatement = attributes.get(DbIncubatingAttributes.DB_STATEMENT);
+    if (dbStatement != null) {
+      return new OtelSpanInfo("db.query", dbStatement, TransactionNameSource.TASK);
     }
 
     return new OtelSpanInfo("db", otelSpan.getName(), TransactionNameSource.TASK);

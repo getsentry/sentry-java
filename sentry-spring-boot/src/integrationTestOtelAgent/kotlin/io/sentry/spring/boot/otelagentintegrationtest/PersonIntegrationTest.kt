@@ -137,7 +137,7 @@ class PersonIntegrationTest : IntegrationTest() {
     assertThat(transaction.hasSpanWithOp("spanCreatedThroughSentryApi")).isTrue()
     assertThat(
         transaction.hasSpanWithOpAndDescription(
-          "db",
+          "db.query",
           "insert into person (firstName, lastName) values (?, ?)",
         ),
       )

@@ -7,6 +7,7 @@ import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.semconv.DbAttributes
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes
@@ -176,23 +177,23 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
-  fun `sets op to db for span with db system and query text`() {
+  fun `sets op to db query for span with stable db attributes`() {
     givenAttributes(
       mapOf(
-        DbIncubatingAttributes.DB_SYSTEM to "some",
-        DbIncubatingAttributes.DB_QUERY_TEXT to "SELECT * FROM tbl",
+        DbAttributes.DB_SYSTEM_NAME to "some",
+        DbAttributes.DB_QUERY_TEXT to "SELECT * FROM tbl",
       ),
     )
 
     val info = whenExtractingSpanInfo()
 
-    assertEquals("db", info.op)
+    assertEquals("db.query", info.op)
     assertEquals("SELECT * FROM tbl", info.description)
     assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
   }
 
   @Test
-  fun `sets op to db for span with db system and statement`() {
+  fun `sets op to db query for span with legacy db attributes`() {
     givenAttributes(
       mapOf(
         DbIncubatingAttributes.DB_SYSTEM to "some",
@@ -202,14 +203,31 @@ class SpanDescriptionExtractorTest {
 
     val info = whenExtractingSpanInfo()
 
-    assertEquals("db", info.op)
+    assertEquals("db.query", info.op)
     assertEquals("SELECT * FROM tbl", info.description)
     assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
   }
 
   @Test
-  fun `sets op to db for span with db system`() {
-    givenAttributes(mapOf(DbIncubatingAttributes.DB_SYSTEM to "some"))
+  fun `prefers query text over legacy statement`() {
+    givenAttributes(
+      mapOf(
+        DbAttributes.DB_SYSTEM_NAME to "some",
+        DbAttributes.DB_QUERY_TEXT to "SELECT * FROM stable_table",
+        DbIncubatingAttributes.DB_STATEMENT to "SELECT * FROM legacy_table",
+      ),
+    )
+
+    val info = whenExtractingSpanInfo()
+
+    assertEquals("db.query", info.op)
+    assertEquals("SELECT * FROM stable_table", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `sets op to db for span with stable db system name`() {
+    givenAttributes(mapOf(DbAttributes.DB_SYSTEM_NAME to "some"))
 
     val info = whenExtractingSpanInfo()
 
@@ -219,7 +237,7 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
-  fun `sets op to db for span with db system fallback to span name as description`() {
+  fun `sets op to db for span with legacy db system fallback to span name as description`() {
     givenSpanName("span name")
     givenAttributes(mapOf(DbIncubatingAttributes.DB_SYSTEM to "some"))
 
