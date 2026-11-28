@@ -9,8 +9,8 @@ import io.sentry.test.transaction
 import kotlin.test.Test
 
 /**
- * The agent traces each GraphQL operation as one span, with the operation's name as its op and
- * description, so the queries are named.
+ * The agent traces each GraphQL operation as one span, using the GraphQL operation name as its
+ * description.
  */
 class GraphqlIntegrationTest : IntegrationTest() {
 
@@ -97,7 +97,7 @@ class GraphqlIntegrationTest : IntegrationTest() {
       .transaction()!!
 
   private fun SentryTransaction.hasOperationSpan(operation: String): Boolean =
-    hasSpanWithOpAndDescription(operation, operation)
+    hasSpanWithOpAndDescription("graphql", operation)
 
   /** Finds the error for [exceptionMessage], then the transaction it belongs to by trace ID. */
   private fun awaitTransactionOfError(exceptionMessage: String): SentryTransaction {
